@@ -54,6 +54,7 @@ export async function bulkInsertResources(resources: any[]) {
   }
 
   revalidatePath('/admin/resources');
+  revalidatePath('/', 'layout'); // Force extreme UI synchronisation
   return { success: true };
 }
 
@@ -107,5 +108,47 @@ export async function createCategory(payload: { name: string; slug: string; subj
   }
 
   revalidatePath('/admin/categories');
+  revalidatePath('/', 'layout'); // Extreme cache flush for dynamic taxonomy
+  return { success: true };
+}
+
+export async function deleteCategoryWithAction(categoryId: string, action: 'cascade' | 'reassign', reassignToId?: string) {
+  const supabase = createAdminClient();
+  
+  if (action === 'reassign' && reassignToId) {
+    // 1. Move all resources to new category
+    const { error: moveError } = await supabase
+      .from('resources')
+      .update({ category_id: reassignToId })
+      .eq('category_id', categoryId);
+      
+    if (moveError) {
+      return { success: false, error: moveError.message };
+    }
+  } else if (action === 'cascade') {
+    // 1. Delete all resources in this category
+    const { error: cascadeError } = await supabase
+      .from('resources')
+      .delete()
+      .eq('category_id', categoryId);
+      
+    if (cascadeError) {
+      return { success: false, error: cascadeError.message };
+    }
+  }
+  
+  // 2. Delete the category itself
+  const { error: deleteError } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', categoryId);
+    
+  if (deleteError) {
+    return { success: false, error: deleteError.message };
+  }
+  
+  // Revalidate ALL paths since category hierarchy changed
+  revalidatePath('/', 'layout');
+  
   return { success: true };
 }
