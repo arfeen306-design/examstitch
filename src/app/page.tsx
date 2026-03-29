@@ -53,7 +53,7 @@ const levelCards = [
 ];
 
 const stats = [
-  { icon: FileText, value: '500+', label: 'Past Papers' },
+  { icon: FileText, value: '500+', label: 'Solved Past Papers' },
   { icon: PlayCircle, value: '200+', label: 'Video Solutions' },
   { icon: BookOpen, value: '50+', label: 'Topical Worksheets' },
   { icon: Users, value: '10K+', label: 'Students Helped' },

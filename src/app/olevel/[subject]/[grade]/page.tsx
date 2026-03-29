@@ -24,7 +24,7 @@ const sections = [
     gradient: 'from-red-500 to-rose-600',
   },
   {
-    title: 'Past Papers',
+    title: 'Solved Past Papers',
     description: 'Practice with official Cambridge past papers and mark schemes',
     href: 'past-papers',
     icon: FileText,

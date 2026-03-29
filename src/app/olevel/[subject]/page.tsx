@@ -61,7 +61,7 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
                         </div>
                         <div className="flex items-center gap-3 text-sm text-navy-600">
                           <FileText className="w-4 h-4 text-blue-500" />
-                          <span>Past Papers</span>
+                          <span>Solved Past Papers</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-navy-600">
                           <PenTool className="w-4 h-4 text-green-500" />
@@ -88,7 +88,7 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
                   Topical Questions
                 </button>
                 <button className="w-full text-left px-3 py-2 text-sm rounded-lg bg-navy-50 text-navy-700 hover:bg-gold-50 hover:text-gold-700 transition-colors">
-                  Past Papers by Year
+                  Solved Past Papers by Year
                 </button>
                 <button className="w-full text-left px-3 py-2 text-sm rounded-lg bg-navy-50 text-navy-700 hover:bg-gold-50 hover:text-gold-700 transition-colors">
                   Video Lectures

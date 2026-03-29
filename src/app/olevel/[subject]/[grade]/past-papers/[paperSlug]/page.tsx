@@ -81,7 +81,7 @@ export default async function PaperViewerPage({
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}/${params.grade}/past-papers`} className="text-white/50 hover:text-white/70 transition-colors">Past Papers</Link>
+            <Link href={`/olevel/${params.subject}/${params.grade}/past-papers`} className="text-white/50 hover:text-white/70 transition-colors">Solved Past Papers</Link>
             <span className="text-white/30">/</span>
             <span className="text-gold-500 font-medium">{paper.title}</span>
           </div>
@@ -137,7 +137,7 @@ function DemoViewer({
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${subject}/${grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${subject}/${grade}/past-papers`} className="text-white/50 hover:text-white/70 transition-colors">Past Papers</Link>
+            <Link href={`/olevel/${subject}/${grade}/past-papers`} className="text-white/50 hover:text-white/70 transition-colors">Solved Past Papers</Link>
             <span className="text-white/30">/</span>
             <span className="text-gold-500 font-medium">{paperTitle}</span>
           </div>

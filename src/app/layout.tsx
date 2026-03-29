@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     'O-Level / IGCSE Mathematics',
     'A-Level Mathematics',
     'IGCSE Maths',
-    'Past Papers',
+    'Solved Past Papers',
     'Topical Worksheets',
     'Video Lectures',
     '4024',

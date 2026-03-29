@@ -118,10 +118,10 @@ export default function PastPapersPage({
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
-            <span className="text-gold-500 font-medium">Past Papers</span>
+            <span className="text-gold-500 font-medium">Solved Past Papers</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-            {gradeName} — Past Papers
+            {gradeName} — Solved Past Papers
           </h1>
           <p className="text-white/60">
             Official Cambridge past papers. Click any paper to view, print, or download.
