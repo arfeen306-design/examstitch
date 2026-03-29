@@ -97,9 +97,9 @@ export default function HomePage() {
             {/* Main heading */}
             <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
               <span className="sr-only">Master O & A-Level Mathematics, Computer Science, Physics, Chemistry</span>
-              <div aria-hidden="true" className="flex flex-col md:flex-row items-center justify-center gap-x-4">
-                <span>Master O & A-Level</span>
-                <span className="relative inline-flex items-center justify-center md:justify-start w-[280px] sm:w-[350px] lg:w-[420px] h-[1.2em] overflow-hidden">
+              <div aria-hidden="true" className="flex flex-col items-center justify-center">
+                <span className="block mb-2">Master O & A-Level</span>
+                <span className="relative inline-flex items-center justify-center w-[280px] sm:w-[400px] lg:w-[500px] h-[1.2em] overflow-hidden">
                   <AnimatePresence mode="popLayout">
                     <motion.span
                       key={subjectIndex}
@@ -107,7 +107,7 @@ export default function HomePage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -40 }}
                       transition={{ duration: 0.5, ease: "easeOut" }}
-                      className="absolute text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600 text-center md:text-left whitespace-nowrap"
+                      className="absolute text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600 text-center whitespace-nowrap"
                     >
                       {SUBJECTS[subjectIndex]}
                     </motion.span>
