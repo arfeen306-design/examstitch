@@ -109,7 +109,7 @@ export async function deleteResource(id: string) {
   return { success: true };
 }
 
-export async function updateResource(id: string, updates: { title?: string; source_url?: string; content_type?: string }) {
+export async function updateResource(id: string, updates: { title?: string; source_url?: string; worksheet_url?: string | null; content_type?: string }) {
   const supabase = createAdminClient();
   
   const { error } = await supabase.from('resources').update(updates).eq('id', id);
