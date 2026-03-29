@@ -15,8 +15,8 @@ export function createAdminClient() {
   // keys that supabase-js v2 requires at the generic level.
   // Queries in route handlers cast rows with explicit types for safety.
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     {
       auth: {
         autoRefreshToken: false,
