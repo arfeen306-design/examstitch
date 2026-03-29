@@ -3,20 +3,23 @@
 /**
  * InteractiveSolver
  *
- * A dual-pane interface for past paper solutions:
- *  - Left (60%): PDF viewer (solved paper from Google Drive)
+ * Dual-pane interface for past paper solutions:
+ *  - Left (60%): PDF viewer (solved paper) — NEVER reloads on tab clicks
  *  - Right (40%): YouTube player + Question/Sub-part navigation tabs
  *
- * Question tabs call YouTube IFrame API seekTo() to jump to exact timestamps.
- * On mobile, layout stacks: Video → Tabs → PDF.
+ * Critical architecture:
+ *  - PDF iframe uses a STABLE key (never remounts) so scroll position is preserved
+ *  - QuestionTabs use <button> with e.preventDefault/stopPropagation (no router interaction)
+ *  - seekTo is called directly on the YT.Player ref (no page-level state changes)
+ *  - SolverPdfViewer is React.memo'd so parent re-renders don't touch it
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   ArrowLeft, Play, ChevronDown, ChevronUp,
-  FileText, RotateCcw, ChevronRight, Maximize2, Minimize2,
+  FileText, RotateCcw, Maximize2, Minimize2,
 } from 'lucide-react';
 import { toEmbedUrl } from '@/lib/url-transform';
 
@@ -39,8 +42,8 @@ export interface QuestionMapping {
 
 interface InteractiveSolverProps {
   title: string;
-  videoUrl: string;         // YouTube URL
-  pdfUrl: string;           // Google Drive URL (solved paper)
+  videoUrl: string;
+  pdfUrl: string;
   questionMapping: QuestionMapping[];
   backHref: string;
   backLabel: string;
@@ -66,12 +69,14 @@ function SolverYouTubePlayer({
   title: string;
   onPlayerReady: (player: any) => void;
 }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const [ended, setEnded] = useState(false);
   const [apiReady, setApiReady] = useState(false);
+  const readyCbRef = useRef(onPlayerReady);
+  readyCbRef.current = onPlayerReady;
 
-  // Load YouTube IFrame API
+  // Load YouTube IFrame API once
   useEffect(() => {
     if (window.YT && window.YT.Player) {
       setApiReady(true);
@@ -84,53 +89,52 @@ function SolverYouTubePlayer({
     return () => { window.onYouTubeIframeAPIReady = () => {}; };
   }, []);
 
-  // Init player once API is ready
+  // Create the player using the YT.Player constructor with a div target
+  // This gives us full API control including seekTo, playVideo, pauseVideo
   useEffect(() => {
-    if (!apiReady || !iframeRef.current) return;
-    playerRef.current = new window.YT.Player(iframeRef.current, {
+    if (!apiReady || !containerRef.current || playerRef.current) return;
+
+    // Extract video ID from embed URL
+    const vidMatch = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
+    if (!vidMatch) return;
+
+    playerRef.current = new window.YT.Player(containerRef.current, {
+      videoId: vidMatch[1],
+      playerVars: {
+        rel: 0,
+        modestbranding: 1,
+        controls: 1,
+        iv_load_policy: 3,
+        enablejsapi: 1,
+        origin: typeof window !== 'undefined' ? window.location.origin : '',
+      },
       events: {
-        onReady: () => onPlayerReady(playerRef.current),
+        onReady: () => readyCbRef.current(playerRef.current),
         onStateChange: (e: any) => {
-          if (e.data === 0) setEnded(true);
+          if (e.data === 0) setEnded(true); // YT.PlayerState.ENDED
         },
       },
     });
-    return () => { try { playerRef.current?.destroy(); } catch (_) {} };
+
+    return () => {
+      try { playerRef.current?.destroy(); } catch (_) {}
+      playerRef.current = null;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiReady]);
+  }, [apiReady, embedUrl]);
 
   const handleReplay = useCallback(() => {
     setEnded(false);
-    try { playerRef.current?.seekTo(0); playerRef.current?.playVideo(); } catch (_) {}
+    try { playerRef.current?.seekTo(0, true); playerRef.current?.playVideo(); } catch (_) {}
   }, []);
 
   return (
     <div className="relative w-full rounded-xl overflow-hidden shadow-lg border bg-black"
          style={{ borderColor: 'var(--border-color, #e2e8f0)' }}>
-      {/* Crop outer shell — hides YT title bar */}
-      <div className="relative w-full overflow-hidden"
-           style={{ paddingBottom: 'calc(56.25% + 50px)' }}>
-        <div style={{ position: 'absolute', top: '-50px', left: 0, right: 0, bottom: 0 }}>
-          <iframe
-            ref={iframeRef}
-            src={embedUrl}
-            title={title}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            loading="lazy"
-          />
-        </div>
-
-        {/* Top brand-bar blocker */}
-        <div aria-hidden="true"
-             style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50px',
-                      pointerEvents: 'auto', background: 'transparent', zIndex: 10 }} />
-
-        {/* Bottom-right logo blocker */}
-        <div aria-hidden="true"
-             style={{ position: 'absolute', bottom: '40px', right: 0, width: '88px', height: '28px',
-                      pointerEvents: 'auto', background: 'transparent', zIndex: 10 }} />
+      {/* 16:9 aspect ratio container */}
+      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+        <div ref={containerRef}
+             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
       </div>
 
       {/* End of video overlay */}
@@ -159,27 +163,21 @@ function SolverYouTubePlayer({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PDF Viewer
+// PDF Viewer — React.memo'd to prevent reload on parent re-renders
 // ─────────────────────────────────────────────────────────────────────────────
 
-function SolverPdfViewer({
+const SolverPdfViewer = memo(function SolverPdfViewer({
   embedUrl,
   title,
-  page,
 }: {
   embedUrl: string;
   title: string;
-  page?: number;
 }) {
-  // Append #page=N for Google Drive / generic PDF deep-link
-  const src = page ? `${embedUrl}#page=${page}` : embedUrl;
-
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg border bg-white"
-         style={{ borderColor: 'var(--border-color, #e2e8f0)' }}>
+    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg border"
+         style={{ borderColor: 'var(--border-color, #e2e8f0)', backgroundColor: 'var(--bg-card, white)' }}>
       <iframe
-        key={src} // force re-mount when page changes for deep-link
-        src={src}
+        src={embedUrl}
         title={title}
         className="w-full h-full border-0"
         style={{ minHeight: '500px' }}
@@ -191,7 +189,7 @@ function SolverPdfViewer({
            style={{ backgroundColor: 'var(--bg-card, white)' }} />
     </div>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Format seconds to MM:SS
@@ -204,7 +202,7 @@ function formatTime(seconds: number): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Question Navigation Tabs
+// Question Navigation Tabs (pure client-side, no router interaction)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function QuestionTabs({
@@ -220,22 +218,22 @@ function QuestionTabs({
 }) {
   const [expandedQ, setExpandedQ] = useState<number | null>(null);
 
-  const handleQClick = (q: QuestionMapping) => {
-    if (expandedQ === q.question) {
-      setExpandedQ(null);
-    } else {
-      setExpandedQ(q.question);
-    }
+  const handleQClick = (e: React.MouseEvent, q: QuestionMapping) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setExpandedQ(prev => prev === q.question ? null : q.question);
     onSelect(q);
   };
 
-  const handlePartClick = (q: QuestionMapping, part: QuestionPart) => {
+  const handlePartClick = (e: React.MouseEvent, q: QuestionMapping, part: QuestionPart) => {
+    e.preventDefault();
+    e.stopPropagation();
     onSelect(q, part);
   };
 
   return (
     <div className="space-y-2">
-      {/* Question label */}
+      {/* Header label */}
       <div className="flex items-center gap-1.5 px-1">
         <Play className="w-3 h-3" style={{ color: 'var(--accent, #d4a843)' }} />
         <span className="text-[10px] font-bold uppercase tracking-widest"
@@ -251,9 +249,10 @@ function QuestionTabs({
           return (
             <button
               key={q.question}
-              onClick={() => handleQClick(q)}
+              type="button"
+              onClick={(e) => handleQClick(e, q)}
               className={`relative shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold
-                         transition-all duration-200 border
+                         transition-all duration-200 border select-none
                          ${isActive
                            ? 'shadow-md scale-[1.02]'
                            : 'hover:scale-[1.01]'}`}
@@ -299,9 +298,10 @@ function QuestionTabs({
                   return (
                     <button
                       key={part.part}
-                      onClick={() => handlePartClick(q, part)}
+                      type="button"
+                      onClick={(e) => handlePartClick(e, q, part)}
                       className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold
-                                 transition-all duration-200 border
+                                 transition-all duration-200 border select-none
                                  ${isPartActive ? 'shadow-md scale-105' : 'hover:scale-[1.02]'}`}
                       style={{
                         backgroundColor: isPartActive ? 'var(--accent, #d4a843)' : 'var(--bg-card, white)',
@@ -338,32 +338,38 @@ export default function InteractiveSolver({
   const { embedUrl: ytEmbedUrl } = toEmbedUrl(videoUrl);
   const { embedUrl: pdfEmbedUrl } = toEmbedUrl(pdfUrl);
 
+  // Mutable ref to the YT.Player — never stored in state to avoid re-renders
   const playerRef = useRef<any>(null);
+
+  // UI state — only these cause visual re-renders (NOT the PDF)
   const [activeQ, setActiveQ] = useState<number | null>(null);
   const [activePart, setActivePart] = useState<string | null>(null);
-  const [pdfPage, setPdfPage] = useState<number | undefined>(undefined);
   const [pdfExpanded, setPdfExpanded] = useState(false);
 
   const handlePlayerReady = useCallback((player: any) => {
     playerRef.current = player;
   }, []);
 
+  // Tab click handler: seek video ONLY, never touch the PDF iframe
   const handleSelect = useCallback((q: QuestionMapping, part?: QuestionPart) => {
     const time = part ? part.start_time : q.start_time;
+
+    // Update active highlight (only re-renders the tabs, not the PDF)
     setActiveQ(q.question);
     setActivePart(part?.part || null);
 
-    // Seek video
+    // Seek video — works whether video is playing or paused
     if (playerRef.current) {
       try {
         playerRef.current.seekTo(time, true);
-        playerRef.current.playVideo();
+        // Only auto-play if the player is currently paused
+        const state = playerRef.current.getPlayerState?.();
+        // 2 = paused, -1 = unstarted, 5 = cued
+        if (state === 2 || state === -1 || state === 5) {
+          playerRef.current.playVideo();
+        }
       } catch (_) {}
     }
-
-    // Jump PDF to page if specified
-    const page = part?.pdf_page;
-    if (page) setPdfPage(page);
   }, []);
 
   return (
@@ -395,10 +401,10 @@ export default function InteractiveSolver({
       </h1>
 
       {/* ── Dual-Pane Layout ── */}
-      <div className={`flex flex-col lg:flex-row gap-4 ${pdfExpanded ? '' : ''}`}
+      <div className="flex flex-col lg:flex-row gap-4"
            style={{ minHeight: '70vh' }}>
 
-        {/* ── LEFT: PDF Viewer (60% on desktop) ── */}
+        {/* ── LEFT: PDF Viewer (60%) — NEVER re-renders on tab clicks ── */}
         <div className={`order-3 lg:order-1 ${pdfExpanded ? 'lg:w-[75%]' : 'lg:w-[58%]'} transition-all duration-300`}
              style={{ minHeight: '500px' }}>
           <div className="sticky top-24 h-[calc(100vh-120px)]">
@@ -409,14 +415,10 @@ export default function InteractiveSolver({
                       style={{ color: 'var(--text-muted, #94a3b8)' }}>
                   Solved Paper
                 </span>
-                {pdfPage && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: 'var(--bg-surface, #f8fafc)', color: 'var(--text-secondary, #64748b)' }}>
-                    Page {pdfPage}
-                  </span>
-                )}
               </div>
-              <button onClick={() => setPdfExpanded(!pdfExpanded)}
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPdfExpanded(!pdfExpanded); }}
                 className="hidden lg:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg
                            transition-colors border"
                 style={{ color: 'var(--text-secondary, #64748b)',
@@ -429,12 +431,11 @@ export default function InteractiveSolver({
             <SolverPdfViewer
               embedUrl={pdfEmbedUrl}
               title={`${title} — Paper`}
-              page={pdfPage}
             />
           </div>
         </div>
 
-        {/* ── RIGHT: Video + Tabs (40% on desktop) ── */}
+        {/* ── RIGHT: Video + Tabs (40%) ── */}
         <div className={`order-1 lg:order-2 ${pdfExpanded ? 'lg:w-[25%]' : 'lg:w-[42%]'} transition-all duration-300 space-y-3`}>
           {/* Video Player */}
           <SolverYouTubePlayer
@@ -460,6 +461,7 @@ export default function InteractiveSolver({
           {/* Currently playing indicator */}
           {activeQ !== null && (
             <motion.div
+              key={`now-${activeQ}-${activePart}`}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
