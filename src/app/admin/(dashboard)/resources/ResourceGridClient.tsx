@@ -2,9 +2,16 @@
 
 import { useState, useTransition } from 'react';
 import { toggleResourceFlag, deleteResource, updateResource, bulkInsertResources } from '../../actions';
-import { Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus } from 'lucide-react';
+import {
+  Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
+  FolderOpen, FileVideo, FileText, ChevronRight,
+} from 'lucide-react';
 import NewResourceModal from './NewResourceModal';
 import { useToast } from '@/components/ui/Toast';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface Resource {
   id: string;
@@ -38,7 +45,9 @@ interface SubtopicState {
   worksheetUrl: string;
 }
 
-// ── Grouping helpers (mirrors UnifiedModuleGrid logic) ────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Grouping / numbering helpers  (mirrors UnifiedModuleGrid)
+// ─────────────────────────────────────────────────────────────────────────────
 
 function getBaseTitle(title: string): string {
   return title
@@ -56,6 +65,99 @@ function isSubTopic(title: string): boolean {
   );
 }
 
+/** Group an array of resources into Paper → TopicGroup hierarchy */
+interface TopicGroup {
+  baseTitle: string;
+  parts: Resource[]; // sorted by sort_order then created_at
+}
+
+interface PaperGroup {
+  categoryId: string;
+  categoryName: string;
+  topicGroups: TopicGroup[];
+}
+
+function buildHierarchy(resources: Resource[]): PaperGroup[] {
+  // Step 1: group by category
+  const paperMap = new Map<string, { name: string; resources: Resource[] }>();
+  for (const r of resources) {
+    const catId = r.category?.id ?? '__none__';
+    const catName = r.category?.name ?? 'Uncategorised';
+    if (!paperMap.has(catId)) paperMap.set(catId, { name: catName, resources: [] });
+    paperMap.get(catId)!.resources.push(r);
+  }
+
+  // Step 2: within each paper group, sub-group by base title
+  return Array.from(paperMap.entries()).map(([catId, { name, resources: catResources }]) => {
+    // Sort within paper by sort_order then created_at
+    const sorted = [...catResources].sort((a, b) => {
+      const ao = a.sort_order ?? 9999;
+      const bo = b.sort_order ?? 9999;
+      if (ao !== bo) return ao - bo;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+
+    const groupMap = new Map<string, Resource[]>();
+    for (const r of sorted) {
+      const base = getBaseTitle(r.title);
+      if (!groupMap.has(base)) groupMap.set(base, []);
+      groupMap.get(base)!.push(r);
+    }
+
+    const topicGroups: TopicGroup[] = Array.from(groupMap.entries()).map(([baseTitle, parts]) => ({
+      baseTitle,
+      parts,
+    }));
+
+    return { categoryId: catId, categoryName: name, topicGroups };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inline edit form
+// ─────────────────────────────────────────────────────────────────────────────
+
+function EditForm({
+  state,
+  onChange,
+}: {
+  state: EditState;
+  onChange: (s: EditState) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <input
+        value={state.title}
+        onChange={e => onChange({ ...state, title: e.target.value })}
+        className="w-full px-2 py-1 text-sm border border-gold-300 rounded-md focus:ring-1 focus:ring-gold-500 outline-none"
+        placeholder="Title"
+      />
+      <div className="relative">
+        <span className="absolute left-2 top-1.5 text-[10px] font-bold text-red-500">YT</span>
+        <input value={state.videoUrl} onChange={e => onChange({ ...state, videoUrl: e.target.value })}
+          className="w-full pl-7 pr-2 py-1 text-xs font-mono border border-red-200 rounded-md focus:ring-1 focus:ring-red-400 outline-none"
+          placeholder="YouTube URL" />
+      </div>
+      <div className="relative">
+        <span className="absolute left-2 top-1.5 text-[10px] font-bold text-green-600">PDF</span>
+        <input value={state.worksheetUrl} onChange={e => onChange({ ...state, worksheetUrl: e.target.value })}
+          className="w-full pl-8 pr-2 py-1 text-xs font-mono border border-green-200 rounded-md focus:ring-1 focus:ring-green-400 outline-none"
+          placeholder="Drive PDF URL (optional)" />
+      </div>
+      <div className="relative">
+        <span className="absolute left-2 top-1.5 text-[10px] font-bold text-purple-600">#</span>
+        <input type="number" min="0" value={state.sortOrder}
+          onChange={e => onChange({ ...state, sortOrder: e.target.value })}
+          className="w-full pl-6 pr-2 py-1 text-xs border border-purple-200 rounded-md focus:ring-1 focus:ring-purple-400 outline-none"
+          placeholder="Sort order (0 = first)" />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ResourceGridClient({ initialResources }: { initialResources: Resource[] }) {
   const [resources, setResources] = useState<Resource[]>(initialResources);
@@ -64,32 +166,34 @@ export default function ResourceGridClient({ initialResources }: { initialResour
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { showToast } = useToast();
 
-  // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState>({ title: '', videoUrl: '', worksheetUrl: '', contentType: 'video', sortOrder: '' });
 
-  // Sub-topic state
   const [subtopicParentId, setSubtopicParentId] = useState<string | null>(null);
   const [subtopicState, setSubtopicState] = useState<SubtopicState>({ parentId: '', title: '', videoUrl: '', worksheetUrl: '' });
+
+  // ── Filtering ──────────────────────────────────────────────────────────────
 
   const filtered = filterSubject === 'all'
     ? resources
     : resources.filter(r => r.subject === filterSubject);
 
-  // ── Toggle flags ──────────────────────────────────────────────────────────
+  const paperGroups = buildHierarchy(filtered);
 
-  const handleToggle = (id: string, field: 'is_published' | 'is_locked' | 'is_watermarked', currentValue: boolean) => {
-    setResources(prev => prev.map(r => r.id === id ? { ...r, [field]: !currentValue } : r));
+  // ── Toggle flags ───────────────────────────────────────────────────────────
+
+  const handleToggle = (id: string, field: 'is_published' | 'is_locked' | 'is_watermarked', current: boolean) => {
+    setResources(prev => prev.map(r => r.id === id ? { ...r, [field]: !current } : r));
     startTransition(async () => {
-      const { success } = await toggleResourceFlag(id, field, !currentValue);
+      const { success } = await toggleResourceFlag(id, field, !current);
       if (!success) {
-        setResources(prev => prev.map(r => r.id === id ? { ...r, [field]: currentValue } : r));
+        setResources(prev => prev.map(r => r.id === id ? { ...r, [field]: current } : r));
         showToast({ message: `Failed to update ${field}`, type: 'error' });
       }
     });
   };
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  // ── Delete ─────────────────────────────────────────────────────────────────
 
   const handleDelete = (id: string, title: string) => {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
@@ -99,16 +203,14 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         if (result.success) {
           setResources(prev => prev.filter(r => r.id !== id));
           showToast({ message: 'Resource deleted', type: 'success' });
-        } else {
-          showToast({ message: result.error || 'Delete failed', type: 'error' });
-        }
-      } catch (err: any) {
-        showToast({ message: 'Delete failed: ' + err.message, type: 'error' });
+        } else showToast({ message: result.error || 'Delete failed', type: 'error' });
+      } catch (err: unknown) {
+        showToast({ message: 'Delete failed: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
       }
     });
   };
 
-  // ── Edit ──────────────────────────────────────────────────────────────────
+  // ── Edit ───────────────────────────────────────────────────────────────────
 
   const startEdit = (r: Resource) => {
     setEditingId(r.id);
@@ -120,55 +222,47 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       sortOrder: r.sort_order != null ? String(r.sort_order) : '',
     });
   };
-
-  const cancelEdit = () => { setEditingId(null); };
+  const cancelEdit = () => setEditingId(null);
 
   const saveEdit = (id: string) => {
     startTransition(async () => {
       try {
         const original = resources.find(r => r.id === id);
         if (!original) return;
-
-        const updates: any = {};
+        const updates: Record<string, unknown> = {};
         if (editState.title !== original.title) updates.title = editState.title;
         if (editState.videoUrl !== (original.source_url || '')) updates.source_url = editState.videoUrl;
         if (editState.worksheetUrl !== (original.worksheet_url || '')) updates.worksheet_url = editState.worksheetUrl || null;
         if (editState.contentType !== original.content_type) updates.content_type = editState.contentType;
         const newOrder = editState.sortOrder !== '' ? parseInt(editState.sortOrder, 10) : null;
         if (newOrder !== (original.sort_order ?? null)) updates.sort_order = newOrder;
-
         if (Object.keys(updates).length === 0) { cancelEdit(); return; }
 
-        const result = await updateResource(id, updates);
+        const result = await updateResource(id, updates as Parameters<typeof updateResource>[1]);
         if (result.success) {
           setResources(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
-          showToast({ message: 'Resource updated!', type: 'success' });
+          showToast({ message: 'Updated!', type: 'success' });
           cancelEdit();
-        } else {
-          showToast({ message: result.error || 'Failed to update', type: 'error' });
-        }
-      } catch (err: any) {
-        showToast({ message: 'Update failed: ' + err.message, type: 'error' });
+        } else showToast({ message: result.error || 'Failed to update', type: 'error' });
+      } catch (err: unknown) {
+        showToast({ message: 'Update failed: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
       }
     });
   };
 
-  // ── Sub-topic ─────────────────────────────────────────────────────────────
+  // ── Sub-topic ──────────────────────────────────────────────────────────────
 
   const openSubtopic = (r: Resource) => {
-    // Auto-number: count existing sub-topics for this title base
-    const baseTitle = r.title;
-    const siblings = resources.filter(x => x.title.startsWith(baseTitle) && x.id !== r.id);
-    const nextNum = siblings.length + 1;
+    const base = getBaseTitle(r.title);
+    const siblings = resources.filter(x => getBaseTitle(x.title) === base && x.id !== r.id);
     setSubtopicParentId(r.id);
     setSubtopicState({
       parentId: r.id,
-      title: `${baseTitle} — Part ${nextNum + 1}`,
+      title: `${base} — Part ${siblings.length + 2}`,
       videoUrl: '',
       worksheetUrl: '',
     });
   };
-
   const cancelSubtopic = () => setSubtopicParentId(null);
 
   const saveSubtopic = (parent: Resource) => {
@@ -178,7 +272,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
     }
     startTransition(async () => {
       try {
-        const payload: any = {
+        const payload = {
           title: subtopicState.title,
           subject: parent.subject,
           category_id: parent.category?.id || '',
@@ -191,228 +285,271 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           is_locked: false,
           is_watermarked: false,
         };
-
         const result = await bulkInsertResources([payload]);
         if (result.success) {
           showToast({ message: 'Sub-topic added!', type: 'success' });
           cancelSubtopic();
-          // Reload page to show new entry
           window.location.reload();
-        } else {
-          showToast({ message: result.error || 'Failed to add sub-topic', type: 'error' });
-        }
-      } catch (err: any) {
-        showToast({ message: 'Failed: ' + err.message, type: 'error' });
+        } else showToast({ message: result.error || 'Failed to add sub-topic', type: 'error' });
+      } catch (err: unknown) {
+        showToast({ message: 'Failed: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
       }
     });
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render a single resource row ───────────────────────────────────────────
+
+  const renderRow = (
+    r: Resource,
+    topicIndex: number,       // 0-based parent index in paper group  → "1", "2" …
+    partIndex: number | null, // null = parent row, else 0-based → "1.1", "1.2" …
+    totalParts: number,
+  ) => {
+    const isSub = partIndex !== null;
+    const label = isSub
+      ? `${topicIndex + 1}.${partIndex! + 1}`
+      : `${topicIndex + 1}`;
+
+    const subLabel = isSub
+      ? r.title.replace(getBaseTitle(r.title), '').replace(/^[\s—–-]+/, '').trim() || `Part ${partIndex! + 1}`
+      : r.title;
+
+    return (
+      <>
+        {/* Resource row */}
+        <tr
+          key={r.id}
+          className={`transition-colors group
+            ${editingId === r.id ? 'bg-gold-50/40' : isSub ? 'bg-blue-50/20 hover:bg-blue-50/40' : 'hover:bg-navy-50/30'}
+            ${isSub ? 'border-l-4 border-blue-300' : ''}`}
+        >
+          {/* # Order column */}
+          <td className="w-12 px-3 py-2.5 text-center">
+            <span className={`inline-block text-xs font-bold tabular-nums rounded px-1.5 py-0.5
+              ${isSub ? 'text-blue-600 bg-blue-50' : 'text-navy-700 bg-navy-100'}`}>
+              {label}
+            </span>
+          </td>
+
+          {/* Title / Links column */}
+          <td className={`py-2.5 font-medium text-navy-900 max-w-[240px] ${isSub ? 'pl-8 pr-4' : 'px-4'}`}>
+            {editingId === r.id ? (
+              <EditForm state={editState} onChange={setEditState} />
+            ) : (
+              <div className="flex items-start gap-2 min-w-0">
+                {/* Icon: folder (parent with children) or file */}
+                {isSub ? (
+                  <span className="shrink-0 text-blue-400 mt-0.5">
+                    <ChevronRight className="w-3 h-3" />
+                  </span>
+                ) : totalParts > 1 ? (
+                  <FolderOpen className="w-3.5 h-3.5 shrink-0 text-gold-500 mt-0.5" />
+                ) : (
+                  r.content_type === 'video'
+                    ? <FileVideo className="w-3.5 h-3.5 shrink-0 text-red-400 mt-0.5" />
+                    : <FileText className="w-3.5 h-3.5 shrink-0 text-green-500 mt-0.5" />
+                )}
+                <div className="min-w-0">
+                  <span className="truncate block text-sm" title={r.title}>{subLabel}</span>
+                  <div className="flex gap-1 mt-0.5 flex-wrap items-center">
+                    {r.source_url && <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">YT</span>}
+                    {r.worksheet_url && <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">PDF</span>}
+                    {totalParts > 1 && !isSub && (
+                      <span className="text-[10px] text-navy-400">{totalParts} parts</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </td>
+
+          {/* Sort order (editable inline without needing full-edit mode) */}
+          <td className="w-20 px-2 py-2.5 text-center">
+            {editingId === r.id ? null : (
+              <input
+                type="number"
+                min="0"
+                defaultValue={r.sort_order ?? ''}
+                onBlur={async e => {
+                  const val = e.target.value !== '' ? parseInt(e.target.value, 10) : null;
+                  if (val === (r.sort_order ?? null)) return;
+                  const result = await updateResource(r.id, { sort_order: val });
+                  if (result.success) {
+                    setResources(prev => prev.map(x => x.id === r.id ? { ...x, sort_order: val } : x));
+                    showToast({ message: 'Order saved', type: 'success' });
+                  }
+                }}
+                className="w-14 text-center text-xs border border-purple-200 rounded-md px-1 py-1
+                           focus:ring-1 focus:ring-purple-400 outline-none text-purple-700
+                           hover:border-purple-400 transition"
+                placeholder="—"
+                title="Sort order — lower = first"
+              />
+            )}
+          </td>
+
+          {/* Type */}
+          <td className="w-20 px-3 py-2.5">
+            {editingId === r.id ? (
+              <select value={editState.contentType} onChange={e => setEditState(s => ({ ...s, contentType: e.target.value }))}
+                className="px-2 py-1 text-xs border border-navy-200 rounded-md">
+                <option value="video">Video</option>
+                <option value="pdf">PDF</option>
+                <option value="worksheet">Worksheet</option>
+              </select>
+            ) : (
+              <span className="bg-navy-100 text-navy-700 px-2 py-0.5 rounded-full text-xs font-mono uppercase">
+                {r.content_type}
+              </span>
+            )}
+          </td>
+
+          {/* Toggles */}
+          <td className="w-10 px-2 py-2.5 text-center">
+            <input type="checkbox" checked={r.is_published} onChange={() => handleToggle(r.id, 'is_published', r.is_published)} className="w-4 h-4 cursor-pointer accent-gold-500" />
+          </td>
+          <td className="w-10 px-2 py-2.5 text-center">
+            <input type="checkbox" checked={r.is_locked} onChange={() => handleToggle(r.id, 'is_locked', r.is_locked)} className="w-4 h-4 cursor-pointer accent-red-500" />
+          </td>
+          <td className="w-10 px-2 py-2.5 text-center">
+            <input type="checkbox" checked={r.is_watermarked} onChange={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)} className="w-4 h-4 cursor-pointer accent-blue-500" />
+          </td>
+
+          {/* Actions */}
+          <td className="w-28 px-3 py-2.5 text-right">
+            <div className="flex items-center justify-end gap-1">
+              {editingId === r.id ? (
+                <>
+                  <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-500 hover:text-green-700 p-1 rounded hover:bg-green-50 transition" title="Save"><Check className="w-4 h-4" /></button>
+                  <button onClick={cancelEdit} className="text-navy-400 hover:text-navy-700 p-1 rounded hover:bg-navy-50 transition" title="Cancel"><X className="w-4 h-4" /></button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => startEdit(r)} className="text-navy-400 hover:text-gold-500 p-1 rounded hover:bg-gold-50 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => openSubtopic(r)} className="text-navy-400 hover:text-blue-500 p-1 rounded hover:bg-blue-50 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
+                  <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-navy-400 hover:text-gold-500 p-1 rounded hover:bg-gold-50 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
+                  <button onClick={() => handleDelete(r.id, r.title)} className="text-navy-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                </>
+              )}
+            </div>
+          </td>
+        </tr>
+
+        {/* Inline sub-topic form */}
+        {subtopicParentId === r.id && (
+          <tr key={`sub-form-${r.id}`} className="bg-blue-50/50 border-l-4 border-blue-400">
+            <td colSpan={8} className="px-4 py-3">
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="flex flex-col gap-1 min-w-[160px]">
+                  <label className="text-xs font-semibold text-navy-500">Sub-topic Title</label>
+                  <input value={subtopicState.title} onChange={e => setSubtopicState(s => ({ ...s, title: e.target.value }))}
+                    className="px-2 py-1 text-sm border border-blue-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none"
+                    placeholder="Differentiation Part 2" />
+                </div>
+                <div className="flex flex-col gap-1 flex-1 min-w-[175px]">
+                  <label className="text-xs font-semibold text-red-500">YouTube URL</label>
+                  <input value={subtopicState.videoUrl} onChange={e => setSubtopicState(s => ({ ...s, videoUrl: e.target.value }))}
+                    className="px-2 py-1 text-xs font-mono border border-red-200 rounded-md focus:ring-1 focus:ring-red-400 outline-none"
+                    placeholder="https://www.youtube.com/watch?v=..." />
+                </div>
+                <div className="flex flex-col gap-1 flex-1 min-w-[175px]">
+                  <label className="text-xs font-semibold text-green-600">Worksheet PDF (optional)</label>
+                  <input value={subtopicState.worksheetUrl} onChange={e => setSubtopicState(s => ({ ...s, worksheetUrl: e.target.value }))}
+                    className="px-2 py-1 text-xs font-mono border border-green-200 rounded-md focus:ring-1 focus:ring-green-400 outline-none"
+                    placeholder="https://drive.google.com/..." />
+                </div>
+                <div className="flex gap-2 pb-0.5">
+                  <button onClick={() => saveSubtopic(r)} disabled={isPending}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition disabled:opacity-50">
+                    <Check className="w-3.5 h-3.5" /> Add
+                  </button>
+                  <button onClick={cancelSubtopic}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-navy-600 bg-white hover:bg-navy-50 rounded-lg border border-navy-200 transition">
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        )}
+      </>
+    );
+  };
+
+  // ── Main render ────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between pb-4">
+      <div className="flex items-center justify-between pb-2">
         <div className="flex items-center gap-4">
-          <select
-            value={filterSubject}
-            onChange={(e) => setFilterSubject(e.target.value)}
-            className="border border-navy-100 rounded-lg px-3 py-2 text-sm text-navy-700 focus:ring-1 focus:ring-gold-500 outline-none"
-          >
+          <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
+            className="border border-navy-100 rounded-lg px-3 py-2 text-sm text-navy-700 focus:ring-1 focus:ring-gold-500 outline-none">
             <option value="all">All Syllabi</option>
-            <option value="mathematics-4024">O-Level / IGCSE (4024/0580)</option>
+            <option value="mathematics-4024">O-Level / IGCSE (4024)</option>
             <option value="mathematics-9709">A-Level (9709)</option>
           </select>
-          <div className="text-sm text-navy-400">Showing {filtered.length} resources</div>
+          <span className="text-sm text-navy-400">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
+        <button onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
           <Plus className="w-4 h-4" /> New Resource
         </button>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto border border-navy-50 rounded-lg max-h-[600px] overflow-y-auto">
-        <table className="w-full text-sm text-left align-middle">
-          <thead className="text-xs uppercase bg-navy-50 text-navy-500 sticky top-0 z-10 shadow-sm">
+      {/* Hierarchical table */}
+      <div className="overflow-x-auto border border-navy-100 rounded-xl max-h-[70vh] overflow-y-auto shadow-sm">
+        <table className="w-full text-sm text-left">
+          <thead className="text-[10px] uppercase tracking-wider bg-navy-900 text-navy-300 sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3">Title / Links</th>
-              <th className="px-4 py-3">Subject / Cat</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3 text-center">Published</th>
-              <th className="px-4 py-3 text-center">Locked</th>
-              <th className="px-4 py-3 text-center">Wtmk</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="w-12 px-3 py-3 text-center">#</th>
+              <th className="px-4 py-3">Topic / Title</th>
+              <th className="w-20 px-2 py-3 text-center">Order ↕</th>
+              <th className="w-20 px-3 py-3">Type</th>
+              <th className="w-10 px-2 py-3 text-center" title="Published">Pub</th>
+              <th className="w-10 px-2 py-3 text-center" title="Locked">Lock</th>
+              <th className="w-10 px-2 py-3 text-center" title="Watermark">Wtmk</th>
+              <th className="w-28 px-3 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-navy-50 bg-white">
-            {filtered.map(r => (
-              <>
-                {/* Main resource row */}
-                <tr key={r.id} className={`hover:bg-gray-50 transition-colors
-                  ${editingId === r.id ? 'bg-gold-50/30' : ''}
-                  ${isSubTopic(r.title) ? 'border-l-2 border-blue-300 bg-blue-50/20' : ''}`}>
-                  <td className="px-4 py-3 font-medium text-navy-900 max-w-[260px]">
-                    {editingId === r.id ? (
-                      <div className="space-y-1.5">
-                        <input
-                          value={editState.title}
-                          onChange={e => setEditState(s => ({ ...s, title: e.target.value }))}
-                          className="w-full px-2 py-1 text-sm border border-gold-300 rounded-md focus:ring-1 focus:ring-gold-500 outline-none"
-                          placeholder="Title"
-                        />
-                        <div className="relative">
-                          <span className="absolute left-2 top-1.5 text-[10px] font-bold text-red-500">YT</span>
-                          <input
-                            value={editState.videoUrl}
-                            onChange={e => setEditState(s => ({ ...s, videoUrl: e.target.value }))}
-                            className="w-full pl-7 pr-2 py-1 text-xs font-mono border border-red-200 rounded-md focus:ring-1 focus:ring-red-400 outline-none"
-                            placeholder="YouTube URL"
-                          />
-                        </div>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1.5 text-[10px] font-bold text-green-600">PDF</span>
-                          <input
-                            value={editState.worksheetUrl}
-                            onChange={e => setEditState(s => ({ ...s, worksheetUrl: e.target.value }))}
-                            className="w-full pl-8 pr-2 py-1 text-xs font-mono border border-green-200 rounded-md focus:ring-1 focus:ring-green-400 outline-none"
-                            placeholder="Google Drive PDF URL (optional)"
-                          />
-                        </div>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1.5 text-[10px] font-bold text-purple-600">#</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={editState.sortOrder}
-                            onChange={e => setEditState(s => ({ ...s, sortOrder: e.target.value }))}
-                            className="w-full pl-6 pr-2 py-1 text-xs border border-purple-200 rounded-md focus:ring-1 focus:ring-purple-400 outline-none"
-                            placeholder="Sort order (0 = first)"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={isSubTopic(r.title) ? 'pl-4' : ''}>
-                        {isSubTopic(r.title) && (
-                          <span className="text-[10px] text-blue-400 font-bold mr-1">└</span>
-                        )}
-                        <span className="truncate" title={r.title}>{r.title}</span>
-                        <div className="flex gap-1 mt-1 flex-wrap items-center">
-                          {r.source_url && (
-                            <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">YT</span>
-                          )}
-                          {r.worksheet_url && (
-                            <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">PDF</span>
-                          )}
-                          {r.sort_order != null && (
-                            <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">#{r.sort_order}</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-navy-500">
-                    <div className="font-semibold">{r.subject.replace('mathematics-', '')}</div>
-                    <div className="truncate w-32" title={r.category?.name || 'Uncategorized'}>{r.category?.name || 'Uncategorized'}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {editingId === r.id ? (
-                      <select value={editState.contentType} onChange={e => setEditState(s => ({ ...s, contentType: e.target.value }))} className="px-2 py-1 text-xs border border-navy-200 rounded-md">
-                        <option value="video">Video</option>
-                        <option value="pdf">PDF</option>
-                        <option value="worksheet">Worksheet</option>
-                      </select>
-                    ) : (
-                      <span className="bg-navy-100 text-navy-700 px-2 py-0.5 rounded-full text-xs font-mono uppercase">{r.content_type}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <input type="checkbox" checked={r.is_published} onChange={() => handleToggle(r.id, 'is_published', r.is_published)} className="w-4 h-4 cursor-pointer accent-gold-500" />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <input type="checkbox" checked={r.is_locked} onChange={() => handleToggle(r.id, 'is_locked', r.is_locked)} className="w-4 h-4 cursor-pointer accent-red-500" />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <input type="checkbox" checked={r.is_watermarked} onChange={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)} className="w-4 h-4 cursor-pointer accent-blue-500" />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      {editingId === r.id ? (
-                        <>
-                          <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-500 hover:text-green-700 p-1 rounded hover:bg-green-50 transition-colors" title="Save"><Check className="w-4 h-4" /></button>
-                          <button onClick={cancelEdit} className="text-navy-400 hover:text-navy-700 p-1 rounded hover:bg-navy-50 transition-colors" title="Cancel"><X className="w-4 h-4" /></button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={() => startEdit(r)} className="text-navy-400 hover:text-gold-500 transition-colors p-1 rounded hover:bg-gold-50" title="Edit"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => openSubtopic(r)} className="text-navy-400 hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50" title="Add Sub-topic"><ListPlus className="w-4 h-4" /></button>
-                          <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-navy-400 hover:text-gold-500 transition-colors p-1 rounded hover:bg-gold-50" title="Preview"><ExternalLink className="w-4 h-4" /></a>
-                          <button onClick={() => handleDelete(r.id, r.title)} className="text-navy-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50" title="Delete"><Trash2 className="w-4 h-4" /></button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-
-                {/* Inline sub-topic form row */}
-                {subtopicParentId === r.id && (
-                  <tr key={`subtopic-${r.id}`} className="bg-blue-50/40 border-l-2 border-blue-400">
-                    <td className="px-4 py-3" colSpan={7}>
-                      <div className="flex flex-wrap gap-2 items-end">
-                        <div className="flex flex-col gap-1 min-w-[160px]">
-                          <label className="text-xs font-semibold text-navy-500">Sub-topic Title</label>
-                          <input
-                            value={subtopicState.title}
-                            onChange={e => setSubtopicState(s => ({ ...s, title: e.target.value }))}
-                            className="px-2 py-1 text-sm border border-blue-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none"
-                            placeholder="e.g. Differentiation Part 2"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-                          <label className="text-xs font-semibold text-red-500">YouTube Video URL</label>
-                          <input
-                            value={subtopicState.videoUrl}
-                            onChange={e => setSubtopicState(s => ({ ...s, videoUrl: e.target.value }))}
-                            className="px-2 py-1 text-xs font-mono border border-red-200 rounded-md focus:ring-1 focus:ring-red-400 outline-none"
-                            placeholder="https://www.youtube.com/watch?v=..."
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-                          <label className="text-xs font-semibold text-green-600">Worksheet PDF (optional)</label>
-                          <input
-                            value={subtopicState.worksheetUrl}
-                            onChange={e => setSubtopicState(s => ({ ...s, worksheetUrl: e.target.value }))}
-                            className="px-2 py-1 text-xs font-mono border border-green-200 rounded-md focus:ring-1 focus:ring-green-400 outline-none"
-                            placeholder="https://drive.google.com/..."
-                          />
-                        </div>
-                        <div className="flex gap-2 pb-0.5">
-                          <button
-                            onClick={() => saveSubtopic(r)}
-                            disabled={isPending}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition disabled:opacity-50"
-                          >
-                            <Check className="w-3.5 h-3.5" /> Add Sub-topic
-                          </button>
-                          <button
-                            onClick={cancelSubtopic}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-navy-600 bg-navy-50 hover:bg-navy-100 rounded-lg border border-navy-200 transition"
-                          >
-                            <X className="w-3.5 h-3.5" /> Cancel
-                          </button>
-                        </div>
+          <tbody className="bg-white divide-y divide-navy-50/80">
+            {paperGroups.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-navy-400 text-sm">No resources found.</td>
+              </tr>
+            ) : (
+              paperGroups.map(paper => (
+                <>
+                  {/* ── Paper group header ── */}
+                  <tr key={`header-${paper.categoryId}`} className="bg-navy-50 border-y border-navy-200">
+                    <td colSpan={8} className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="w-4 h-4 text-gold-500" />
+                        <span className="text-xs font-bold text-navy-700 uppercase tracking-widest">
+                          {paper.categoryName}
+                        </span>
+                        <span className="text-xs text-navy-400">
+                          · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
+                        </span>
                       </div>
                     </td>
                   </tr>
-                )}
-              </>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-navy-400">No resources found.</td>
-              </tr>
+
+                  {/* ── Topic groups ── */}
+                  {paper.topicGroups.map((group, topicIdx) => (
+                    <>
+                      {group.parts.map((part, partIdx) =>
+                        renderRow(
+                          part,
+                          topicIdx,
+                          group.parts.length > 1 ? partIdx : null,
+                          group.parts.length,
+                        )
+                      )}
+                    </>
+                  ))}
+                </>
+              ))
             )}
           </tbody>
         </table>
