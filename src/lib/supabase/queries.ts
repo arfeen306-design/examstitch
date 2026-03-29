@@ -129,6 +129,7 @@ export async function getResourcesByCategory(
     .from('resources')
     .select('*')
     .eq('category_id', categoryId)
+    .eq('is_published', true)
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 
@@ -257,19 +258,71 @@ export async function getSolutionVideo(videoResourceId: string): Promise<Resourc
 
 /**
  * Full-text search across resource titles, descriptions, and topics.
+ *
+ * Uses the `fts` generated tsvector column (see migration 009) so queries
+ * hit the GIN index instead of doing a sequential ILIKE scan.
+ * Requires migration 009_add_fts_column.sql to be applied in Supabase.
  */
-export async function searchResources(query: string, limit = 20): Promise<Resource[]> {
+export async function searchResources(query: string, limit = 60): Promise<Resource[]> {
   const supabase = createClient();
+
+  const trimmed = query.trim().slice(0, 120);
+  if (!trimmed) return [];
+
+  // ── Tier 1: FTS via websearch_to_tsquery ─────────────────────────────────
+  // Handles natural language, quoted phrases, AND/OR operators, multi-word.
+  // Uses the 'fts' tsvector column (GIN-indexed) for fast ranked lookups.
+  try {
+    const { data: ftsData, error: ftsErr } = await supabase
+      .from('resources')
+      .select('*, category:categories(id, name, slug)')
+      .eq('is_published', true)
+      .textSearch('fts', trimmed, { config: 'english', type: 'websearch' })
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (!ftsErr && ftsData && ftsData.length > 0) {
+      return ftsData as unknown as Resource[];
+    }
+  } catch (_) { /* fall through */ }
+
+  // ── Tier 2: Broad ILIKE fallback ──────────────────────────────────────────
+  // Catches short words, partial matches, and common misspellings by
+  // scanning title, topic, description, and subject columns.
+  const sanitized = trimmed.replace(/[%_]/g, '\\$&'); // escape ILIKE wildcards
   const { data, error } = await supabase
     .from('resources')
-    .select('*')
+    .select('*, category:categories(id, name, slug)')
     .eq('is_published', true)
-    .or(`title.ilike.%${query}%,description.ilike.%${query}%,topic.ilike.%${query}%`)
+    .or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%,topic.ilike.%${sanitized}%,subject.ilike.%${sanitized}%`)
+    .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(limit);
-  if (error) throw new Error(`searchResources(${query}): ${error.message}`);
+
+  if (error) throw new Error(`searchResources(${trimmed}): ${error.message}`);
   return (data ?? []) as unknown as Resource[];
 }
+
+/**
+ * Categorised search — returns results split into content-type buckets.
+ * Used by the /search results page.
+ */
+export interface CategorisedResults {
+  videoTopical: Resource[];
+  solvedPapers: Resource[];
+  total: number;
+}
+
+export async function searchResourcesCategorised(query: string): Promise<CategorisedResults> {
+  const all = await searchResources(query, 80);
+  return {
+    videoTopical: all.filter(r => (r as any).module_type === 'video_topical' || r.content_type === 'video'),
+    solvedPapers: all.filter(r => (r as any).module_type === 'solved_past_paper' || r.content_type === 'pdf'),
+    total: all.length,
+  };
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Blog

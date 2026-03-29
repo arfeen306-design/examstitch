@@ -2,6 +2,32 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
+const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
+
+const ResourceSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(500),
+  content_type: z.enum(['video', 'pdf', 'worksheet']),
+  source_url: z
+    .string()
+    .min(1, 'Source URL is required')
+    .regex(ALLOWED_URL, 'Must be a YouTube or Google Drive URL'),
+  is_locked: z.boolean().default(false),
+  source_type: z.string().optional(),
+  subject: z.string().optional(),
+  category_id: z.string().uuid('Invalid category ID').optional(),
+  description: z.string().max(2000).optional(),
+  topic: z.string().max(200).optional(),
+  module_type: z.enum(['video_topical', 'solved_past_paper']).optional(),
+  worksheet_url: z
+    .string()
+    .regex(ALLOWED_URL, 'Must be a YouTube or Google Drive URL')
+    .nullable()
+    .optional(),
+  is_watermarked: z.boolean().optional(),
+  is_published: z.boolean().optional(),
+});
 
 export async function toggleResourceFlag(id: string, field: 'is_published' | 'is_locked' | 'is_watermarked', value: boolean) {
   const supabase = createAdminClient();
@@ -27,29 +53,38 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
   return { success: true };
 }
 
-export async function bulkInsertResources(resources: any[]) {
+export async function bulkInsertResources(resources: unknown[]) {
+  // Validate every row before touching the database
+  const parsed = z.array(ResourceSchema).safeParse(resources);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+    return {
+      success: false,
+      error: `Validation failed on row — ${firstIssue.path.join('.')}: ${firstIssue.message}`,
+    };
+  }
+
   const supabase = createAdminClient();
-  
-  // Build payload — only include fields that have actual values
-  const payload = resources.map(res => {
-    const item: any = {
+
+  // Build clean payload — only include fields that have actual values
+  const payload = parsed.data.map(res => {
+    const item: Record<string, unknown> = {
       title: res.title,
       content_type: res.content_type,
       source_url: res.source_url,
-      is_locked: res.is_locked ?? false,
+      is_locked: res.is_locked,
     };
-    
-    // Attach optional columns only if they have values
-    if (res.source_type)   item.source_type = res.source_type;
-    if (res.subject)       item.subject = res.subject;
-    if (res.category_id)   item.category_id = res.category_id;
-    if (res.description)   item.description = res.description;
-    if (res.topic)         item.topic = res.topic;
-    if (res.module_type)   item.module_type = res.module_type;
+
+    if (res.source_type)               item.source_type   = res.source_type;
+    if (res.subject)                   item.subject       = res.subject;
+    if (res.category_id)               item.category_id   = res.category_id;
+    if (res.description)               item.description   = res.description;
+    if (res.topic)                     item.topic         = res.topic;
+    if (res.module_type)               item.module_type   = res.module_type;
     if (res.worksheet_url !== undefined) item.worksheet_url = res.worksheet_url;
     if (res.is_watermarked !== undefined) item.is_watermarked = res.is_watermarked;
-    if (res.is_published !== undefined)   item.is_published = res.is_published;
-    
+    if (res.is_published !== undefined)   item.is_published   = res.is_published;
+
     return item;
   });
 
@@ -64,7 +99,7 @@ export async function bulkInsertResources(resources: any[]) {
     revalidatePath('/admin/resources');
     revalidatePath('/', 'layout');
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Bulk insert exception', err);
     return { success: false, error: 'Could not reach the database. Check your Supabase connection.' };
   }

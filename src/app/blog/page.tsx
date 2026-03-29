@@ -71,7 +71,7 @@ export default function BlogPage() {
                 </span>
               </div>
 
-              <h2 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-600 transition-colors">
+              <h2 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-700 transition-colors">
                 {post.title}
               </h2>
               <p className="text-sm text-navy-500 leading-relaxed">

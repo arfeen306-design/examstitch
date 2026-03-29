@@ -84,7 +84,7 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-navy-500 mt-6">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-gold-600 font-medium hover:underline">Sign In</Link>
+            <Link href="/auth/login" className="text-gold-700 font-medium hover:underline">Sign In</Link>
           </p>
         </div>
       </div>

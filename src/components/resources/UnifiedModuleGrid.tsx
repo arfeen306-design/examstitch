@@ -142,7 +142,7 @@ function SingleRow({
                          bg-navy-900 text-white text-xs font-bold tabular-nums">
           {String(globalIndex + 1).padStart(2, '0')}
         </span>
-        <h3 className="text-sm font-semibold text-navy-900 truncate hover:text-gold-600 transition-colors duration-150">
+        <h3 className="text-sm font-semibold text-navy-900 truncate hover:text-gold-700 transition-colors duration-150">
           {group.baseTitle}
         </h3>
       </div>

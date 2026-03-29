@@ -80,7 +80,7 @@ export default function GradePage({ params }: { params: { subject: string; grade
                   <div className={`w-16 h-16 bg-gradient-to-br ${section.gradient} rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform`}>
                     <section.icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-600 transition-colors">
+                  <h3 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-700 transition-colors">
                     {section.title}
                   </h3>
                   <p className="text-sm text-navy-500 mb-4">{section.description}</p>

@@ -59,7 +59,7 @@ export default function ResourceCard({
                   </span>
                 )}
               </div>
-              <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-600 transition-colors truncate">
+              <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-700 transition-colors truncate">
                 {title}
               </h3>
               {description && (

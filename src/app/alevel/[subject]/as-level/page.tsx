@@ -46,7 +46,7 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                     <FileText className="w-7 h-7 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-600 transition-colors">
+                  <h3 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-700 transition-colors">
                     {paper.label}
                   </h3>
                   <p className="text-sm text-navy-500 mb-4">{paper.description}</p>

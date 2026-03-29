@@ -53,7 +53,7 @@ function TopicList({
                 <BookOpen className="w-5 h-5 text-green-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-600 transition-colors truncate">
+                <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-700 transition-colors truncate">
                   {item.topic}
                 </h3>
                 <p className="text-xs text-navy-400">{item.count} worksheet{item.count !== 1 ? 's' : ''}</p>

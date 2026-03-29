@@ -55,7 +55,7 @@ export default function OLevelPage() {
                   <div className={`w-12 h-12 bg-gradient-to-br ${subject.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <span className="text-sm font-bold text-white">{subject.code}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-navy-900 mb-1 group-hover:text-gold-600 transition-colors">
+                  <h3 className="text-lg font-bold text-navy-900 mb-1 group-hover:text-gold-700 transition-colors">
                     {subject.name}
                   </h3>
                   <p className="text-sm text-navy-500 mb-4">{subject.description}</p>

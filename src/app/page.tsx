@@ -186,7 +186,7 @@ export default function HomePage() {
                     <card.icon className="w-7 h-7 text-white" />
                   </div>
 
-                  <h3 className="text-xl font-bold text-navy-900 mb-2 group-hover:text-gold-600 transition-colors">
+                  <h3 className="text-xl font-bold text-navy-900 mb-2 group-hover:text-gold-700 transition-colors">
                     {card.title}
                   </h3>
                   <p className="text-sm text-navy-500 mb-4 leading-relaxed">
