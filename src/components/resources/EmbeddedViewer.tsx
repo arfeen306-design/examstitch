@@ -209,8 +209,8 @@ function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
   return (
     <div className="relative w-full rounded-lg overflow-hidden"
          style={{
-           backgroundColor: 'var(--bg-surface, #f8fafc)',
-           border: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
+           backgroundColor: '#f5f0e8',
+           border: '1px solid #e8e0d0',
          }}>
       <iframe
         src={embedUrl}
@@ -222,7 +222,7 @@ function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
       />
       {/* Cover Google Drive's "open in new window" icon, top-right */}
       <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-10 rounded-bl-lg"
-           style={{ backgroundColor: 'var(--bg-surface, #f8fafc)' }} />
+           style={{ backgroundColor: '#f5f0e8' }} />
     </div>
   );
 }

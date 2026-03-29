@@ -176,10 +176,9 @@ const SolverPdfViewer = memo(function SolverPdfViewer({
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden"
          style={{
-           backgroundColor: 'var(--bg-surface, #f8fafc)',
-           border: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
+           backgroundColor: '#f5f0e8',
+           border: '1px solid #e8e0d0',
          }}>
-      {/* Iframe — pushed up slightly to crop Google Drive's top chrome */}
       <iframe
         src={embedUrl}
         title={title}
@@ -191,11 +190,7 @@ const SolverPdfViewer = memo(function SolverPdfViewer({
 
       {/* Cover Google Drive's "open in new window" icon (top-right) */}
       <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-10 rounded-bl-lg"
-           style={{ backgroundColor: 'var(--bg-surface, #f8fafc)' }} />
-
-      {/* Cover Google Drive's bottom toolbar to reduce visual noise */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] pointer-events-none z-10"
-           style={{ backgroundColor: 'var(--bg-surface, #f8fafc)' }} />
+           style={{ backgroundColor: '#f5f0e8' }} />
     </div>
   );
 });
