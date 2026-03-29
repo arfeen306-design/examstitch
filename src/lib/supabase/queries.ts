@@ -263,23 +263,33 @@ export async function getSolutionVideo(videoResourceId: string): Promise<Resourc
  * hit the GIN index instead of doing a sequential ILIKE scan.
  * Requires migration 009_add_fts_column.sql to be applied in Supabase.
  */
+/**
+ * Full-text search across resource titles, descriptions, and topics.
+ *
+ * 3-tier strategy:
+ *  Tier 1 — FTS websearch_to_tsquery (fast, stemmed, handles natural language)
+ *  Tier 2 — Broad ILIKE on full query string (catches exact substrings)
+ *  Tier 3 — Per-word prefix ILIKE (catches abbreviations like "Diff" for "Differentiation")
+ */
 export async function searchResources(query: string, limit = 60): Promise<Resource[]> {
   const supabase = createClient();
-
   const trimmed = query.trim().slice(0, 120);
   if (!trimmed) return [];
 
-  // ── Tier 1: FTS via websearch_to_tsquery ─────────────────────────────────
-  // Handles natural language, quoted phrases, AND/OR operators, multi-word.
-  // Uses the 'fts' tsvector column (GIN-indexed) for fast ranked lookups.
+  const orderOpts = [
+    { column: 'sort_order', ascending: true, nullsFirst: false },
+    { column: 'created_at', ascending: false },
+  ] as const;
+
+  // ── Tier 1: FTS ───────────────────────────────────────────────────────────
   try {
     const { data: ftsData, error: ftsErr } = await supabase
       .from('resources')
       .select('*, category:categories(id, name, slug)')
       .eq('is_published', true)
       .textSearch('fts', trimmed, { config: 'english', type: 'websearch' })
-      .order('sort_order', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
+      .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
+      .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
       .limit(limit);
 
     if (!ftsErr && ftsData && ftsData.length > 0) {
@@ -287,26 +297,94 @@ export async function searchResources(query: string, limit = 60): Promise<Resour
     }
   } catch (_) { /* fall through */ }
 
-  // ── Tier 2: Broad ILIKE fallback ──────────────────────────────────────────
-  // Catches short words, partial matches, and common misspellings by
-  // scanning title, topic, description, and subject columns.
-  const sanitized = trimmed.replace(/[%_]/g, '\\$&'); // escape ILIKE wildcards
-  const { data, error } = await supabase
-    .from('resources')
-    .select('*, category:categories(id, name, slug)')
-    .eq('is_published', true)
-    .or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%,topic.ilike.%${sanitized}%,subject.ilike.%${sanitized}%`)
-    .order('sort_order', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  // ── Tier 2: Full ILIKE on raw query ───────────────────────────────────────
+  const safe = trimmed.replace(/[%_]/g, '\\$&');
+  try {
+    const { data: ilikeData, error: ilikeErr } = await supabase
+      .from('resources')
+      .select('*, category:categories(id, name, slug)')
+      .eq('is_published', true)
+      .or(`title.ilike.%${safe}%,description.ilike.%${safe}%,topic.ilike.%${safe}%`)
+      .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
+      .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
+      .limit(limit);
 
-  if (error) throw new Error(`searchResources(${trimmed}): ${error.message}`);
-  return (data ?? []) as unknown as Resource[];
+    if (!ilikeErr && ilikeData && ilikeData.length > 0) {
+      return ilikeData as unknown as Resource[];
+    }
+  } catch (_) { /* fall through */ }
+
+  // ── Tier 3: Per-word prefix ILIKE ─────────────────────────────────────────
+  // Splits "Differentiation Rules" → ["diff", "rule"] and does an OR ILIKE
+  // so "Diff (2026)" matches "Differentiation". Min prefix length = 3 chars.
+  const prefixes = trimmed
+    .split(/\s+/)
+    .map(w => w.replace(/[%_]/g, '\\$&').slice(0, 6)) // first 6 chars per word
+    .filter(w => w.length >= 3);
+
+  if (prefixes.length > 0) {
+    const orClause = prefixes
+      .map(p => `title.ilike.%${p}%`)
+      .join(',');
+
+    const { data: prefixData, error: prefixErr } = await supabase
+      .from('resources')
+      .select('*, category:categories(id, name, slug)')
+      .eq('is_published', true)
+      .or(orClause)
+      .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
+      .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
+      .limit(limit);
+
+    if (!prefixErr) return (prefixData ?? []) as unknown as Resource[];
+  }
+
+  return [];
+}
+
+/**
+ * Returns up to `count` real resource titles from the DB that partially match
+ * the user's query. Used for "Try searching for" suggestions on zero-results.
+ * Only returns titles whose prefix matches at least one word in the query.
+ */
+export async function getSuggestions(query: string, count = 6): Promise<string[]> {
+  const supabase = createClient();
+  const trimmed = query.trim().slice(0, 60);
+  if (!trimmed) return [];
+
+  // Take first 3 chars of the query as a loose prefix
+  const prefix = trimmed.slice(0, 3).replace(/[%_]/g, '\\$&');
+
+  const { data } = await supabase
+    .from('resources')
+    .select('title')
+    .eq('is_published', true)
+    .ilike('title', `${prefix}%`)
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .limit(count * 3); // fetch more, dedupe by base title below
+
+  if (!data) return [];
+
+  // Deduplicate by stripping year/part suffixes, then return unique base titles
+  const seen = new Set<string>();
+  const results: string[] = [];
+  for (const row of data) {
+    const base = row.title
+      .replace(/\s*\(\d{4}\)\s*/g, '') // strip (2026)
+      .replace(/\s*[—–-]\s*Part\s+\d+\s*$/i, '') // strip — Part 2
+      .replace(/\s+Part\s+\d+\s*$/i, '')
+      .trim();
+    if (!seen.has(base) && base.toLowerCase() !== trimmed.toLowerCase()) {
+      seen.add(base);
+      results.push(base);
+      if (results.length >= count) break;
+    }
+  }
+  return results;
 }
 
 /**
  * Categorised search — returns results split into content-type buckets.
- * Used by the /search results page.
  */
 export interface CategorisedResults {
   videoTopical: Resource[];
@@ -322,6 +400,7 @@ export async function searchResourcesCategorised(query: string): Promise<Categor
     total: all.length,
   };
 }
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────

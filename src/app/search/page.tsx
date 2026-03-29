@@ -1,22 +1,9 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { Search, Play, FileText, BookOpen } from 'lucide-react';
-import { searchResourcesCategorised } from '@/lib/supabase/queries';
+import { searchResourcesCategorised, getSuggestions } from '@/lib/supabase/queries';
 import type { Resource } from '@/lib/supabase/types';
 
-// ── Related suggestions shown when zero results ───────────────────────────────
-
-const SUGGESTIONS = [
-  'Differentiation', 'Integration', 'Trigonometry', 'Statistics',
-  'Probability', 'Algebra', 'Quadratics', 'Vectors', 'Mechanics',
-  'Coordinate Geometry', 'Series', 'Logarithms',
-];
-
-function pickSuggestions(query: string, count = 4): string[] {
-  const lower = query.toLowerCase();
-  const filtered = SUGGESTIONS.filter(s => !s.toLowerCase().includes(lower));
-  return filtered.slice(0, count);
-}
 
 // ── Result card ────────────────────────────────────────────────────────────────
 
@@ -130,9 +117,13 @@ function Section({
 
 async function SearchResults({ query }: { query: string }) {
   let results = { videoTopical: [] as Resource[], solvedPapers: [] as Resource[], total: 0 };
+  let suggestions: string[] = [];
 
   try {
-    results = await searchResourcesCategorised(query);
+    [results, suggestions] = await Promise.all([
+      searchResourcesCategorised(query),
+      getSuggestions(query, 5),
+    ]);
   } catch (e) {
     return (
       <div className="text-center py-10 text-navy-400 text-sm">
@@ -142,7 +133,6 @@ async function SearchResults({ query }: { query: string }) {
   }
 
   if (results.total === 0) {
-    const suggestions = pickSuggestions(query);
     return (
       <div className="text-center py-16">
         <div className="w-16 h-16 bg-navy-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
