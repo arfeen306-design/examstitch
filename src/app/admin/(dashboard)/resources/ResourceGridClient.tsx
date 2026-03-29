@@ -36,6 +36,25 @@ interface SubtopicState {
   worksheetUrl: string;
 }
 
+// ── Grouping helpers (mirrors UnifiedModuleGrid logic) ────────────────────────
+
+function getBaseTitle(title: string): string {
+  return title
+    .replace(/\s*[—–-]\s*Part\s+\d+\s*$/i, '')
+    .replace(/\s*\(Part\s+\d+\)\s*$/i, '')
+    .replace(/\s+Part\s+\d+\s*$/i, '')
+    .trim();
+}
+
+function isSubTopic(title: string): boolean {
+  return (
+    /[—–-]\s*Part\s+\d+\s*$/i.test(title) ||
+    /\(Part\s+\d+\)\s*$/i.test(title) ||
+    /Part\s+\d+\s*$/i.test(title)
+  );
+}
+
+
 export default function ResourceGridClient({ initialResources }: { initialResources: Resource[] }) {
   const [resources, setResources] = useState<Resource[]>(initialResources);
   const [filterSubject, setFilterSubject] = useState<string>('all');
@@ -227,7 +246,9 @@ export default function ResourceGridClient({ initialResources }: { initialResour
             {filtered.map(r => (
               <>
                 {/* Main resource row */}
-                <tr key={r.id} className={`hover:bg-gray-50 transition-colors ${editingId === r.id ? 'bg-gold-50/30' : ''}`}>
+                <tr key={r.id} className={`hover:bg-gray-50 transition-colors
+                  ${editingId === r.id ? 'bg-gold-50/30' : ''}
+                  ${isSubTopic(r.title) ? 'border-l-2 border-blue-300 bg-blue-50/20' : ''}`}>
                   <td className="px-4 py-3 font-medium text-navy-900 max-w-[260px]">
                     {editingId === r.id ? (
                       <div className="space-y-1.5">
@@ -257,8 +278,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                         </div>
                       </div>
                     ) : (
-                      <div>
-                        <span className="truncate block" title={r.title}>{r.title}</span>
+                      <div className={isSubTopic(r.title) ? 'pl-4' : ''}>
+                        {isSubTopic(r.title) && (
+                          <span className="text-[10px] text-blue-400 font-bold mr-1">└</span>
+                        )}
+                        <span className="truncate" title={r.title}>{r.title}</span>
                         <div className="flex gap-1 mt-1 flex-wrap">
                           {r.source_url && (
                             <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">YT</span>
