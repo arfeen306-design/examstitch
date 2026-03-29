@@ -49,20 +49,34 @@ export default function A2PaperPage({ params }: { params: { subject: string; pap
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
-        <motion.div initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+        <motion.div initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {sections.map((section, i) => (
             <motion.div key={section.href} variants={fadeUp} custom={i + 3}>
-              <Link href={`/alevel/${params.subject}/a2-level/${params.paper}/${section.href}`} className="block group">
-                <div className="card-hover bg-white border border-navy-100 rounded-2xl p-8 text-center shadow-sm h-full">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${section.gradient} rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform`}>
-                    <section.icon className="w-8 h-8 text-white" />
+              <Link href={`/alevel/${params.subject}/a2-level/${params.paper}/${section.href}`} className="block group h-full">
+                <div className="relative overflow-hidden rounded-2xl p-8 text-center shadow-lg h-full flex flex-col items-center
+                                border transition-all duration-300 group-hover:shadow-xl group-hover:scale-[1.02]"
+                     style={{
+                       backgroundColor: 'var(--bg-card, white)',
+                       borderColor: 'var(--border-subtle, #e2e8f0)',
+                     }}>
+                  {/* Gradient accent top */}
+                  <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${section.gradient}`} />
+
+                  <div className={`w-14 h-14 bg-gradient-to-br ${section.gradient} rounded-xl flex items-center justify-center mb-5
+                                   shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                    <section.icon className="w-7 h-7 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-700 transition-colors">
+                  <h3 className="text-lg font-bold mb-2 transition-colors"
+                      style={{ color: 'var(--text-primary, #1a1f36)' }}>
                     {section.title}
                   </h3>
-                  <p className="text-sm text-navy-500 mb-4">{section.desc}</p>
-                  <ArrowRight className="w-5 h-5 text-navy-300 group-hover:text-gold-500 mx-auto group-hover:translate-x-1 transition-all" />
+                  <p className="text-sm mb-5 flex-1 min-h-[40px] flex items-center"
+                     style={{ color: 'var(--text-secondary, #64748b)' }}>
+                    {section.desc}
+                  </p>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-all"
+                              style={{ color: 'var(--text-muted, #94a3b8)' }} />
                 </div>
               </Link>
             </motion.div>
