@@ -103,6 +103,22 @@ export async function deleteResource(id: string) {
   revalidatePath('/alevel/[subject]/[level]/[paper]/video-lectures', 'page');
   revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
   revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function updateResource(id: string, updates: { title?: string; source_url?: string; content_type?: string }) {
+  const supabase = createAdminClient();
+  
+  const { error } = await supabase.from('resources').update(updates).eq('id', id);
+
+  if (error) {
+    console.error('Failed to update resource', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/admin/resources');
+  revalidatePath('/', 'layout');
   return { success: true };
 }
 

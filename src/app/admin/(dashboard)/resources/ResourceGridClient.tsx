@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { toggleResourceFlag, deleteResource } from '../../actions';
-import { ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { toggleResourceFlag, deleteResource, updateResource } from '../../actions';
+import { ExternalLink, Plus, Trash2, Pencil, X, Check } from 'lucide-react';
 import NewResourceModal from './NewResourceModal';
 import { useToast } from '@/components/ui/Toast';
 
@@ -11,12 +11,12 @@ interface Resource {
   title: string;
   subject: string;
   content_type: string;
+  source_url?: string;
   topic: string | null;
   category: { name: string; slug: string } | null;
   is_published: boolean;
   is_locked: boolean;
   is_watermarked: boolean;
-  exam_series: any;
   created_at: string;
 }
 
@@ -26,6 +26,12 @@ export default function ResourceGridClient({ initialResources }: { initialResour
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { showToast } = useToast();
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editType, setEditType] = useState('');
 
   const filtered = filterSubject === 'all' 
     ? resources 
@@ -49,19 +55,62 @@ export default function ResourceGridClient({ initialResources }: { initialResour
     if (!confirm(`Are you sure you want to delete "${title}"? This cannot be undone.`)) return;
     
     startTransition(async () => {
-      const { success, error } = await deleteResource(id);
-      if (success) {
-        setResources(prev => prev.filter(r => r.id !== id));
-        showToast({ message: 'Resource deleted', type: 'success' });
-      } else {
-        showToast({ message: error || 'Failed to delete resource', type: 'error' });
+      try {
+        const result = await deleteResource(id);
+        if (result.success) {
+          setResources(prev => prev.filter(r => r.id !== id));
+          showToast({ message: 'Resource deleted', type: 'success' });
+        } else {
+          showToast({ message: result.error || 'Failed to delete resource', type: 'error' });
+        }
+      } catch (err: any) {
+        showToast({ message: 'Delete failed: ' + (err.message || 'Unknown error'), type: 'error' });
       }
     });
   };
 
-  const getLiveLink = (resource: Resource) => {
-    const board = resource.subject.includes('9709') ? 'alevel' : 'olevel';
-    return `/${board}/${resource.subject}`;
+  const startEdit = (r: Resource) => {
+    setEditingId(r.id);
+    setEditTitle(r.title);
+    setEditUrl(r.source_url || '');
+    setEditType(r.content_type);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTitle('');
+    setEditUrl('');
+    setEditType('');
+  };
+
+  const saveEdit = (id: string) => {
+    startTransition(async () => {
+      try {
+        const updates: any = {};
+        const original = resources.find(r => r.id === id);
+        if (!original) return;
+
+        if (editTitle !== original.title) updates.title = editTitle;
+        if (editUrl !== (original.source_url || '')) updates.source_url = editUrl;
+        if (editType !== original.content_type) updates.content_type = editType;
+
+        if (Object.keys(updates).length === 0) {
+          cancelEdit();
+          return;
+        }
+
+        const result = await updateResource(id, updates);
+        if (result.success) {
+          setResources(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+          showToast({ message: 'Resource updated!', type: 'success' });
+          cancelEdit();
+        } else {
+          showToast({ message: result.error || 'Failed to update', type: 'error' });
+        }
+      } catch (err: any) {
+        showToast({ message: 'Update failed: ' + (err.message || 'Unknown error'), type: 'error' });
+      }
+    });
   };
 
   return (
@@ -106,18 +155,42 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           </thead>
           <tbody className="divide-y divide-navy-50 bg-white">
             {filtered.map(r => (
-              <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-navy-900 max-w-[200px] truncate" title={r.title}>
-                  {r.title}
+              <tr key={r.id} className={`hover:bg-gray-50 transition-colors ${editingId === r.id ? 'bg-gold-50/30' : ''}`}>
+                <td className="px-4 py-3 font-medium text-navy-900 max-w-[200px]">
+                  {editingId === r.id ? (
+                    <div className="space-y-1.5">
+                      <input 
+                        value={editTitle} 
+                        onChange={e => setEditTitle(e.target.value)}
+                        className="w-full px-2 py-1 text-sm border border-gold-300 rounded-md focus:ring-1 focus:ring-gold-500 outline-none"
+                      />
+                      <input 
+                        value={editUrl} 
+                        onChange={e => setEditUrl(e.target.value)}
+                        className="w-full px-2 py-1 text-xs font-mono border border-navy-200 rounded-md focus:ring-1 focus:ring-gold-500 outline-none"
+                        placeholder="Source URL"
+                      />
+                    </div>
+                  ) : (
+                    <span className="truncate block" title={r.title}>{r.title}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-xs text-navy-500">
                   <div className="font-semibold">{r.subject.replace('mathematics-', '')}</div>
                   <div className="truncate w-32" title={r.category?.name || 'Uncategorized'}>{r.category?.name || 'Uncategorized'}</div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="bg-navy-100 text-navy-700 px-2 py-0.5 rounded-full text-xs font-mono uppercase">
-                    {r.content_type}
-                  </span>
+                  {editingId === r.id ? (
+                    <select value={editType} onChange={e => setEditType(e.target.value)} className="px-2 py-1 text-xs border border-navy-200 rounded-md">
+                      <option value="video">Video</option>
+                      <option value="pdf">PDF</option>
+                      <option value="worksheet">Worksheet</option>
+                    </select>
+                  ) : (
+                    <span className="bg-navy-100 text-navy-700 px-2 py-0.5 rounded-full text-xs font-mono uppercase">
+                      {r.content_type}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <input 
@@ -144,23 +217,52 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                   />
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-3">
-                    <a 
-                      href={getLiveLink(r)} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="text-navy-400 hover:text-gold-500 transition-colors"
-                      title="Live View"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                    <button 
-                      onClick={() => handleDelete(r.id, r.title)}
-                      className="text-navy-400 hover:text-red-500 transition-colors"
-                      title="Delete Resource"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div className="flex items-center justify-end gap-2">
+                    {editingId === r.id ? (
+                      <>
+                        <button 
+                          onClick={() => saveEdit(r.id)}
+                          disabled={isPending}
+                          className="text-green-500 hover:text-green-700 p-1 rounded hover:bg-green-50 transition-colors"
+                          title="Save"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={cancelEdit}
+                          className="text-navy-400 hover:text-navy-700 p-1 rounded hover:bg-navy-50 transition-colors"
+                          title="Cancel"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => startEdit(r)}
+                          className="text-navy-400 hover:text-gold-500 transition-colors p-1 rounded hover:bg-gold-50"
+                          title="Edit Resource"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <a 
+                          href={`/view/${r.id}`}
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-navy-400 hover:text-gold-500 transition-colors p-1 rounded hover:bg-gold-50"
+                          title="Preview"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <button 
+                          onClick={() => handleDelete(r.id, r.title)}
+                          className="text-navy-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                          title="Delete Resource"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -181,8 +283,6 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         onClose={() => setIsModalOpen(false)} 
         onSuccess={() => {
           setIsModalOpen(false);
-          // To fetch new data automatically, we just let nextJS finish the server action revalidate path,
-          // but if we want instant local, we do nothing. Revalidation handles the data refresh on the route.
         }} 
       />
     </div>
