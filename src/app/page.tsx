@@ -122,15 +122,24 @@ export default function HomePage() {
 
             {/* Search Bar */}
             <motion.div variants={fadeUp} custom={3} className="max-w-xl mx-auto mb-12">
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-gold-500 transition-colors" />
+              <form method="GET" action="/search" className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-gold-500 transition-colors pointer-events-none" />
                 <input
                   type="text"
+                  name="q"
                   placeholder="Search past papers, topics, or videos..."
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-gold-500/50 focus:ring-2 focus:ring-gold-500/20 focus:bg-white/10 transition-all text-sm"
+                  className="w-full pl-12 pr-28 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-gold-500/50 focus:ring-2 focus:ring-gold-500/20 focus:bg-white/10 transition-all text-sm"
+                  autoComplete="off"
                 />
-              </div>
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-gold-500 hover:bg-gold-400 text-navy-900 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  Search
+                </button>
+              </form>
             </motion.div>
+
 
             {/* Quick Stats */}
             <motion.div variants={fadeUp} custom={4} className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto">
