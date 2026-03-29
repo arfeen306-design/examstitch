@@ -40,7 +40,7 @@ export default function ResourceCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      transition={{ duration: 0.4, delay: Math.min(index * 0.03, 0.3) }}
     >
       <Link href={href} className="block group">
         <div className="card-hover bg-white border border-navy-100 rounded-2xl p-5 hover:border-gold-500/30">
