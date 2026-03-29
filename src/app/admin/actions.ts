@@ -30,38 +30,54 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
 export async function bulkInsertResources(resources: any[]) {
   const supabase = createAdminClient();
   
-  // Clean up any extra fields that might not match the schema perfectly in bulk payloads
+  // Step 1: Discover which columns actually exist in the live database
+  const { data: columns } = await supabase
+    .from('information_schema.columns' as any)
+    .select('column_name')
+    .eq('table_name', 'resources')
+    .eq('table_schema', 'public');
+  
+  const existingCols = new Set(
+    columns?.map((c: any) => c.column_name) || []
+  );
+  
+  // Step 2: Build payload using ONLY columns that exist in the live table
   const payload = resources.map(res => {
-    const item: any = {
-      title: res.title,
-      content_type: res.content_type,
-      source_type: res.source_type,
-      source_url: res.source_url,
-      subject: res.subject,
-      category_id: res.category_id,
-      is_watermarked: res.is_watermarked ?? false,
-      is_locked: res.is_locked ?? false,
-      is_published: res.is_published ?? true,
-    };
+    const item: any = {};
     
-    // Only attach these keys if they literally exist, to prevent crashing on old database schemas
-    // that don't have these columns yet.
-    if (res.description) item.description = res.description;
-    if (res.topic) item.topic = res.topic;
+    // Always required
+    if (existingCols.has('title'))        item.title = res.title;
+    if (existingCols.has('source_url'))   item.source_url = res.source_url;
+    
+    // Conditionally attach every other field
+    if (existingCols.has('content_type'))  item.content_type = res.content_type;
+    if (existingCols.has('source_type'))   item.source_type = res.source_type;
+    if (existingCols.has('subject'))       item.subject = res.subject;
+    if (existingCols.has('category_id'))   item.category_id = res.category_id;
+    if (existingCols.has('is_watermarked'))item.is_watermarked = res.is_watermarked ?? false;
+    if (existingCols.has('is_locked'))     item.is_locked = res.is_locked ?? false;
+    if (existingCols.has('is_published'))  item.is_published = res.is_published ?? true;
+    if (existingCols.has('description') && res.description) item.description = res.description;
+    if (existingCols.has('topic') && res.topic)             item.topic = res.topic;
     
     return item;
   });
 
-  const { error } = await supabase.from('resources').insert(payload);
+  try {
+    const { error } = await supabase.from('resources').insert(payload);
 
-  if (error) {
-    console.error('Bulk insert failed', error);
-    return { success: false, error: error.message };
+    if (error) {
+      console.error('Bulk insert failed', error);
+      return { success: false, error: `Database rejected the insert: ${error.message}. Please run the schema repair script in the Supabase SQL Editor.` };
+    }
+
+    revalidatePath('/admin/resources');
+    revalidatePath('/', 'layout');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Bulk insert exception', err);
+    return { success: false, error: 'Could not reach the database. Check your Supabase connection.' };
   }
-
-  revalidatePath('/admin/resources');
-  revalidatePath('/', 'layout'); // Force extreme UI synchronisation
-  return { success: true };
 }
 
 export async function createResource(data: any) {
