@@ -207,7 +207,11 @@ function YouTubeLockedPlayer({
 
 function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden shadow-lg border border-navy-100 bg-white">
+    <div className="relative w-full rounded-lg overflow-hidden"
+         style={{
+           backgroundColor: 'var(--bg-surface, #f8fafc)',
+           border: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
+         }}>
       <iframe
         src={embedUrl}
         title={title}
@@ -217,7 +221,8 @@ function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
         loading="lazy"
       />
       {/* Cover Google Drive's "open in new window" icon, top-right */}
-      <div className="absolute top-0 right-0 w-16 h-14 bg-white pointer-events-auto z-10" />
+      <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-10 rounded-bl-lg"
+           style={{ backgroundColor: 'var(--bg-surface, #f8fafc)' }} />
     </div>
   );
 }

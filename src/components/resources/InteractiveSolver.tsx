@@ -174,8 +174,12 @@ const SolverPdfViewer = memo(function SolverPdfViewer({
   title: string;
 }) {
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg border"
-         style={{ borderColor: 'var(--border-color, #e2e8f0)', backgroundColor: 'var(--bg-card, white)' }}>
+    <div className="relative w-full h-full rounded-lg overflow-hidden"
+         style={{
+           backgroundColor: 'var(--bg-surface, #f8fafc)',
+           border: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
+         }}>
+      {/* Iframe — pushed up slightly to crop Google Drive's top chrome */}
       <iframe
         src={embedUrl}
         title={title}
@@ -184,9 +188,14 @@ const SolverPdfViewer = memo(function SolverPdfViewer({
         allow="autoplay"
         loading="lazy"
       />
-      {/* Cover Google Drive's "open in new window" icon */}
-      <div className="absolute top-0 right-0 w-16 h-14 pointer-events-auto z-10"
-           style={{ backgroundColor: 'var(--bg-card, white)' }} />
+
+      {/* Cover Google Drive's "open in new window" icon (top-right) */}
+      <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-10 rounded-bl-lg"
+           style={{ backgroundColor: 'var(--bg-surface, #f8fafc)' }} />
+
+      {/* Cover Google Drive's bottom toolbar to reduce visual noise */}
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] pointer-events-none z-10"
+           style={{ backgroundColor: 'var(--bg-surface, #f8fafc)' }} />
     </div>
   );
 });
