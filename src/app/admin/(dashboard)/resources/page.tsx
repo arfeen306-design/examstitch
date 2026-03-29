@@ -13,8 +13,7 @@ export default async function AdminResourcesPage() {
     .from('resources')
     .select(`
       *,
-      category:categories(id, name, slug, parent_id),
-      exam_series:exam_series(id, year, session, variant, paper_number)
+      category:categories(id, name, slug, parent_id)
     `)
     .order('created_at', { ascending: false });
 

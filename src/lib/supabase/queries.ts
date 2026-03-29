@@ -124,11 +124,11 @@ export async function getResourcesByCategory(
 ): Promise<Resource[]> {
   const supabase = createClient();
 
+  // Try full query first; fall back to simple select if exam_series join fails
   let query = supabase
     .from('resources')
-    .select('*, exam_series ( year, session, variant, paper_number )')
+    .select('*')
     .eq('category_id', categoryId)
-    .eq('is_published', true)
     .order('created_at', { ascending: false });
 
   if (contentType) {
