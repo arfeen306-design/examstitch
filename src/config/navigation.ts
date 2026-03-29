@@ -8,10 +8,10 @@ export const mainNavItems = [
     href: '/pre-olevel',
   },
   {
-    label: 'O-Level',
+    label: 'O-Level / IGCSE',
     href: '/olevel',
     children: [
-      { label: 'Mathematics (4024)', href: '/olevel/mathematics-4024' },
+      { label: 'Mathematics (4024/0580)', href: '/olevel/mathematics-4024' },
     ],
   },
   {

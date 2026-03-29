@@ -31,12 +31,12 @@ function toResourceItem(resource: Resource, basePath: string): ResourceItem {
 
 // Demo papers shown while Supabase is not yet connected
 const DEMO_PAPERS: ResourceItem[] = [
-  { id: 'd1', title: 'May/June 2024 — Paper 1 Variant 1', contentType: 'pdf', href: '#may-june-2024-p1-v1', year: 2024, session: 'May/June', variant: 1, subject: 'Mathematics 4024' },
-  { id: 'd2', title: 'May/June 2024 — Paper 2 Variant 1', contentType: 'pdf', href: '#may-june-2024-p2-v1', year: 2024, session: 'May/June', variant: 1, subject: 'Mathematics 4024' },
-  { id: 'd3', title: 'Oct/Nov 2023 — Paper 1 Variant 2', contentType: 'pdf', href: '#oct-nov-2023-p1-v2', year: 2023, session: 'Oct/Nov',  variant: 2, subject: 'Mathematics 4024' },
-  { id: 'd4', title: 'Oct/Nov 2023 — Paper 2 Variant 2', contentType: 'pdf', href: '#oct-nov-2023-p2-v2', year: 2023, session: 'Oct/Nov',  variant: 2, subject: 'Mathematics 4024' },
-  { id: 'd5', title: 'May/June 2023 — Paper 1 Variant 1', contentType: 'pdf', href: '#may-june-2023-p1-v1', year: 2023, session: 'May/June', variant: 1, subject: 'Mathematics 4024' },
-  { id: 'd6', title: 'Feb/Mar 2023 — Paper 1 Variant 2', contentType: 'pdf', href: '#feb-mar-2023-p1-v2',  year: 2023, session: 'Feb/Mar', variant: 2, subject: 'Mathematics 4024' },
+  { id: 'd1', title: 'May/June 2024 — Paper 1 Variant 1', contentType: 'pdf', href: '#may-june-2024-p1-v1', year: 2024, session: 'May/June', variant: 1, subject: 'Mathematics 4024/0580' },
+  { id: 'd2', title: 'May/June 2024 — Paper 2 Variant 1', contentType: 'pdf', href: '#may-june-2024-p2-v1', year: 2024, session: 'May/June', variant: 1, subject: 'Mathematics 4024/0580' },
+  { id: 'd3', title: 'Oct/Nov 2023 — Paper 1 Variant 2', contentType: 'pdf', href: '#oct-nov-2023-p1-v2', year: 2023, session: 'Oct/Nov',  variant: 2, subject: 'Mathematics 4024/0580' },
+  { id: 'd4', title: 'Oct/Nov 2023 — Paper 2 Variant 2', contentType: 'pdf', href: '#oct-nov-2023-p2-v2', year: 2023, session: 'Oct/Nov',  variant: 2, subject: 'Mathematics 4024/0580' },
+  { id: 'd5', title: 'May/June 2023 — Paper 1 Variant 1', contentType: 'pdf', href: '#may-june-2023-p1-v1', year: 2023, session: 'May/June', variant: 1, subject: 'Mathematics 4024/0580' },
+  { id: 'd6', title: 'Feb/Mar 2023 — Paper 1 Variant 2', contentType: 'pdf', href: '#feb-mar-2023-p1-v2',  year: 2023, session: 'Feb/Mar', variant: 2, subject: 'Mathematics 4024/0580' },
 ];
 
 // ── Async data component ──────────────────────────────────────────────────────
@@ -112,9 +112,9 @@ export default function PastPapersPage({
       <div className="gradient-hero py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
-            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level</Link>
+            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024)</Link>
+            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>

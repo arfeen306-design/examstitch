@@ -23,12 +23,12 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-sm mb-3">
-              <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level</Link>
+              <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
               <span className="text-white/30">/</span>
-              <span className="text-gold-500 font-medium">Mathematics (4024)</span>
+              <span className="text-gold-500 font-medium">Mathematics (4024/0580)</span>
             </motion.div>
             <motion.h1 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-2">
-              Mathematics — 4024
+              Mathematics — 4024/0580
             </motion.h1>
             <motion.p variants={fadeUp} custom={2} className="text-white/60 max-w-xl">
               Select your grade to access past papers, video solutions, and topical worksheets.

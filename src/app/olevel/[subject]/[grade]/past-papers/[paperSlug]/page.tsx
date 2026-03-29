@@ -75,9 +75,9 @@ export default async function PaperViewerPage({
       <div className="bg-navy-900 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm flex-wrap">
-            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level</Link>
+            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024)</Link>
+            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
@@ -131,9 +131,9 @@ function DemoViewer({
       <div className="bg-navy-900 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm flex-wrap">
-            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level</Link>
+            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024)</Link>
+            <Link href={`/olevel/${subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${subject}/${grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
@@ -146,7 +146,7 @@ function DemoViewer({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <PDFViewerLayout
           pdfUrl="https://www.africau.edu/images/default/sample.pdf"
-          title={`Mathematics 4024 — ${gradeName} — ${paperTitle}`}
+          title={`Mathematics 4024/0580 — ${gradeName} — ${paperTitle}`}
           videoId="dQw4w9WgXcQ"
           videoTitle={`${paperTitle} — Full Video Solution`}
           solutions={demoSolutions}

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   keywords: [
-    'O-Level Mathematics',
+    'O-Level / IGCSE Mathematics',
     'A-Level Mathematics',
     'IGCSE Maths',
     'Past Papers',

@@ -22,12 +22,12 @@ function toResourceItem(resource: Resource, basePath: string): ResourceItem {
 }
 
 const DEMO_VIDEOS: ResourceItem[] = [
-  { id: 'v1', title: 'Algebra — Linear Equations',           contentType: 'video', href: '#', subject: 'Mathematics 4024', description: 'Solving linear equations step by step' },
-  { id: 'v2', title: 'Trigonometry — Sine, Cosine, Tangent', contentType: 'video', href: '#', subject: 'Mathematics 4024', description: 'Introduction to trigonometric ratios' },
-  { id: 'v3', title: 'Geometry — Circle Theorems',           contentType: 'video', href: '#', subject: 'Mathematics 4024', description: 'All circle theorems explained with examples' },
-  { id: 'v4', title: 'Statistics — Mean, Median, Mode',      contentType: 'video', href: '#', subject: 'Mathematics 4024', description: 'Measures of central tendency' },
-  { id: 'v5', title: 'Probability — Tree Diagrams',           contentType: 'video', href: '#', subject: 'Mathematics 4024', description: 'Using tree diagrams to solve probability problems' },
-  { id: 'v6', title: 'Mensuration — Volume & Surface Area',  contentType: 'video', href: '#', subject: 'Mathematics 4024', description: '3D shapes — cylinders, cones, spheres' },
+  { id: 'v1', title: 'Algebra — Linear Equations',           contentType: 'video', href: '#', subject: 'Mathematics 4024/0580', description: 'Solving linear equations step by step' },
+  { id: 'v2', title: 'Trigonometry — Sine, Cosine, Tangent', contentType: 'video', href: '#', subject: 'Mathematics 4024/0580', description: 'Introduction to trigonometric ratios' },
+  { id: 'v3', title: 'Geometry — Circle Theorems',           contentType: 'video', href: '#', subject: 'Mathematics 4024/0580', description: 'All circle theorems explained with examples' },
+  { id: 'v4', title: 'Statistics — Mean, Median, Mode',      contentType: 'video', href: '#', subject: 'Mathematics 4024/0580', description: 'Measures of central tendency' },
+  { id: 'v5', title: 'Probability — Tree Diagrams',           contentType: 'video', href: '#', subject: 'Mathematics 4024/0580', description: 'Using tree diagrams to solve probability problems' },
+  { id: 'v6', title: 'Mensuration — Volume & Surface Area',  contentType: 'video', href: '#', subject: 'Mathematics 4024/0580', description: '3D shapes — cylinders, cones, spheres' },
 ];
 
 async function VideoGrid({ subject, grade }: { subject: string; grade: string }) {
@@ -61,9 +61,9 @@ export default function VideoLecturesPage({ params }: { params: { subject: strin
       <div className="gradient-hero py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
-            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level</Link>
+            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024)</Link>
+            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>

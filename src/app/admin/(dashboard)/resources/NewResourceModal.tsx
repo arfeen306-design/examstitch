@@ -127,7 +127,7 @@ export default function NewResourceModal({
             <div>
               <label className="block text-sm font-medium text-navy-700 mb-1">Subject</label>
               <select value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500">
-                <option value="mathematics-4024">O-Level (4024)</option>
+                <option value="mathematics-4024">O-Level / IGCSE (4024/0580)</option>
                 <option value="mathematics-9709">A-Level (9709)</option>
               </select>
             </div>

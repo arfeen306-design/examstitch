@@ -16,7 +16,7 @@ const fadeUp = {
 const subjects = [
   {
     name: 'Mathematics',
-    code: '4024',
+    code: '4024/0580',
     slug: 'mathematics-4024',
     description: 'Extended & Core Mathematics — Grades 9, 10 & 11',
     papers: 2,
@@ -36,7 +36,7 @@ export default function OLevelPage() {
               <span>O-Level / IGCSE</span>
             </motion.div>
             <motion.h1 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-bold text-white mb-2">
-              O-Level Resources
+              O-Level / IGCSE Resources
             </motion.h1>
             <motion.p variants={fadeUp} custom={2} className="text-white/60 max-w-xl">
               Cambridge IGCSE past papers, video lectures, and topical worksheets organized by grade and subject.

@@ -60,9 +60,9 @@ export default function GradePage({ params }: { params: { subject: string; grade
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-sm mb-3">
-              <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level</Link>
+              <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
               <span className="text-white/30">/</span>
-              <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024)</Link>
+              <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
               <span className="text-white/30">/</span>
               <span className="text-gold-500 font-medium">{gradeName}</span>
             </motion.div>

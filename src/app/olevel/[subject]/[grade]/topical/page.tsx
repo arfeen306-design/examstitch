@@ -108,9 +108,9 @@ export default function TopicalPage({ params }: { params: { subject: string; gra
       <div className="gradient-hero py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
-            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level</Link>
+            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024)</Link>
+            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
