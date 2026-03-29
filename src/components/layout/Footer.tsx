@@ -39,7 +39,7 @@ export default function Footer() {
             <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">A-Level (9709)</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/alevel/mathematics-9709/as-level/paper-1-pure-mathematics" className="hover:text-gold-500 transition-colors">AS Paper 1 — Pure Maths</Link></li>
-              <li><Link href="/alevel/mathematics-9709/as-level/paper-2-probability-statistics" className="hover:text-gold-500 transition-colors">AS Paper 2 — Prob & Stats</Link></li>
+              <li><Link href="/alevel/mathematics-9709/as-level/paper-5-probability-statistics" className="hover:text-gold-500 transition-colors">AS Paper 5 — Prob & Stats</Link></li>
               <li><Link href="/alevel/mathematics-9709/a2-level/paper-3-pure-mathematics" className="hover:text-gold-500 transition-colors">A2 Paper 3 — Pure Maths</Link></li>
               <li><Link href="/alevel/mathematics-9709/a2-level/paper-4-mechanics" className="hover:text-gold-500 transition-colors">A2 Paper 4 — Mechanics</Link></li>
             </ul>

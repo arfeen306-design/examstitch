@@ -36,7 +36,7 @@ export const oLevelGrades = [
 export const aLevelPapers = {
   'as-level': [
     { label: 'Paper 1 — Pure Mathematics', slug: 'paper-1-pure-mathematics', description: 'Algebra, functions, coordinate geometry, calculus' },
-    { label: 'Paper 2 — Probability & Statistics', slug: 'paper-2-probability-statistics', description: 'Statistical data, probability, distributions' },
+    { label: 'Paper 5 — Probability & Statistics', slug: 'paper-5-probability-statistics', description: 'Statistical data, probability, distributions' },
   ],
   'a2-level': [
     { label: 'Paper 3 — Pure Mathematics', slug: 'paper-3-pure-mathematics', description: 'Advanced calculus, differential equations, vectors' },

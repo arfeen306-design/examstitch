@@ -126,7 +126,7 @@ BEGIN
   -- -----------------------------------------------------------------------------------
   INSERT INTO categories (subject_id, name, slug, sort_order) VALUES
     (alevel_id, 'Paper 1 — Pure Mathematics', 'paper-1-pure-mathematics', 10),
-    (alevel_id, 'Paper 2 — Probability & Statistics', 'paper-2-probability-statistics', 20),
+    (alevel_id, 'Paper 5 — Probability & Statistics', 'paper-5-probability-statistics', 50),
     (alevel_id, 'Paper 3 — Pure Mathematics', 'paper-3-pure-mathematics', 30),
     (alevel_id, 'Paper 4 — Mechanics', 'paper-4-mechanics', 40);
 

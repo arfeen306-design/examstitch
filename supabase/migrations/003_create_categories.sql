@@ -48,8 +48,8 @@ ON CONFLICT DO NOTHING;
 INSERT INTO categories (subject_id, name, slug, parent_id, sort_order)
 SELECT
   s.id,
-  'Paper 2 — Probability & Statistics',
-  'paper-2-probability-statistics',
+  'Paper 5 — Probability & Statistics',
+  'paper-5-probability-statistics',
   c.id,
   2
 FROM subjects s
