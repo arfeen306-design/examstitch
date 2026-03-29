@@ -15,6 +15,7 @@ import {
   Star,
 } from 'lucide-react';
 import NotifyMeBox from '@/components/lead-gen/NotifyMeBox';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -143,10 +144,16 @@ export default function HomePage() {
 
             {/* Quick Stats */}
             <motion.div variants={fadeUp} custom={4} className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto">
-              {stats.map((stat) => (
+              {stats.map((stat, i) => (
                 <div key={stat.label} className="text-center">
                   <stat.icon className="w-5 h-5 text-gold-500 mx-auto mb-1" />
-                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  <div className="text-2xl font-bold text-white tabular-nums">
+                    <AnimatedCounter
+                      value={stat.value}
+                      duration={2000}
+                      delay={i * 150}
+                    />
+                  </div>
                   <div className="text-xs text-white/40">{stat.label}</div>
                 </div>
               ))}
