@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { Search, Play, FileText, BookOpen, ArrowRight } from 'lucide-react';
+import { Search, Play, FileText, BookOpen } from 'lucide-react';
 import { searchResourcesCategorised } from '@/lib/supabase/queries';
 import type { Resource } from '@/lib/supabase/types';
 
@@ -20,47 +20,81 @@ function pickSuggestions(query: string, count = 4): string[] {
 
 // ── Result card ────────────────────────────────────────────────────────────────
 
-function ResultCard({ resource }: { resource: Resource & { category?: { name: string; slug: string } } }) {
-  const isVideo = resource.content_type === 'video';
-  const isPaper = (resource as any).module_type === 'solved_past_paper';
+type SearchResource = Resource & {
+  category?: { name: string; slug: string };
+  worksheet_url?: string | null;
+  module_type?: string;
+};
 
-  const icon = isVideo ? <Play className="w-4 h-4" /> : <FileText className="w-4 h-4" />;
-  const badge = isVideo
-    ? { label: 'Video Lecture', color: 'bg-red-50 text-red-600 border-red-100' }
-    : isPaper
-    ? { label: 'Past Paper', color: 'bg-blue-50 text-blue-600 border-blue-100' }
-    : { label: 'Worksheet', color: 'bg-green-50 text-green-600 border-green-100' };
+function ResultCard({ resource }: { resource: SearchResource }) {
+  const isVideo = resource.content_type === 'video';
+  const isPaper = resource.module_type === 'solved_past_paper';
+  const hasWorksheet = !!resource.worksheet_url;
 
   return (
-    <Link
-      href={`/view/${resource.id}`}
-      className="group flex items-center justify-between gap-4 px-5 py-4
-                 bg-white rounded-xl border border-navy-100 hover:border-gold-400/50
-                 hover:shadow-md transition-all duration-150"
-    >
-      <div className="flex items-start gap-3 min-w-0">
-        <span className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg
-                          border ${badge.color}`}>
-          {icon}
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3
+                    px-5 py-4 bg-white rounded-xl border border-navy-100
+                    hover:border-gold-400/50 hover:shadow-md transition-all duration-150">
+      {/* Left: icon + title + category */}
+      <div className="flex items-start gap-3 min-w-0 flex-1">
+        <span className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border
+          ${isPaper ? 'bg-blue-50 text-blue-600 border-blue-100'
+            : isVideo ? 'bg-red-50 text-red-500 border-red-100'
+            : 'bg-green-50 text-green-600 border-green-100'}`}>
+          {isPaper ? <FileText className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-navy-900 truncate group-hover:text-gold-600 transition-colors">
+          <p className="text-sm font-semibold text-navy-900 truncate">
             {resource.title}
           </p>
           <p className="text-xs text-navy-400 mt-0.5">
-            {resource.category?.name || resource.subject || '—'}
+            {(resource.category as any)?.name || resource.subject || '—'}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className={`hidden sm:inline text-xs font-medium px-2 py-0.5 rounded-full border ${badge.color}`}>
-          {badge.label}
-        </span>
-        <ArrowRight className="w-4 h-4 text-navy-300 group-hover:text-gold-500 transition-colors" />
+
+      {/* Right: action pills */}
+      <div className="flex items-center gap-2 shrink-0 pl-11 sm:pl-0">
+        {isPaper ? (
+          <Link
+            href={`/view/${resource.id}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5
+                       bg-blue-600 hover:bg-blue-500 text-white
+                       text-xs font-semibold rounded-full shadow-sm transition-all"
+          >
+            <FileText className="w-3 h-3" /> View Paper
+          </Link>
+        ) : (
+          <>
+            {/* Watch Video pill — always shown for video_topical */}
+            <Link
+              href={`/view/${resource.id}`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5
+                         bg-gold-500 hover:bg-gold-400 text-navy-900
+                         text-xs font-semibold rounded-full shadow-sm transition-all whitespace-nowrap"
+            >
+              <Play className="w-3 h-3 fill-navy-900" /> Watch Video
+            </Link>
+
+            {/* Worksheet pill — only shown if worksheet_url exists */}
+            {hasWorksheet && (
+              <Link
+                href={`/view/${resource.id}?mode=worksheet`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5
+                           border border-navy-200 bg-white hover:bg-navy-50
+                           text-navy-600 hover:text-navy-900
+                           text-xs font-semibold rounded-full shadow-sm transition-all whitespace-nowrap"
+              >
+                <FileText className="w-3 h-3" /> Worksheet
+              </Link>
+            )}
+          </>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
+
 
 // ── Section block ──────────────────────────────────────────────────────────────
 
