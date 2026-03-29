@@ -26,11 +26,13 @@ function TopicList({
 }) {
   if (!topics.length) {
     return (
-      <div className="flex flex-col items-center py-16 text-center">
-        <Layers className="w-10 h-10 text-navy-300 mb-3" />
-        <h3 className="text-base font-semibold text-navy-700 mb-1">No topical worksheets yet</h3>
-        <p className="text-sm text-navy-400 max-w-xs">
-          Upload worksheets with a &ldquo;topic&rdquo; tag via the admin dashboard.
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-white border border-dashed border-navy-100 rounded-3xl mt-4">
+        <div className="w-16 h-16 bg-gold-50 rounded-2xl flex items-center justify-center mb-4">
+          <Layers className="w-8 h-8 text-gold-500" />
+        </div>
+        <h3 className="text-xl font-bold text-navy-900 mb-2 tracking-tight">Coming Soon</h3>
+        <p className="text-sm text-navy-400 max-w-sm">
+          These resources are currently being stitched. Our QA engineers are verifying the mark schemes and will push them live shortly.
         </p>
       </div>
     );
