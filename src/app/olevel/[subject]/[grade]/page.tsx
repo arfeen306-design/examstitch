@@ -32,15 +32,6 @@ const sections = [
     bg: 'bg-blue-50',
     gradient: 'from-blue-500 to-indigo-600',
   },
-  {
-    title: 'Topical Worksheets',
-    description: 'Master individual topics with focused practice questions',
-    href: 'topical',
-    icon: BookOpen,
-    color: 'text-green-500',
-    bg: 'bg-green-50',
-    gradient: 'from-green-500 to-emerald-600',
-  },
 ];
 
 function formatGrade(slug: string): string {

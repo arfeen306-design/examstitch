@@ -20,7 +20,6 @@ function formatPaperName(slug: string): string {
 const sections = [
   { title: 'Video Lectures & Worksheets', href: 'video-lectures', icon: PlayCircle, gradient: 'from-red-500 to-rose-600', desc: 'Watch topic videos — each paired with a practice worksheet' },
   { title: 'Solved Past Papers', href: 'past-papers', icon: FileText, gradient: 'from-blue-500 to-indigo-600', desc: 'Practice with official Cambridge past papers' },
-  { title: 'Topical Worksheets', href: 'topical', icon: BookOpen, gradient: 'from-green-500 to-emerald-600', desc: 'Master individual topics with targeted practice' },
 ];
 
 export default function A2PaperPage({ params }: { params: { subject: string; paper: string } }) {
