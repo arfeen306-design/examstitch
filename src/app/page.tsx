@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   Search,
@@ -58,7 +59,18 @@ const stats = [
   { icon: Users, value: '10K+', label: 'Students Helped' },
 ];
 
+const SUBJECTS = ["Mathematics", "Computer Science", "Physics", "Chemistry"];
+
 export default function HomePage() {
+  const [subjectIndex, setSubjectIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSubjectIndex((prev) => (prev + 1) % SUBJECTS.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       {/* Hero Section */}
@@ -84,10 +96,24 @@ export default function HomePage() {
 
             {/* Main heading */}
             <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Master O & A-Level{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600">
-                Mathematics
-              </span>
+              <span className="sr-only">Master O & A-Level Mathematics, Computer Science, Physics, Chemistry</span>
+              <div aria-hidden="true" className="flex flex-col md:flex-row items-center justify-center gap-x-4">
+                <span>Master O & A-Level</span>
+                <span className="relative inline-flex items-center justify-center md:justify-start w-[280px] sm:w-[350px] lg:w-[420px] h-[1.2em] overflow-hidden">
+                  <AnimatePresence mode="popLayout">
+                    <motion.span
+                      key={subjectIndex}
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -40 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      className="absolute text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600 text-center md:text-left whitespace-nowrap"
+                    >
+                      {SUBJECTS[subjectIndex]}
+                    </motion.span>
+                  </AnimatePresence>
+                </span>
+              </div>
             </motion.h1>
 
             <motion.p variants={fadeUp} custom={2} className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto mb-10">
