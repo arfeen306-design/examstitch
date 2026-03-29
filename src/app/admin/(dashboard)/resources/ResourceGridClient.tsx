@@ -342,9 +342,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       ? `${topicIndex + 1}.${partIndex! + 1}`
       : `${topicIndex + 1}`;
 
-    const subLabel = isSub
-      ? r.title.replace(getBaseTitle(r.title), '').replace(/^[\s—–-]+/, '').trim() || `Part ${partIndex! + 1}`
-      : r.title;
+    const baseTitle = getBaseTitle(r.title);
+    const partSuffix = isSub
+      ? r.title.replace(baseTitle, '').replace(/^[\s—–-]+/, '').trim() || `Part ${partIndex! + 1}`
+      : '';
+    const subLabel = isSub ? baseTitle : r.title;
 
     return (
       <>
@@ -383,7 +385,14 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                     : <FileText className="w-3.5 h-3.5 shrink-0 text-green-500 mt-0.5" />
                 )}
                 <div className="min-w-0">
-                  <span className="truncate block text-sm" title={r.title}>{subLabel}</span>
+                  <span className="truncate block text-sm" title={r.title}>
+                    {subLabel}
+                    {isSub && partSuffix && (
+                      <span className="text-[10px] font-normal text-blue-400 ml-1.5">
+                        — {partSuffix}
+                      </span>
+                    )}
+                  </span>
                   <div className="flex gap-1 mt-0.5 flex-wrap items-center">
                     {r.source_url && <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">YT</span>}
                     {r.worksheet_url && <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">PDF</span>}
