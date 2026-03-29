@@ -18,7 +18,7 @@ function formatPaperName(slug: string): string {
 }
 
 const sections = [
-  { title: 'Video Lectures', href: 'video-lectures', icon: PlayCircle, gradient: 'from-red-500 to-rose-600', desc: 'Watch detailed topic explanations and worked examples' },
+  { title: 'Video Lectures & Worksheets', href: 'video-lectures', icon: PlayCircle, gradient: 'from-red-500 to-rose-600', desc: 'Watch topic videos — each paired with a practice worksheet' },
   { title: 'Solved Past Papers', href: 'past-papers', icon: FileText, gradient: 'from-blue-500 to-indigo-600', desc: 'Practice with official Cambridge past papers' },
   { title: 'Topical Worksheets', href: 'topical', icon: BookOpen, gradient: 'from-green-500 to-emerald-600', desc: 'Master individual topics with targeted practice' },
 ];

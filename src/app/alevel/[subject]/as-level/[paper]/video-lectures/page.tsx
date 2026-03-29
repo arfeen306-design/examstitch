@@ -65,10 +65,10 @@ export default function VideoLecturesPage({ params }: { params: { subject: strin
             <span className="text-white/30">/</span>
             <Link href={`/alevel/${params.subject}/${levelSlug}/${params.paper}`} className="text-white/50 hover:text-white/70 transition-colors">{paperName}</Link>
             <span className="text-white/30">/</span>
-            <span className="text-gold-500 font-medium">Video Lectures</span>
+            <span className="text-gold-500 font-medium">Video Lectures & Worksheets</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{paperName} — Video Lectures</h1>
-          <p className="text-white/60">Watch topic-by-topic video explanations with linked worksheets.</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{paperName} — Video Lectures & Worksheets</h1>
+          <p className="text-white/60">Topic-by-topic video explanations — each paired with a downloadable worksheet.</p>
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">

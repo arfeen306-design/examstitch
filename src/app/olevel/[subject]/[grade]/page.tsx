@@ -15,8 +15,8 @@ const fadeUp = {
 
 const sections = [
   {
-    title: 'Video Lectures',
-    description: 'Watch detailed explanations of every topic and concept',
+    title: 'Video Lectures & Worksheets',
+    description: 'Watch topic videos — each paired with a practice worksheet',
     href: 'video-lectures',
     icon: PlayCircle,
     color: 'text-red-500',
