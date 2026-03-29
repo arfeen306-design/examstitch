@@ -14,6 +14,7 @@ interface Resource {
   source_url?: string;
   worksheet_url?: string | null;
   module_type?: string;
+  sort_order?: number | null;
   topic: string | null;
   category: { name: string; slug: string; id: string } | null;
   is_published: boolean;
@@ -27,6 +28,7 @@ interface EditState {
   videoUrl: string;
   worksheetUrl: string;
   contentType: string;
+  sortOrder: string;
 }
 
 interface SubtopicState {
@@ -64,7 +66,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editState, setEditState] = useState<EditState>({ title: '', videoUrl: '', worksheetUrl: '', contentType: 'video' });
+  const [editState, setEditState] = useState<EditState>({ title: '', videoUrl: '', worksheetUrl: '', contentType: 'video', sortOrder: '' });
 
   // Sub-topic state
   const [subtopicParentId, setSubtopicParentId] = useState<string | null>(null);
@@ -115,6 +117,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       videoUrl: r.content_type === 'video' ? (r.source_url || '') : '',
       worksheetUrl: r.worksheet_url || '',
       contentType: r.content_type,
+      sortOrder: r.sort_order != null ? String(r.sort_order) : '',
     });
   };
 
@@ -131,6 +134,8 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         if (editState.videoUrl !== (original.source_url || '')) updates.source_url = editState.videoUrl;
         if (editState.worksheetUrl !== (original.worksheet_url || '')) updates.worksheet_url = editState.worksheetUrl || null;
         if (editState.contentType !== original.content_type) updates.content_type = editState.contentType;
+        const newOrder = editState.sortOrder !== '' ? parseInt(editState.sortOrder, 10) : null;
+        if (newOrder !== (original.sort_order ?? null)) updates.sort_order = newOrder;
 
         if (Object.keys(updates).length === 0) { cancelEdit(); return; }
 
@@ -276,6 +281,17 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                             placeholder="Google Drive PDF URL (optional)"
                           />
                         </div>
+                        <div className="relative">
+                          <span className="absolute left-2 top-1.5 text-[10px] font-bold text-purple-600">#</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={editState.sortOrder}
+                            onChange={e => setEditState(s => ({ ...s, sortOrder: e.target.value }))}
+                            className="w-full pl-6 pr-2 py-1 text-xs border border-purple-200 rounded-md focus:ring-1 focus:ring-purple-400 outline-none"
+                            placeholder="Sort order (0 = first)"
+                          />
+                        </div>
                       </div>
                     ) : (
                       <div className={isSubTopic(r.title) ? 'pl-4' : ''}>
@@ -283,12 +299,15 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                           <span className="text-[10px] text-blue-400 font-bold mr-1">└</span>
                         )}
                         <span className="truncate" title={r.title}>{r.title}</span>
-                        <div className="flex gap-1 mt-1 flex-wrap">
+                        <div className="flex gap-1 mt-1 flex-wrap items-center">
                           {r.source_url && (
                             <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">YT</span>
                           )}
                           {r.worksheet_url && (
                             <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">PDF</span>
+                          )}
+                          {r.sort_order != null && (
+                            <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">#{r.sort_order}</span>
                           )}
                         </div>
                       </div>

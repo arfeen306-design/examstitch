@@ -196,12 +196,6 @@ function AccordionRow({
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {/* Preview pills (first part) — shown when collapsed */}
-          {!isOpen && (
-            <div className="hidden sm:flex gap-2">
-              <ActionPills mod={group.parts[0]} />
-            </div>
-          )}
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.25 }}

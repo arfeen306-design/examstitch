@@ -129,7 +129,8 @@ export async function getResourcesByCategory(
     .from('resources')
     .select('*')
     .eq('category_id', categoryId)
-    .order('created_at', { ascending: false });
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true });
 
   if (contentType) {
     query = query.eq('content_type', contentType);
