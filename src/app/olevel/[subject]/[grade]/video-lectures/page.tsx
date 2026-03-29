@@ -16,7 +16,7 @@ function toResourceItem(resource: Resource, basePath: string): ResourceItem {
     title: resource.title,
     description: resource.description ?? undefined,
     contentType: resource.content_type,
-    href: `${basePath}/${resource.id}`,
+    href: resource.source_url,
     subject: resource.subject,
   };
 }
