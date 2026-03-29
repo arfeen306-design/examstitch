@@ -22,6 +22,10 @@ export const mainNavItems = [
     ],
   },
   {
+    label: 'Search',
+    href: '/search',
+  },
+  {
     label: 'Blog',
     href: '/blog',
   },

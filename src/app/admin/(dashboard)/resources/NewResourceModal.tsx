@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { X, PlayCircle, FileText } from 'lucide-react';
+import { X, PlayCircle, FileText, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
 interface Category {
@@ -25,6 +25,8 @@ export default function NewResourceModal({
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
   const [moduleType, setModuleType] = useState<ModuleType>('video_topical');
+  const [keepOpen, setKeepOpen] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -48,6 +50,8 @@ export default function NewResourceModal({
       if (data) setCategories(data as any[]);
     };
     fetchCategories();
+    // Auto-focus the title field when modal opens
+    setTimeout(() => titleRef.current?.focus(), 80);
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,9 +137,15 @@ export default function NewResourceModal({
       const { success, error } = await bulkInsertResources(payloads);
 
       if (success) {
-        showToast({ message: `Successfully linked ${moduleType === 'video_topical' ? 'Video + Topical' : 'Solved Past Paper'}!`, type: 'success' });
-        onSuccess();
-        setFormData({ ...formData, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '' });
+        showToast({ message: `Saved! ${keepOpen ? 'Ready for next entry.' : ''}`, type: 'success' });
+        if (keepOpen) {
+          // Clear only the URL fields — keep subject, category, module type
+          setFormData(prev => ({ ...prev, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '' }));
+          setTimeout(() => titleRef.current?.focus(), 50);
+        } else {
+          onSuccess();
+          setFormData({ ...formData, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '' });
+        }
       } else {
         showToast({ message: error || 'Failed to link resources', type: 'error' });
       }
@@ -204,7 +214,14 @@ export default function NewResourceModal({
               <label className="block text-sm font-medium text-navy-700 mb-1">
                 {moduleType === 'video_topical' ? 'Topic Name' : 'Paper Title'}
               </label>
-              <input required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500" placeholder={moduleType === 'video_topical' ? 'e.g. Differentiation Rules' : 'e.g. May/June 2024 V1'} />
+              <input
+                ref={titleRef}
+                required
+                value={formData.title}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                placeholder={moduleType === 'video_topical' ? 'e.g. Differentiation Rules' : 'e.g. May/June 2024 V1'}
+              />
             </div>
 
             <div>
@@ -266,13 +283,25 @@ export default function NewResourceModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-navy-50 mt-6 sticky bottom-0 bg-white">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50 rounded-lg transition">Cancel</button>
-            <button type="submit" disabled={loading} className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 ${
-              moduleType === 'video_topical' ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'
-            }`}>
-              {loading ? 'Processing...' : moduleType === 'video_topical' ? 'Link Video + Topical' : 'Link Past Paper'}
-            </button>
+          <div className="flex items-center justify-between pt-4 border-t border-navy-50 mt-6 sticky bottom-0 bg-white">
+            <label className="flex items-center gap-2 text-sm text-navy-500 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={keepOpen}
+                onChange={e => setKeepOpen(e.target.checked)}
+                className="w-4 h-4 accent-gold-500 cursor-pointer"
+              />
+              <RotateCcw className="w-3.5 h-3.5" />
+              Keep open after save
+            </label>
+            <div className="flex gap-3">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50 rounded-lg transition">Cancel</button>
+              <button type="submit" disabled={loading} className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 ${
+                moduleType === 'video_topical' ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'
+              }`}>
+                {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === 'video_topical' ? 'Link Video + Topical' : 'Link Past Paper'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
