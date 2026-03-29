@@ -31,20 +31,26 @@ export async function bulkInsertResources(resources: any[]) {
   const supabase = createAdminClient();
   
   // Clean up any extra fields that might not match the schema perfectly in bulk payloads
-  const payload = resources.map(res => ({
-    title: res.title,
-    description: res.description || null,
-    content_type: res.content_type,
-    source_type: res.source_type,
-    source_url: res.source_url,
-    topic: res.topic || null,
-    subject: res.subject,
-    category_id: res.category_id,
-    is_watermarked: res.is_watermarked ?? false,
-    is_locked: res.is_locked ?? false,
-    is_published: res.is_published ?? true,
-    // Note: uploaded_by and exam_series_id omitted or you can supply them if available
-  }));
+  const payload = resources.map(res => {
+    const item: any = {
+      title: res.title,
+      content_type: res.content_type,
+      source_type: res.source_type,
+      source_url: res.source_url,
+      subject: res.subject,
+      category_id: res.category_id,
+      is_watermarked: res.is_watermarked ?? false,
+      is_locked: res.is_locked ?? false,
+      is_published: res.is_published ?? true,
+    };
+    
+    // Only attach these keys if they literally exist, to prevent crashing on old database schemas
+    // that don't have these columns yet.
+    if (res.description) item.description = res.description;
+    if (res.topic) item.topic = res.topic;
+    
+    return item;
+  });
 
   const { error } = await supabase.from('resources').insert(payload);
 
