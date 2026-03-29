@@ -121,10 +121,10 @@ export async function getCategoryBySlug(
 export async function getResourcesByCategory(
   categoryId: string,
   contentType?: 'video' | 'pdf' | 'worksheet',
+  moduleType?: 'video_topical' | 'solved_past_paper',
 ): Promise<Resource[]> {
   const supabase = createClient();
 
-  // Try full query first; fall back to simple select if exam_series join fails
   let query = supabase
     .from('resources')
     .select('*')
@@ -133,6 +133,10 @@ export async function getResourcesByCategory(
 
   if (contentType) {
     query = query.eq('content_type', contentType);
+  }
+
+  if (moduleType) {
+    query = query.eq('module_type', moduleType);
   }
 
   const { data, error } = await query;

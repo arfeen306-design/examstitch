@@ -45,6 +45,8 @@ export async function bulkInsertResources(resources: any[]) {
     if (res.category_id)   item.category_id = res.category_id;
     if (res.description)   item.description = res.description;
     if (res.topic)         item.topic = res.topic;
+    if (res.module_type)   item.module_type = res.module_type;
+    if (res.worksheet_url !== undefined) item.worksheet_url = res.worksheet_url;
     if (res.is_watermarked !== undefined) item.is_watermarked = res.is_watermarked;
     if (res.is_published !== undefined)   item.is_published = res.is_published;
     

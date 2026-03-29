@@ -70,7 +70,7 @@ async function PastPapersGrid({
       );
     }
 
-    const resources = await getResourcesByCategory(category.id, 'pdf');
+    const resources = await getResourcesByCategory(category.id, 'pdf', 'solved_past_paper');
     const items: ResourceItem[] = resources.map((r) => toResourceItem(r, basePath));
 
     return (
