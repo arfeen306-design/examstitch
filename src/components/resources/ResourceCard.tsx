@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { FileText, PlayCircle, BookOpen, ExternalLink } from 'lucide-react';
+import { FileText, PlayCircle, BookOpen, ChevronRight } from 'lucide-react';
 
 interface ResourceCardProps {
   title: string;
@@ -71,7 +71,7 @@ export default function ResourceCard({
                 </span>
               )}
             </div>
-            <ExternalLink className="w-4 h-4 text-navy-200 group-hover:text-gold-500 transition-colors shrink-0 mt-1" />
+            <ChevronRight className="w-4 h-4 text-navy-200 group-hover:text-gold-500 transition-colors shrink-0 mt-1" />
           </div>
         </div>
       </Link>

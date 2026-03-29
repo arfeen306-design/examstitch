@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Download, ExternalLink, Maximize2 } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
 
 interface EmbeddedViewerProps {
@@ -42,24 +42,16 @@ export default function EmbeddedViewer({
         </Link>
 
         <div className="flex items-center gap-2">
-          {downloadUrl && contentType === 'worksheet' && (
+          {downloadUrl && (contentType === 'worksheet' || contentType === 'pdf') && (
             <a
               href={downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-navy-900 rounded-lg hover:bg-navy-800 transition-colors"
             >
-              <Download className="w-3.5 h-3.5" /> Download Original
+              <Download className="w-3.5 h-3.5" /> Download PDF
             </a>
           )}
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-navy-600 border border-navy-200 rounded-lg hover:bg-navy-50 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" /> Open Original
-          </a>
         </div>
       </div>
 
@@ -90,6 +82,8 @@ export default function EmbeddedViewer({
             allow="autoplay"
             loading="lazy"
           />
+          {/* Overlay to cover Google Drive's external link icon on the right */}
+          <div className="absolute top-0 right-0 w-12 h-16 bg-white pointer-events-auto z-10 rounded-bl-lg" />
         </div>
       )}
 
@@ -106,3 +100,4 @@ export default function EmbeddedViewer({
     </motion.div>
   );
 }
+
