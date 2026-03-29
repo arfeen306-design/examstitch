@@ -54,17 +54,20 @@ function groupModules(modules: LearningModule[]): TopicGroup[] {
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center justify-between px-5 py-4 animate-pulse border-b border-navy-50">
+    <div
+      className="flex items-center justify-between px-5 py-4 animate-pulse"
+      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+    >
       <div className="flex items-center gap-4 flex-1">
-        <div className="w-7 h-7 bg-navy-100 rounded-lg shrink-0" />
+        <div className="w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'var(--border-subtle)' }} />
         <div className="space-y-1.5 flex-1">
-          <div className="h-4 bg-navy-100 rounded-full w-1/3" />
-          <div className="h-3 bg-navy-50 rounded-full w-1/5" />
+          <div className="h-4 rounded-full w-1/3" style={{ backgroundColor: 'var(--border-subtle)' }} />
+          <div className="h-3 rounded-full w-1/5" style={{ backgroundColor: 'var(--bg-surface)' }} />
         </div>
       </div>
       <div className="flex gap-2">
-        <div className="h-7 w-24 bg-gold-100 rounded-full" />
-        <div className="h-7 w-20 bg-navy-50 rounded-full" />
+        <div className="h-7 w-24 rounded-full" style={{ backgroundColor: 'var(--accent-subtle)' }} />
+        <div className="h-7 w-20 rounded-full" style={{ backgroundColor: 'var(--bg-surface)' }} />
       </div>
     </div>
   );
@@ -79,11 +82,12 @@ function EmptyState({ title, message }: { title: string; message: string }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-20 text-center"
     >
-      <div className="w-14 h-14 bg-navy-50 rounded-2xl flex items-center justify-center mb-4">
-        <BookOpen className="w-7 h-7 text-navy-300" />
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+           style={{ backgroundColor: 'var(--bg-surface)' }}>
+        <BookOpen className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
       </div>
-      <h3 className="text-sm font-semibold text-navy-700 mb-1">{title}</h3>
-      <p className="text-xs text-navy-400 max-w-xs leading-relaxed">{message}</p>
+      <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>{title}</h3>
+      <p className="text-xs max-w-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{message}</p>
     </motion.div>
   );
 }
@@ -96,21 +100,27 @@ function ActionPills({ mod }: { mod: LearningModule }) {
       <Link
         href={`/view/${mod.id}`}
         className="inline-flex items-center gap-1.5 px-3.5 py-1.5
-                   bg-gold-500 hover:bg-gold-400 text-navy-900
                    text-xs font-semibold rounded-full shadow-sm
                    transition-all duration-150 hover:shadow-md whitespace-nowrap"
+        style={{
+          backgroundColor: 'var(--accent)',
+          color: 'var(--text-on-accent)',
+        }}
       >
-        <Play className="w-3 h-3 fill-navy-900" />
+        <Play className="w-3 h-3" style={{ fill: 'var(--text-on-accent)' }} />
         Watch Video
       </Link>
       {mod.worksheetUrl && (
         <Link
           href={`/view/${mod.id}?mode=worksheet`}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5
-                     border border-navy-200 bg-white hover:bg-navy-50
-                     text-navy-600 hover:text-navy-900
                      text-xs font-semibold rounded-full shadow-sm
                      transition-all duration-150 hover:shadow-md whitespace-nowrap"
+          style={{
+            border: '1px solid var(--border-color)',
+            backgroundColor: 'var(--bg-card)',
+            color: 'var(--text-secondary)',
+          }}
         >
           <FileText className="w-3 h-3" />
           Worksheet
@@ -132,17 +142,23 @@ function SingleRow({
   const mod = group.parts[0];
   return (
     <motion.div
-      whileHover={{ scale: 1.003, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}
+      whileHover={{ scale: 1.005, boxShadow: '0 6px 24px var(--shadow-color)' }}
       className="flex flex-col sm:flex-row sm:items-center justify-between
-                 gap-3 px-5 py-4 bg-white rounded-xl border border-navy-100/80
-                 hover:border-gold-400/40 transition-colors duration-200"
+                 gap-3 px-5 py-4 rounded-xl transition-colors duration-200"
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-subtle)',
+      }}
     >
       <div className="flex items-center gap-4 min-w-0 flex-1">
-        <span className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg
-                         bg-navy-900 text-white text-xs font-bold tabular-nums">
+        <span
+          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums"
+          style={{ backgroundColor: 'var(--badge-bg)', color: 'var(--badge-text)' }}
+        >
           {String(globalIndex + 1).padStart(2, '0')}
         </span>
-        <h3 className="text-sm font-semibold text-navy-900 truncate hover:text-gold-700 transition-colors duration-150">
+        <h3 className="text-sm font-semibold truncate transition-colors duration-150"
+            style={{ color: 'var(--text-primary)' }}>
           {group.baseTitle}
         </h3>
       </div>
@@ -167,28 +183,40 @@ function AccordionRow({
   onToggle: () => void;
 }) {
   return (
-    <div className={`rounded-xl border transition-all duration-200 overflow-hidden
-                     ${isOpen ? 'border-gold-400/60 shadow-md' : 'border-navy-100/80 hover:border-gold-300/50'}`}>
+    <div
+      className="rounded-xl transition-all duration-200 overflow-hidden"
+      style={{
+        border: isOpen
+          ? '1px solid var(--accent)'
+          : '1px solid var(--border-subtle)',
+        boxShadow: isOpen ? '0 6px 24px var(--shadow-color)' : 'none',
+      }}
+    >
       {/* Header — always visible */}
       <motion.button
         onClick={onToggle}
         whileTap={{ scale: 0.998 }}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 bg-white
-                   hover:bg-gold-50/30 transition-colors duration-150 text-left"
+        className="w-full flex items-center justify-between gap-4 px-5 py-4
+                   transition-colors duration-150 text-left"
+        style={{ backgroundColor: 'var(--bg-card)' }}
       >
         <div className="flex items-center gap-4 min-w-0 flex-1">
-          <span className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg
-                           text-xs font-bold tabular-nums transition-colors
-                           ${isOpen ? 'bg-gold-500 text-navy-900' : 'bg-navy-900 text-white'}`}>
+          <span
+            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums transition-colors"
+            style={{
+              backgroundColor: isOpen ? 'var(--accent)' : 'var(--badge-bg)',
+              color: isOpen ? 'var(--text-on-accent)' : 'var(--badge-text)',
+            }}
+          >
             {String(globalIndex + 1).padStart(2, '0')}
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-navy-900 truncate">
+            <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               {group.baseTitle}
             </h3>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <Layers className="w-3 h-3 text-navy-400" />
-              <span className="text-xs text-navy-400">
+              <Layers className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {group.parts.length} parts
               </span>
             </div>
@@ -199,8 +227,11 @@ function AccordionRow({
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.25 }}
-            className={`w-6 h-6 rounded-full flex items-center justify-center
-                        ${isOpen ? 'bg-gold-100 text-gold-700' : 'bg-navy-50 text-navy-400'}`}
+            className="w-6 h-6 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: isOpen ? 'var(--accent-subtle)' : 'var(--bg-surface)',
+              color: isOpen ? 'var(--accent-text)' : 'var(--text-muted)',
+            }}
           >
             <ChevronDown className="w-4 h-4" />
           </motion.div>
@@ -218,7 +249,10 @@ function AccordionRow({
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="border-t border-navy-50 bg-navy-50/30 divide-y divide-navy-50/80">
+            <div style={{
+              borderTop: '1px solid var(--border-subtle)',
+              backgroundColor: 'var(--bg-surface)',
+            }}>
               {group.parts.map((part, partIndex) => (
                 <motion.div
                   key={part.id}
@@ -226,16 +260,23 @@ function AccordionRow({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: partIndex * 0.06, duration: 0.25 }}
                   className="flex flex-col sm:flex-row sm:items-center justify-between
-                             gap-3 px-5 py-3.5 hover:bg-white/60 transition-colors duration-150"
+                             gap-3 px-5 py-3.5 transition-colors duration-150"
+                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
                 >
                   {/* Sub-number + label */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="shrink-0 w-8 h-6 flex items-center justify-center
-                                     rounded-md bg-white border border-navy-100
-                                     text-xs font-bold text-navy-500 tabular-nums">
+                    <span
+                      className="shrink-0 w-8 h-6 flex items-center justify-center
+                                 rounded-md text-xs font-bold tabular-nums"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
                       {globalIndex + 1}.{partIndex + 1}
                     </span>
-                    <span className="text-sm text-navy-700 truncate">
+                    <span className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                       {part.title !== group.baseTitle
                         ? part.title.replace(group.baseTitle, '').replace(/^[\s—–-]+/, '').trim() || `Part ${partIndex + 1}`
                         : `Part ${partIndex + 1}`
@@ -277,7 +318,8 @@ export default function UnifiedModuleGrid({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl border border-navy-100 overflow-hidden">
+      <div className="rounded-2xl overflow-hidden"
+           style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
       </div>
     );
@@ -298,19 +340,19 @@ export default function UnifiedModuleGrid({
     >
       {/* Legend */}
       <div className="flex items-center justify-between px-1 pb-2 mb-1">
-        <p className="text-xs font-semibold uppercase tracking-widest text-navy-400">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
           {groups.length} topic{groups.length !== 1 ? 's' : ''}
           {groups.some(g => g.parts.length > 1) && (
-            <span className="ml-1 text-navy-300">· click to expand parts</span>
+            <span className="ml-1" style={{ color: 'var(--border-color)' }}>· click to expand parts</span>
           )}
         </p>
-        <div className="flex items-center gap-4 text-xs text-navy-400">
+        <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-gold-400 inline-block" />
+            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: 'var(--accent)' }} />
             Video
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-navy-200 inline-block" />
+            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: 'var(--border-color)' }} />
             Worksheet
           </span>
         </div>

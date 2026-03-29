@@ -43,9 +43,12 @@ export default function ResourceCard({
       transition={{ duration: 0.4, delay: Math.min(index * 0.03, 0.3) }}
     >
       <Link href={href} className="block group">
-        <div className={`card-hover bg-white border rounded-2xl p-5 transition-all duration-200 ${config.accent} hover:shadow-md`}>
+        <div
+          className={`card-hover border rounded-2xl p-5 transition-all duration-200 ${config.accent} hover:shadow-md`}
+          style={{ backgroundColor: 'var(--bg-card)' }}
+        >
           <div className="flex items-start gap-4">
-            <div className={`shrink-0 w-11 h-11 ${config.bg} rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform`}>
+            <div className={`shrink-0 w-11 h-11 ${config.bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
               <Icon className={`w-5 h-5 ${config.color}`} />
             </div>
             <div className="flex-1 min-w-0">
@@ -54,24 +57,34 @@ export default function ResourceCard({
                   {config.label}
                 </span>
                 {year && (
-                  <span className="text-xs text-navy-400">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {session} {year}{variant ? ` V${variant}` : ''}
                   </span>
                 )}
               </div>
-              <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-700 transition-colors truncate">
-                {title}
+              <h3
+                className="text-sm font-semibold transition-colors truncate"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <span className="group-hover:hidden">{title}</span>
+                <span className="hidden group-hover:inline" style={{ color: 'var(--accent-text)' }}>{title}</span>
               </h3>
               {description && (
-                <p className="text-xs text-navy-500 mt-1 line-clamp-2">{description}</p>
+                <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{description}</p>
               )}
               {subject && (
-                <span className="inline-block mt-2 text-xs text-navy-400 bg-navy-50 px-2 py-0.5 rounded-full">
+                <span
+                  className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full"
+                  style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)' }}
+                >
                   {subject}
                 </span>
               )}
             </div>
-            <ChevronRight className="w-4 h-4 text-navy-200 group-hover:text-gold-500 transition-colors shrink-0 mt-1" />
+            <ChevronRight
+              className="w-4 h-4 transition-colors shrink-0 mt-1"
+              style={{ color: 'var(--border-color)' }}
+            />
           </div>
         </div>
       </Link>

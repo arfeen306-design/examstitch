@@ -2,165 +2,185 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   THEME TOKENS
-   Applied via data-theme on <html>. Components read CSS vars for key surfaces.
-───────────────────────────────────────────────────────────────────────────── */
-
-:root,
-[data-theme='default'] {
-  --bg-main:        #0F1A38;
-  --bg-card:        #1A2B56;
-  --bg-surface:     #243870;
-  --bg-navbar:      rgba(15, 26, 56, 0.92);
-  --text-primary:   #FFFFFF;
-  --text-secondary: rgba(255,255,255,0.55);
-  --text-muted:     rgba(255,255,255,0.30);
-  --accent:         #D4AF37;        /* gold */
-  --accent-hover:   #E9C94A;
-  --accent-fg:      #0F1A38;        /* text on accent bg */
-  --border-color:   rgba(255,255,255,0.10);
-  --hero-grad:      linear-gradient(135deg, #1A2B56 0%, #0F1A38 50%, #1A2B56 100%);
-  --accent-grad:    linear-gradient(135deg, #D4AF37 0%, #E9B82E 50%, #D4AF37 100%);
-  --row-stripe:     rgba(255,255,255,0.02);
-  --shadow-card:    0 8px 32px rgba(0,0,0,0.35);
-}
-
-[data-theme='dark'] {
-  --bg-main:        #0A0A0F;
-  --bg-card:        #13131A;
-  --bg-surface:     #1E1E2E;
-  --bg-navbar:      rgba(10, 10, 15, 0.95);
-  --text-primary:   #E8E8F0;
-  --text-secondary: rgba(232,232,240,0.55);
-  --text-muted:     rgba(232,232,240,0.30);
-  --accent:         #A78BFA;        /* violet */
-  --accent-hover:   #C4B5FD;
-  --accent-fg:      #0A0A0F;
-  --border-color:   rgba(167,139,250,0.15);
-  --hero-grad:      linear-gradient(135deg, #13131A 0%, #0A0A0F 50%, #13131A 100%);
-  --accent-grad:    linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
-  --row-stripe:     rgba(167,139,250,0.03);
-  --shadow-card:    0 8px 32px rgba(0,0,0,0.60);
-}
-
-[data-theme='beach'] {
-  --bg-main:        #F5F0E8;
-  --bg-card:        #FFFBF4;
-  --bg-surface:     #EDE8DE;
-  --bg-navbar:      rgba(245,240,232,0.96);
-  --text-primary:   #1A3A5C;
-  --text-secondary: rgba(26,58,92,0.60);
-  --text-muted:     rgba(26,58,92,0.35);
-  --accent:         #0E7EC0;        /* ocean blue */
-  --accent-hover:   #1A6FA8;
-  --accent-fg:      #FFFFFF;
-  --border-color:   rgba(26,58,92,0.12);
-  --hero-grad:      linear-gradient(135deg, #B3D8F0 0%, #87C5E8 50%, #B3D8F0 100%);
-  --accent-grad:    linear-gradient(135deg, #0E7EC0 0%, #0A5C8A 100%);
-  --row-stripe:     rgba(14,126,192,0.04);
-  --shadow-card:    0 4px 20px rgba(26,58,92,0.10);
-}
-
-[data-theme='forest'] {
-  --bg-main:        #0D1F0F;
-  --bg-card:        #142916;
-  --bg-surface:     #1D3B20;
-  --bg-navbar:      rgba(13, 31, 15, 0.94);
-  --text-primary:   #E8F5E9;
-  --text-secondary: rgba(232,245,233,0.55);
-  --text-muted:     rgba(232,245,233,0.30);
-  --accent:         #4ADE80;        /* lime green */
-  --accent-hover:   #22C55E;
-  --accent-fg:      #0D1F0F;
-  --border-color:   rgba(74,222,128,0.15);
-  --hero-grad:      linear-gradient(135deg, #142916 0%, #0D1F0F 50%, #142916 100%);
-  --accent-grad:    linear-gradient(135deg, #4ADE80 0%, #16A34A 100%);
-  --row-stripe:     rgba(74,222,128,0.03);
-  --shadow-card:    0 8px 32px rgba(0,0,0,0.45);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   BASE STYLES
-───────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME VARIABLES — consumed via var(--name) in components.
+   Each [data-theme] block defines the full palette for that theme.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
+  /* ── Default (Navy & Gold) ─────────────────────────────────────────────── */
+  :root,
+  [data-theme="default"] {
+    --bg-primary:    #ffffff;
+    --bg-surface:    #F8F9FB;
+    --bg-card:       #ffffff;
+    --bg-elevated:   #ffffff;
+
+    --hero-from:     #1A2B56;
+    --hero-via:      #0F1A38;
+    --hero-to:       #1A2B56;
+    --navbar-bg:     rgba(26, 43, 86, 0.92);
+
+    --text-primary:  #1A2B56;
+    --text-secondary:#3B4F80;
+    --text-muted:    #596993;
+    --text-on-dark:  #ffffff;
+    --text-on-accent:#1A2B56;
+
+    --accent:        #D4AF37;
+    --accent-hover:  #E9B82E;
+    --accent-subtle: #FDF8EB;
+    --accent-text:   #9A7523;
+
+    --border-color:  #C5CAD8;
+    --border-subtle: #E8EAF0;
+
+    --badge-bg:      #1A2B56;
+    --badge-text:    #ffffff;
+
+    --shadow-color:  rgba(26, 43, 86, 0.08);
+
+    --wave-fill:     #ffffff;
+  }
+
+  /* ── Dark ───────────────────────────────────────────────────────────────── */
+  [data-theme="dark"] {
+    --bg-primary:    #0D0D14;
+    --bg-surface:    #16161F;
+    --bg-card:       #1A1A26;
+    --bg-elevated:   #22222F;
+
+    --hero-from:     #0D0D14;
+    --hero-via:      #16161F;
+    --hero-to:       #0D0D14;
+    --navbar-bg:     rgba(13, 13, 20, 0.92);
+
+    --text-primary:  #EEEEF2;
+    --text-secondary:#A0A0B8;
+    --text-muted:    #6B6B82;
+    --text-on-dark:  #EEEEF2;
+    --text-on-accent:#0D0D14;
+
+    --accent:        #A78BFA;
+    --accent-hover:  #C4B5FD;
+    --accent-subtle: rgba(167, 139, 250, 0.10);
+    --accent-text:   #C4B5FD;
+
+    --border-color:  #2A2A3A;
+    --border-subtle: #1E1E2A;
+
+    --badge-bg:      #A78BFA;
+    --badge-text:    #0D0D14;
+
+    --shadow-color:  rgba(0, 0, 0, 0.3);
+
+    --wave-fill:     #0D0D14;
+  }
+
+  /* ── Beach ──────────────────────────────────────────────────────────────── */
+  [data-theme="beach"] {
+    --bg-primary:    #FFF9F2;
+    --bg-surface:    #FFF3E6;
+    --bg-card:       #FFFFFF;
+    --bg-elevated:   #FFFFFF;
+
+    --hero-from:     #0C4A6E;
+    --hero-via:      #075985;
+    --hero-to:       #0C4A6E;
+    --navbar-bg:     rgba(12, 74, 110, 0.92);
+
+    --text-primary:  #0C4A6E;
+    --text-secondary:#0369A1;
+    --text-muted:    #0284C7;
+    --text-on-dark:  #ffffff;
+    --text-on-accent:#0C4A6E;
+
+    --accent:        #0EA5E9;
+    --accent-hover:  #38BDF8;
+    --accent-subtle: #E0F2FE;
+    --accent-text:   #0369A1;
+
+    --border-color:  #BAE6FD;
+    --border-subtle: #E0F2FE;
+
+    --badge-bg:      #0C4A6E;
+    --badge-text:    #ffffff;
+
+    --shadow-color:  rgba(12, 74, 110, 0.08);
+
+    --wave-fill:     #FFF9F2;
+  }
+
+  /* ── Forest ─────────────────────────────────────────────────────────────── */
+  [data-theme="forest"] {
+    --bg-primary:    #F0FDF4;
+    --bg-surface:    #E8FAE6;
+    --bg-card:       #FFFFFF;
+    --bg-elevated:   #FFFFFF;
+
+    --hero-from:     #14532D;
+    --hero-via:      #052E16;
+    --hero-to:       #14532D;
+    --navbar-bg:     rgba(20, 83, 45, 0.92);
+
+    --text-primary:  #14532D;
+    --text-secondary:#166534;
+    --text-muted:    #15803D;
+    --text-on-dark:  #ffffff;
+    --text-on-accent:#052E16;
+
+    --accent:        #22C55E;
+    --accent-hover:  #4ADE80;
+    --accent-subtle: #DCFCE7;
+    --accent-text:   #15803D;
+
+    --border-color:  #BBF7D0;
+    --border-subtle: #DCFCE7;
+
+    --badge-bg:      #14532D;
+    --badge-text:    #ffffff;
+
+    --shadow-color:  rgba(20, 83, 45, 0.08);
+
+    --wave-fill:     #F0FDF4;
+  }
+
+  /* ── Base element styling ───────────────────────────────────────────────── */
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    background-color: var(--bg-main);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
     @apply font-sans antialiased;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   ::selection {
-    background-color: color-mix(in srgb, var(--accent) 25%, transparent);
+    background: var(--accent-subtle);
     color: var(--text-primary);
   }
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   COMPONENT OVERRIDES — theme-aware
-───────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENT UTILITIES — use CSS vars so themes cascade automatically.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
   .glass-navbar {
-    background-color: var(--bg-navbar);
-    border-bottom: 1px solid var(--border-color);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: var(--navbar-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .gradient-hero {
-    background: var(--hero-grad);
+    background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-via) 50%, var(--hero-to) 100%);
   }
 
   .gradient-gold {
-    background: var(--accent-grad);
-  }
-
-  /* Beach theme: flip navbar text to dark */
-  [data-theme='beach'] .glass-navbar .text-white,
-  [data-theme='beach'] .glass-navbar .text-white\/80 {
-    color: var(--text-primary) !important;
-  }
-  [data-theme='beach'] .glass-navbar .hover\:text-gold-500:hover {
-    color: var(--accent) !important;
-  }
-  [data-theme='beach'] .glass-navbar .text-gold-500 {
-    color: var(--accent) !important;
-  }
-
-  /* Accent recolor across themes */
-  [data-theme='dark'] .text-gold-500,
-  [data-theme='forest'] .text-gold-500,
-  [data-theme='beach'] .text-gold-500 {
-    color: var(--accent) !important;
-  }
-
-  /* Card surfaces */
-  .theme-card {
-    background-color: var(--bg-card);
-    border-color: var(--border-color);
-    box-shadow: var(--shadow-card);
-  }
-
-  /* Table zebra stripe */
-  .theme-table-row-stripe {
-    background-color: var(--row-stripe);
-  }
-
-  /* Admin table overrides */
-  [data-theme='beach'] table thead,
-  [data-theme='beach'] .admin-table-header {
-    background-color: var(--bg-surface) !important;
-    color: var(--text-primary) !important;
-  }
-  [data-theme='beach'] table tbody tr:hover {
-    background-color: var(--row-stripe) !important;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 50%, var(--accent) 100%);
   }
 
   .card-hover {
@@ -168,8 +188,8 @@
   }
 
   .card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-card);
+    transform: translateY(-2px) scale(1.008);
+    box-shadow: 0 12px 28px var(--shadow-color);
   }
 
   .gold-underline {
@@ -178,15 +198,12 @@
 
   .gold-underline::after {
     content: '';
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 0; height: 2px;
+    @apply absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300;
     background-color: var(--accent);
-    transition: width 0.3s ease;
   }
 
   .gold-underline:hover::after {
-    width: 100%;
+    @apply w-full;
   }
 }
 
@@ -194,10 +211,4 @@
   .text-balance {
     text-wrap: balance;
   }
-
-  /* Shorthand for accent color (works alongside Tailwind) */
-  .text-accent   { color: var(--accent); }
-  .bg-accent     { background-color: var(--accent); }
-  .border-accent { border-color: var(--accent); }
 }
-

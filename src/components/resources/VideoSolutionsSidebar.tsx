@@ -56,49 +56,61 @@ export default function VideoSolutionsSidebar({
   );
 
   return (
-    <div className="bg-white border border-navy-100 rounded-2xl overflow-hidden">
+    <div className="rounded-2xl overflow-hidden"
+         style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
       {/* Header */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full flex items-center justify-between p-4 bg-navy-900 text-white"
+        className="w-full flex items-center justify-between px-5 py-4"
+        style={{ backgroundColor: 'var(--badge-bg)', color: 'var(--text-on-dark)' }}
       >
-        <div className="flex items-center gap-2">
-          <PlayCircle className="w-5 h-5 text-gold-500" />
+        <div className="flex items-center gap-3">
+          <PlayCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           <span className="text-sm font-semibold">Video Solutions</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-white/50">{solutions.length} questions</span>
+          <span className="text-xs opacity-50">{solutions.length} questions</span>
           {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
         </div>
       </button>
 
-      {/* Question List */}
+      {/* Question List — increased padding and gap for breathability */}
       {!isCollapsed && (
         <motion.div
           initial={{ height: 0 }}
           animate={{ height: 'auto' }}
-          className="divide-y divide-navy-50"
+          transition={{ type: 'spring', stiffness: 400, damping: 35, mass: 0.8 }}
+          className="overflow-hidden"
         >
           {sortedSolutions.map((solution) => {
             const qNum = getQuestionNumber(solution);
             const ts   = getTimestamp(solution);
+            const isActive = activeQuestion === qNum;
 
             return (
               <button
                 key={solution.id}
                 onClick={() => onTimestampClick(ts)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gold-50 ${
-                  activeQuestion === qNum ? 'bg-gold-50 border-l-2 border-gold-500' : ''
-                }`}
+                className="w-full flex items-center gap-4 px-5 py-4 text-left transition-colors duration-150"
+                style={{
+                  borderBottom: '1px solid var(--border-subtle)',
+                  backgroundColor: isActive ? 'var(--accent-subtle)' : 'transparent',
+                  borderLeft: isActive ? '3px solid var(--accent)' : '3px solid transparent',
+                }}
               >
-                <div className="shrink-0 w-8 h-8 bg-navy-50 rounded-lg flex items-center justify-center">
-                  <span className="text-xs font-bold text-navy-600">Q{qNum}</span>
+                <div
+                  className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--bg-surface)' }}
+                >
+                  <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Q{qNum}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-navy-900 truncate">{solution.label}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                    {solution.label}
+                  </p>
                 </div>
-                <div className="shrink-0 flex items-center gap-1.5 text-xs text-navy-400">
-                  <PlayCircle className="w-3.5 h-3.5 text-gold-500" />
+                <div className="shrink-0 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <PlayCircle className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
                   {formatTime(ts)}
                 </div>
               </button>

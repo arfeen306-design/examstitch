@@ -110,9 +110,6 @@ export default function Navbar() {
               className="md:hidden overflow-hidden border-t border-white/10"
             >
               <div className="py-4 space-y-1">
-                <div className="px-4 pb-2">
-                  <ThemeToggle />
-                </div>
                 {mainNavItems.map((item) => (
                   <div key={item.href}>
                     <Link

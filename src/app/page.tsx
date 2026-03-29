@@ -164,7 +164,7 @@ export default function HomePage() {
         {/* Wave divider */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 40L48 35C96 30 192 20 288 22C384 24 480 38 576 42C672 46 768 40 864 35C960 30 1056 26 1152 28C1248 30 1344 38 1392 42L1440 46V80H0V40Z" fill="white" />
+            <path d="M0 40L48 35C96 30 192 20 288 22C384 24 480 38 576 42C672 46 768 40 864 35C960 30 1056 26 1152 28C1248 30 1344 38 1392 42L1440 46V80H0V40Z" fill="var(--wave-fill)" />
           </svg>
         </div>
       </section>
@@ -177,10 +177,12 @@ export default function HomePage() {
           viewport={{ once: true, margin: '-100px' }}
           className="text-center mb-12"
         >
-          <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold text-navy-900 mb-3">
+          <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3"
+                     style={{ color: 'var(--text-primary)' }}>
             Choose Your Level
           </motion.h2>
-          <motion.p variants={fadeUp} custom={1} className="text-navy-500 max-w-lg mx-auto">
+          <motion.p variants={fadeUp} custom={1} className="max-w-lg mx-auto"
+                    style={{ color: 'var(--text-secondary)' }}>
             Select your academic level to access organized resources for every paper and topic.
           </motion.p>
         </motion.div>
@@ -194,7 +196,8 @@ export default function HomePage() {
           {levelCards.map((card, i) => (
             <motion.div key={card.title} variants={fadeUp} custom={i + 2}>
               <Link href={card.href} className="block group">
-                <div className="card-hover relative overflow-hidden bg-white border border-navy-100 rounded-2xl p-8 h-full">
+                <div className="card-hover relative overflow-hidden rounded-2xl p-8 h-full"
+                     style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                   {/* Gradient accent top */}
                   <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.gradient}`} />
 
@@ -202,18 +205,21 @@ export default function HomePage() {
                     <card.icon className="w-7 h-7 text-white" />
                   </div>
 
-                  <h3 className="text-xl font-bold text-navy-900 mb-2 group-hover:text-gold-700 transition-colors">
+                  <h3 className="text-xl font-bold mb-2 transition-colors"
+                      style={{ color: 'var(--text-primary)' }}>
                     {card.title}
                   </h3>
-                  <p className="text-sm text-navy-500 mb-4 leading-relaxed">
+                  <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                     {card.description}
                   </p>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-navy-400 bg-navy-50 px-3 py-1 rounded-full">
+                    <span className="text-xs font-medium px-3 py-1 rounded-full"
+                          style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)' }}>
                       {card.count}
                     </span>
-                    <ArrowRight className="w-5 h-5 text-navy-300 group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-all"
+                                style={{ color: 'var(--border-color)' }} />
                   </div>
                 </div>
               </Link>

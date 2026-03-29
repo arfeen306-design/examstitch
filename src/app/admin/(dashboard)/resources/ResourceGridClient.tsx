@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { toggleResourceFlag, deleteResource, updateResource, bulkInsertResources } from '../../actions';
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
-  FolderOpen, FileVideo, FileText, ChevronRight,
+  FolderOpen, FileVideo, FileText, ChevronRight, Clock,
 } from 'lucide-react';
 import NewResourceModal from './NewResourceModal';
 import { useToast } from '@/components/ui/Toast';
@@ -22,6 +22,7 @@ interface Resource {
   worksheet_url?: string | null;
   module_type?: string;
   sort_order?: number | null;
+  question_mapping?: any[] | null;
   topic: string | null;
   category: { name: string; slug: string; id: string } | null;
   is_published: boolean;
@@ -171,6 +172,37 @@ export default function ResourceGridClient({ initialResources }: { initialResour
 
   const [subtopicParentId, setSubtopicParentId] = useState<string | null>(null);
   const [subtopicState, setSubtopicState] = useState<SubtopicState>({ parentId: '', title: '', videoUrl: '', worksheetUrl: '' });
+
+  // Timestamp mapping editor state
+  const [mappingEditId, setMappingEditId] = useState<string | null>(null);
+  const [mappingDraft, setMappingDraft] = useState<any[]>([]);
+
+  const openTimestampEditor = (r: Resource) => {
+    setMappingEditId(r.id);
+    setMappingDraft(r.question_mapping || [
+      { question: 1, label: 'Q1', start_time: 0, parts: [] },
+    ]);
+  };
+
+  const cancelTimestampEditor = () => setMappingEditId(null);
+
+  const saveTimestamps = (resourceId: string) => {
+    startTransition(async () => {
+      try {
+        const clean = mappingDraft.filter((q: any) => q.label);
+        const result = await updateResource(resourceId, { question_mapping: clean.length > 0 ? clean : null });
+        if (result.success) {
+          setResources(prev => prev.map(r => r.id === resourceId ? { ...r, question_mapping: clean.length > 0 ? clean : null } : r));
+          showToast({ message: 'Timestamps saved!', type: 'success' });
+          setMappingEditId(null);
+        } else {
+          showToast({ message: result.error || 'Failed to save timestamps', type: 'error' });
+        }
+      } catch (err: unknown) {
+        showToast({ message: 'Save failed: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
+      }
+    });
+  };
 
   // ── Filtering ──────────────────────────────────────────────────────────────
 
@@ -332,7 +364,8 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           </td>
 
           {/* Title / Links column */}
-          <td className={`py-2.5 font-medium text-navy-900 max-w-[240px] ${isSub ? 'pl-8 pr-4' : 'px-4'}`}>
+          <td className={`py-2.5 font-medium max-w-[240px] ${isSub ? 'pl-8 pr-4' : 'px-4'}`}
+              style={{ color: 'var(--text-primary)' }}>
             {editingId === r.id ? (
               <EditForm state={editState} onChange={setEditState} />
             ) : (
@@ -426,6 +459,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               ) : (
                 <>
                   <button onClick={() => startEdit(r)} className="text-navy-400 hover:text-gold-500 p-1 rounded hover:bg-gold-50 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => openTimestampEditor(r)} className="text-navy-400 hover:text-purple-500 p-1 rounded hover:bg-purple-50 transition" title="Timestamps"><Clock className="w-4 h-4" /></button>
                   <button onClick={() => openSubtopic(r)} className="text-navy-400 hover:text-blue-500 p-1 rounded hover:bg-blue-50 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
                   <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-navy-400 hover:text-gold-500 p-1 rounded hover:bg-gold-50 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
                   <button onClick={() => handleDelete(r.id, r.title)} className="text-navy-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
@@ -472,6 +506,134 @@ export default function ResourceGridClient({ initialResources }: { initialResour
             </td>
           </tr>
         )}
+
+        {/* Inline timestamp mapping editor */}
+        {mappingEditId === r.id && (
+          <tr key={`ts-editor-${r.id}`} className="bg-purple-50/50 border-l-4 border-purple-400">
+            <td colSpan={8} className="px-4 py-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-purple-700 uppercase tracking-widest flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" /> Question Timestamps
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const next = mappingDraft.length + 1;
+                        setMappingDraft([...mappingDraft, { question: next, label: `Q${next}`, start_time: 0, parts: [] }]);
+                      }}
+                      className="text-xs font-semibold text-purple-600 hover:text-purple-800 px-2 py-1 rounded border border-purple-200 hover:bg-purple-100 transition"
+                    >+ Add Question</button>
+                  </div>
+                </div>
+
+                {mappingDraft.map((q: any, qi: number) => (
+                  <div key={qi} className="flex flex-col gap-2 p-2 bg-white rounded-lg border border-purple-100">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        value={q.label}
+                        onChange={e => {
+                          const copy = [...mappingDraft];
+                          copy[qi] = { ...copy[qi], label: e.target.value };
+                          setMappingDraft(copy);
+                        }}
+                        className="w-16 px-2 py-1 text-xs font-bold border border-purple-200 rounded-md text-center"
+                        placeholder="Q1"
+                      />
+                      <span className="text-xs text-navy-400">@</span>
+                      <input
+                        type="text"
+                        value={(() => { const m = Math.floor(q.start_time / 60); const s = q.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
+                        onChange={e => {
+                          const [mm, ss] = e.target.value.split(':').map(Number);
+                          const copy = [...mappingDraft];
+                          copy[qi] = { ...copy[qi], start_time: (mm || 0) * 60 + (ss || 0) };
+                          setMappingDraft(copy);
+                        }}
+                        className="w-16 px-2 py-1 text-xs font-mono border border-purple-200 rounded-md text-center"
+                        placeholder="0:00"
+                        title="MM:SS"
+                      />
+                      <button
+                        onClick={() => {
+                          const copy = [...mappingDraft];
+                          const parts = copy[qi].parts || [];
+                          const nextPart = String.fromCharCode(97 + parts.length); // a, b, c...
+                          copy[qi] = { ...copy[qi], parts: [...parts, { part: nextPart, start_time: q.start_time, pdf_page: 1 }] };
+                          setMappingDraft(copy);
+                        }}
+                        className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold px-1.5 py-0.5 rounded border border-blue-200 hover:bg-blue-50 transition"
+                      >+ Part</button>
+                      <button
+                        onClick={() => setMappingDraft(mappingDraft.filter((_: any, i: number) => i !== qi))}
+                        className="text-red-400 hover:text-red-600 p-0.5 rounded hover:bg-red-50 transition ml-auto"
+                        title="Remove question"
+                      ><Trash2 className="w-3 h-3" /></button>
+                    </div>
+
+                    {/* Sub-parts */}
+                    {q.parts && q.parts.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pl-6">
+                        {q.parts.map((part: any, pi: number) => (
+                          <div key={pi} className="flex items-center gap-1 bg-blue-50 rounded px-2 py-1">
+                            <span className="text-xs font-bold text-blue-700 w-4">{part.part.toUpperCase()}</span>
+                            <input
+                              type="text"
+                              value={(() => { const m = Math.floor(part.start_time / 60); const s = part.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
+                              onChange={e => {
+                                const [mm, ss] = e.target.value.split(':').map(Number);
+                                const copy = [...mappingDraft];
+                                const pcopy = [...copy[qi].parts];
+                                pcopy[pi] = { ...pcopy[pi], start_time: (mm || 0) * 60 + (ss || 0) };
+                                copy[qi] = { ...copy[qi], parts: pcopy };
+                                setMappingDraft(copy);
+                              }}
+                              className="w-14 px-1 py-0.5 text-[10px] font-mono border border-blue-200 rounded text-center"
+                              title="MM:SS"
+                            />
+                            <input
+                              type="number" min="1"
+                              value={part.pdf_page || ''}
+                              onChange={e => {
+                                const copy = [...mappingDraft];
+                                const pcopy = [...copy[qi].parts];
+                                pcopy[pi] = { ...pcopy[pi], pdf_page: parseInt(e.target.value) || 1 };
+                                copy[qi] = { ...copy[qi], parts: pcopy };
+                                setMappingDraft(copy);
+                              }}
+                              className="w-10 px-1 py-0.5 text-[10px] border border-blue-200 rounded text-center"
+                              placeholder="pg"
+                              title="PDF page number"
+                            />
+                            <button
+                              onClick={() => {
+                                const copy = [...mappingDraft];
+                                copy[qi] = { ...copy[qi], parts: copy[qi].parts.filter((_: any, i: number) => i !== pi) };
+                                setMappingDraft(copy);
+                              }}
+                              className="text-red-400 hover:text-red-600 p-0.5"
+                            ><X className="w-2.5 h-2.5" /></button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => saveTimestamps(r.id)} disabled={isPending}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition disabled:opacity-50">
+                    <Check className="w-3.5 h-3.5" /> Save Timestamps
+                  </button>
+                  <button onClick={cancelTimestampEditor}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-navy-600 bg-white hover:bg-navy-50 rounded-lg border border-navy-200 transition">
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        )}
       </>
     );
   };
@@ -498,9 +660,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       </div>
 
       {/* Hierarchical table */}
-      <div className="overflow-x-auto border border-navy-100 rounded-xl max-h-[70vh] overflow-y-auto shadow-sm">
+      <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm"
+           style={{ border: '1px solid var(--border-color)' }}>
         <table className="w-full text-sm text-left">
-          <thead className="text-[10px] uppercase tracking-wider bg-navy-900 text-navy-300 sticky top-0 z-10">
+          <thead className="text-[10px] uppercase tracking-wider sticky top-0 z-10"
+                 style={{ backgroundColor: 'var(--badge-bg)', color: 'var(--text-on-dark)' }}>
             <tr>
               <th className="w-12 px-3 py-3 text-center">#</th>
               <th className="px-4 py-3">Topic / Title</th>
@@ -512,7 +676,8 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               <th className="w-28 px-3 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-navy-50/80">
+          <tbody style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                 className="divide-y" >
             {paperGroups.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-navy-400 text-sm">No resources found.</td>
@@ -521,14 +686,16 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               paperGroups.map(paper => (
                 <>
                   {/* ── Paper group header ── */}
-                  <tr key={`header-${paper.categoryId}`} className="bg-navy-50 border-y border-navy-200">
+                  <tr key={`header-${paper.categoryId}`}
+                      style={{ backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
                     <td colSpan={8} className="px-4 py-2">
                       <div className="flex items-center gap-2">
-                        <FolderOpen className="w-4 h-4 text-gold-500" />
-                        <span className="text-xs font-bold text-navy-700 uppercase tracking-widest">
+                        <FolderOpen className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                        <span className="text-xs font-bold uppercase tracking-widest"
+                              style={{ color: 'var(--text-secondary)' }}>
                           {paper.categoryName}
                         </span>
-                        <span className="text-xs text-navy-400">
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                           · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
                         </span>
                       </div>
