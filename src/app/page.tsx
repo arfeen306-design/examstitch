@@ -100,7 +100,7 @@ export default function HomePage() {
               <span className="sr-only">Master O and A-level Mathematics, Computer Science, Physics, Chemistry</span>
               <div aria-hidden="true" className="flex flex-col items-center justify-center">
                 <span className="block mb-2">Master O and A-level</span>
-                <span className="relative inline-flex items-center justify-center w-[280px] sm:w-[400px] lg:w-[500px] h-[1.2em] overflow-hidden">
+                <span className="relative inline-flex items-center justify-center w-full max-w-[640px] px-4 h-[1.2em] overflow-hidden">
                   <AnimatePresence mode="popLayout">
                     <motion.span
                       key={subjectIndex}
