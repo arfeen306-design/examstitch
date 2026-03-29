@@ -14,8 +14,17 @@ export function toEmbedUrl(url: string): { embedUrl: string; type: 'youtube' | '
   const ytRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
   const ytMatch = url.match(ytRegex);
   if (ytMatch) {
+    const params = new URLSearchParams({
+      rel: '0',              // no suggestions from other channels
+      modestbranding: '1',   // minimal YouTube branding
+      showinfo: '0',         // legacy: hide title bar
+      controls: '1',         // keep player controls
+      iv_load_policy: '3',   // hide video annotations
+      enablejsapi: '1',      // enable IFrame API for end-of-video detection
+      origin: 'https://examstitch.com',
+    });
     return {
-      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`,
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?${params.toString()}`,
       type: 'youtube',
     };
   }
