@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { siteConfig } from '@/config/site';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import './globals.css';
 
 const inter = Inter({
@@ -46,10 +47,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
+      {/* Anti-flash: apply saved theme before React hydration */}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            var t = localStorage.getItem('examstitch-theme');
+            if(t && ['default','dark','beach','forest'].includes(t)){
+              document.documentElement.setAttribute('data-theme', t);
+            }
+          })();
+        `}} />
+      </head>
       <body className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

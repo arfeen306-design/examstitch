@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, GraduationCap } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
 import { FEATURES } from '@/config/features';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -70,6 +71,7 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             {FEATURES.AUTH_ENABLED && (
               <>
                 <Link
@@ -108,6 +110,9 @@ export default function Navbar() {
               className="md:hidden overflow-hidden border-t border-white/10"
             >
               <div className="py-4 space-y-1">
+                <div className="px-4 pb-2">
+                  <ThemeToggle />
+                </div>
                 {mainNavItems.map((item) => (
                   <div key={item.href}>
                     <Link

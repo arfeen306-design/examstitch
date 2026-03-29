@@ -2,31 +2,165 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   THEME TOKENS
+   Applied via data-theme on <html>. Components read CSS vars for key surfaces.
+───────────────────────────────────────────────────────────────────────────── */
+
+:root,
+[data-theme='default'] {
+  --bg-main:        #0F1A38;
+  --bg-card:        #1A2B56;
+  --bg-surface:     #243870;
+  --bg-navbar:      rgba(15, 26, 56, 0.92);
+  --text-primary:   #FFFFFF;
+  --text-secondary: rgba(255,255,255,0.55);
+  --text-muted:     rgba(255,255,255,0.30);
+  --accent:         #D4AF37;        /* gold */
+  --accent-hover:   #E9C94A;
+  --accent-fg:      #0F1A38;        /* text on accent bg */
+  --border-color:   rgba(255,255,255,0.10);
+  --hero-grad:      linear-gradient(135deg, #1A2B56 0%, #0F1A38 50%, #1A2B56 100%);
+  --accent-grad:    linear-gradient(135deg, #D4AF37 0%, #E9B82E 50%, #D4AF37 100%);
+  --row-stripe:     rgba(255,255,255,0.02);
+  --shadow-card:    0 8px 32px rgba(0,0,0,0.35);
+}
+
+[data-theme='dark'] {
+  --bg-main:        #0A0A0F;
+  --bg-card:        #13131A;
+  --bg-surface:     #1E1E2E;
+  --bg-navbar:      rgba(10, 10, 15, 0.95);
+  --text-primary:   #E8E8F0;
+  --text-secondary: rgba(232,232,240,0.55);
+  --text-muted:     rgba(232,232,240,0.30);
+  --accent:         #A78BFA;        /* violet */
+  --accent-hover:   #C4B5FD;
+  --accent-fg:      #0A0A0F;
+  --border-color:   rgba(167,139,250,0.15);
+  --hero-grad:      linear-gradient(135deg, #13131A 0%, #0A0A0F 50%, #13131A 100%);
+  --accent-grad:    linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
+  --row-stripe:     rgba(167,139,250,0.03);
+  --shadow-card:    0 8px 32px rgba(0,0,0,0.60);
+}
+
+[data-theme='beach'] {
+  --bg-main:        #F5F0E8;
+  --bg-card:        #FFFBF4;
+  --bg-surface:     #EDE8DE;
+  --bg-navbar:      rgba(245,240,232,0.96);
+  --text-primary:   #1A3A5C;
+  --text-secondary: rgba(26,58,92,0.60);
+  --text-muted:     rgba(26,58,92,0.35);
+  --accent:         #0E7EC0;        /* ocean blue */
+  --accent-hover:   #1A6FA8;
+  --accent-fg:      #FFFFFF;
+  --border-color:   rgba(26,58,92,0.12);
+  --hero-grad:      linear-gradient(135deg, #B3D8F0 0%, #87C5E8 50%, #B3D8F0 100%);
+  --accent-grad:    linear-gradient(135deg, #0E7EC0 0%, #0A5C8A 100%);
+  --row-stripe:     rgba(14,126,192,0.04);
+  --shadow-card:    0 4px 20px rgba(26,58,92,0.10);
+}
+
+[data-theme='forest'] {
+  --bg-main:        #0D1F0F;
+  --bg-card:        #142916;
+  --bg-surface:     #1D3B20;
+  --bg-navbar:      rgba(13, 31, 15, 0.94);
+  --text-primary:   #E8F5E9;
+  --text-secondary: rgba(232,245,233,0.55);
+  --text-muted:     rgba(232,245,233,0.30);
+  --accent:         #4ADE80;        /* lime green */
+  --accent-hover:   #22C55E;
+  --accent-fg:      #0D1F0F;
+  --border-color:   rgba(74,222,128,0.15);
+  --hero-grad:      linear-gradient(135deg, #142916 0%, #0D1F0F 50%, #142916 100%);
+  --accent-grad:    linear-gradient(135deg, #4ADE80 0%, #16A34A 100%);
+  --row-stripe:     rgba(74,222,128,0.03);
+  --shadow-card:    0 8px 32px rgba(0,0,0,0.45);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE STYLES
+───────────────────────────────────────────────────────────────────────────── */
+
 @layer base {
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-white text-navy-900 font-sans antialiased;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    @apply font-sans antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   ::selection {
-    @apply bg-gold-500/20 text-navy-900;
+    background-color: color-mix(in srgb, var(--accent) 25%, transparent);
+    color: var(--text-primary);
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   COMPONENT OVERRIDES — theme-aware
+───────────────────────────────────────────────────────────────────────────── */
+
 @layer components {
   .glass-navbar {
-    @apply backdrop-blur-xl bg-navy-900/90 border-b border-white/10;
+    background-color: var(--bg-navbar);
+    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .gradient-hero {
-    background: linear-gradient(135deg, #1A2B56 0%, #0F1A38 50%, #1A2B56 100%);
+    background: var(--hero-grad);
   }
 
   .gradient-gold {
-    background: linear-gradient(135deg, #D4AF37 0%, #E9B82E 50%, #D4AF37 100%);
+    background: var(--accent-grad);
+  }
+
+  /* Beach theme: flip navbar text to dark */
+  [data-theme='beach'] .glass-navbar .text-white,
+  [data-theme='beach'] .glass-navbar .text-white\/80 {
+    color: var(--text-primary) !important;
+  }
+  [data-theme='beach'] .glass-navbar .hover\:text-gold-500:hover {
+    color: var(--accent) !important;
+  }
+  [data-theme='beach'] .glass-navbar .text-gold-500 {
+    color: var(--accent) !important;
+  }
+
+  /* Accent recolor across themes */
+  [data-theme='dark'] .text-gold-500,
+  [data-theme='forest'] .text-gold-500,
+  [data-theme='beach'] .text-gold-500 {
+    color: var(--accent) !important;
+  }
+
+  /* Card surfaces */
+  .theme-card {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Table zebra stripe */
+  .theme-table-row-stripe {
+    background-color: var(--row-stripe);
+  }
+
+  /* Admin table overrides */
+  [data-theme='beach'] table thead,
+  [data-theme='beach'] .admin-table-header {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+  }
+  [data-theme='beach'] table tbody tr:hover {
+    background-color: var(--row-stripe) !important;
   }
 
   .card-hover {
@@ -34,7 +168,8 @@
   }
 
   .card-hover:hover {
-    @apply -translate-y-1 shadow-xl shadow-navy-900/10;
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card);
   }
 
   .gold-underline {
@@ -43,11 +178,15 @@
 
   .gold-underline::after {
     content: '';
-    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-gold-500 transition-all duration-300;
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0; height: 2px;
+    background-color: var(--accent);
+    transition: width 0.3s ease;
   }
 
   .gold-underline:hover::after {
-    @apply w-full;
+    width: 100%;
   }
 }
 
@@ -55,4 +194,10 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Shorthand for accent color (works alongside Tailwind) */
+  .text-accent   { color: var(--accent); }
+  .bg-accent     { background-color: var(--accent); }
+  .border-accent { border-color: var(--accent); }
 }
+
