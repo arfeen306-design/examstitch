@@ -206,12 +206,10 @@ function YouTubeLockedPlayer({
 // ── Google Drive / PDF Viewer ──────────────────────────────────────────────
 
 function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
+  const beige = '#f5f0e8';
   return (
     <div className="relative w-full rounded-lg overflow-hidden"
-         style={{
-           backgroundColor: '#f5f0e8',
-           border: '1px solid #e8e0d0',
-         }}>
+         style={{ backgroundColor: beige, border: '1px solid #e8e0d0' }}>
       <iframe
         src={embedUrl}
         title={title}
@@ -220,9 +218,20 @@ function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
         allow="autoplay"
         loading="lazy"
       />
+
+      {/* ── Edge overlays to mask Google Drive's internal black borders ── */}
+      <div className="absolute top-0 left-0 right-0 pointer-events-none z-10"
+           style={{ height: '3px', backgroundColor: beige }} />
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
+           style={{ height: '3px', backgroundColor: beige }} />
+      <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-10"
+           style={{ width: '3px', backgroundColor: beige }} />
+      <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-10"
+           style={{ width: '6px', backgroundColor: beige }} />
+
       {/* Cover Google Drive's "open in new window" icon, top-right */}
-      <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-10 rounded-bl-lg"
-           style={{ backgroundColor: '#f5f0e8' }} />
+      <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-20 rounded-bl-lg"
+           style={{ backgroundColor: beige }} />
     </div>
   );
 }
