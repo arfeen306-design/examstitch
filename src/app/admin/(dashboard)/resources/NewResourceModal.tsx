@@ -118,18 +118,38 @@ export default function NewResourceModal({
         return;
       }
 
-      payloads.push({
-        title: richTitle,
-        subject: formData.subject,
-        category_id: formData.category_id,
-        source_url: formData.solution_url,
-        source_type: 'google_drive',
-        content_type: 'pdf',
-        module_type: 'solved_past_paper',
-        is_published: true,
-        is_locked: false,
-        is_watermarked: false,
-      });
+      // If admin also provided a YouTube video → save as video resource with PDF as worksheet
+      // This enables the Interactive Solver dual-pane view
+      const hasVideo = formData.video_url && validateUrl(formData.video_url);
+
+      if (hasVideo) {
+        payloads.push({
+          title: richTitle,
+          subject: formData.subject,
+          category_id: formData.category_id,
+          source_url: formData.video_url,
+          worksheet_url: formData.solution_url,
+          source_type: 'youtube',
+          content_type: 'video',
+          module_type: 'solved_past_paper',
+          is_published: true,
+          is_locked: false,
+          is_watermarked: false,
+        });
+      } else {
+        payloads.push({
+          title: richTitle,
+          subject: formData.subject,
+          category_id: formData.category_id,
+          source_url: formData.solution_url,
+          source_type: 'google_drive',
+          content_type: 'pdf',
+          module_type: 'solved_past_paper',
+          is_published: true,
+          is_locked: false,
+          is_watermarked: false,
+        });
+      }
     }
 
     try {
@@ -203,7 +223,7 @@ export default function NewResourceModal({
                 <FileText className="w-5 h-5" />
                 <div className="text-left">
                   <div className="font-semibold">Solved Past Paper</div>
-                  <div className="text-xs opacity-70">Standalone PDF</div>
+                  <div className="text-xs opacity-70">PDF + optional Video</div>
                 </div>
               </button>
             </div>
@@ -274,10 +294,17 @@ export default function NewResourceModal({
                     </div>
                   </>
                 ) : (
-                  <div>
-                    <label className="block text-xs font-medium text-blue-600 mb-1">PDF Solution Link *</label>
-                    <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-blue-600 mb-1">PDF Solution Link *</label>
+                      <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Walkthrough (Optional)</label>
+                      <input value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-red-500 focus:border-red-500 font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
+                      <p className="text-[10px] text-navy-400 mt-1">Adding a video enables the Interactive Solver (split-screen PDF + Video)</p>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
