@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { FileText, PlayCircle, BookOpen, Printer, Download, ExternalLink } from 'lucide-react';
+import { FileText, PlayCircle, BookOpen, ExternalLink } from 'lucide-react';
 
 interface ResourceCardProps {
   title: string;
@@ -17,9 +17,9 @@ interface ResourceCardProps {
 }
 
 const typeConfig = {
-  video: { icon: PlayCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'Video' },
-  pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50', label: 'Past Paper' },
-  worksheet: { icon: BookOpen, color: 'text-green-500', bg: 'bg-green-50', label: 'Worksheet' },
+  video: { icon: PlayCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'Video', accent: 'border-red-200 hover:border-red-400' },
+  pdf: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50', label: 'Past Paper', accent: 'border-blue-200 hover:border-blue-400' },
+  worksheet: { icon: BookOpen, color: 'text-green-500', bg: 'bg-green-50', label: 'Worksheet', accent: 'border-green-200 hover:border-green-400' },
 };
 
 export default function ResourceCard({
@@ -42,89 +42,39 @@ export default function ResourceCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: Math.min(index * 0.03, 0.3) }}
     >
-      {href.startsWith('http') ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="block group">
-          <div className="card-hover bg-white border border-navy-100 rounded-2xl p-5 hover:border-gold-500/30">
-            <div className="flex items-start gap-4">
-              <div className={`shrink-0 w-11 h-11 ${config.bg} rounded-xl flex items-center justify-center`}>
-                <Icon className={`w-5 h-5 ${config.color}`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-xs font-medium ${config.color} ${config.bg} px-2 py-0.5 rounded-full`}>
-                    {config.label}
-                  </span>
-                  {year && (
-                    <span className="text-xs text-navy-400">
-                      {session} {year}{variant ? ` V${variant}` : ''}
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-600 transition-colors truncate">
-                  {title}
-                </h3>
-                {description && (
-                  <p className="text-xs text-navy-500 mt-1 line-clamp-2">{description}</p>
-                )}
-                {subject && (
-                  <span className="inline-block mt-2 text-xs text-navy-400 bg-navy-50 px-2 py-0.5 rounded-full">
-                    {subject}
-                  </span>
-                )}
-              </div>
-              <ExternalLink className="w-4 h-4 text-navy-300 group-hover:text-gold-500 transition-colors shrink-0 mt-1" />
+      <Link href={href} className="block group">
+        <div className={`card-hover bg-white border rounded-2xl p-5 transition-all duration-200 ${config.accent} hover:shadow-md`}>
+          <div className="flex items-start gap-4">
+            <div className={`shrink-0 w-11 h-11 ${config.bg} rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform`}>
+              <Icon className={`w-5 h-5 ${config.color}`} />
             </div>
-          </div>
-        </a>
-      ) : (
-        <Link href={href} className="block group">
-          <div className="card-hover bg-white border border-navy-100 rounded-2xl p-5 hover:border-gold-500/30">
-            <div className="flex items-start gap-4">
-              <div className={`shrink-0 w-11 h-11 ${config.bg} rounded-xl flex items-center justify-center`}>
-                <Icon className={`w-5 h-5 ${config.color}`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-xs font-medium ${config.color} ${config.bg} px-2 py-0.5 rounded-full`}>
-                    {config.label}
-                  </span>
-                  {year && (
-                    <span className="text-xs text-navy-400">
-                      {session} {year}{variant ? ` V${variant}` : ''}
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-600 transition-colors truncate">
-                  {title}
-                </h3>
-                {description && (
-                  <p className="text-xs text-navy-500 mt-1 line-clamp-2">{description}</p>
-                )}
-                {subject && (
-                  <span className="inline-block mt-2 text-xs text-navy-400 bg-navy-50 px-2 py-0.5 rounded-full">
-                    {subject}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-xs font-medium ${config.color} ${config.bg} px-2 py-0.5 rounded-full`}>
+                  {config.label}
+                </span>
+                {year && (
+                  <span className="text-xs text-navy-400">
+                    {session} {year}{variant ? ` V${variant}` : ''}
                   </span>
                 )}
               </div>
+              <h3 className="text-sm font-semibold text-navy-900 group-hover:text-gold-600 transition-colors truncate">
+                {title}
+              </h3>
+              {description && (
+                <p className="text-xs text-navy-500 mt-1 line-clamp-2">{description}</p>
+              )}
+              {subject && (
+                <span className="inline-block mt-2 text-xs text-navy-400 bg-navy-50 px-2 py-0.5 rounded-full">
+                  {subject}
+                </span>
+              )}
             </div>
-
-            {/* Action buttons for PDF type */}
-            {contentType === 'pdf' && (
-              <div className="mt-4 pt-3 border-t border-navy-50 flex gap-2">
-                <span className="flex items-center gap-1 text-xs text-navy-400 hover:text-navy-600 transition-colors">
-                  <ExternalLink className="w-3.5 h-3.5" /> View
-                </span>
-                <span className="flex items-center gap-1 text-xs text-navy-400 hover:text-navy-600 transition-colors">
-                  <Printer className="w-3.5 h-3.5" /> Print
-                </span>
-                <span className="flex items-center gap-1 text-xs text-navy-400 hover:text-navy-600 transition-colors">
-                  <Download className="w-3.5 h-3.5" /> Download
-                </span>
-              </div>
-            )}
+            <ExternalLink className="w-4 h-4 text-navy-200 group-hover:text-gold-500 transition-colors shrink-0 mt-1" />
           </div>
-        </Link>
-      )}
+        </div>
+      </Link>
     </motion.div>
   );
 }
