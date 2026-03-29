@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 interface ViewerPageProps {
   params: { id: string };
+  searchParams: { mode?: string };
 }
 
 async function getResource(id: string) {
@@ -28,18 +29,11 @@ function buildBackPath(resource: any): { href: string; label: string } {
   }
 
   const subjectSlug = category.subjects?.slug || resource.subject || 'mathematics-9709';
-  const subjectCode = category.subjects?.code || '';
   const categorySlug = category.slug || '';
 
-  // Determine the content section from content_type
-  const section =
-    resource.content_type === 'video' ? 'video-lectures' :
-    resource.content_type === 'worksheet' ? 'topical' :
-    'past-papers';
+  const section = 'video-lectures';
 
-  // A-Level papers have slugs like paper-1-pure-mathematics
   if (categorySlug.startsWith('paper-')) {
-    // Determine AS vs A2 based on paper number
     const paperNum = parseInt(categorySlug.match(/paper-(\d+)/)?.[1] || '1');
     const level = paperNum <= 2 || paperNum === 5 ? 'as-level' : 'a2-level';
     return {
@@ -48,7 +42,6 @@ function buildBackPath(resource: any): { href: string; label: string } {
     };
   }
 
-  // O-Level grades
   if (categorySlug.startsWith('grade-')) {
     return {
       href: `/olevel/${subjectSlug}/${categorySlug}/${section}`,
@@ -59,19 +52,32 @@ function buildBackPath(resource: any): { href: string; label: string } {
   return { href: '/', label: 'Back to Home' };
 }
 
-export async function generateMetadata({ params }: ViewerPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: ViewerPageProps): Promise<Metadata> {
   const resource = await getResource(params.id);
   if (!resource) return { title: 'Resource Not Found — ExamStitch' };
 
+  const isWorksheet = searchParams.mode === 'worksheet';
+  const suffix = isWorksheet ? ' — Worksheet' : '';
+
   return {
-    title: `${resource.title} — ExamStitch`,
-    description: resource.description || `View ${resource.content_type} resource on ExamStitch.`,
+    title: `${resource.title}${suffix} — ExamStitch`,
+    description: resource.description || `View resource on ExamStitch.`,
   };
 }
 
-export default async function ViewerPage({ params }: ViewerPageProps) {
+export default async function ViewerPage({ params, searchParams }: ViewerPageProps) {
   const resource = await getResource(params.id);
   if (!resource) notFound();
+
+  const isWorksheet = searchParams.mode === 'worksheet';
+  const worksheetUrl = (resource as any).worksheet_url;
+
+  // If worksheet mode requested but no worksheet URL exists, fall back to video
+  const showWorksheet = isWorksheet && !!worksheetUrl;
+
+  const sourceUrl = showWorksheet ? worksheetUrl : resource.source_url;
+  const contentType = showWorksheet ? 'pdf' : resource.content_type;
+  const title = showWorksheet ? `${resource.title} — Worksheet` : resource.title;
 
   const { href: backHref, label: backLabel } = buildBackPath(resource);
 
@@ -79,9 +85,9 @@ export default async function ViewerPage({ params }: ViewerPageProps) {
     <div className="min-h-screen pt-24 pb-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <EmbeddedViewer
-          title={resource.title}
-          sourceUrl={resource.source_url}
-          contentType={resource.content_type}
+          title={title}
+          sourceUrl={sourceUrl}
+          contentType={contentType}
           backHref={backHref}
           backLabel={backLabel}
         />

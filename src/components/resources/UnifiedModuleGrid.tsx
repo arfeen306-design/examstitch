@@ -111,7 +111,7 @@ function TopicRow({ module, index }: { module: LearningModule; index: number }) 
         {/* Worksheet pill — only shown if worksheet URL exists */}
         {module.worksheetUrl && (
           <Link
-            href={`/view/${module.id}?tab=worksheet`}
+            href={`/view/${module.id}?mode=worksheet`}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5
                        border border-navy-200 bg-white hover:bg-navy-50
                        text-navy-600 hover:text-navy-900
