@@ -105,10 +105,10 @@ export default function PastPapersPage({
   const paperName = paperConfig?.label || params.paper.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   
   // Try to determine the level
-  const levelStr = aLevelPapers['as-level'].find(p => p.slug === params.paper) ? 'as-level' : 'a2-level';
-  const levelName = levelStr === 'as-level' ? 'AS Level' : 'A2 Level';
+  const levelSlug = aLevelPapers['as-level'].find(p => p.slug === params.paper) ? 'as-level' : 'a2-level';
+  const levelName = levelSlug === 'as-level' ? 'AS Level' : 'A2 Level';
   
-  const basePath = `/alevel/${params.subject}/${levelStr}/${params.paper}/past-papers`;
+  const basePath = `/alevel/${params.subject}/${levelSlug}/${params.paper}/past-papers`;
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -120,9 +120,9 @@ export default function PastPapersPage({
             <span className="text-white/30">/</span>
             <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (9709)</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/alevel/${params.subject}/${levelStr}`} className="text-white/50 hover:text-white/70 transition-colors">{${levelName}}</Link>
+            <Link href={`/alevel/${params.subject}/${levelSlug}`} className="text-white/50 hover:text-white/70 transition-colors">{levelName}</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/alevel/${params.subject}/${levelStr}/${params.paper}`} className="text-white/50 hover:text-white/70 transition-colors">{${paperName}}</Link>
+            <Link href={`/alevel/${params.subject}/${levelSlug}/${params.paper}`} className="text-white/50 hover:text-white/70 transition-colors">{paperName}</Link>
             <span className="text-white/30">/</span>
             <span className="text-gold-500 font-medium">Past Papers</span>
           </div>
