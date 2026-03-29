@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import EmbeddedViewer from '@/components/resources/EmbeddedViewer';
-import InteractiveSolver from '@/components/resources/InteractiveSolver';
-import type { QuestionMapping } from '@/components/resources/InteractiveSolver';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -73,32 +71,6 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
 
   const isWorksheet = searchParams.mode === 'worksheet';
   const worksheetUrl = (resource as any).worksheet_url;
-  const questionMapping = (resource as any).question_mapping as QuestionMapping[] | null;
-
-  // ── Interactive Solver mode ──────────────────────────────────────────────
-  // Activates when the resource has BOTH a video AND a PDF AND question mappings
-  const hasVideo = resource.source_url && resource.content_type === 'video';
-  const hasPdf = !!worksheetUrl;
-  const hasMapping = Array.isArray(questionMapping) && questionMapping.length > 0;
-  const useInteractiveSolver = hasVideo && hasPdf && hasMapping && !isWorksheet;
-
-  if (useInteractiveSolver) {
-    const { href: backHref, label: backLabel } = buildBackPath(resource);
-    return (
-      <div className="min-h-screen pt-24 pb-16">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <InteractiveSolver
-            title={resource.title}
-            videoUrl={resource.source_url}
-            pdfUrl={worksheetUrl}
-            questionMapping={questionMapping!}
-            backHref={backHref}
-            backLabel={backLabel}
-          />
-        </div>
-      </div>
-    );
-  }
 
   // ── Standard single-pane viewer ──────────────────────────────────────────
   const showWorksheet = isWorksheet && !!worksheetUrl;
