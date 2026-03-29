@@ -1,0 +1,10 @@
+export const FEATURES = {
+  AUTH_ENABLED: false,
+  TUTOR_REGISTRATION: false,
+  STUDENT_ENROLLMENT: false,
+  RESOURCE_LOCKING: false,
+  BLOG_ENABLED: true,
+  MULTI_SUBJECT: false,
+  NOTIFY_ME_ENABLED: true,
+  VIDEO_SOLUTIONS: true,
+};

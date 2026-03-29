@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-navy-900 font-sans antialiased;
+  }
+
+  ::selection {
+    @apply bg-gold-500/20 text-navy-900;
+  }
+}
+
+@layer components {
+  .glass-navbar {
+    @apply backdrop-blur-xl bg-navy-900/90 border-b border-white/10;
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, #1A2B56 0%, #0F1A38 50%, #1A2B56 100%);
+  }
+
+  .gradient-gold {
+    background: linear-gradient(135deg, #D4AF37 0%, #E9B82E 50%, #D4AF37 100%);
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-xl shadow-navy-900/10;
+  }
+
+  .gold-underline {
+    @apply relative;
+  }
+
+  .gold-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-gold-500 transition-all duration-300;
+  }
+
+  .gold-underline:hover::after {
+    @apply w-full;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
