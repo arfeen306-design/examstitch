@@ -11,7 +11,7 @@
  * callers without the verbose generated types.
  */
 
-import { createClient } from './server';
+import { createAdminClient } from './admin';
 import { unstable_cache } from 'next/cache';
 
 // Cache revalidation: 1 hour for near-static data, 5 min for resources
@@ -32,7 +32,7 @@ import type {
 
 export const getLevels = unstable_cache(
   async (): Promise<Level[]> => {
-    const supabase = createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
       .from('levels')
       .select('*')
@@ -54,7 +54,7 @@ export const getLevels = unstable_cache(
 export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject[]> {
   return unstable_cache(
     async () => {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('subjects')
         .select('*, levels!inner ( slug )')
@@ -75,7 +75,7 @@ export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject
 export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
   return unstable_cache(
     async () => {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('subjects')
         .select('*')
@@ -101,7 +101,7 @@ export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
 export async function getCategoriesBySubjectSlug(subjectSlug: string): Promise<Category[]> {
   return unstable_cache(
     async () => {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('categories')
         .select('*, subjects!inner ( slug )')
@@ -126,7 +126,7 @@ export async function getCategoryBySlug(
 ): Promise<Category | null> {
   return unstable_cache(
     async () => {
-      const supabase = createClient();
+      const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('categories')
         .select('*, subjects!inner ( slug )')
@@ -159,7 +159,7 @@ export async function getResourcesByCategory(
   const cacheKey = `resources-${categoryId}-${contentType ?? 'all'}-${moduleType ?? 'all'}`;
   return unstable_cache(
     async () => {
-      const supabase = createClient();
+      const supabase = createAdminClient();
 
       let query = supabase
         .from('resources')
@@ -188,7 +188,7 @@ export async function getResourcesByTopic(
   categoryId: string,
   topic: string,
 ): Promise<Resource[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('resources')
     .select('*')
@@ -207,7 +207,7 @@ export async function getResourcesByTopic(
 export async function getTopicsByCategory(
   categoryId: string,
 ): Promise<{ topic: string; count: number }[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('resources')
     .select('topic')
@@ -231,7 +231,7 @@ export async function getTopicsByCategory(
  * Fetches a single resource by its UUID.
  */
 export async function getResourceById(id: string): Promise<Resource | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('resources')
     .select('*')
@@ -247,7 +247,7 @@ export async function getResourceById(id: string): Promise<Resource | null> {
  * Fetches the latest N published resources. Used on the homepage.
  */
 export async function getLatestResources(limit = 6): Promise<Resource[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('resources')
     .select('*')
@@ -269,7 +269,7 @@ export async function getLatestResources(limit = 6): Promise<Resource[]> {
  * Each row maps:  question_number + label → timestamp_seconds + video_id
  */
 export async function getSolutionsForPaper(paperId: string): Promise<ResourceSolution[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('resource_solutions')
     .select('*')
@@ -307,7 +307,7 @@ export async function getSolutionVideo(videoResourceId: string): Promise<Resourc
  *  Tier 3 — Per-word prefix ILIKE (catches abbreviations like "Diff" for "Differentiation")
  */
 export async function searchResources(query: string, limit = 60): Promise<Resource[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const trimmed = query.trim().slice(0, 120);
   if (!trimmed) return [];
 
@@ -383,7 +383,7 @@ export async function searchResources(query: string, limit = 60): Promise<Resour
  * Only returns titles whose prefix matches at least one word in the query.
  */
 export async function getSuggestions(query: string, count = 6): Promise<string[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const trimmed = query.trim().slice(0, 60);
   if (!trimmed) return [];
 
@@ -443,7 +443,7 @@ export async function searchResourcesCategorised(query: string): Promise<Categor
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getBlogPosts(limit = 10): Promise<BlogPost[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('blog_posts')
     .select('id, title, slug, created_at, is_published, author_id, content, updated_at')
@@ -455,7 +455,7 @@ export async function getBlogPosts(limit = 10): Promise<BlogPost[]> {
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('blog_posts')
     .select('*')
