@@ -12,12 +12,11 @@ interface EmbeddedViewerProps {
   contentType: 'video' | 'pdf' | 'worksheet';
   backHref: string;
   backLabel: string;
-  /** Optional: href of the next sub-topic for the end-of-video CTA */
   nextHref?: string;
   nextTitle?: string;
 }
 
-// ── YouTube IFrame API types (lightweight) ─────────────────────────────────
+// ── YouTube IFrame API types ───────────────────────────────────────────────
 
 declare global {
   interface Window {
@@ -26,9 +25,9 @@ declare global {
   }
 }
 
-// ── YouTube Locked-In Player ───────────────────────────────────────────────
+// ── Premium VideoFrame ─────────────────────────────────────────────────────
 
-function YouTubeLockedPlayer({
+function VideoFrame({
   embedUrl,
   title,
   nextHref,
@@ -53,30 +52,21 @@ function YouTubeLockedPlayer({
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(tag);
-
     window.onYouTubeIframeAPIReady = () => setApiReady(true);
-    return () => {
-      // cleanup: remove listener but keep script (may be used elsewhere)
-      window.onYouTubeIframeAPIReady = () => {};
-    };
+    return () => { window.onYouTubeIframeAPIReady = () => {}; };
   }, []);
 
-  // Initialise YT.Player once API is ready
+  // Init YT.Player
   useEffect(() => {
     if (!apiReady || !iframeRef.current) return;
-
     playerRef.current = new window.YT.Player(iframeRef.current, {
       events: {
         onStateChange: (e: any) => {
-          // 0 = ended
           if (e.data === 0) setEnded(true);
         },
       },
     });
-
-    return () => {
-      try { playerRef.current?.destroy(); } catch (_) {}
-    };
+    return () => { try { playerRef.current?.destroy(); } catch (_) {} };
   }, [apiReady]);
 
   const handleReplay = useCallback(() => {
@@ -85,121 +75,152 @@ function YouTubeLockedPlayer({
   }, []);
 
   return (
-    /*
-     * Layout trick to hide the YouTube title bar:
-     * - The outer div clips to the visible area (overflow-hidden)
-     * - The inner div is pushed up by ~50px so the YT title bar moves out of view
-     * - Padding-bottom compensates to keep the 16:9 ratio intact
-     *
-     * On mobile the bar is ~44px, on desktop ~50px. 56px is a safe value.
-     */
-    <div className="relative w-full rounded-2xl overflow-hidden shadow-xl border border-navy-100 bg-black">
-      {/* Clipping shell — hides the top YT bar */}
+    <motion.div
+      initial={{ opacity: 0, y: 16, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="max-w-4xl mx-auto group/frame"
+    >
+      {/* ── Device Frame Shell ── */}
       <div
-        className="relative w-full overflow-hidden"
-        style={{ paddingBottom: 'calc(56.25% + 56px)' }} // extra height for the crop
+        className="relative rounded-2xl overflow-hidden transition-all duration-500
+                   hover:scale-[1.005]"
+        style={{
+          border: '3px solid var(--accent, #D4AF37)',
+          boxShadow: `
+            0 4px 20px var(--shadow-color, rgba(0,0,0,0.1)),
+            0 20px 50px color-mix(in srgb, var(--accent, #D4AF37) 15%, transparent)
+          `,
+        }}
       >
+        {/* ── macOS Browser Top Bar ── */}
         <div
-          style={{
-            position: 'absolute',
-            top: '-56px',          // pull iframe up to hide YT title bar
-            left: 0,
-            right: 0,
-            bottom: 0,
-          }}
+          className="flex items-center gap-3 px-4 h-9"
+          style={{ backgroundColor: 'var(--bg-elevated, #ffffff)' }}
         >
-          <iframe
-            ref={iframeRef}
-            src={embedUrl}
-            title={title}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            loading="lazy"
-          />
+          {/* Traffic lights */}
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#FF5F57] opacity-80" />
+            <span className="w-3 h-3 rounded-full bg-[#FEBC2E] opacity-80" />
+            <span className="w-3 h-3 rounded-full bg-[#28C840] opacity-80" />
+          </div>
+
+          {/* Title */}
+          <span
+            className="text-[11px] font-medium truncate flex-1 text-center -ml-10"
+            style={{ color: 'var(--text-muted, #596993)', fontFamily: 'Inter, system-ui, sans-serif' }}
+          >
+            {title}
+          </span>
         </div>
 
-        {/*
-         * Pointer-events blocker strips:
-         * 1. Top strip — covers the area where the YT title/logo appear
-         * 2. Bottom-right corner — covers the YouTube logo watermark
-         * These intercept clicks on branding without blocking the timeline/controls
-         */}
-        {/* Top brand bar blocker */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '56px',
-            pointerEvents: 'auto',
-            background: 'transparent',
-            zIndex: 10,
-          }}
-        />
-        {/* Bottom-right YouTube logo blocker */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            bottom: '40px',
-            right: 0,
-            width: '88px',
-            height: '28px',
-            pointerEvents: 'auto',
-            background: 'transparent',
-            zIndex: 10,
-          }}
-        />
+        {/* ── Video Viewport ── */}
+        <div className="relative w-full bg-black overflow-hidden">
+          {/* Clipping shell — hides the top YT bar */}
+          <div
+            className="relative w-full overflow-hidden"
+            style={{ paddingBottom: 'calc(56.25% + 56px)' }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '-56px',
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
+            >
+              <iframe
+                ref={iframeRef}
+                src={embedUrl}
+                title={title}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+              />
+            </div>
+
+            {/* Top brand bar blocker */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0,
+                height: '56px', pointerEvents: 'auto',
+                background: 'transparent', zIndex: 10,
+              }}
+            />
+            {/* Bottom-right YouTube logo blocker */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute', bottom: '40px', right: 0,
+                width: '88px', height: '28px', pointerEvents: 'auto',
+                background: 'transparent', zIndex: 10,
+              }}
+            />
+          </div>
+
+          {/* End-of-video overlay */}
+          <AnimatePresence>
+            {ended && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 z-20 flex flex-col items-center justify-center
+                           bg-black/80 backdrop-blur-md gap-4 px-6"
+              >
+                <p className="text-white/50 text-xs font-medium uppercase tracking-widest">
+                  Video Complete
+                </p>
+                <h3 className="text-white text-xl font-bold text-center">{title}</h3>
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+                  <button
+                    onClick={handleReplay}
+                    className="inline-flex items-center gap-2 px-5 py-2.5
+                               bg-white/10 hover:bg-white/20 text-white
+                               text-sm font-semibold rounded-full border border-white/20
+                               transition-all duration-200"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Replay
+                  </button>
+                  {nextHref && (
+                    <Link
+                      href={nextHref}
+                      className="inline-flex items-center gap-2 px-5 py-2.5
+                                 text-sm font-semibold rounded-full shadow-md
+                                 transition-all duration-200"
+                      style={{
+                        backgroundColor: 'var(--accent, #D4AF37)',
+                        color: 'var(--text-on-accent, #1A2B56)',
+                      }}
+                    >
+                      {nextTitle || 'Next Topic'}
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* End-of-video overlay */}
-      <AnimatePresence>
-        {ended && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center
-                       bg-navy-950/90 backdrop-blur-sm rounded-2xl gap-4 px-6"
-          >
-            <p className="text-white/60 text-xs font-medium uppercase tracking-widest">
-              Video Complete
-            </p>
-            <h3 className="text-white text-xl font-bold text-center">{title}</h3>
-
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-              <button
-                onClick={handleReplay}
-                className="inline-flex items-center gap-2 px-5 py-2.5
-                           bg-white/10 hover:bg-white/20 text-white
-                           text-sm font-semibold rounded-full border border-white/20
-                           transition-all duration-150"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Replay
-              </button>
-
-              {nextHref && (
-                <Link
-                  href={nextHref}
-                  className="inline-flex items-center gap-2 px-5 py-2.5
-                             bg-gold-500 hover:bg-gold-400 text-navy-900
-                             text-sm font-semibold rounded-full shadow-md
-                             transition-all duration-150"
-                >
-                  {nextTitle || 'Next Topic'}
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      {/* ── Staying on ExamStitch badge ── */}
+      <div className="flex justify-center mt-3">
+        <span
+          className="text-[10px] font-medium px-3 py-1 rounded-full"
+          style={{
+            backgroundColor: 'var(--accent-subtle, #FDF8EB)',
+            color: 'var(--accent-text, #9A7523)',
+          }}
+        >
+          🔒 Staying on ExamStitch
+        </span>
+      </div>
+    </motion.div>
   );
 }
 
@@ -219,7 +240,7 @@ function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
         loading="lazy"
       />
 
-      {/* ── Edge overlays to mask Google Drive's internal black borders ── */}
+      {/* Edge overlays to mask Google Drive's internal black borders */}
       <div className="absolute top-0 left-0 right-0 pointer-events-none z-10"
            style={{ height: '3px', backgroundColor: beige }} />
       <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
@@ -228,8 +249,6 @@ function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
            style={{ width: '3px', backgroundColor: beige }} />
       <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-10"
            style={{ width: '6px', backgroundColor: beige }} />
-
-      {/* Cover Google Drive's "open in new window" icon, top-right */}
       <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-20 rounded-bl-lg"
            style={{ backgroundColor: beige }} />
     </div>
@@ -256,13 +275,14 @@ export default function EmbeddedViewer({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="space-y-4"
+      className="space-y-5"
     >
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-2 text-sm font-medium text-navy-500 hover:text-navy-800 transition-colors group"
+          className="inline-flex items-center gap-2 text-sm font-medium transition-colors group"
+          style={{ color: 'var(--text-secondary, #3B4F80)' }}
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           {backLabel}
@@ -274,7 +294,11 @@ export default function EmbeddedViewer({
               href={downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-navy-900 rounded-lg hover:bg-navy-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+              style={{
+                backgroundColor: 'var(--badge-bg, #1A2B56)',
+                color: 'var(--badge-text, #ffffff)',
+              }}
             >
               <Download className="w-3.5 h-3.5" /> Download PDF
             </a>
@@ -282,14 +306,17 @@ export default function EmbeddedViewer({
         </div>
       </div>
 
-      {/* Title — always visible above the player */}
-      <h1 className="text-xl sm:text-2xl font-bold text-navy-900 tracking-tight">
+      {/* Title */}
+      <h1
+        className="text-xl sm:text-2xl font-bold tracking-tight"
+        style={{ color: 'var(--text-primary, #1A2B56)', fontFamily: 'Inter, system-ui, sans-serif' }}
+      >
         {title}
       </h1>
 
       {/* Embedded Content */}
       {isVideo ? (
-        <YouTubeLockedPlayer
+        <VideoFrame
           embedUrl={embedUrl}
           title={title}
           nextHref={nextHref}
@@ -299,21 +326,20 @@ export default function EmbeddedViewer({
         <DriveViewer embedUrl={embedUrl} title={title} />
       )}
 
-      {/* Content type badge */}
-      <div className="flex items-center gap-2 pt-1">
-        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-          isVideo         ? 'bg-red-50 text-red-600' :
-          contentType === 'worksheet' ? 'bg-green-50 text-green-600' :
-          'bg-blue-50 text-blue-600'
-        }`}>
-          {isVideo ? '▶ Video' : contentType === 'worksheet' ? '📄 Worksheet' : '📋 Past Paper'}
-        </span>
-        {isVideo && (
-          <span className="text-xs text-navy-400 flex items-center gap-1">
-            🔒 Staying on ExamStitch
+      {/* Content type badge — for PDFs only (video badge is inside VideoFrame) */}
+      {!isVideo && (
+        <div className="flex items-center gap-2 pt-1">
+          <span
+            className="text-xs font-medium px-2.5 py-1 rounded-full"
+            style={{
+              backgroundColor: contentType === 'worksheet' ? '#f0fdf4' : '#eff6ff',
+              color: contentType === 'worksheet' ? '#16a34a' : '#2563eb',
+            }}
+          >
+            {contentType === 'worksheet' ? '📄 Worksheet' : '📋 Past Paper'}
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </motion.div>
   );
 }
