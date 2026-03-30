@@ -200,14 +200,54 @@ export default function HomeClient({ feedItems }: { feedItems: FeedItem[] }) {
             {/* Main heading */}
             <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
               <span className="sr-only">Master O and A-level Mathematics, Computer Science, Physics, Chemistry</span>
-              <span aria-hidden>Master{' '}
+              <span aria-hidden className="inline-flex items-baseline flex-wrap justify-center gap-x-4">
+                {/* Animated "Master" — letter-by-letter drop-in + shimmer glow cycle */}
+                <span className="inline-flex">
+                  {'Master'.split('').map((letter, i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ opacity: 0, y: 40, rotateX: -90 }}
+                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: 0.4 + i * 0.07,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="inline-block"
+                      style={{ transformOrigin: 'bottom center', perspective: '400px' }}
+                    >
+                      <motion.span
+                        className="inline-block"
+                        animate={{
+                          color: ['#ffffff', '#D4AF37', '#ffffff'],
+                          textShadow: [
+                            '0 0 0px rgba(212,175,55,0)',
+                            '0 0 20px rgba(212,175,55,0.6)',
+                            '0 0 0px rgba(212,175,55,0)',
+                          ],
+                        }}
+                        transition={{
+                          duration: 3,
+                          delay: 2 + i * 0.15,
+                          repeat: Infinity,
+                          repeatDelay: 4,
+                          ease: 'easeInOut',
+                        }}
+                      >
+                        {letter}
+                      </motion.span>
+                    </motion.span>
+                  ))}
+                </span>
+
+                {/* Subject word — blur + fade transition */}
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={subjectIndex}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4 }}
+                    initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
+                    transition={{ duration: 0.45, ease: 'easeInOut' }}
                     className="text-gold-500 inline-block"
                   >
                     {SUBJECTS[subjectIndex]}
