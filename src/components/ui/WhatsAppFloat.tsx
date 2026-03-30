@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 
-const WA_NUMBER = '923005099306';
+const WA_NUMBER = '923005093306';
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=Hi%20ExamStitch%20Team!`;
 
 export default function WhatsAppFloat() {

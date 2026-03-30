@@ -12,7 +12,7 @@ const fadeUp = {
   }),
 };
 
-const WA_NUMBER = '923005099306';
+const WA_NUMBER = '923005093306';
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=Hi%20ExamStitch%20Team!`;
 
 const contacts = [
@@ -35,7 +35,7 @@ const contacts = [
   {
     icon: MessageCircle,
     label: 'WhatsApp',
-    value: '+92 300 509 9306',
+    value: '+92 300 509 3306',
     href: WA_URL,
     color: '#25D366',
     bgColor: 'rgba(37, 211, 102, 0.08)',
