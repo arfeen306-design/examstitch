@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, Database, FolderTree, Users, LogOut } from 'lucide-react';
+import { Home, Database, FolderTree, Users, LogOut, Newspaper } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -15,6 +15,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
     { label: 'Dashboard Overview', href: '/admin', icon: Home },
     { label: 'Resource Manager', href: '/admin/resources', icon: Database },
     { label: 'Taxonomy Manager', href: '/admin/categories', icon: FolderTree },
+    { label: 'Blog / Updates', href: '/admin/blog', icon: Newspaper },
     { label: 'Lead List', href: '/admin/subscribers', icon: Users },
   ];
 

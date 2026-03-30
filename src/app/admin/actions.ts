@@ -215,3 +215,52 @@ export async function deleteCategoryWithAction(categoryId: string, action: 'casc
   
   return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Blog / Announcements
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function createBlogPost(formData: FormData) {
+  const supabase = createAdminClient();
+
+  const title = formData.get('title')?.toString().trim() ?? '';
+  const content = formData.get('content')?.toString().trim() ?? '';
+  const image_url = formData.get('image_url')?.toString().trim() || null;
+
+  if (!title) return { success: false, error: 'Title is required' };
+
+  const { data, error } = await supabase
+    .from('blogs')
+    .insert({ title, content: content || null, image_url, is_published: true })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('createBlogPost:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/admin/blog');
+  revalidatePath('/');
+
+  return { success: true, post: data };
+}
+
+export async function deleteBlogPost(id: string) {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from('blogs')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('deleteBlogPost:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/admin/blog');
+  revalidatePath('/');
+
+  return { success: true };
+}

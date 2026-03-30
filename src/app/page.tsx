@@ -1,281 +1,56 @@
-'use client';
+/**
+ * Homepage — Server Component
+ * Fetches feed data server-side, passes to client component for rendering.
+ */
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import {
-  Search,
-  GraduationCap,
-  BookOpen,
-  Award,
-  ArrowRight,
-  FileText,
-  PlayCircle,
-  Users,
-  Star,
-} from 'lucide-react';
-import NotifyMeBox from '@/components/lead-gen/NotifyMeBox';
-import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import { createClient } from '@/lib/supabase/server';
+import HomeClient, { type FeedItem } from '@/components/home/HomeClient';
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, delay: i * 0.1 },
-  }),
-};
+async function getFeedItems(): Promise<FeedItem[]> {
+  try {
+    const supabase = createClient();
 
-const levelCards = [
-  {
-    title: 'Pre O-Level',
-    description: 'Build your foundation with core mathematical concepts',
-    href: '/pre-olevel',
-    icon: BookOpen,
-    gradient: 'from-emerald-500 to-teal-600',
-    count: 'Coming Soon',
-  },
-  {
-    title: 'O-Level / IGCSE',
-    description: 'Grade 9, 10 & 11 — Past papers, video solutions & topical worksheets',
-    href: '/olevel',
-    icon: GraduationCap,
-    gradient: 'from-blue-500 to-indigo-600',
-    count: 'Mathematics 4024/0580',
-  },
-  {
-    title: 'A-Level',
-    description: 'AS & A2 Level — Paper 1 to Paper 4 with full video solutions',
-    href: '/alevel',
-    icon: Award,
-    gradient: 'from-gold-500 to-gold-700',
-    count: 'Mathematics 9709',
-  },
-];
+    const [resourcesRes, blogsRes] = await Promise.all([
+      supabase
+        .from('resources')
+        .select('id, title, content_type, created_at')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('blogs')
+        .select('id, title, content, image_url, created_at')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(5),
+    ]);
 
-const stats = [
-  { icon: FileText, value: '500+', label: 'Solved Past Papers' },
-  { icon: PlayCircle, value: '200+', label: 'Video Solutions' },
-  { icon: BookOpen, value: '50+', label: 'Topical Worksheets' },
-  { icon: Users, value: '10K+', label: 'Students Helped' },
-];
+    const resourceItems: FeedItem[] = (resourcesRes.data ?? []).map(r => ({
+      id: r.id,
+      title: r.title,
+      type: r.content_type as FeedItem['type'],
+      created_at: r.created_at,
+    }));
 
-const SUBJECTS = ["Mathematics", "Computer Science", "Physics", "Chemistry"];
+    const blogItems: FeedItem[] = (blogsRes.data ?? []).map(b => ({
+      id: b.id,
+      title: b.title,
+      type: 'blog' as const,
+      created_at: b.created_at,
+      image_url: b.image_url,
+      content: b.content,
+    }));
 
-export default function HomePage() {
-  const [subjectIndex, setSubjectIndex] = useState(0);
+    return [...resourceItems, ...blogItems]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+  } catch {
+    // If blogs table doesn't exist yet, return empty gracefully
+    return [];
+  }
+}
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSubjectIndex((prev) => (prev + 1) % SUBJECTS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <>
-      {/* Hero Section */}
-      <section className="gradient-hero relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gold-500/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gold-500/5 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-navy-700/20 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            className="text-center max-w-4xl mx-auto"
-          >
-            {/* Badge */}
-            <motion.div variants={fadeUp} custom={0} className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full mb-8">
-              <Star className="w-4 h-4 text-gold-500" />
-              <span className="text-sm text-white/70">Free resources for Cambridge students</span>
-            </motion.div>
-
-            {/* Main heading */}
-            <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              <span className="sr-only">Master O and A-level Mathematics, Computer Science, Physics, Chemistry</span>
-              <div aria-hidden="true" className="flex flex-col items-center justify-center">
-                <span className="block mb-2">Master O and A-level</span>
-                <span className="relative inline-flex items-center justify-center w-full max-w-[640px] px-4 h-[1.2em] overflow-hidden">
-                  <AnimatePresence mode="popLayout">
-                    <motion.span
-                      key={subjectIndex}
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -40 }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                      className="absolute text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600 text-center whitespace-nowrap"
-                    >
-                      {SUBJECTS[subjectIndex]}
-                    </motion.span>
-                  </AnimatePresence>
-                </span>
-              </div>
-            </motion.h1>
-
-            <motion.p variants={fadeUp} custom={2} className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto mb-10">
-              Past papers with video solutions, topical worksheets, and expert video lectures — organized by grade, paper, and topic.
-            </motion.p>
-
-            {/* Search Bar */}
-            <motion.div variants={fadeUp} custom={3} className="max-w-xl mx-auto mb-12">
-              <form method="GET" action="/search" className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-gold-500 transition-colors pointer-events-none" />
-                <input
-                  type="text"
-                  name="q"
-                  placeholder="Search past papers, topics, or videos..."
-                  className="w-full pl-12 pr-28 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:border-gold-500/50 focus:ring-2 focus:ring-gold-500/20 focus:bg-white/10 transition-all text-sm"
-                  autoComplete="off"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-gold-500 hover:bg-gold-400 text-navy-900 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors"
-                >
-                  Search
-                </button>
-              </form>
-            </motion.div>
-
-
-            {/* Quick Stats */}
-            <motion.div variants={fadeUp} custom={4} className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto">
-              {stats.map((stat, i) => (
-                <div key={stat.label} className="text-center">
-                  <stat.icon className="w-5 h-5 text-gold-500 mx-auto mb-1" />
-                  <div className="text-2xl font-bold text-white tabular-nums">
-                    <AnimatedCounter
-                      value={stat.value}
-                      duration={2000}
-                      delay={i * 150}
-                    />
-                  </div>
-                  <div className="text-xs text-white/40">{stat.label}</div>
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </div>
-
-        {/* Wave divider */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 40L48 35C96 30 192 20 288 22C384 24 480 38 576 42C672 46 768 40 864 35C960 30 1056 26 1152 28C1248 30 1344 38 1392 42L1440 46V80H0V40Z" fill="var(--wave-fill)" />
-          </svg>
-        </div>
-      </section>
-
-      {/* Level Cards */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-100px' }}
-          className="text-center mb-12"
-        >
-          <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3"
-                     style={{ color: 'var(--text-primary)' }}>
-            Choose Your Level
-          </motion.h2>
-          <motion.p variants={fadeUp} custom={1} className="max-w-lg mx-auto"
-                    style={{ color: 'var(--text-secondary)' }}>
-            Select your academic level to access organized resources for every paper and topic.
-          </motion.p>
-        </motion.div>
-
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          {levelCards.map((card, i) => (
-            <motion.div key={card.title} variants={fadeUp} custom={i + 2}>
-              <Link href={card.href} className="block group">
-                <div className="card-hover relative overflow-hidden rounded-2xl p-8 h-full"
-                     style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-                  {/* Gradient accent top */}
-                  <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.gradient}`} />
-
-                  <div className={`w-14 h-14 bg-gradient-to-br ${card.gradient} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                    <card.icon className="w-7 h-7 text-white" />
-                  </div>
-
-                  <h3 className="text-xl font-bold mb-2 transition-colors"
-                      style={{ color: 'var(--text-primary)' }}>
-                    {card.title}
-                  </h3>
-                  <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {card.description}
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium px-3 py-1 rounded-full"
-                          style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-surface)' }}>
-                      {card.count}
-                    </span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-all"
-                                style={{ color: 'var(--border-color)' }} />
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20" style={{ backgroundColor: 'var(--bg-surface)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3"
-                       style={{ color: 'var(--text-primary)' }}>
-              How ExamStitch Works
-            </motion.h2>
-            <motion.p variants={fadeUp} custom={1} className="max-w-lg mx-auto"
-                      style={{ color: 'var(--text-secondary)' }}>
-              View past papers with instant video solutions — question by question.
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
-            {[
-              { step: '01', title: 'Pick Your Paper', desc: 'Browse by grade, year, session, and variant.' },
-              { step: '02', title: 'View & Print', desc: 'Open the paper in our built-in viewer. Print or download instantly.' },
-              { step: '03', title: 'Watch Solutions', desc: 'Click any question number to jump directly to the video solution.' },
-            ].map((item, i) => (
-              <motion.div key={item.step} variants={fadeUp} custom={i + 2} className="text-center">
-                <div className="w-12 h-12 gradient-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-sm font-bold" style={{ color: 'var(--text-on-accent)' }}>{item.step}</span>
-                </div>
-                <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Notify Me Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="max-w-xl mx-auto">
-          <NotifyMeBox level="general" sourcePage="/" />
-        </div>
-      </section>
-    </>
-  );
+export default async function HomePage() {
+  const feedItems = await getFeedItems();
+  return <HomeClient feedItems={feedItems} />;
 }
