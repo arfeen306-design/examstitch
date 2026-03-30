@@ -8,39 +8,39 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
-  /* ── Default (Navy & Gold) ─────────────────────────────────────────────── */
+  /* ── Beach (Default for new visitors) ───────────────────────────────────── */
   :root,
-  [data-theme="default"] {
-    --bg-primary:    #ffffff;
-    --bg-surface:    #F8F9FB;
-    --bg-card:       #ffffff;
-    --bg-elevated:   #ffffff;
+  [data-theme="beach"] {
+    --bg-primary:    #FFF9F2;
+    --bg-surface:    #FFF3E6;
+    --bg-card:       #FFFFFF;
+    --bg-elevated:   #FFFFFF;
 
-    --hero-from:     #1A2B56;
-    --hero-via:      #0F1A38;
-    --hero-to:       #1A2B56;
-    --navbar-bg:     rgba(26, 43, 86, 0.92);
+    --hero-from:     #0C4A6E;
+    --hero-via:      #075985;
+    --hero-to:       #0C4A6E;
+    --navbar-bg:     rgba(12, 74, 110, 0.92);
 
-    --text-primary:  #1A2B56;
-    --text-secondary:#3B4F80;
-    --text-muted:    #596993;
+    --text-primary:  #0C4A6E;
+    --text-secondary:#0369A1;
+    --text-muted:    #0284C7;
     --text-on-dark:  #ffffff;
-    --text-on-accent:#1A2B56;
+    --text-on-accent:#0C4A6E;
 
-    --accent:        #D4AF37;
-    --accent-hover:  #E9B82E;
-    --accent-subtle: #FDF8EB;
-    --accent-text:   #9A7523;
+    --accent:        #0EA5E9;
+    --accent-hover:  #38BDF8;
+    --accent-subtle: #E0F2FE;
+    --accent-text:   #0369A1;
 
-    --border-color:  #C5CAD8;
-    --border-subtle: #E8EAF0;
+    --border-color:  #BAE6FD;
+    --border-subtle: #E0F2FE;
 
-    --badge-bg:      #1A2B56;
+    --badge-bg:      #0C4A6E;
     --badge-text:    #ffffff;
 
-    --shadow-color:  rgba(26, 43, 86, 0.08);
+    --shadow-color:  rgba(12, 74, 110, 0.08);
 
-    --wave-fill:     #ffffff;
+    --wave-fill:     #FFF9F2;
   }
 
   /* ── Dark ───────────────────────────────────────────────────────────────── */
@@ -77,38 +77,38 @@
     --wave-fill:     #0D0D14;
   }
 
-  /* ── Beach ──────────────────────────────────────────────────────────────── */
-  [data-theme="beach"] {
-    --bg-primary:    #FFF9F2;
-    --bg-surface:    #FFF3E6;
-    --bg-card:       #FFFFFF;
-    --bg-elevated:   #FFFFFF;
+  /* ── Navy & Gold ─────────────────────────────────────────────────────── */
+  [data-theme="default"] {
+    --bg-primary:    #ffffff;
+    --bg-surface:    #F8F9FB;
+    --bg-card:       #ffffff;
+    --bg-elevated:   #ffffff;
 
-    --hero-from:     #0C4A6E;
-    --hero-via:      #075985;
-    --hero-to:       #0C4A6E;
-    --navbar-bg:     rgba(12, 74, 110, 0.92);
+    --hero-from:     #1A2B56;
+    --hero-via:      #0F1A38;
+    --hero-to:       #1A2B56;
+    --navbar-bg:     rgba(26, 43, 86, 0.92);
 
-    --text-primary:  #0C4A6E;
-    --text-secondary:#0369A1;
-    --text-muted:    #0284C7;
+    --text-primary:  #1A2B56;
+    --text-secondary:#3B4F80;
+    --text-muted:    #596993;
     --text-on-dark:  #ffffff;
-    --text-on-accent:#0C4A6E;
+    --text-on-accent:#1A2B56;
 
-    --accent:        #0EA5E9;
-    --accent-hover:  #38BDF8;
-    --accent-subtle: #E0F2FE;
-    --accent-text:   #0369A1;
+    --accent:        #D4AF37;
+    --accent-hover:  #E9B82E;
+    --accent-subtle: #FDF8EB;
+    --accent-text:   #9A7523;
 
-    --border-color:  #BAE6FD;
-    --border-subtle: #E0F2FE;
+    --border-color:  #C5CAD8;
+    --border-subtle: #E8EAF0;
 
-    --badge-bg:      #0C4A6E;
+    --badge-bg:      #1A2B56;
     --badge-text:    #ffffff;
 
-    --shadow-color:  rgba(12, 74, 110, 0.08);
+    --shadow-color:  rgba(26, 43, 86, 0.08);
 
-    --wave-fill:     #FFF9F2;
+    --wave-fill:     #ffffff;
   }
 
   /* ── Forest ─────────────────────────────────────────────────────────────── */

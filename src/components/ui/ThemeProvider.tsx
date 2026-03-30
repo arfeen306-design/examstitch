@@ -17,20 +17,23 @@ interface ThemeCtx {
 }
 
 const ThemeContext = createContext<ThemeCtx>({
-  theme: 'default',
+  theme: 'beach',
   setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('default');
+  const [theme, setThemeState] = useState<Theme>('beach');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Read saved preference on first mount to avoid flash
+    // Read saved preference on first mount
     const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
     if (saved && ['default', 'dark', 'beach', 'forest'].includes(saved)) {
       setThemeState(saved);
       document.documentElement.setAttribute('data-theme', saved);
+    } else {
+      // No saved preference — apply Beach as default
+      document.documentElement.setAttribute('data-theme', 'beach');
     }
     setMounted(true);
   }, []);
