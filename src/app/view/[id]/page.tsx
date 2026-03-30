@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import EmbeddedViewer from '@/components/resources/EmbeddedViewer';
 import InteractiveSolver from '@/components/resources/InteractiveSolver';
 import type { QuestionMapping } from '@/components/resources/InteractiveSolver';
 import type { Metadata } from 'next';
 
-// Revalidate every 5 minutes — resources change rarely, no need to hit DB on every request
-export const revalidate = 300;
+// force-dynamic: resource pages are unique per-ID; admin client bypasses cookie context
+export const dynamic = 'force-dynamic';
 
 interface ViewerPageProps {
   params: { id: string };
@@ -14,7 +14,7 @@ interface ViewerPageProps {
 }
 
 async function getResource(id: string) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('resources')
     .select('*, category:categories(id, name, slug, subject_id, subjects:subjects(slug, code))')
