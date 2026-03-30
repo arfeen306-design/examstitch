@@ -22,6 +22,7 @@ import {
   FileText, RotateCcw, Maximize2, Minimize2,
 } from 'lucide-react';
 import { toEmbedUrl } from '@/lib/url-transform';
+import VideoContainer from './VideoContainer';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -129,8 +130,7 @@ function SolverYouTubePlayer({
   }, []);
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden shadow-lg border bg-black"
-         style={{ borderColor: 'var(--border-color, #e2e8f0)' }}>
+    <VideoContainer title={title} maxWidth="max-w-full">
       {/* 16:9 aspect ratio container */}
       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
         <div ref={containerRef}
@@ -144,7 +144,7 @@ function SolverYouTubePlayer({
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
             className="absolute inset-0 z-20 flex flex-col items-center justify-center
-                       bg-navy-950/90 backdrop-blur-sm rounded-xl gap-3 px-4"
+                       bg-black/80 backdrop-blur-sm gap-3 px-4"
           >
             <p className="text-white/60 text-xs font-medium uppercase tracking-widest">
               Video Complete
@@ -158,7 +158,7 @@ function SolverYouTubePlayer({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </VideoContainer>
   );
 }
 

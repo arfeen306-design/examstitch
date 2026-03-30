@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Download, RotateCcw, ChevronRight } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
+import VideoContainer from './VideoContainer';
 
 interface EmbeddedViewerProps {
   title: string;
@@ -79,147 +80,98 @@ function VideoFrame({
       initial={{ opacity: 0, y: 16, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="max-w-4xl mx-auto group/frame"
     >
-      {/* ── Device Frame Shell ── */}
-      <div
-        className="relative rounded-2xl overflow-hidden transition-all duration-500
-                   hover:scale-[1.005]"
-        style={{
-          border: '3px solid var(--accent, #D4AF37)',
-          boxShadow: `
-            0 4px 20px var(--shadow-color, rgba(0,0,0,0.1)),
-            0 20px 50px color-mix(in srgb, var(--accent, #D4AF37) 15%, transparent)
-          `,
-        }}
-      >
-        {/* ── macOS Browser Top Bar ── */}
+      <VideoContainer title={title} showBadge>
+        {/* Clipping shell — hides the top YT bar */}
         <div
-          className="flex items-center gap-3 px-4 h-9"
-          style={{ backgroundColor: 'var(--bg-elevated, #ffffff)' }}
+          className="relative w-full overflow-hidden"
+          style={{ paddingBottom: 'calc(56.25% + 56px)' }}
         >
-          {/* Traffic lights */}
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#FF5F57] opacity-80" />
-            <span className="w-3 h-3 rounded-full bg-[#FEBC2E] opacity-80" />
-            <span className="w-3 h-3 rounded-full bg-[#28C840] opacity-80" />
-          </div>
-
-          {/* Title */}
-          <span
-            className="text-[11px] font-medium truncate flex-1 text-center -ml-10"
-            style={{ color: 'var(--text-muted, #596993)', fontFamily: 'Inter, system-ui, sans-serif' }}
-          >
-            {title}
-          </span>
-        </div>
-
-        {/* ── Video Viewport ── */}
-        <div className="relative w-full bg-black overflow-hidden">
-          {/* Clipping shell — hides the top YT bar */}
           <div
-            className="relative w-full overflow-hidden"
-            style={{ paddingBottom: 'calc(56.25% + 56px)' }}
+            style={{
+              position: 'absolute',
+              top: '-56px',
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
           >
-            <div
-              style={{
-                position: 'absolute',
-                top: '-56px',
-                left: 0,
-                right: 0,
-                bottom: 0,
-              }}
-            >
-              <iframe
-                ref={iframeRef}
-                src={embedUrl}
-                title={title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                loading="lazy"
-              />
-            </div>
-
-            {/* Top brand bar blocker */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute', top: 0, left: 0, right: 0,
-                height: '56px', pointerEvents: 'auto',
-                background: 'transparent', zIndex: 10,
-              }}
-            />
-            {/* Bottom-right YouTube logo blocker */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute', bottom: '40px', right: 0,
-                width: '88px', height: '28px', pointerEvents: 'auto',
-                background: 'transparent', zIndex: 10,
-              }}
+            <iframe
+              ref={iframeRef}
+              src={embedUrl}
+              title={title}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
             />
           </div>
 
-          {/* End-of-video overlay */}
-          <AnimatePresence>
-            {ended && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                className="absolute inset-0 z-20 flex flex-col items-center justify-center
-                           bg-black/80 backdrop-blur-md gap-4 px-6"
-              >
-                <p className="text-white/50 text-xs font-medium uppercase tracking-widest">
-                  Video Complete
-                </p>
-                <h3 className="text-white text-xl font-bold text-center">{title}</h3>
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-                  <button
-                    onClick={handleReplay}
-                    className="inline-flex items-center gap-2 px-5 py-2.5
-                               bg-white/10 hover:bg-white/20 text-white
-                               text-sm font-semibold rounded-full border border-white/20
-                               transition-all duration-200"
-                  >
-                    <RotateCcw className="w-4 h-4" /> Replay
-                  </button>
-                  {nextHref && (
-                    <Link
-                      href={nextHref}
-                      className="inline-flex items-center gap-2 px-5 py-2.5
-                                 text-sm font-semibold rounded-full shadow-md
-                                 transition-all duration-200"
-                      style={{
-                        backgroundColor: 'var(--accent, #D4AF37)',
-                        color: 'var(--text-on-accent, #1A2B56)',
-                      }}
-                    >
-                      {nextTitle || 'Next Topic'}
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Top brand bar blocker */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', top: 0, left: 0, right: 0,
+              height: '56px', pointerEvents: 'auto',
+              background: 'transparent', zIndex: 10,
+            }}
+          />
+          {/* Bottom-right YouTube logo blocker */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', bottom: '40px', right: 0,
+              width: '88px', height: '28px', pointerEvents: 'auto',
+              background: 'transparent', zIndex: 10,
+            }}
+          />
         </div>
-      </div>
 
-      {/* ── Staying on ExamStitch badge ── */}
-      <div className="flex justify-center mt-3">
-        <span
-          className="text-[10px] font-medium px-3 py-1 rounded-full"
-          style={{
-            backgroundColor: 'var(--accent-subtle, #FDF8EB)',
-            color: 'var(--accent-text, #9A7523)',
-          }}
-        >
-          🔒 Staying on ExamStitch
-        </span>
-      </div>
+        {/* End-of-video overlay */}
+        <AnimatePresence>
+          {ended && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="absolute inset-0 z-20 flex flex-col items-center justify-center
+                         bg-black/80 backdrop-blur-md gap-4 px-6"
+            >
+              <p className="text-white/50 text-xs font-medium uppercase tracking-widest">
+                Video Complete
+              </p>
+              <h3 className="text-white text-xl font-bold text-center">{title}</h3>
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+                <button
+                  onClick={handleReplay}
+                  className="inline-flex items-center gap-2 px-5 py-2.5
+                             bg-white/10 hover:bg-white/20 text-white
+                             text-sm font-semibold rounded-full border border-white/20
+                             transition-all duration-200"
+                >
+                  <RotateCcw className="w-4 h-4" /> Replay
+                </button>
+                {nextHref && (
+                  <Link
+                    href={nextHref}
+                    className="inline-flex items-center gap-2 px-5 py-2.5
+                               text-sm font-semibold rounded-full shadow-md
+                               transition-all duration-200"
+                    style={{
+                      backgroundColor: 'var(--accent, #D4AF37)',
+                      color: 'var(--text-on-accent, #1A2B56)',
+                    }}
+                  >
+                    {nextTitle || 'Next Topic'}
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </VideoContainer>
     </motion.div>
   );
 }
