@@ -29,6 +29,10 @@ export const mainNavItems = [
     label: 'Blog',
     href: '/blog',
   },
+  {
+    label: 'Contact',
+    href: '/contact',
+  },
 ];
 
 export const oLevelGrades = [
