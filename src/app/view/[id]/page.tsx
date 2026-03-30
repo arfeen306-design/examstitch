@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import EmbeddedViewer from '@/components/resources/EmbeddedViewer';
 import InteractiveSolver from '@/components/resources/InteractiveSolver';
 import type { QuestionMapping } from '@/components/resources/InteractiveSolver';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+// Revalidate every 5 minutes — resources change rarely, no need to hit DB on every request
+export const revalidate = 300;
 
 interface ViewerPageProps {
   params: { id: string };

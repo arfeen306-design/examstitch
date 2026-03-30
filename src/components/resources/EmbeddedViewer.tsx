@@ -80,12 +80,16 @@ function VideoFrame({
       initial={{ opacity: 0, y: 16, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
+      style={{ willChange: 'opacity, transform' }}
     >
       <VideoContainer title={title} showBadge>
-        {/* Clipping shell — hides the top YT bar */}
+        {/*
+         * Outer shell: aspect-ratio reserves space before iframe loads → zero CLS.
+         * Inner div clips the top YouTube bar (56px) without collapsing height.
+         */}
         <div
           className="relative w-full overflow-hidden"
-          style={{ paddingBottom: 'calc(56.25% + 56px)' }}
+          style={{ aspectRatio: '16 / 9', minHeight: '200px' }}
         >
           <div
             style={{

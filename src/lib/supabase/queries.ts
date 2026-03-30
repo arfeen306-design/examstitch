@@ -12,6 +12,11 @@
  */
 
 import { createClient } from './server';
+import { unstable_cache } from 'next/cache';
+
+// Cache revalidation: 1 hour for near-static data, 5 min for resources
+const CACHE_1H = 3600;
+const CACHE_5M = 300;
 import type {
   Level,
   Subject,
@@ -25,15 +30,19 @@ import type {
 // Levels
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getLevels(): Promise<Level[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('levels')
-    .select('*')
-    .order('sort_order', { ascending: true });
-  if (error) throw new Error(`getLevels: ${error.message}`);
-  return (data ?? []) as Level[];
-}
+export const getLevels = unstable_cache(
+  async (): Promise<Level[]> => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('levels')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    if (error) throw new Error(`getLevels: ${error.message}`);
+    return (data ?? []) as Level[];
+  },
+  ['levels'],
+  { revalidate: CACHE_1H, tags: ['levels'] },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Subjects
@@ -43,14 +52,20 @@ export async function getLevels(): Promise<Level[]> {
  * Fetches all subjects for a given level slug (e.g. 'olevel').
  */
 export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('subjects')
-    .select('*, levels!inner ( slug )')
-    .eq('levels.slug', levelSlug)
-    .order('sort_order', { ascending: true });
-  if (error) throw new Error(`getSubjectsByLevelSlug(${levelSlug}): ${error.message}`);
-  return (data ?? []) as unknown as Subject[];
+  return unstable_cache(
+    async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('subjects')
+        .select('*, levels!inner ( slug )')
+        .eq('levels.slug', levelSlug)
+        .order('sort_order', { ascending: true });
+      if (error) throw new Error(`getSubjectsByLevelSlug(${levelSlug}): ${error.message}`);
+      return (data ?? []) as unknown as Subject[];
+    },
+    [`subjects-${levelSlug}`],
+    { revalidate: CACHE_1H, tags: ['subjects'] },
+  )();
 }
 
 /**
@@ -58,16 +73,22 @@ export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject
  * Example slug: 'mathematics-4024'
  */
 export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('subjects')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-  if (error && error.code !== 'PGRST116') {
-    throw new Error(`getSubjectBySlug(${slug}): ${error.message}`);
-  }
-  return (data ?? null) as Subject | null;
+  return unstable_cache(
+    async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('subjects')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(`getSubjectBySlug(${slug}): ${error.message}`);
+      }
+      return (data ?? null) as Subject | null;
+    },
+    [`subject-${slug}`],
+    { revalidate: CACHE_1H, tags: ['subjects'] },
+  )();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,15 +99,21 @@ export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
  * Returns all top-level categories for a subject (grades or papers).
  */
 export async function getCategoriesBySubjectSlug(subjectSlug: string): Promise<Category[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*, subjects!inner ( slug )')
-    .eq('subjects.slug', subjectSlug)
-    .is('parent_id', null)
-    .order('sort_order', { ascending: true });
-  if (error) throw new Error(`getCategoriesBySubjectSlug(${subjectSlug}): ${error.message}`);
-  return (data ?? []) as unknown as Category[];
+  return unstable_cache(
+    async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*, subjects!inner ( slug )')
+        .eq('subjects.slug', subjectSlug)
+        .is('parent_id', null)
+        .order('sort_order', { ascending: true });
+      if (error) throw new Error(`getCategoriesBySubjectSlug(${subjectSlug}): ${error.message}`);
+      return (data ?? []) as unknown as Category[];
+    },
+    [`categories-${subjectSlug}`],
+    { revalidate: CACHE_1H, tags: ['categories'] },
+  )();
 }
 
 /**
@@ -97,17 +124,23 @@ export async function getCategoryBySlug(
   subjectSlug: string,
   categorySlug: string,
 ): Promise<Category | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*, subjects!inner ( slug )')
-    .eq('subjects.slug', subjectSlug)
-    .eq('slug', categorySlug)
-    .single();
-  if (error && error.code !== 'PGRST116') {
-    throw new Error(`getCategoryBySlug(${subjectSlug}, ${categorySlug}): ${error.message}`);
-  }
-  return (data ?? null) as unknown as Category | null;
+  return unstable_cache(
+    async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*, subjects!inner ( slug )')
+        .eq('subjects.slug', subjectSlug)
+        .eq('slug', categorySlug)
+        .single();
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(`getCategoryBySlug(${subjectSlug}, ${categorySlug}): ${error.message}`);
+      }
+      return (data ?? null) as unknown as Category | null;
+    },
+    [`category-${subjectSlug}-${categorySlug}`],
+    { revalidate: CACHE_1H, tags: ['categories'] },
+  )();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -123,27 +156,29 @@ export async function getResourcesByCategory(
   contentType?: 'video' | 'pdf' | 'worksheet',
   moduleType?: 'video_topical' | 'solved_past_paper',
 ): Promise<Resource[]> {
-  const supabase = createClient();
+  const cacheKey = `resources-${categoryId}-${contentType ?? 'all'}-${moduleType ?? 'all'}`;
+  return unstable_cache(
+    async () => {
+      const supabase = createClient();
 
-  let query = supabase
-    .from('resources')
-    .select('*')
-    .eq('category_id', categoryId)
-    .eq('is_published', true)
-    .order('sort_order', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: true });
+      let query = supabase
+        .from('resources')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('is_published', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true });
 
-  if (contentType) {
-    query = query.eq('content_type', contentType);
-  }
+      if (contentType) query = query.eq('content_type', contentType);
+      if (moduleType)  query = query.eq('module_type', moduleType);
 
-  if (moduleType) {
-    query = query.eq('module_type', moduleType);
-  }
-
-  const { data, error } = await query;
-  if (error) throw new Error(`getResourcesByCategory(${categoryId}): ${error.message}`);
-  return (data ?? []) as unknown as Resource[];
+      const { data, error } = await query;
+      if (error) throw new Error(`getResourcesByCategory(${categoryId}): ${error.message}`);
+      return (data ?? []) as unknown as Resource[];
+    },
+    [cacheKey],
+    { revalidate: CACHE_5M, tags: ['resources'] },
+  )();
 }
 
 /**

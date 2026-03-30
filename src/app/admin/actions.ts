@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
@@ -42,7 +42,8 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
     return { success: false, error: error.message };
   }
 
-  // Revalidate admin and public resource paths
+  // Revalidate admin and public resource paths + unstable_cache tags
+  revalidateTag('resources');
   revalidatePath('/admin/resources');
   revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
@@ -96,6 +97,7 @@ export async function bulkInsertResources(resources: unknown[]) {
       return { success: false, error: `Insert failed: ${error.message}. Run the schema repair script in Supabase SQL Editor.` };
     }
 
+    revalidateTag('resources');
     revalidatePath('/admin/resources');
     revalidatePath('/', 'layout');
     return { success: true };
@@ -115,6 +117,7 @@ export async function createResource(data: any) {
     return { success: false, error: error.message };
   }
 
+  revalidateTag('resources');
   revalidatePath('/admin/resources');
   revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
@@ -134,6 +137,7 @@ export async function deleteResource(id: string) {
     return { success: false, error: error.message };
   }
 
+  revalidateTag('resources');
   revalidatePath('/admin/resources');
   revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
@@ -154,6 +158,7 @@ export async function updateResource(id: string, updates: { title?: string; sour
     return { success: false, error: error.message };
   }
 
+  revalidateTag('resources');
   revalidatePath('/admin/resources');
   revalidatePath('/', 'layout');
   return { success: true };
