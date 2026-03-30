@@ -105,7 +105,7 @@ export default function TopicalPage({ params }: { params: { subject: string; gra
 
   return (
     <div className="min-h-screen pt-24 pb-16">
-      <div className="gradient-hero py-12">
+      <div className="gradient-hero pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
