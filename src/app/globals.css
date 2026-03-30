@@ -200,6 +200,12 @@
     z-index: 1;
   }
 
+  /* Ensure content that overlaps into the hero (-mt-6 etc.) sits above the ::after */
+  .gradient-hero + * {
+    position: relative;
+    z-index: 2;
+  }
+
   .gradient-gold {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 50%, var(--accent) 100%);
   }

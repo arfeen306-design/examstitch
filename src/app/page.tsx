@@ -229,7 +229,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="bg-navy-50/50 py-20">
+      <section className="py-20" style={{ backgroundColor: 'var(--bg-surface)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
@@ -237,10 +237,12 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold text-navy-900 mb-3">
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3"
+                       style={{ color: 'var(--text-primary)' }}>
               How ExamStitch Works
             </motion.h2>
-            <motion.p variants={fadeUp} custom={1} className="text-navy-500 max-w-lg mx-auto">
+            <motion.p variants={fadeUp} custom={1} className="max-w-lg mx-auto"
+                      style={{ color: 'var(--text-secondary)' }}>
               View past papers with instant video solutions — question by question.
             </motion.p>
           </motion.div>
@@ -258,10 +260,10 @@ export default function HomePage() {
             ].map((item, i) => (
               <motion.div key={item.step} variants={fadeUp} custom={i + 2} className="text-center">
                 <div className="w-12 h-12 gradient-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-sm font-bold text-navy-900">{item.step}</span>
+                  <span className="text-sm font-bold" style={{ color: 'var(--text-on-accent)' }}>{item.step}</span>
                 </div>
-                <h3 className="text-lg font-semibold text-navy-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-navy-500">{item.desc}</p>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>
