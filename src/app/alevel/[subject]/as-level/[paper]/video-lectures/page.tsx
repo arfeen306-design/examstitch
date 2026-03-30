@@ -6,24 +6,19 @@ import { getCategoryBySlug, getResourcesByCategory } from '@/lib/supabase/querie
 import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
 import { aLevelPapers } from '@/config/navigation';
 
-const DEMO_MODULES: LearningModule[] = [
-  { id: 'd1', title: 'Quadratics — Completing the Square', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-  { id: 'd2', title: 'Functions — Inverse Functions', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-  { id: 'd3', title: 'Coordinate Geometry — Perpendicular Lines', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-];
-
 async function VideoModules({ subject, paper }: { subject: string; paper: string }) {
   if (!isSupabaseConfigured()) {
-    return <UnifiedModuleGrid modules={DEMO_MODULES} />;
+    return <UnifiedModuleGrid modules={[]} emptyTitle="Database not configured" emptyMessage="Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY." />;
   }
 
   try {
     const category = await getCategoryBySlug(subject, paper);
     if (!category) return <UnifiedModuleGrid modules={[]} emptyTitle="Category not found" emptyMessage="Run the SQL migrations first." />;
-    
-    // Only fetch video_topical resources
-    const resources = await getResourcesByCategory(category.id, 'video', 'video_topical');
-    
+
+    // Fetch ALL published videos for this category (no module_type filter —
+    // resources uploaded via bulk JSON may not have module_type set)
+    const resources = await getResourcesByCategory(category.id, 'video');
+
     const modules: LearningModule[] = resources.map(r => ({
       id: r.id,
       title: r.title,
@@ -40,7 +35,7 @@ async function VideoModules({ subject, paper }: { subject: string; paper: string
     );
   } catch (err) {
     console.error('VideoModules error:', err);
-    return <UnifiedModuleGrid modules={DEMO_MODULES} />;
+    return <UnifiedModuleGrid modules={[]} emptyTitle="Failed to load" emptyMessage="Please refresh the page." />;
   }
 }
 

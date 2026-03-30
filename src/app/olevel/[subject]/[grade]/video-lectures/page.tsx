@@ -9,23 +9,18 @@ function formatGrade(slug: string): string {
   return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-const DEMO_MODULES: LearningModule[] = [
-  { id: 'd1', title: 'Algebra — Linear Equations', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-  { id: 'd2', title: 'Trigonometry — Sine, Cosine, Tangent', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-  { id: 'd3', title: 'Geometry — Circle Theorems', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-];
-
 async function VideoModules({ subject, grade }: { subject: string; grade: string }) {
   if (!isSupabaseConfigured()) {
-    return <UnifiedModuleGrid modules={DEMO_MODULES} />;
+    return <UnifiedModuleGrid modules={[]} emptyTitle="Database not configured" emptyMessage="Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY." />;
   }
 
   try {
     const category = await getCategoryBySlug(subject, grade);
     if (!category) return <UnifiedModuleGrid modules={[]} emptyTitle="Category not found" emptyMessage="Run the SQL migrations first." />;
-    
-    const resources = await getResourcesByCategory(category.id, 'video', 'video_topical');
-    
+
+    // Fetch ALL published videos (no module_type filter)
+    const resources = await getResourcesByCategory(category.id, 'video');
+
     const modules: LearningModule[] = resources.map(r => ({
       id: r.id,
       title: r.title,
@@ -42,7 +37,7 @@ async function VideoModules({ subject, grade }: { subject: string; grade: string
     );
   } catch (err) {
     console.error('VideoModules error:', err);
-    return <UnifiedModuleGrid modules={DEMO_MODULES} />;
+    return <UnifiedModuleGrid modules={[]} emptyTitle="Failed to load" emptyMessage="Please refresh the page." />;
   }
 }
 
