@@ -46,7 +46,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen pt-24 pb-16">
       {/* Hero */}
-      <div className="gradient-hero pb-16">
+      <div className="gradient-hero py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial="hidden" animate="visible">
             <motion.div

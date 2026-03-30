@@ -27,7 +27,7 @@ export default function A2PaperPage({ params }: { params: { subject: string; pap
 
   return (
     <div className="min-h-screen pt-24 pb-16">
-      <div className="gradient-hero pb-12">
+      <div className="gradient-hero py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-sm mb-3 flex-wrap">

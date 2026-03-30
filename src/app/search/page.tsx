@@ -192,7 +192,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
   return (
     <div className="min-h-screen pt-24 pb-16">
       {/* Hero */}
-      <div className="gradient-hero pb-10">
+      <div className="gradient-hero py-10">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
           <h1 className="text-3xl font-bold text-white mb-2">
             {query ? `Results for "${query}"` : 'Search Resources'}
