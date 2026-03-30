@@ -51,13 +51,27 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-1 w-56 bg-navy-950 border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+                      className="absolute top-full left-0 mt-1 w-56 rounded-xl shadow-2xl overflow-hidden"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-subtle)',
+                        boxShadow: '0 8px 32px var(--shadow-color)',
+                      }}
                     >
                       {item.children.map((child) => (
                         <Link
                           key={child.href}
                           href={child.href}
-                          className="block px-4 py-3 text-sm text-white/70 hover:text-gold-500 hover:bg-white/5 transition-colors"
+                          className="block px-4 py-3 text-sm font-medium transition-colors"
+                          style={{ color: 'var(--text-secondary)' }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.color = 'var(--accent-text)';
+                            (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-subtle)';
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+                            (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                          }}
                         >
                           {child.label}
                         </Link>
@@ -65,6 +79,7 @@ export default function Navbar() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
               </div>
             ))}
           </div>
