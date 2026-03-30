@@ -55,6 +55,11 @@ export default function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('examstitch-theme');if(t&&['default','dark','beach','forest'].indexOf(t)!==-1){document.documentElement.setAttribute('data-theme',t)}else{document.documentElement.setAttribute('data-theme','beach')}}catch(e){document.documentElement.setAttribute('data-theme','beach')}})()`,
           }}
         />
+        {/* Preconnect: cuts DNS+TLS round-trip for Supabase, YouTube, Google Drive */}
+        <link rel="preconnect" href="https://www.youtube.com" />
+        <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+        <link rel="preconnect" href="https://drive.google.com" />
+        <link rel="dns-prefetch" href="https://img.youtube.com" />
       </head>
       <body className="min-h-screen flex flex-col">
         <ThemeProvider>
