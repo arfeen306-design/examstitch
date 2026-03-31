@@ -391,6 +391,201 @@ function LiveFeedUI({ items }: { items: FeedItem[] }) {
   );
 }
 
+// ── Student Reviews Data ────────────────────────────────────────────────────
+const reviews = [
+  {
+    name: 'Alesha',
+    location: 'Saudi Arabia',
+    subject: 'Mathematics',
+    text: 'I was struggling with differentiation and integration for months. ExamStitch broke everything down question by question and I finally understood it. Got an A in my O Levels and my parents were so proud.',
+  },
+  {
+    name: 'Malaika',
+    location: 'United Kingdom',
+    subject: 'Physics',
+    text: 'The video solutions are genuinely amazing. I used to just stare at past papers not knowing where to start. Now I watch the solution, pause, try it myself, and actually learn. My predicted grade went from a C to an A.',
+  },
+  {
+    name: 'Azan',
+    location: 'United States',
+    subject: 'Computer Science',
+    text: 'I moved from Pakistan to the US and the Cambridge syllabus was completely new to me. ExamStitch helped me catch up with algorithms and programming concepts so fast. Honestly a lifesaver for international students.',
+  },
+  {
+    name: 'Hamza',
+    location: 'Pakistan',
+    subject: 'Mathematics',
+    text: 'My school teacher only covers half the syllabus properly. ExamStitch fills in all the gaps with clear video walkthroughs. I used it for my Paper 1 and Paper 2 revision and scored way higher than I expected.',
+  },
+  {
+    name: 'Fatima',
+    location: 'UAE',
+    subject: 'Chemistry',
+    text: 'Organic chemistry was my worst topic. The way ExamStitch organizes past papers by topic made it so much easier to practice. I could just focus on the areas I was weak in instead of doing random papers.',
+  },
+  {
+    name: 'Omar',
+    location: 'Qatar',
+    subject: 'Physics',
+    text: 'The interactive solver is brilliant. Having the paper and video side by side means I can follow along without switching tabs constantly. It feels like having a private tutor sitting next to you.',
+  },
+  {
+    name: 'Ayesha',
+    location: 'Pakistan',
+    subject: 'Mathematics',
+    text: 'I recommend ExamStitch to literally everyone in my class. The topical worksheets helped me practice specific question types that kept coming up in exams. My teacher even noticed my improvement.',
+  },
+  {
+    name: 'Rashid',
+    location: 'Bahrain',
+    subject: 'Computer Science',
+    text: 'Finding good CS resources for Cambridge was so hard until I found this site. The video explanations for pseudocode and data structures are clear and to the point. No fluff, just what you need to pass.',
+  },
+  {
+    name: 'Sana',
+    location: 'Kuwait',
+    subject: 'Biology',
+    text: 'I used ExamStitch for my A Level Biology revision. The past papers organized by topic saved me so much time. Instead of flipping through years of papers I could just go straight to the chapter I needed.',
+  },
+  {
+    name: 'Abdullah',
+    location: 'Pakistan',
+    subject: 'Chemistry',
+    text: 'What I love about ExamStitch is that everything is free. Most sites charge money for past paper solutions but this one gives it all away. The quality is just as good as any paid platform I have tried.',
+  },
+  {
+    name: 'Zara',
+    location: 'Oman',
+    subject: 'Mathematics',
+    text: 'The night before my exam I was panicking. I went on ExamStitch and did three full papers with the video solutions. It calmed me down completely and I walked into the exam room feeling confident.',
+  },
+  {
+    name: 'Ibrahim',
+    location: 'Saudi Arabia',
+    subject: 'Physics',
+    text: 'I have used so many websites for Cambridge revision and ExamStitch is honestly the best one. The layout is clean, the videos are high quality, and everything loads fast. No annoying ads either which is a huge plus.',
+  },
+];
+
+const SUBJECT_COLORS: Record<string, { bg: string; text: string }> = {
+  Mathematics:       { bg: 'rgba(14, 165, 233, 0.12)', text: '#0EA5E9' },
+  Physics:           { bg: 'rgba(168, 85, 247, 0.12)', text: '#A855F7' },
+  'Computer Science': { bg: 'rgba(249, 115, 22, 0.12)', text: '#F97316' },
+  Chemistry:         { bg: 'rgba(34, 197, 94, 0.12)',  text: '#22C55E' },
+  Biology:           { bg: 'rgba(236, 72, 153, 0.12)', text: '#EC4899' },
+};
+
+function StudentReviews() {
+  return (
+    <section className="py-16 overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="text-center"
+        >
+          <motion.p
+            variants={fadeUp}
+            custom={0}
+            className="text-sm font-semibold uppercase tracking-widest mb-3"
+            style={{ color: '#FF6B35' }}
+          >
+            Student Reviews
+          </motion.p>
+          <motion.h2
+            variants={fadeUp}
+            custom={1}
+            className="text-3xl font-bold mb-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Trusted by Students Worldwide
+          </motion.h2>
+          <motion.p
+            variants={fadeUp}
+            custom={2}
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            Real feedback from real Cambridge students.
+          </motion.p>
+        </motion.div>
+      </div>
+
+      {/* Marquee — CSS-only infinite scroll, right to left */}
+      <div className="relative">
+        {/* Fade edges */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to right, var(--bg-primary), transparent)' }}
+        />
+        <div
+          className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to left, var(--bg-primary), transparent)' }}
+        />
+
+        <div className="flex gap-5 animate-marquee hover:[animation-play-state:paused]">
+          {/* Duplicate the set for seamless loop */}
+          {[...reviews, ...reviews].map((review, i) => {
+            const subjectColor = SUBJECT_COLORS[review.subject] || SUBJECT_COLORS.Mathematics;
+            return (
+              <div
+                key={`${review.name}-${i}`}
+                className="shrink-0 w-[340px] rounded-2xl p-6 transition-shadow duration-300 hover:shadow-lg"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  boxShadow: '0 2px 8px var(--shadow-color)',
+                }}
+              >
+                {/* Stars */}
+                <div className="flex gap-0.5 mb-3">
+                  {[...Array(5)].map((_, j) => (
+                    <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+
+                {/* Review text */}
+                <p
+                  className="text-sm leading-relaxed mb-4 line-clamp-5"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  &ldquo;{review.text}&rdquo;
+                </p>
+
+                {/* Reviewer info */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: '#FF6B35' }}
+                    >
+                      {review.name[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {review.name}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {review.location}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
+                    style={{ backgroundColor: subjectColor.bg, color: subjectColor.text }}
+                  >
+                    {review.subject}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Main export ──────────────────────────────────────────────────────────────
 export default function HomeClient({ feedItems }: { feedItems: FeedItem[] }) {
   const [subjectIndex, setSubjectIndex] = useState(0);
@@ -595,6 +790,9 @@ export default function HomeClient({ feedItems }: { feedItems: FeedItem[] }) {
           </motion.div>
         </div>
       </section>
+
+      {/* ═══ STUDENT REVIEWS — Auto-scrolling Marquee ═══ */}
+      <StudentReviews />
 
       {/* Notify Me Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
