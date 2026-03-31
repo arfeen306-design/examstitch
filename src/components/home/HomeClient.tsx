@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -19,6 +19,8 @@ import {
   TrendingUp,
   Globe,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import NotifyMeBox from '@/components/lead-gen/NotifyMeBox';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
@@ -467,15 +469,225 @@ const reviews = [
   },
 ];
 
+// ── O-Level Mathematics Reviews ─────────────────────────────────────────────
+const oLevelMathReviews = [
+  {
+    name: 'Bilal',
+    location: 'Pakistan',
+    subject: 'O-Level Maths',
+    text: 'Simultaneous equations used to confuse me so much but the topical worksheets on ExamStitch made the method click properly. I did 20 questions in a row and by the end I was getting all of them right.',
+  },
+  {
+    name: 'Mariam',
+    location: 'UAE',
+    subject: 'O-Level Maths',
+    text: 'The 4024 papers are organised by year AND by topic which is exactly what I needed. I focused on geometry for two weeks using past paper questions and my marks in that topic jumped massively.',
+  },
+  {
+    name: 'Saad',
+    location: 'Saudi Arabia',
+    subject: 'O-Level Maths',
+    text: 'Quadratic factorisation was something I always guessed on. Watching the video solutions showed me the exact steps to follow every single time. Now I can do it without even thinking twice.',
+  },
+  {
+    name: 'Hira',
+    location: 'Pakistan',
+    subject: 'O-Level Maths',
+    text: 'I have been using ExamStitch for three months and my mock results are so much better. The IGCSE 0580 resources are especially good. Worked examples for every type of question you could get in the exam.',
+  },
+  {
+    name: 'Yousef',
+    location: 'Kuwait',
+    subject: 'O-Level Maths',
+    text: 'Statistics and probability were always my weakest areas. Going through the past paper questions by topic helped me notice patterns I never would have seen by just doing full papers randomly.',
+  },
+  {
+    name: 'Noor',
+    location: 'Jordan',
+    subject: 'O-Level Maths',
+    text: 'Matrices and transformations are covered so well here. The step by step videos show you what the question is asking before jumping into the working. That made a huge difference for me.',
+  },
+  {
+    name: 'Usman',
+    location: 'Pakistan',
+    subject: 'O-Level Maths',
+    text: 'I was failing Paper 2 every mock. I spent three weeks doing only Paper 2 past questions from ExamStitch and went from a D to a B in my school trial exam. The resources are genuinely very effective.',
+  },
+  {
+    name: 'Lina',
+    location: 'Bahrain',
+    subject: 'O-Level Maths',
+    text: 'Functions and graphs came up a lot in my 4024 exam and I was ready for them thanks to ExamStitch. I had seen every variation of those questions already through the topical practice.',
+  },
+  {
+    name: 'Tariq',
+    location: 'Pakistan',
+    subject: 'O-Level Maths',
+    text: 'What I appreciate is that the video solutions do not skip steps. Other YouTube videos assume you already know things but here the tutor explains every single line of working clearly.',
+  },
+  {
+    name: 'Dania',
+    location: 'Qatar',
+    subject: 'O-Level Maths',
+    text: 'Trigonometry was something I kept putting off because it scared me. Once I started watching the solutions on ExamStitch and doing the practice worksheets I realised it was actually manageable.',
+  },
+  {
+    name: 'Faisal',
+    location: 'Saudi Arabia',
+    subject: 'O-Level Maths',
+    text: 'Set theory and Venn diagrams always had me confused. Seeing 15 to 20 past paper questions on them back to back with video explanations made the whole topic feel really straightforward.',
+  },
+  {
+    name: 'Amna',
+    location: 'Pakistan',
+    subject: 'O-Level Maths',
+    text: 'I used ExamStitch for all my O Level revision this year. The way everything is sorted by topic is so much better than searching for papers on Google. I saved hours and learned so much more.',
+  },
+];
+
+// ── A-Level Mathematics Reviews ─────────────────────────────────────────────
+const aLevelMathReviews = [
+  {
+    name: 'Khaled',
+    location: 'UAE',
+    subject: 'A-Level Maths',
+    text: 'Integration by parts and substitution were topics I kept mixing up. The A2 video solutions on ExamStitch show you how to recognise which method to use just from looking at the integral. That insight changed everything.',
+  },
+  {
+    name: 'Sadia',
+    location: 'UK',
+    subject: 'A-Level Maths',
+    text: 'Paper 3 Pure Maths is brutal but ExamStitch made it survivable. I went through differential equations by topic and watched every solution twice. By the time the exam came I was confident rather than panicking.',
+  },
+  {
+    name: 'Rayan',
+    location: 'Saudi Arabia',
+    subject: 'A-Level Maths',
+    text: 'The 9709 Paper 1 resources are brilliant. Pure maths topics like binomial expansion and sequences are covered with enough past paper examples that you start to see exactly how Cambridge words its questions.',
+  },
+  {
+    name: 'Alishba',
+    location: 'Pakistan',
+    subject: 'A-Level Maths',
+    text: 'Vectors in 3D were a nightmare for me in AS level. The video explanations broke down the dot product and cross product with diagrams that made it finally make sense geometrically not just algebraically.',
+  },
+  {
+    name: 'Nasser',
+    location: 'Oman',
+    subject: 'A-Level Maths',
+    text: 'Paper 4 Mechanics is something a lot of students ignore until the last minute. I used ExamStitch from the start of Year 13 and built up my confidence on equilibrium and circular motion slowly over months.',
+  },
+  {
+    name: 'Zainab',
+    location: 'Pakistan',
+    subject: 'A-Level Maths',
+    text: 'Normal distribution and hypothesis testing are Paper 5 topics that most people find confusing because of the notation. ExamStitch explains them in plain terms before showing the formal working. Really helpful approach.',
+  },
+  {
+    name: 'Adnan',
+    location: 'Kuwait',
+    subject: 'A-Level Maths',
+    text: 'Implicit differentiation and parametric equations gave me so much trouble in Year 12. Working through topical past paper questions here helped me understand what the examiner is actually looking for in the marks.',
+  },
+  {
+    name: 'Mahnoor',
+    location: 'Pakistan',
+    subject: 'A-Level Maths',
+    text: 'I got an A star in A Level Maths and ExamStitch was a big part of that. The video solutions pushed me to think about why each step is done rather than just copying methods. That really matters at A Level.',
+  },
+  {
+    name: 'Tariq',
+    location: 'Bahrain',
+    subject: 'A-Level Maths',
+    text: 'Complex numbers and Argand diagrams in Further Maths are covered here too and the explanations are really clear. I wish I had found ExamStitch in Year 12 instead of wasting time on less helpful resources.',
+  },
+  {
+    name: 'Rida',
+    location: 'Pakistan',
+    subject: 'A-Level Maths',
+    text: 'The way ExamStitch organises Paper 5 probability questions is so useful. Permutations and combinations always seemed random to me but after working through enough questions I started to see the logic behind each type.',
+  },
+  {
+    name: 'Sultan',
+    location: 'Qatar',
+    subject: 'A-Level Maths',
+    text: 'Solving trigonometric equations over a given range was something my teacher rushed through. The ExamStitch videos go at the right pace and show all the solutions properly without skipping any cases.',
+  },
+  {
+    name: 'Aroha',
+    location: 'New Zealand',
+    subject: 'A-Level Maths',
+    text: 'I am the only student doing Cambridge A Levels in my school here and finding good resources was really hard. ExamStitch gave me access to the same quality of preparation that students in bigger cities have.',
+  },
+];
+
 const SUBJECT_COLORS: Record<string, { bg: string; text: string }> = {
   Mathematics:       { bg: 'rgba(14, 165, 233, 0.12)', text: '#0EA5E9' },
   Physics:           { bg: 'rgba(168, 85, 247, 0.12)', text: '#A855F7' },
   'Computer Science': { bg: 'rgba(249, 115, 22, 0.12)', text: '#F97316' },
   Chemistry:         { bg: 'rgba(34, 197, 94, 0.12)',  text: '#22C55E' },
   Biology:           { bg: 'rgba(236, 72, 153, 0.12)', text: '#EC4899' },
+  'O-Level Maths':   { bg: 'rgba(14, 165, 233, 0.12)', text: '#0EA5E9' },
+  'A-Level Maths':   { bg: 'rgba(99, 102, 241, 0.12)', text: '#6366F1' },
 };
 
+type ReviewTab = 'all' | 'olevel' | 'alevel';
+
 function StudentReviews() {
+  const [activeTab, setActiveTab] = useState<ReviewTab>('all');
+  const trackRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef(0);
+  const pauseUntilRef = useRef(0);
+  const rafRef = useRef<number>(0);
+
+  const getList = (tab: ReviewTab) => {
+    if (tab === 'olevel') return oLevelMathReviews;
+    if (tab === 'alevel') return aLevelMathReviews;
+    return reviews;
+  };
+
+  const doubled = [...getList(activeTab), ...getList(activeTab)];
+
+  // Reset position when tab changes
+  useEffect(() => {
+    posRef.current = 0;
+    pauseUntilRef.current = 0;
+    if (trackRef.current) {
+      trackRef.current.style.transform = 'translateX(0px)';
+    }
+  }, [activeTab]);
+
+  // RAF auto-scroll loop
+  useEffect(() => {
+    const speed = 0.5; // px per frame
+    const tick = (timestamp: number) => {
+      if (timestamp >= pauseUntilRef.current && trackRef.current) {
+        posRef.current += speed;
+        const half = trackRef.current.scrollWidth / 2;
+        if (posRef.current >= half) posRef.current -= half;
+        trackRef.current.style.transform = `translateX(-${posRef.current}px)`;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [activeTab]);
+
+  const handleNav = (dir: 'left' | 'right') => {
+    if (!trackRef.current) return;
+    const half = trackRef.current.scrollWidth / 2;
+    const delta = dir === 'right' ? 360 : -360;
+    posRef.current = Math.max(0, Math.min(half - 1, posRef.current + delta));
+    trackRef.current.style.transform = `translateX(-${posRef.current}px)`;
+    pauseUntilRef.current = performance.now() + 900;
+  };
+
+  const tabs: { id: ReviewTab; label: string }[] = [
+    { id: 'all', label: 'All Subjects' },
+    { id: 'olevel', label: 'O-Level Maths' },
+    { id: 'alevel', label: 'A-Level Maths' },
+  ];
+
   return (
     <section className="py-16 overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
@@ -496,7 +708,7 @@ function StudentReviews() {
           <motion.h2
             variants={fadeUp}
             custom={1}
-            className="text-3xl font-bold mb-2"
+            className="text-3xl font-bold mb-4"
             style={{ color: 'var(--text-primary)' }}
           >
             Trusted by Students Worldwide
@@ -504,14 +716,38 @@ function StudentReviews() {
           <motion.p
             variants={fadeUp}
             custom={2}
+            className="mb-8"
             style={{ color: 'var(--text-secondary)' }}
           >
             Real feedback from real Cambridge students.
           </motion.p>
+
+          {/* Tab pills */}
+          <motion.div
+            variants={fadeUp}
+            custom={3}
+            className="inline-flex items-center gap-2 p-1 rounded-full"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200"
+                style={
+                  activeTab === tab.id
+                    ? { backgroundColor: '#FF6B35', color: '#fff', boxShadow: '0 2px 8px rgba(255,107,53,0.35)' }
+                    : { color: 'var(--text-secondary)' }
+                }
+              >
+                {tab.label}
+              </button>
+            ))}
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* Marquee — CSS-only infinite scroll, right to left */}
+      {/* Scroll track wrapper */}
       <div className="relative">
         {/* Fade edges */}
         <div
@@ -523,64 +759,91 @@ function StudentReviews() {
           style={{ background: 'linear-gradient(to left, var(--bg-primary), transparent)' }}
         />
 
-        <div className="flex gap-5 animate-marquee hover:[animation-play-state:paused]">
-          {/* Duplicate the set for seamless loop */}
-          {[...reviews, ...reviews].map((review, i) => {
-            const subjectColor = SUBJECT_COLORS[review.subject] || SUBJECT_COLORS.Mathematics;
-            return (
-              <div
-                key={`${review.name}-${i}`}
-                className="shrink-0 w-[340px] rounded-2xl p-6 transition-shadow duration-300 hover:shadow-lg"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  boxShadow: '0 2px 8px var(--shadow-color)',
-                }}
-              >
-                {/* Stars */}
-                <div className="flex gap-0.5 mb-3">
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-
-                {/* Review text */}
-                <p
-                  className="text-sm leading-relaxed mb-4 line-clamp-5"
-                  style={{ color: 'var(--text-secondary)' }}
+        {/* Overflow clip */}
+        <div className="overflow-hidden">
+          <div ref={trackRef} className="flex gap-5 will-change-transform">
+            {doubled.map((review, i) => {
+              const subjectColor = SUBJECT_COLORS[review.subject] || SUBJECT_COLORS.Mathematics;
+              return (
+                <div
+                  key={`${review.name}-${i}`}
+                  className="shrink-0 w-[340px] rounded-2xl p-6 transition-shadow duration-300 hover:shadow-lg"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    boxShadow: '0 2px 8px var(--shadow-color)',
+                  }}
                 >
-                  &ldquo;{review.text}&rdquo;
-                </p>
-
-                {/* Reviewer info */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                      style={{ backgroundColor: '#FF6B35' }}
-                    >
-                      {review.name[0]}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        {review.name}
-                      </p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {review.location}
-                      </p>
-                    </div>
+                  <div className="flex gap-0.5 mb-3">
+                    {[...Array(5)].map((_, j) => (
+                      <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    ))}
                   </div>
-                  <span
-                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
-                    style={{ backgroundColor: subjectColor.bg, color: subjectColor.text }}
+                  <p
+                    className="text-sm leading-relaxed mb-4 line-clamp-5"
+                    style={{ color: 'var(--text-secondary)' }}
                   >
-                    {review.subject}
-                  </span>
+                    &ldquo;{review.text}&rdquo;
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                        style={{ backgroundColor: '#FF6B35' }}
+                      >
+                        {review.name[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                          {review.name}
+                        </p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          {review.location}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
+                      style={{ backgroundColor: subjectColor.bg, color: subjectColor.text }}
+                    >
+                      {review.subject}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
+      </div>
+
+      {/* Left / Right nav buttons */}
+      <div className="flex items-center justify-center gap-4 mt-8">
+        <button
+          onClick={() => handleNav('left')}
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: '0 2px 8px var(--shadow-color)',
+            color: 'var(--text-secondary)',
+          }}
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => handleNav('right')}
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: '0 2px 8px var(--shadow-color)',
+            color: 'var(--text-secondary)',
+          }}
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
     </section>
   );
