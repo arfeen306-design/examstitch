@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, GraduationCap } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
-import { FEATURES } from '@/config/features';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function Navbar() {
@@ -87,22 +86,19 @@ export default function Navbar() {
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            {FEATURES.AUTH_ENABLED && (
-              <>
-                <Link
-                  href="/auth/login"
-                  className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors"
-                >
-                  Log In
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="px-4 py-2 text-sm font-semibold text-navy-900 gradient-gold rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
+            <Link
+              href="/auth/login"
+              className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors"
+            >
+              Log In
+            </Link>
+            <Link
+              href="/auth/signup"
+              className="px-5 py-2 text-sm font-bold text-white rounded-lg transition-all duration-300 hover:shadow-[0_4px_20px_rgba(255,107,53,0.4)] hover:scale-[1.02]"
+              style={{ backgroundColor: '#FF6B35' }}
+            >
+              Sign Up for Free
+            </Link>
           </div>
 
           {/* Mobile hamburger */}
@@ -146,24 +142,23 @@ export default function Navbar() {
                     ))}
                   </div>
                 ))}
-                {FEATURES.AUTH_ENABLED && (
-                  <div className="pt-4 px-4 border-t border-white/10 mt-4 space-y-2">
-                    <Link
-                      href="/auth/login"
-                      onClick={() => setMobileOpen(false)}
-                      className="block w-full text-center py-2 text-sm text-white/80 border border-white/20 rounded-lg"
-                    >
-                      Log In
-                    </Link>
-                    <Link
-                      href="/auth/signup"
-                      onClick={() => setMobileOpen(false)}
-                      className="block w-full text-center py-2 text-sm font-semibold text-navy-900 gradient-gold rounded-lg"
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
-                )}
+                <div className="pt-4 px-4 border-t border-white/10 mt-4 space-y-2">
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block w-full text-center py-2.5 text-sm text-white/80 border border-white/20 rounded-lg"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    onClick={() => setMobileOpen(false)}
+                    className="block w-full text-center py-2.5 text-sm font-bold text-white rounded-lg"
+                    style={{ backgroundColor: '#FF6B35' }}
+                  >
+                    Sign Up for Free
+                  </Link>
+                </div>
               </div>
             </motion.div>
           )}
