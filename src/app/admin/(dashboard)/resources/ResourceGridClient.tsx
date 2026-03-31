@@ -354,19 +354,19 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         <tr
           key={r.id}
           className={`transition-colors group
-            ${editingId === r.id ? 'bg-gold-50/40' : isSub ? 'bg-blue-50/20 hover:bg-blue-50/40' : 'hover:bg-navy-50/30'}
+            ${editingId === r.id ? 'bg-gold-50/40' : isSub ? 'bg-blue-50/20 hover:bg-blue-50/40' : 'hover:bg-gray-50/50 dark:hover:bg-white/5'}
             ${isSub ? 'border-l-4 border-blue-300' : ''}`}
         >
           {/* # Order column */}
           <td className="w-12 px-3 py-2.5 text-center">
             <span className={`inline-block text-xs font-bold tabular-nums rounded px-1.5 py-0.5
-              ${isSub ? 'text-blue-600 bg-blue-50' : 'text-navy-700 bg-navy-100'}`}>
+              ${isSub ? 'text-blue-600 bg-blue-50' : 'text-[var(--text-secondary)] bg-[var(--border-subtle)]'}`}>
               {label}
             </span>
           </td>
 
-          {/* Title / Links column */}
-          <td className={`py-2.5 font-medium max-w-[240px] ${isSub ? 'pl-8 pr-4' : 'px-4'}`}
+          {/* Title / Links column — no max-width cap so it takes remaining space */}
+          <td className={`py-2.5 font-medium min-w-[180px] ${isSub ? 'pl-8 pr-4' : 'px-4'}`}
               style={{ color: 'var(--text-primary)' }}>
             {editingId === r.id ? (
               <EditForm state={editState} onChange={setEditState} />
@@ -411,7 +411,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           </td>
 
           {/* Sort order (editable inline without needing full-edit mode) */}
-          <td className="w-20 px-2 py-2.5 text-center">
+          <td className="w-16 px-2 py-2.5 text-center">
             {editingId === r.id ? null : (
               <input
                 type="number"
@@ -436,7 +436,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           </td>
 
           {/* Type */}
-          <td className="w-20 px-3 py-2.5">
+          <td className="w-24 px-3 py-2.5">
             {editingId === r.id ? (
               <select value={editState.contentType} onChange={e => setEditState(s => ({ ...s, contentType: e.target.value }))}
                 className="px-2 py-1 text-xs border border-navy-200 rounded-md">
@@ -445,14 +445,15 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                 <option value="worksheet">Worksheet</option>
               </select>
             ) : (
-              <span className="bg-navy-100 text-navy-700 px-2 py-0.5 rounded-full text-xs font-mono uppercase">
+              <span className="px-2 py-0.5 rounded-full text-xs font-mono uppercase"
+                    style={{ backgroundColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
                 {r.content_type}
               </span>
             )}
           </td>
 
           {/* Toggles */}
-          <td className="w-10 px-2 py-2.5 text-center">
+          <td className="w-14 px-2 py-2.5 text-center">
             <button
               onClick={() => handleToggle(r.id, 'is_published', r.is_published)}
               title={r.is_published ? 'Published — click to unpublish' : 'Unpublished — click to publish'}
@@ -461,27 +462,28 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_published ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
           </td>
-          <td className="w-10 px-2 py-2.5 text-center">
+          <td className="w-14 px-2 py-2.5 text-center">
             <button
               onClick={() => handleToggle(r.id, 'is_locked', r.is_locked)}
               title={r.is_locked ? 'Locked (login required) — click to unlock' : 'Public — click to lock (require login)'}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_locked ? 'bg-orange-500' : 'bg-gray-300'}`}
+              style={r.is_locked ? { backgroundColor: '#FF6B35' } : undefined}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${!r.is_locked ? 'bg-gray-300' : ''}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_locked ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
           </td>
-          <td className="w-10 px-2 py-2.5 text-center">
+          <td className="w-14 px-2 py-2.5 text-center">
             <button
               onClick={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)}
               title={r.is_watermarked ? 'Watermarked — click to remove' : 'No watermark — click to enable'}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_watermarked ? 'bg-blue-500' : 'bg-gray-300'}`}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_watermarked ? 'bg-blue-600' : 'bg-gray-300'}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_watermarked ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
           </td>
 
-          {/* Actions */}
-          <td className="w-28 px-3 py-2.5 text-right">
+          {/* Actions — fixed w-32 so icons never shift */}
+          <td className="w-32 px-3 py-2.5 text-right">
             <div className="flex items-center justify-end gap-1">
               {editingId === r.id ? (
                 <>
@@ -696,20 +698,21 @@ export default function ResourceGridClient({ initialResources }: { initialResour
            style={{ border: '1px solid var(--border-color)' }}>
         <table className="w-full text-sm text-left">
           <thead className="text-[10px] uppercase tracking-wider sticky top-0 z-10"
-                 style={{ backgroundColor: 'var(--badge-bg)', color: 'var(--text-on-dark)' }}>
+                 style={{ backgroundColor: 'var(--badge-bg)', color: 'var(--text-on-dark)', borderBottom: '2px solid var(--border-color)' }}>
             <tr>
-              <th className="w-12 px-3 py-3 text-center">#</th>
-              <th className="px-4 py-3">Topic / Title</th>
-              <th className="w-20 px-2 py-3 text-center">Order ↕</th>
-              <th className="w-20 px-3 py-3">Type</th>
-              <th className="w-12 px-2 py-3 text-center" title="Published — toggle to show/hide on site">Pub</th>
-              <th className="w-12 px-2 py-3 text-center" title="Locked — toggle to require login to view">🔒 Lock</th>
-              <th className="w-12 px-2 py-3 text-center" title="Watermark — toggle to mark content">Wtmk</th>
-              <th className="w-28 px-3 py-3 text-right">Actions</th>
+              <th className="w-12 px-3 py-3 text-center whitespace-nowrap">#</th>
+              {/* flex-grow: title column takes all remaining space */}
+              <th className="px-4 py-3 min-w-[200px]">Topic / Title</th>
+              <th className="w-16 px-2 py-3 text-center whitespace-nowrap">Order ↕</th>
+              <th className="w-24 px-3 py-3 whitespace-nowrap">Type</th>
+              <th className="w-14 px-2 py-3 text-center whitespace-nowrap" title="Published — toggle to show/hide on site">Pub</th>
+              <th className="w-14 px-2 py-3 text-center whitespace-nowrap" title="Locked — toggle to require login to view">🔒 Lock</th>
+              <th className="w-14 px-2 py-3 text-center whitespace-nowrap" title="Watermark — toggle to mark content">Wtmk</th>
+              <th className="w-32 px-3 py-3 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                 className="divide-y" >
+                 className="divide-y divide-[var(--border-subtle)]" >
             {paperGroups.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-navy-400 text-sm">No resources found.</td>
