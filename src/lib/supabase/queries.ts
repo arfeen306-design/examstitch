@@ -207,24 +207,30 @@ export async function getResourcesByTopic(
 export async function getTopicsByCategory(
   categoryId: string,
 ): Promise<{ topic: string; count: number }[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('resources')
-    .select('topic')
-    .eq('category_id', categoryId)
-    .eq('is_published', true)
-    .not('topic', 'is', null);
-  if (error) throw new Error(`getTopicsByCategory(${categoryId}): ${error.message}`);
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('resources')
+        .select('topic')
+        .eq('category_id', categoryId)
+        .eq('is_published', true)
+        .not('topic', 'is', null);
+      if (error) throw new Error(`getTopicsByCategory(${categoryId}): ${error.message}`);
 
-  const rows = (data ?? []) as { topic: string | null }[];
-  const counts = rows.reduce<Record<string, number>>((acc, row) => {
-    if (row.topic) acc[row.topic] = (acc[row.topic] ?? 0) + 1;
-    return acc;
-  }, {});
+      const rows = (data ?? []) as { topic: string | null }[];
+      const counts = rows.reduce<Record<string, number>>((acc, row) => {
+        if (row.topic) acc[row.topic] = (acc[row.topic] ?? 0) + 1;
+        return acc;
+      }, {});
 
-  return Object.entries(counts)
-    .map(([topic, count]) => ({ topic, count }))
-    .sort((a, b) => a.topic.localeCompare(b.topic));
+      return Object.entries(counts)
+        .map(([topic, count]) => ({ topic, count }))
+        .sort((a, b) => a.topic.localeCompare(b.topic));
+    },
+    [`topics-${categoryId}`],
+    { revalidate: CACHE_5M, tags: ['resources'] },
+  )();
 }
 
 /**
@@ -269,14 +275,20 @@ export async function getLatestResources(limit = 6): Promise<Resource[]> {
  * Each row maps:  question_number + label → timestamp_seconds + video_id
  */
 export async function getSolutionsForPaper(paperId: string): Promise<ResourceSolution[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('resource_solutions')
-    .select('*')
-    .eq('paper_id', paperId)
-    .order('sort_order', { ascending: true });
-  if (error) throw new Error(`getSolutionsForPaper(${paperId}): ${error.message}`);
-  return (data ?? []) as unknown as ResourceSolution[];
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('resource_solutions')
+        .select('*')
+        .eq('paper_id', paperId)
+        .order('sort_order', { ascending: true });
+      if (error) throw new Error(`getSolutionsForPaper(${paperId}): ${error.message}`);
+      return (data ?? []) as unknown as ResourceSolution[];
+    },
+    [`solutions-${paperId}`],
+    { revalidate: CACHE_5M, tags: ['resources'] },
+  )();
 }
 
 /**
@@ -307,74 +319,81 @@ export async function getSolutionVideo(videoResourceId: string): Promise<Resourc
  *  Tier 3 — Per-word prefix ILIKE (catches abbreviations like "Diff" for "Differentiation")
  */
 export async function searchResources(query: string, limit = 60): Promise<Resource[]> {
-  const supabase = createAdminClient();
   const trimmed = query.trim().slice(0, 120);
   if (!trimmed) return [];
 
-  const orderOpts = [
-    { column: 'sort_order', ascending: true, nullsFirst: false },
-    { column: 'created_at', ascending: false },
-  ] as const;
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
 
-  // ── Tier 1: FTS ───────────────────────────────────────────────────────────
-  try {
-    const { data: ftsData, error: ftsErr } = await supabase
-      .from('resources')
-      .select('*, category:categories(id, name, slug)')
-      .eq('is_published', true)
-      .textSearch('fts', trimmed, { config: 'english', type: 'websearch' })
-      .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
-      .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
-      .limit(limit);
+      const orderOpts = [
+        { column: 'sort_order', ascending: true, nullsFirst: false },
+        { column: 'created_at', ascending: false },
+      ] as const;
 
-    if (!ftsErr && ftsData && ftsData.length > 0) {
-      return ftsData as unknown as Resource[];
-    }
-  } catch (_) { /* fall through */ }
+      // ── Tier 1: FTS ─────────────────────────────────────────────────────────
+      try {
+        const { data: ftsData, error: ftsErr } = await supabase
+          .from('resources')
+          .select('*, category:categories(id, name, slug)')
+          .eq('is_published', true)
+          .textSearch('fts', trimmed, { config: 'english', type: 'websearch' })
+          .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
+          .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
+          .limit(limit);
 
-  // ── Tier 2: Full ILIKE on raw query ───────────────────────────────────────
-  const safe = trimmed.replace(/[%_]/g, '\\$&');
-  try {
-    const { data: ilikeData, error: ilikeErr } = await supabase
-      .from('resources')
-      .select('*, category:categories(id, name, slug)')
-      .eq('is_published', true)
-      .or(`title.ilike.%${safe}%,description.ilike.%${safe}%,topic.ilike.%${safe}%`)
-      .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
-      .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
-      .limit(limit);
+        if (!ftsErr && ftsData && ftsData.length > 0) {
+          return ftsData as unknown as Resource[];
+        }
+      } catch (_) { /* fall through */ }
 
-    if (!ilikeErr && ilikeData && ilikeData.length > 0) {
-      return ilikeData as unknown as Resource[];
-    }
-  } catch (_) { /* fall through */ }
+      // ── Tier 2: Full ILIKE on raw query ───────────────────────────────────
+      const safe = trimmed.replace(/[%_]/g, '\\$&');
+      try {
+        const { data: ilikeData, error: ilikeErr } = await supabase
+          .from('resources')
+          .select('*, category:categories(id, name, slug)')
+          .eq('is_published', true)
+          .or(`title.ilike.%${safe}%,description.ilike.%${safe}%,topic.ilike.%${safe}%`)
+          .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
+          .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
+          .limit(limit);
 
-  // ── Tier 3: Per-word prefix ILIKE ─────────────────────────────────────────
-  // Splits "Differentiation Rules" → ["diff", "rule"] and does an OR ILIKE
-  // so "Diff (2026)" matches "Differentiation". Min prefix length = 3 chars.
-  const prefixes = trimmed
-    .split(/\s+/)
-    .map(w => w.replace(/[%_]/g, '\\$&').slice(0, 6)) // first 6 chars per word
-    .filter(w => w.length >= 3);
+        if (!ilikeErr && ilikeData && ilikeData.length > 0) {
+          return ilikeData as unknown as Resource[];
+        }
+      } catch (_) { /* fall through */ }
 
-  if (prefixes.length > 0) {
-    const orClause = prefixes
-      .map(p => `title.ilike.%${p}%`)
-      .join(',');
+      // ── Tier 3: Per-word prefix ILIKE ─────────────────────────────────────
+      // Splits "Differentiation Rules" → ["diff", "rule"] and does an OR ILIKE
+      // so "Diff (2026)" matches "Differentiation". Min prefix length = 3 chars.
+      const prefixes = trimmed
+        .split(/\s+/)
+        .map(w => w.replace(/[%_]/g, '\\$&').slice(0, 6)) // first 6 chars per word
+        .filter(w => w.length >= 3);
 
-    const { data: prefixData, error: prefixErr } = await supabase
-      .from('resources')
-      .select('*, category:categories(id, name, slug)')
-      .eq('is_published', true)
-      .or(orClause)
-      .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
-      .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
-      .limit(limit);
+      if (prefixes.length > 0) {
+        const orClause = prefixes
+          .map(p => `title.ilike.%${p}%`)
+          .join(',');
 
-    if (!prefixErr) return (prefixData ?? []) as unknown as Resource[];
-  }
+        const { data: prefixData, error: prefixErr } = await supabase
+          .from('resources')
+          .select('*, category:categories(id, name, slug)')
+          .eq('is_published', true)
+          .or(orClause)
+          .order(orderOpts[0].column, { ascending: orderOpts[0].ascending, nullsFirst: orderOpts[0].nullsFirst })
+          .order(orderOpts[1].column, { ascending: orderOpts[1].ascending })
+          .limit(limit);
 
-  return [];
+        if (!prefixErr) return (prefixData ?? []) as unknown as Resource[];
+      }
+
+      return [];
+    },
+    [`search-${trimmed}-${limit}`],
+    { revalidate: CACHE_5M, tags: ['resources'] },
+  )();
 }
 
 /**

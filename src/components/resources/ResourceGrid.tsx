@@ -26,13 +26,13 @@ interface ResourceGridProps {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white border border-navy-100 rounded-2xl p-5 animate-pulse">
+    <div className="rounded-2xl p-5 animate-pulse" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
       <div className="flex items-start gap-4">
-        <div className="shrink-0 w-11 h-11 bg-navy-100 rounded-xl" />
+        <div className="shrink-0 w-11 h-11 rounded-xl" style={{ backgroundColor: 'var(--border-subtle)' }} />
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-navy-100 rounded-full w-1/3" />
-          <div className="h-4 bg-navy-100 rounded-full w-3/4" />
-          <div className="h-3 bg-navy-50 rounded-full w-1/2" />
+          <div className="h-4 rounded-full w-1/3" style={{ backgroundColor: 'var(--border-subtle)' }} />
+          <div className="h-4 rounded-full w-3/4" style={{ backgroundColor: 'var(--border-subtle)' }} />
+          <div className="h-3 rounded-full w-1/2" style={{ backgroundColor: 'var(--bg-surface)' }} />
         </div>
       </div>
     </div>
@@ -46,11 +46,11 @@ function EmptyState({ title, message }: { title: string; message: string }) {
       animate={{ opacity: 1, y: 0 }}
       className="col-span-full flex flex-col items-center justify-center py-16 text-center"
     >
-      <div className="w-16 h-16 bg-navy-50 rounded-2xl flex items-center justify-center mb-4">
-        <FileSearch className="w-8 h-8 text-navy-300" />
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-surface)' }}>
+        <FileSearch className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
       </div>
-      <h3 className="text-base font-semibold text-navy-700 mb-1">{title}</h3>
-      <p className="text-sm text-navy-400 max-w-xs">{message}</p>
+      <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>{title}</h3>
+      <p className="text-sm max-w-xs" style={{ color: 'var(--text-muted)' }}>{message}</p>
     </motion.div>
   );
 }

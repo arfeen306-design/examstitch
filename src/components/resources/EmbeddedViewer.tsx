@@ -163,7 +163,7 @@ function VideoFrame({
                                text-sm font-semibold rounded-full shadow-md
                                transition-all duration-200"
                     style={{
-                      backgroundColor: 'var(--accent, #D4AF37)',
+                      backgroundColor: 'var(--cta-orange)',
                       color: 'var(--text-on-accent, #1A2B56)',
                     }}
                   >

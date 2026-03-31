@@ -15,7 +15,7 @@ export default function PreOLevelPage() {
       <div className="gradient-hero py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial="hidden" animate="visible">
-            <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-gold-500 text-sm font-medium mb-3">
+            <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-sm font-medium mb-3" style={{ color: "var(--accent)" }}>
               <BookOpen className="w-4 h-4" />
               <span>Pre O-Level</span>
             </motion.div>
@@ -34,11 +34,12 @@ export default function PreOLevelPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white border border-navy-100 rounded-2xl p-12 text-center shadow-sm"
+          className="rounded-2xl p-12 text-center shadow-sm"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
         >
-          <Clock className="w-12 h-12 text-gold-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-navy-900 mb-2">Coming Soon</h2>
-          <p className="text-navy-500 max-w-md mx-auto mb-8">
+          <Clock className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--accent)' }} />
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Coming Soon</h2>
+          <p className="max-w-md mx-auto mb-8" style={{ color: 'var(--text-muted)' }}>
             Pre O-Level resources are being prepared. Get notified when they are available.
           </p>
           <div className="max-w-md mx-auto">

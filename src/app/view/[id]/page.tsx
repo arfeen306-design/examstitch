@@ -1,12 +1,14 @@
 import { notFound } from 'next/navigation';
+import nextDynamic from 'next/dynamic';
 import { createAdminClient } from '@/lib/supabase/admin';
-import EmbeddedViewer from '@/components/resources/EmbeddedViewer';
-import InteractiveSolver from '@/components/resources/InteractiveSolver';
 import type { QuestionMapping } from '@/components/resources/InteractiveSolver';
 import type { Metadata } from 'next';
 
-// force-dynamic: resource pages are unique per-ID; admin client bypasses cookie context
-export const dynamic = 'force-dynamic';
+const EmbeddedViewer    = nextDynamic(() => import('@/components/resources/EmbeddedViewer'),    { ssr: false });
+const InteractiveSolver = nextDynamic(() => import('@/components/resources/InteractiveSolver'), { ssr: false });
+
+// ISR: cache each resource page for 5 minutes; stale pages revalidate in the background
+export const revalidate = 300;
 
 interface ViewerPageProps {
   params: { id: string };
@@ -17,7 +19,7 @@ async function getResource(id: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('resources')
-    .select('*, category:categories(id, name, slug, subject_id, subjects:subjects(slug, code))')
+    .select('*, category:categories(id, name, slug, subject_id, subjects!categories_subject_id_fkey(slug, code))')
     .eq('id', id)
     .single();
 
@@ -34,7 +36,7 @@ function buildBackPath(resource: any): { href: string; label: string } {
   const subjectSlug = category.subjects?.slug || resource.subject || 'mathematics-9709';
   const categorySlug = category.slug || '';
 
-  const section = 'video-lectures';
+  const section = resource.module_type === 'solved_past_paper' ? 'past-papers' : 'video-lectures';
 
   if (categorySlug.startsWith('paper-')) {
     const paperNum = parseInt(categorySlug.match(/paper-(\d+)/)?.[1] || '1');

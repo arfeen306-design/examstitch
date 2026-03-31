@@ -25,7 +25,7 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
               <span className="text-white/30">/</span>
               <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (9709)</Link>
               <span className="text-white/30">/</span>
-              <span className="text-gold-500 font-medium">AS Level</span>
+              <span style={{ color: "var(--accent)" }} className="font-medium">AS Level</span>
             </motion.div>
             <motion.h1 variants={fadeUp} custom={1} className="text-3xl font-bold text-white mb-2">
               AS Level Papers
@@ -42,20 +42,20 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
           {aLevelPapers['as-level'].map((paper, i) => (
             <motion.div key={paper.slug} variants={fadeUp} custom={i + 3}>
               <Link href={`/alevel/${params.subject}/as-level/${paper.slug}`} className="block group">
-                <div className="card-hover bg-white border border-navy-100 rounded-2xl p-8 shadow-sm h-full">
+                <div className="card-hover rounded-2xl p-8 shadow-sm h-full" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                     <FileText className="w-7 h-7 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-navy-900 mb-2 group-hover:text-gold-700 transition-colors">
+                  <h3 className="text-lg font-bold mb-2 transition-colors group-hover:text-[var(--cta-orange)]" style={{ color: 'var(--text-primary)' }}>
                     {paper.label}
                   </h3>
-                  <p className="text-sm text-navy-500 mb-4">{paper.description}</p>
-                  <div className="flex items-center gap-4 text-xs text-navy-400 mb-4">
+                  <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>{paper.description}</p>
+                  <div className="flex items-center gap-4 text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
                     <span className="flex items-center gap-1"><PlayCircle className="w-3.5 h-3.5 text-red-500" /> Videos</span>
-                    <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-blue-500" /> Papers</span>
-                    <span className="flex items-center gap-1"><PenTool className="w-3.5 h-3.5 text-green-500" /> Topical</span>
+                    <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} /> Papers</span>
+                    <span className="flex items-center gap-1"><PenTool className="w-3.5 h-3.5" style={{ color: 'var(--accent-text)' }} /> Topical</span>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-navy-300 group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-all" style={{ color: 'var(--text-muted)' }} />
                 </div>
               </Link>
             </motion.div>

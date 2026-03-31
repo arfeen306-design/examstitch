@@ -103,7 +103,7 @@ function ActionPills({ mod }: { mod: LearningModule }) {
                    text-xs font-semibold rounded-full shadow-sm
                    transition-all duration-150 hover:shadow-md whitespace-nowrap"
         style={{
-          backgroundColor: 'var(--accent)',
+          backgroundColor: 'var(--cta-orange)',
           color: 'var(--text-on-accent)',
         }}
       >

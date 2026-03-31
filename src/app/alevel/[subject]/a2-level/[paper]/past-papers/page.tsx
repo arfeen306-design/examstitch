@@ -124,7 +124,7 @@ export default function PastPapersPage({
             <span className="text-white/30">/</span>
             <Link href={`/alevel/${params.subject}/${levelSlug}/${params.paper}`} className="text-white/50 hover:text-white/70 transition-colors">{paperName}</Link>
             <span className="text-white/30">/</span>
-            <span className="text-gold-500 font-medium">Solved Past Papers</span>
+            <span style={{ color: "var(--accent)" }} className="font-medium">Solved Past Papers</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
             {paperName} — Solved Past Papers
@@ -137,16 +137,16 @@ export default function PastPapersPage({
 
       {/* Filters + Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
-        <div className="bg-white border border-navy-100 rounded-2xl p-4 mb-6 shadow-sm flex flex-wrap gap-3">
-          <select className="px-3 py-2 text-sm border border-navy-200 rounded-xl bg-white text-navy-700 focus:outline-none focus:border-gold-500">
+        <div className="rounded-2xl p-4 mb-6 shadow-sm flex flex-wrap gap-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+          <select className="px-3 py-2 text-sm rounded-xl focus:outline-none" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
             <option>All Years</option>
             <option>2024</option><option>2023</option><option>2022</option><option>2021</option>
           </select>
-          <select className="px-3 py-2 text-sm border border-navy-200 rounded-xl bg-white text-navy-700 focus:outline-none focus:border-gold-500">
+          <select className="px-3 py-2 text-sm rounded-xl focus:outline-none" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
             <option>All Sessions</option>
             <option>May/June</option><option>Oct/Nov</option><option>Feb/Mar</option>
           </select>
-          <select className="px-3 py-2 text-sm border border-navy-200 rounded-xl bg-white text-navy-700 focus:outline-none focus:border-gold-500">
+          <select className="px-3 py-2 text-sm rounded-xl focus:outline-none" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
             <option>All Variants</option>
             <option>Variant 1</option><option>Variant 2</option><option>Variant 3</option>
           </select>
