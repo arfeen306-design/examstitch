@@ -368,9 +368,6 @@ export default function DemoBookingForm() {
         )}
       </motion.button>
 
-      <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-        No spam. We&apos;ll only contact you about your demo session.
-      </p>
     </motion.form>
   );
 }
