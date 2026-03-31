@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { headers } from 'next/headers';
 import { siteConfig } from '@/config/site';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import Navbar from '@/components/layout/Navbar';
@@ -41,11 +42,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') ?? '';
+  const isAdmin = pathname.startsWith('/admin');
+
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -63,10 +68,18 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col">
         <ThemeProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <WhatsAppFloat />
+          {isAdmin ? (
+            // Admin pages: no public Navbar/Footer/WhatsAppFloat
+            <>{children}</>
+          ) : (
+            // Public pages: full layout with Navbar, Footer, WhatsApp button
+            <>
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <WhatsAppFloat />
+            </>
+          )}
         </ThemeProvider>
       </body>
     </html>
