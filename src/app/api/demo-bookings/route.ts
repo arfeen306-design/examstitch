@@ -123,3 +123,37 @@ export async function POST(request: Request) {
 export async function GET() {
   return NextResponse.json({ error: 'Method not allowed.' }, { status: 405 });
 }
+
+// PATCH — update booking status
+export async function PATCH(request: Request) {
+  try {
+    const { id, status } = await request.json() as { id: string; status: string };
+    const allowed = ['pending', 'contacted', 'booked', 'cancelled'];
+    if (!id) return NextResponse.json({ error: 'ID required.' }, { status: 400 });
+    if (!allowed.includes(status)) return NextResponse.json({ error: 'Invalid status.' }, { status: 400 });
+
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('demo_bookings').update({ status }).eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[demo-bookings] PATCH error:', err);
+    return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
+  }
+}
+
+// DELETE — remove a booking
+export async function DELETE(request: Request) {
+  try {
+    const { id } = await request.json() as { id: string };
+    if (!id) return NextResponse.json({ error: 'ID required.' }, { status: 400 });
+
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('demo_bookings').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[demo-bookings] DELETE error:', err);
+    return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
+  }
+}
