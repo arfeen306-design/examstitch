@@ -93,6 +93,12 @@ export default function Navbar() {
               Log In
             </Link>
             <Link
+              href="/demo"
+              className="px-5 py-2 text-sm font-bold text-white rounded-lg border border-white/30 hover:border-white/60 hover:bg-white/10 transition-all duration-200"
+            >
+              Book a Demo
+            </Link>
+            <Link
               href="/auth/signup"
               className="px-5 py-2 text-sm font-bold text-white rounded-lg transition-all duration-300 hover:shadow-[0_4px_20px_rgba(255,107,53,0.4)] hover:scale-[1.02]"
               style={{ backgroundColor: '#FF6B35' }}
@@ -149,6 +155,13 @@ export default function Navbar() {
                     className="block w-full text-center py-2.5 text-sm text-white/80 border border-white/20 rounded-lg"
                   >
                     Log In
+                  </Link>
+                  <Link
+                    href="/demo"
+                    onClick={() => setMobileOpen(false)}
+                    className="block w-full text-center py-2.5 text-sm font-bold text-white border border-white/30 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    Book a Demo
                   </Link>
                   <Link
                     href="/auth/signup"
