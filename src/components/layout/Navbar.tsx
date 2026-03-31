@@ -1,15 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, GraduationCap } from 'lucide-react';
+import { Menu, X, ChevronDown, GraduationCap, LogOut, User } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import { createClient } from '@/lib/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export default function Navbar() {
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <header className="glass-navbar fixed top-0 left-0 right-0 z-50">
@@ -86,12 +115,30 @@ export default function Navbar() {
           {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
-            <Link
-              href="/auth/login"
-              className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/5"
-            >
-              Log In
-            </Link>
+            {!authLoading && (
+              user ? (
+                <>
+                  <span className="flex items-center gap-1.5 px-3 py-2 text-sm text-white/70 rounded-lg">
+                    <User className="w-3.5 h-3.5" />
+                    {user.email?.split('@')[0]}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                >
+                  Log In
+                </Link>
+              )
+            )}
             <Link
               href="/demo"
               className="px-5 py-2 text-sm font-bold text-white rounded-lg transition-all duration-200 hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,107,53,0.4)]"
@@ -143,13 +190,26 @@ export default function Navbar() {
                   </div>
                 ))}
                 <div className="pt-4 px-4 border-t border-white/10 mt-4 space-y-2">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="block w-full text-center py-2.5 text-sm font-medium text-white/80 border border-white/20 rounded-lg hover:bg-white/5 transition-colors"
-                  >
-                    Log In
-                  </Link>
+                  {user ? (
+                    <>
+                      <p className="text-xs text-white/50 px-1 pb-1">{user.email}</p>
+                      <button
+                        onClick={() => { handleSignOut(); setMobileOpen(false); }}
+                        className="flex items-center gap-2 w-full text-center py-2.5 text-sm font-medium text-white/80 border border-white/20 rounded-lg hover:bg-white/5 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4 ml-auto" />
+                        <span className="mr-auto">Sign Out</span>
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      href="/auth/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="block w-full text-center py-2.5 text-sm font-medium text-white/80 border border-white/20 rounded-lg hover:bg-white/5 transition-colors"
+                    >
+                      Log In
+                    </Link>
+                  )}
                   <Link
                     href="/demo"
                     onClick={() => setMobileOpen(false)}

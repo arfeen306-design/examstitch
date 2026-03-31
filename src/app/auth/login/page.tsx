@@ -29,8 +29,9 @@ export default function LoginPage() {
     }
 
     const redirectTo = searchParams.get('redirectTo') || '/';
-    router.push(redirectTo);
-    router.refresh();
+    // Use window.location for a full page navigation so the browser sends
+    // the newly-set session cookie to the server on the very next request.
+    window.location.href = redirectTo;
   };
 
   return (

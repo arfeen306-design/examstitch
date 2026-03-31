@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "promo-video": {
+      "source": "divakarwl12/skills",
+      "sourceType": "github",
+      "computedHash": "b384abaa03a1a782073b66678a1c8c34ddf31439ece83fb328ff8308bcad197a"
+    },
+    "remotion-best-practices": {
+      "source": "remotion-dev/skills",
+      "sourceType": "github",
+      "computedHash": "2f673b7710813ac07c71c0a54657f740078aec6585f15edf351494499e1f9ac3"
+    }
+  }
+}
