@@ -708,7 +708,7 @@ function StudentReviews() {
           <motion.h2
             variants={fadeUp}
             custom={1}
-            className="text-3xl font-bold mb-4"
+            className="text-3xl font-bold mb-2"
             style={{ color: 'var(--text-primary)' }}
           >
             Trusted by Students Worldwide
