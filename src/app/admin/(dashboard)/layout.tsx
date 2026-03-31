@@ -1,22 +1,40 @@
 import Link from 'next/link';
-import { Home, Database, FolderTree, Users, LogOut, Newspaper } from 'lucide-react';
+import { Home, Database, FolderTree, Users, LogOut, Newspaper, CalendarCheck } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
+import { createAdminClient } from '@/lib/supabase/admin';
 
-export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
+async function getNewBookingsCount(): Promise<number> {
+  try {
+    const supabase = createAdminClient();
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from('demo_bookings')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', since);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   async function handleLogout() {
     'use server';
     cookies().delete('admin_session');
     redirect('/admin/login');
   }
 
+  const newBookings = await getNewBookingsCount();
+
   const navItems = [
-    { label: 'Dashboard Overview', href: '/admin', icon: Home },
-    { label: 'Resource Manager', href: '/admin/resources', icon: Database },
-    { label: 'Taxonomy Manager', href: '/admin/categories', icon: FolderTree },
-    { label: 'Blog / Updates', href: '/admin/blog', icon: Newspaper },
-    { label: 'Lead List', href: '/admin/subscribers', icon: Users },
+    { label: 'Dashboard Overview', href: '/admin',             icon: Home },
+    { label: 'Resource Manager',   href: '/admin/resources',   icon: Database },
+    { label: 'Taxonomy Manager',   href: '/admin/categories',  icon: FolderTree },
+    { label: 'Blog / Updates',     href: '/admin/blog',        icon: Newspaper },
+    { label: 'Lead List',          href: '/admin/subscribers', icon: Users },
+    { label: 'Bookings',           href: '/admin/bookings',    icon: CalendarCheck, badge: newBookings > 0 ? newBookings : undefined },
   ];
 
   return (
@@ -28,7 +46,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
             <h2 className="text-xl font-bold text-gold-500 tracking-tight">ExamStitch Admin</h2>
             <p className="text-xs text-navy-300 mt-1">Control Panel v1.0</p>
           </div>
-          
+
           <nav className="flex-1 px-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -38,8 +56,13 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
                   href={item.href}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-navy-100 hover:text-white hover:bg-navy-800 transition-colors"
                 >
-                  <Icon className="w-5 h-5 text-gold-500" />
-                  {item.label}
+                  <Icon className="w-5 h-5 text-gold-500 shrink-0" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge !== undefined && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-orange-500 text-white leading-none">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

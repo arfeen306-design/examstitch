@@ -147,6 +147,20 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['blog_posts']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['blog_posts']['Row']>;
       };
+      demo_bookings: {
+        Row: {
+          id: string;
+          booking_ref: string;
+          name: string;
+          whatsapp: string;
+          level: string;
+          subject: string;
+          status: 'pending' | 'contacted' | 'booked' | 'cancelled';
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['demo_bookings']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['demo_bookings']['Row']>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -169,3 +183,4 @@ export type ResourceSolution = Database['public']['Tables']['resource_solutions'
 export type Subscriber = Database['public']['Tables']['subscribers']['Row'];
 export type User = Database['public']['Tables']['users']['Row'];
 export type BlogPost = Database['public']['Tables']['blog_posts']['Row'];
+export type DemoBooking = Database['public']['Tables']['demo_bookings']['Row'];
