@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { toggleResourceFlag, deleteResource, updateResource, bulkInsertResources } from '../../actions';
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
-  FolderOpen, FileVideo, FileText, ChevronRight, Clock,
+  FolderOpen, FileVideo, FileText, ChevronRight, Clock, Lock,
 } from 'lucide-react';
 import NewResourceModal from './NewResourceModal';
 import { useToast } from '@/components/ui/Toast';
@@ -396,6 +396,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                   <div className="flex gap-1 mt-0.5 flex-wrap items-center">
                     {r.source_url && <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">YT</span>}
                     {r.worksheet_url && <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">PDF</span>}
+                    {r.is_locked && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                        <Lock className="w-2.5 h-2.5" /> Locked
+                      </span>
+                    )}
                     {totalParts > 1 && !isSub && (
                       <span className="text-[10px] text-navy-400">{totalParts} parts</span>
                     )}
@@ -448,13 +453,31 @@ export default function ResourceGridClient({ initialResources }: { initialResour
 
           {/* Toggles */}
           <td className="w-10 px-2 py-2.5 text-center">
-            <input type="checkbox" checked={r.is_published} onChange={() => handleToggle(r.id, 'is_published', r.is_published)} className="w-4 h-4 cursor-pointer accent-gold-500" />
+            <button
+              onClick={() => handleToggle(r.id, 'is_published', r.is_published)}
+              title={r.is_published ? 'Published — click to unpublish' : 'Unpublished — click to publish'}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_published ? 'bg-yellow-400' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_published ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
           </td>
           <td className="w-10 px-2 py-2.5 text-center">
-            <input type="checkbox" checked={r.is_locked} onChange={() => handleToggle(r.id, 'is_locked', r.is_locked)} className="w-4 h-4 cursor-pointer accent-red-500" />
+            <button
+              onClick={() => handleToggle(r.id, 'is_locked', r.is_locked)}
+              title={r.is_locked ? 'Locked (login required) — click to unlock' : 'Public — click to lock (require login)'}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_locked ? 'bg-orange-500' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_locked ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
           </td>
           <td className="w-10 px-2 py-2.5 text-center">
-            <input type="checkbox" checked={r.is_watermarked} onChange={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)} className="w-4 h-4 cursor-pointer accent-blue-500" />
+            <button
+              onClick={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)}
+              title={r.is_watermarked ? 'Watermarked — click to remove' : 'No watermark — click to enable'}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_watermarked ? 'bg-blue-500' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_watermarked ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
           </td>
 
           {/* Actions */}
@@ -679,9 +702,9 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               <th className="px-4 py-3">Topic / Title</th>
               <th className="w-20 px-2 py-3 text-center">Order ↕</th>
               <th className="w-20 px-3 py-3">Type</th>
-              <th className="w-10 px-2 py-3 text-center" title="Published">Pub</th>
-              <th className="w-10 px-2 py-3 text-center" title="Locked">Lock</th>
-              <th className="w-10 px-2 py-3 text-center" title="Watermark">Wtmk</th>
+              <th className="w-12 px-2 py-3 text-center" title="Published — toggle to show/hide on site">Pub</th>
+              <th className="w-12 px-2 py-3 text-center" title="Locked — toggle to require login to view">🔒 Lock</th>
+              <th className="w-12 px-2 py-3 text-center" title="Watermark — toggle to mark content">Wtmk</th>
               <th className="w-28 px-3 py-3 text-right">Actions</th>
             </tr>
           </thead>
