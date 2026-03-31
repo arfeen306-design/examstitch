@@ -14,6 +14,7 @@ export interface ResourceItem {
   session?: string;
   variant?: number;
   subject?: string;
+  isLocked?: boolean;
 }
 
 interface ResourceGridProps {
@@ -95,6 +96,7 @@ export default function ResourceGrid({
           session={resource.session}
           variant={resource.variant}
           subject={resource.subject}
+          isLocked={resource.isLocked}
           index={index}
         />
       ))}

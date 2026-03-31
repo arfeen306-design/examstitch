@@ -24,6 +24,7 @@ async function VideoModules({ subject, paper }: { subject: string; paper: string
       title: r.title,
       videoUrl: r.source_url,
       worksheetUrl: (r as any).worksheet_url || null,
+      isLocked: (r as any).is_locked ?? false,
     }));
 
     return (

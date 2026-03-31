@@ -26,6 +26,7 @@ function toResourceItem(resource: Resource, basePath: string): ResourceItem {
     session: examSeries?.session,
     variant: examSeries?.variant,
     subject: resource.subject,
+    isLocked: (resource as any).is_locked ?? false,
   };
 }
 
