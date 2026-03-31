@@ -55,16 +55,21 @@ export async function POST(request: Request) {
   try {
     const body = await request.json() as {
       name?: string;
+      email?: string;
       whatsapp?: string;
       level?: string;
       subject?: string;
     };
 
-    const { name, whatsapp, level, subject } = body;
+    const { name, email, whatsapp, level, subject } = body;
 
     // ── Validation ──────────────────────────────────────────────────────────
     if (!name || name.trim().length < 2) {
       return NextResponse.json({ error: 'Please enter your full name.' }, { status: 400 });
+    }
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !EMAIL_REGEX.test(email.trim())) {
+      return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     }
     if (!whatsapp || !WHATSAPP_REGEX.test(whatsapp.trim())) {
       return NextResponse.json(
@@ -87,7 +92,7 @@ export async function POST(request: Request) {
 
     const { data: inserted, error } = await supabase
       .from('demo_bookings')
-      .insert({ booking_ref, name: name.trim(), whatsapp: whatsapp.trim(), level, subject, status })
+      .insert({ booking_ref, name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim(), level, subject, status })
       .select('*')
       .single();
 

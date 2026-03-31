@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, Database, FolderTree, Users, LogOut, Newspaper, CalendarCheck } from 'lucide-react';
+import { Home, Database, FolderTree, Users, LogOut, Newspaper, CalendarCheck, GraduationCap } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -22,7 +22,7 @@ async function getNewBookingsCount(): Promise<number> {
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   async function handleLogout() {
     'use server';
-    cookies().delete('admin_session');
+    (await cookies()).delete('admin_session');
     redirect('/admin/login');
   }
 
@@ -35,6 +35,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
     { label: 'Blog / Updates',     href: '/admin/blog',        icon: Newspaper },
     { label: 'Lead List',          href: '/admin/subscribers', icon: Users },
     { label: 'Bookings',           href: '/admin/bookings',    icon: CalendarCheck, badge: newBookings > 0 ? newBookings : undefined },
+    { label: 'Students',           href: '/admin/students',    icon: GraduationCap },
   ];
 
   return (

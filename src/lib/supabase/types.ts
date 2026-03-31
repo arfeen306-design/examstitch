@@ -152,6 +152,7 @@ export type Database = {
           id: string;
           booking_ref: string;
           name: string;
+          email: string;
           whatsapp: string;
           level: string;
           subject: string;
@@ -160,6 +161,21 @@ export type Database = {
         };
         Insert: Omit<Database['public']['Tables']['demo_bookings']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['demo_bookings']['Row']>;
+      };
+      student_accounts: {
+        Row: {
+          id: string;
+          email: string;
+          full_name: string;
+          password_hash: string;
+          salt: string;
+          level: string;
+          is_active: boolean;
+          created_at: string;
+          last_login: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['student_accounts']['Row'], 'id' | 'created_at' | 'last_login'>;
+        Update: Partial<Database['public']['Tables']['student_accounts']['Row']>;
       };
     };
     Views: Record<string, never>;
@@ -184,3 +200,4 @@ export type Subscriber = Database['public']['Tables']['subscribers']['Row'];
 export type User = Database['public']['Tables']['users']['Row'];
 export type BlogPost = Database['public']['Tables']['blog_posts']['Row'];
 export type DemoBooking = Database['public']['Tables']['demo_bookings']['Row'];
+export type StudentAccount = Database['public']['Tables']['student_accounts']['Row'];

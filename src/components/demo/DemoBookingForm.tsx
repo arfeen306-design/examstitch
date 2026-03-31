@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Loader2, Phone, User, BookOpen, GraduationCap, Calendar } from 'lucide-react';
+import { CheckCircle, Loader2, Phone, User, BookOpen, GraduationCap, Calendar, Mail } from 'lucide-react';
 import MathConfetti from './MathConfetti';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -24,8 +24,11 @@ const SUBJECTS = [
 // E.164: + followed by 8–15 digits (e.g. +923001234567)
 const WHATSAPP_REGEX = /^\+[1-9]\d{7,14}$/;
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 interface FormState {
   name: string;
+  email: string;
   whatsapp: string;
   level: string;
   subject: string;
@@ -33,6 +36,7 @@ interface FormState {
 
 interface FieldError {
   name?: string;
+  email?: string;
   whatsapp?: string;
   level?: string;
   subject?: string;
@@ -82,7 +86,7 @@ const inputStyle = {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function DemoBookingForm() {
-  const [form, setForm] = useState<FormState>({ name: '', whatsapp: '', level: '', subject: '' });
+  const [form, setForm] = useState<FormState>({ name: '', email: '', whatsapp: '', level: '', subject: '' });
   const [errors, setErrors] = useState<FieldError>({});
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [apiError, setApiError] = useState('');
@@ -93,6 +97,8 @@ export default function DemoBookingForm() {
     const next: FieldError = {};
     if (!form.name.trim() || form.name.trim().length < 2)
       next.name = 'Please enter your full name.';
+    if (!form.email.trim() || !EMAIL_REGEX.test(form.email.trim()))
+      next.email = 'Please enter a valid email address.';
     if (!form.whatsapp.trim() || !WHATSAPP_REGEX.test(form.whatsapp.trim()))
       next.whatsapp = 'Use international format — e.g. +923001234567';
     if (!form.level)
@@ -213,8 +219,8 @@ export default function DemoBookingForm() {
             {[
               { label: 'Level', value: form.level },
               { label: 'Subject', value: form.subject },
+              { label: 'Email', value: form.email },
               { label: 'WhatsApp', value: form.whatsapp },
-              { label: 'Status', value: 'Pending Confirmation' },
             ].map(({ label, value }) => (
               <div
                 key={label}
@@ -255,6 +261,22 @@ export default function DemoBookingForm() {
           style={{
             ...inputStyle,
             borderColor: errors.name ? '#ef4444' : undefined,
+          }}
+        />
+      </Field>
+
+      {/* Email */}
+      <Field label="Email Address" error={errors.email} icon={Mail}>
+        <input
+          type="email"
+          value={form.email}
+          onChange={set('email')}
+          placeholder="e.g. student@example.com"
+          autoComplete="email"
+          className={inputClass}
+          style={{
+            ...inputStyle,
+            borderColor: errors.email ? '#ef4444' : undefined,
           }}
         />
       </Field>
