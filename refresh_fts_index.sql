@@ -1,26 +1,21 @@
 -- ============================================================
 -- ExamStitch: FTS Index Refresh
--- Run this in your Supabase SQL Editor whenever new resources
--- are uploaded and search results look stale.
+-- Run in Supabase SQL Editor after bulk uploads to sync search.
+-- 'fts' is a GENERATED column — Postgres recomputes it
+-- automatically when the source columns change.
 -- ============================================================
 
--- 1. Force-update the tsvector column on ALL rows so the GIN
---    index picks up every title and description change.
+-- 1. Force recompute: no-op UPDATE on source columns causes
+--    Postgres to re-evaluate the generated 'fts' expression.
 UPDATE resources
-SET fts = to_tsvector(
-  'english',
-  coalesce(title, '') || ' ' ||
-  coalesce(description, '') || ' ' ||
-  coalesce(subject, '') || ' ' ||
-  coalesce(topic, '')
-);
+SET title = title
+WHERE is_published = true;
 
--- 2. Re-index the GIN index to compact fragmentation.
+-- 2. Compact / rebuild the GIN index after the update.
 REINDEX INDEX CONCURRENTLY resources_fts_idx;
 
--- 3. Verify: run a quick sanity check — should return 1 row
---    for any title you recently uploaded.
--- SELECT id, title, fts
+-- 3. Sanity check (uncomment to verify a specific title):
+-- SELECT id, title
 -- FROM resources
--- WHERE fts @@ to_tsquery('english', 'Quadratics')
+-- WHERE fts @@ websearch_to_tsquery('english', 'Quadratics')
 -- LIMIT 5;
