@@ -163,6 +163,7 @@ function EditForm({
 export default function ResourceGridClient({ initialResources }: { initialResources: Resource[] }) {
   const [resources, setResources] = useState<Resource[]>(initialResources);
   const [filterSubject, setFilterSubject] = useState<string>('all');
+  const [filterModuleType, setFilterModuleType] = useState<string>('all');
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { showToast } = useToast();
@@ -206,9 +207,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
 
   // ── Filtering ──────────────────────────────────────────────────────────────
 
-  const filtered = filterSubject === 'all'
-    ? resources
-    : resources.filter(r => r.subject === filterSubject);
+  const filtered = resources.filter(r => {
+    if (filterSubject !== 'all' && r.subject !== filterSubject) return false;
+    if (filterModuleType !== 'all' && r.module_type !== filterModuleType) return false;
+    return true;
+  });
 
   const paperGroups = buildHierarchy(filtered);
 
@@ -452,6 +455,17 @@ export default function ResourceGridClient({ initialResources }: { initialResour
             )}
           </td>
 
+          {/* Module Type */}
+          <td className="w-28 px-3 py-2.5">
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${
+              r.module_type === 'solved_past_paper'
+                ? 'bg-blue-50 text-blue-700'
+                : 'bg-amber-50 text-amber-700'
+            }`}>
+              {r.module_type === 'solved_past_paper' ? 'Past Paper' : 'Video Topical'}
+            </span>
+          </td>
+
           {/* Toggles */}
           <td className="w-14 px-2 py-2.5 text-center">
             <button
@@ -476,7 +490,8 @@ export default function ResourceGridClient({ initialResources }: { initialResour
             <button
               onClick={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)}
               title={r.is_watermarked ? 'Watermarked — click to remove' : 'No watermark — click to enable'}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_watermarked ? 'bg-blue-600' : 'bg-gray-300'}`}
+              style={r.is_watermarked ? { backgroundColor: '#FF6B35' } : undefined}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${!r.is_watermarked ? 'bg-gray-300' : ''}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_watermarked ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
@@ -506,7 +521,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         {/* Inline sub-topic form */}
         {subtopicParentId === r.id && (
           <tr key={`sub-form-${r.id}`} className="bg-blue-50/50 border-l-4 border-blue-400">
-            <td colSpan={8} className="px-4 py-3">
+            <td colSpan={9} className="px-4 py-3">
               <div className="flex flex-wrap gap-2 items-end">
                 <div className="flex flex-col gap-1 min-w-[160px]">
                   <label className="text-xs font-semibold text-navy-500">Sub-topic Title</label>
@@ -544,7 +559,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         {/* Inline timestamp mapping editor */}
         {mappingEditId === r.id && (
           <tr key={`ts-editor-${r.id}`} className="bg-purple-50/50 border-l-4 border-purple-400">
-            <td colSpan={8} className="px-4 py-3">
+            <td colSpan={9} className="px-4 py-3">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-purple-700 uppercase tracking-widest flex items-center gap-1">
@@ -677,18 +692,37 @@ export default function ResourceGridClient({ initialResources }: { initialResour
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between pb-2">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between pb-2 flex-wrap gap-3">
+        <div className="flex items-center gap-4 flex-wrap">
           <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
             className="border border-navy-100 rounded-lg px-3 py-2 text-sm text-navy-700 focus:ring-1 focus:ring-gold-500 outline-none">
             <option value="all">All Syllabi</option>
             <option value="mathematics-4024">O-Level / IGCSE (4024)</option>
             <option value="mathematics-9709">A-Level (9709)</option>
           </select>
+          <div className="flex rounded-lg border border-navy-100 overflow-hidden">
+            {[
+              { value: 'all', label: 'All Types' },
+              { value: 'video_topical', label: 'Video Topical' },
+              { value: 'solved_past_paper', label: 'Past Papers' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setFilterModuleType(opt.value)}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${
+                  filterModuleType === opt.value
+                    ? 'bg-[#FF6B35] text-white'
+                    : 'text-navy-600 hover:bg-navy-50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <span className="text-sm text-navy-400">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
         </div>
         <button onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+          className="flex items-center gap-2 bg-[#FF6B35] hover:bg-[#e55a2b] text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
           <Plus className="w-4 h-4" /> New Resource
         </button>
       </div>
@@ -705,6 +739,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               <th className="px-4 py-3 min-w-[200px]">Topic / Title</th>
               <th className="w-16 px-2 py-3 text-center whitespace-nowrap">Order ↕</th>
               <th className="w-24 px-3 py-3 whitespace-nowrap">Type</th>
+              <th className="w-28 px-3 py-3 whitespace-nowrap">Module</th>
               <th className="w-14 px-2 py-3 text-center whitespace-nowrap" title="Published — toggle to show/hide on site">Pub</th>
               <th className="w-14 px-2 py-3 text-center whitespace-nowrap" title="Locked — toggle to require login to view">🔒 Lock</th>
               <th className="w-14 px-2 py-3 text-center whitespace-nowrap" title="Watermark — toggle to mark content">Wtmk</th>
@@ -715,7 +750,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                  className="divide-y divide-[var(--border-subtle)]" >
             {paperGroups.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-navy-400 text-sm">No resources found.</td>
+                <td colSpan={9} className="py-12 text-center text-navy-400 text-sm">No resources found.</td>
               </tr>
             ) : (
               paperGroups.map(paper => (
@@ -723,7 +758,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                   {/* ── Paper group header ── */}
                   <tr key={`header-${paper.categoryId}`}
                       style={{ backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-                    <td colSpan={8} className="px-4 py-2">
+                    <td colSpan={9} className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <FolderOpen className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                         <span className="text-xs font-bold uppercase tracking-widest"

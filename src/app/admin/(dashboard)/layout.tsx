@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient as createServerSupabase } from '@/lib/supabase/server';
 
 async function getNewBookingsCount(): Promise<number> {
   try {
@@ -22,6 +23,8 @@ async function getNewBookingsCount(): Promise<number> {
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   async function handleLogout() {
     'use server';
+    const supabase = createServerSupabase();
+    await supabase.auth.signOut();
     (await cookies()).delete('admin_session');
     redirect('/admin/login');
   }
@@ -42,7 +45,8 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
     <ToastProvider>
       <div className="min-h-screen bg-gray-50 flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-navy-900 text-white flex flex-col items-stretch shrink-0">
+        <aside className="w-64 text-white flex flex-col items-stretch shrink-0"
+               style={{ backgroundColor: 'var(--sidebar-bg, #1A2B56)' }}>
           <div className="p-6">
             <h2 className="text-xl font-bold text-gold-500 tracking-tight">ExamStitch Admin</h2>
             <p className="text-xs text-navy-300 mt-1">Control Panel v1.0</p>

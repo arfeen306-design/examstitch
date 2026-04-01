@@ -12,6 +12,20 @@ interface Category {
 
 type ModuleType = 'video_topical' | 'solved_past_paper';
 
+const SESSION_OPTIONS = [
+  { value: 'mj', label: 'May/June' },
+  { value: 'on', label: 'Oct/Nov' },
+  { value: 'fm', label: 'Feb/March' },
+] as const;
+
+function generateDisplayTitle(session: string, year: string, variant: string): string {
+  const sessionLabel = SESSION_OPTIONS.find(s => s.value === session)?.label ?? session;
+  const parts = [sessionLabel];
+  if (year) parts.push(year);
+  if (variant) parts.push(`- Paper ${variant}`);
+  return parts.join(' ');
+}
+
 export default function NewResourceModal({
   isOpen,
   onClose,
@@ -37,6 +51,8 @@ export default function NewResourceModal({
     video_url: '',
     worksheet_url: '',
     solution_url: '',
+    session: 'mj',
+    variant: '',
   });
 
   useEffect(() => {
@@ -58,6 +74,12 @@ export default function NewResourceModal({
     e.preventDefault();
     setLoading(true);
 
+    if (!formData.subject) {
+      showToast({ message: 'Please select a Subject.', type: 'error' });
+      setLoading(false);
+      return;
+    }
+
     if (!formData.category_id) {
       showToast({ message: 'Please select a Target Module.', type: 'error' });
       setLoading(false);
@@ -69,7 +91,9 @@ export default function NewResourceModal({
       return /^https?:\/\/(drive\.google\.com|youtu\.be|www\.youtube\.com)\/.+/.test(url);
     };
 
-    const richTitle = `${formData.title} ${formData.year ? `(${formData.year})` : ''} ${formData.paper ? `P${formData.paper}` : ''}`.trim();
+    const richTitle = moduleType === 'solved_past_paper'
+      ? generateDisplayTitle(formData.session, formData.year, formData.variant)
+      : formData.title;
 
     const payloads = [];
 
@@ -159,12 +183,12 @@ export default function NewResourceModal({
       if (success) {
         showToast({ message: `Saved! ${keepOpen ? 'Ready for next entry.' : ''}`, type: 'success' });
         if (keepOpen) {
-          // Clear only the URL fields — keep subject, category, module type
-          setFormData(prev => ({ ...prev, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '' }));
+          // Clear only the URL fields — keep subject, category, module type, session
+          setFormData(prev => ({ ...prev, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '', variant: '' }));
           setTimeout(() => titleRef.current?.focus(), 50);
         } else {
           onSuccess();
-          setFormData({ ...formData, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '' });
+          setFormData({ ...formData, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '', variant: '' });
         }
       } else {
         showToast({ message: error || 'Failed to link resources', type: 'error' });
@@ -230,19 +254,62 @@ export default function NewResourceModal({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-navy-700 mb-1">
-                {moduleType === 'video_topical' ? 'Topic Name' : 'Paper Title'}
-              </label>
-              <input
-                ref={titleRef}
-                required
-                value={formData.title}
-                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
-                placeholder={moduleType === 'video_topical' ? 'e.g. Differentiation Rules' : 'e.g. May/June 2024 V1'}
-              />
-            </div>
+            {/* ── Title section: Topic Name for videos, Session/Year/Variant for past papers ── */}
+            {moduleType === 'video_topical' ? (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-navy-700 mb-1">Topic Name</label>
+                <input
+                  ref={titleRef}
+                  required
+                  value={formData.title}
+                  onChange={e => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                  placeholder="e.g. Differentiation Rules"
+                />
+              </div>
+            ) : (
+              <div className="col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-navy-400 mb-2">Paper Identity</label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-navy-700 mb-1">Session</label>
+                    <select
+                      value={formData.session}
+                      onChange={e => setFormData({ ...formData, session: e.target.value })}
+                      className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                    >
+                      {SESSION_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-navy-700 mb-1">Year</label>
+                    <input
+                      ref={titleRef}
+                      required
+                      value={formData.year}
+                      onChange={e => setFormData({ ...formData, year: e.target.value })}
+                      className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                      placeholder="e.g. 2024"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-navy-700 mb-1">Paper Variant</label>
+                    <input
+                      required
+                      value={formData.variant}
+                      onChange={e => setFormData({ ...formData, variant: e.target.value })}
+                      className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                      placeholder="e.g. 12, 22"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-navy-400 mt-1.5">
+                  Preview: <span className="font-semibold text-navy-600">{generateDisplayTitle(formData.session, formData.year, formData.variant) || '—'}</span>
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-navy-700 mb-1">Subject</label>
@@ -261,19 +328,6 @@ export default function NewResourceModal({
                 ))}
               </select>
             </div>
-
-            {moduleType === 'solved_past_paper' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-navy-700 mb-1">Paper # (Optional)</label>
-                  <input value={formData.paper} onChange={e => setFormData({ ...formData, paper: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500" placeholder="e.g. 1" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-navy-700 mb-1">Year (Optional)</label>
-                  <input value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500" placeholder="e.g. 2024" />
-                </div>
-              </>
-            )}
 
             {/* Dynamic Link Inputs */}
             <div className="col-span-2 pt-2 border-t border-navy-50">
@@ -323,9 +377,7 @@ export default function NewResourceModal({
             </label>
             <div className="flex gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50 rounded-lg transition">Cancel</button>
-              <button type="submit" disabled={loading} className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 ${
-                moduleType === 'video_topical' ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'
-              }`}>
+              <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-[#FF6B35] hover:bg-[#e55a2b]">
                 {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === 'video_topical' ? 'Link Video + Topical' : 'Link Past Paper'}
               </button>
             </div>

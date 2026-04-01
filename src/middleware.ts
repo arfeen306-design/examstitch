@@ -46,14 +46,21 @@ export async function middleware(request: NextRequest) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ── Admin panel guard (cookie-based) ──────────────────────────────────────
+  // ── Admin panel guard (Supabase Auth + role-verified cookie) ──────────────
+  // Requires BOTH a valid Supabase session AND an admin_session cookie whose
+  // value matches the authenticated user's ID. A student with a normal session
+  // cannot access /admin/* because they will never hold a matching cookie.
   if (pathname.startsWith('/admin')) {
     if (pathname === '/admin/login') return response;
 
-    const authCookie = request.cookies.get('admin_session');
-    if (!authCookie || authCookie.value !== 'true') {
+    const adminCookie = request.cookies.get('admin_session');
+
+    if (!user || !adminCookie || adminCookie.value !== user.id) {
       const loginUrl = new URL('/admin/login', request.url);
-      return NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      // Clear any stale admin cookie
+      redirectResponse.cookies.delete('admin_session');
+      return redirectResponse;
     }
   }
   // ─────────────────────────────────────────────────────────────────────────

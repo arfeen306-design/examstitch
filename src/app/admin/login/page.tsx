@@ -1,73 +1,124 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { ShieldCheck } from 'lucide-react';
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function AdminLoginPage() {
-  async function handleLogin(formData: FormData) {
-    'use server';
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const password = formData.get('password');
-    const correctPassword = process.env.ADMIN_PASSWORD;
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-    if (!correctPassword) {
-      console.error('ADMIN_PASSWORD is not set in environment variables');
-    }
-
-    if (password === correctPassword) {
-      cookies().set('admin_session', 'true', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
-      redirect('/admin/resources');
-    } else {
-      redirect('/admin/login?error=invalid');
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Authentication failed.');
+        return;
+      }
+
+      router.push('/admin/resources');
+      router.refresh();
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#1e293b] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center flex-col items-center">
-          <div className="w-16 h-16 bg-navy-900 rounded-2xl flex items-center justify-center mb-4 shadow-xl">
-            <ShieldCheck className="w-8 h-8 text-gold-500" />
+          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 shadow-xl backdrop-blur-sm border border-white/10">
+            <ShieldCheck className="w-8 h-8 text-[#FF6B35]" />
           </div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-navy-900 tracking-tight">
+          <h2 className="mt-2 text-center text-3xl font-extrabold text-white tracking-tight">
             ExamStitch Admin
           </h2>
-          <p className="mt-2 text-center text-sm text-navy-500">
-            Internal dashboard for managing platform resources
+          <p className="mt-2 text-center text-sm text-slate-400">
+            Secure access to the platform dashboard
           </p>
         </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-sm border border-navy-50 sm:rounded-2xl sm:px-10">
-          <form action={handleLogin} className="space-y-6">
+        <div className="bg-white/5 backdrop-blur-sm py-8 px-4 shadow-xl border border-white/10 sm:rounded-2xl sm:px-10">
+          {error && (
+            <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-500/10 border border-red-500/20 p-4">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-navy-700">
-                Admin Password
+              <label htmlFor="email" className="block text-sm font-medium text-slate-300">
+                Email Address
+              </label>
+              <div className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  className="appearance-none block w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg shadow-sm placeholder-slate-500 text-white focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/50 focus:border-[#FF6B35] sm:text-sm transition-colors"
+                  placeholder="admin@examstitch.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                Password
               </label>
               <div className="mt-1">
                 <input
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-navy-100 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gold-500 focus:border-gold-500 sm:text-sm"
-                  placeholder="Enter administrator password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  className="appearance-none block w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg shadow-sm placeholder-slate-500 text-white focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/50 focus:border-[#FF6B35] sm:text-sm transition-colors"
+                  placeholder="••••••••"
                 />
               </div>
             </div>
 
-            <div>
+            <div className="pt-1">
               <button
                 type="submit"
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-navy-900 hover:bg-navy-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500"
+                disabled={loading}
+                className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-[#FF6B35] hover:bg-[#e55a2b] disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1e293b] focus:ring-[#FF6B35]"
               >
-                Authenticate
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Authenticating…
+                  </>
+                ) : (
+                  'Authenticate'
+                )}
               </button>
             </div>
           </form>
