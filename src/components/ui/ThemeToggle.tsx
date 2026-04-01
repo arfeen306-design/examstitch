@@ -16,9 +16,6 @@ export default function ThemeToggle() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const current = THEMES.find(t => t.id === theme) ?? THEMES[0];
-  const Icon = current.icon;
-
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -30,24 +27,16 @@ export default function ThemeToggle() {
 
   return (
     <div ref={ref} className="relative">
-      {/* Trigger */}
+      {/* Trigger — transparent moon icon only */}
       <button
         onClick={() => setOpen(o => !o)}
         title="Switch theme"
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                   border border-[var(--border-color)] hover:border-[var(--accent)]
-                   text-[var(--text-primary)] hover:text-[var(--accent)]
-                   bg-[var(--bg-surface)]/30 hover:bg-[var(--bg-surface)]/60
-                   transition-all duration-150 text-xs font-medium"
+        className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10
+                   transition-all duration-150"
         aria-expanded={open}
         aria-haspopup="listbox"
       >
-        <Icon className="w-3.5 h-3.5" style={{ color: current.color }} />
-        <span className="hidden sm:inline">{current.label}</span>
-        <svg className={`w-3 h-3 ml-0.5 transition-transform ${open ? 'rotate-180' : ''}`}
-             viewBox="0 0 12 12" fill="none">
-          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
+        <Moon className="w-4 h-4" />
       </button>
 
       {/* Dropdown */}

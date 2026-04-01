@@ -114,7 +114,6 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
-            <ThemeToggle />
             {!authLoading && (
               user ? (
                 <>
@@ -146,6 +145,7 @@ export default function Navbar() {
             >
               Book a Demo
             </Link>
+            <ThemeToggle />
           </div>
 
           {/* Mobile hamburger */}
