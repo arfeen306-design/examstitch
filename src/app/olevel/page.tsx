@@ -51,17 +51,17 @@ export default function OLevelPage() {
           {subjects.map((subject, i) => (
             <motion.div key={subject.slug} variants={fadeUp} custom={i + 3}>
               <Link href={`/olevel/${subject.slug}`} className="block group">
-                <div className="card-hover bg-white border border-navy-100 rounded-2xl p-6 shadow-sm">
+                <div className="card-hover border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <div className={`w-12 h-12 bg-gradient-to-br ${subject.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <span className="text-sm font-bold text-white">{subject.code}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-navy-900 mb-1 group-hover:text-gold-700 transition-colors">
+                  <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1 group-hover:text-gold-700 transition-colors">
                     {subject.name}
                   </h3>
-                  <p className="text-sm text-navy-500 mb-4">{subject.description}</p>
+                  <p className="text-sm text-[var(--text-secondary)] mb-4">{subject.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-navy-400">{subject.papers} Papers</span>
-                    <ArrowRight className="w-4 h-4 text-navy-300 group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
+                    <span className="text-xs text-[var(--text-muted)]">{subject.papers} Papers</span>
+                    <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
                   </div>
                 </div>
               </Link>

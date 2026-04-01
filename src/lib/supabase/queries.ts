@@ -188,16 +188,22 @@ export async function getResourcesByTopic(
   categoryId: string,
   topic: string,
 ): Promise<Resource[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('resources')
-    .select('*')
-    .eq('category_id', categoryId)
-    .eq('topic', topic)
-    .eq('is_published', true)
-    .order('created_at', { ascending: false });
-  if (error) throw new Error(`getResourcesByTopic(${categoryId}, ${topic}): ${error.message}`);
-  return (data ?? []) as unknown as Resource[];
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('topic', topic)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(`getResourcesByTopic(${categoryId}, ${topic}): ${error.message}`);
+      return (data ?? []) as unknown as Resource[];
+    },
+    [`resources-topic-${categoryId}-${topic}`],
+    { revalidate: CACHE_1H, tags: ['resources'] },
+  )();
 }
 
 /**
@@ -237,31 +243,43 @@ export async function getTopicsByCategory(
  * Fetches a single resource by its UUID.
  */
 export async function getResourceById(id: string): Promise<Resource | null> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('resources')
-    .select('*')
-    .eq('id', id)
-    .single();
-  if (error && error.code !== 'PGRST116') {
-    throw new Error(`getResourceById(${id}): ${error.message}`);
-  }
-  return (data ?? null) as unknown as Resource | null;
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(`getResourceById(${id}): ${error.message}`);
+      }
+      return (data ?? null) as unknown as Resource | null;
+    },
+    [`resource-${id}`],
+    { revalidate: CACHE_1H, tags: ['resources'] },
+  )();
 }
 
 /**
  * Fetches the latest N published resources. Used on the homepage.
  */
 export async function getLatestResources(limit = 6): Promise<Resource[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('resources')
-    .select('*')
-    .eq('is_published', true)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  if (error) throw new Error(`getLatestResources: ${error.message}`);
-  return (data ?? []) as unknown as Resource[];
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(`getLatestResources: ${error.message}`);
+      return (data ?? []) as unknown as Resource[];
+    },
+    [`latest-resources-${limit}`],
+    { revalidate: CACHE_1H, tags: ['resources'] },
+  )();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -402,39 +420,45 @@ export async function searchResources(query: string, limit = 60): Promise<Resour
  * Only returns titles whose prefix matches at least one word in the query.
  */
 export async function getSuggestions(query: string, count = 6): Promise<string[]> {
-  const supabase = createAdminClient();
   const trimmed = query.trim().slice(0, 60);
   if (!trimmed) return [];
 
-  // Take first 3 chars of the query as a loose prefix
-  const prefix = trimmed.slice(0, 3).replace(/[%_]/g, '\\$&');
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      // Take first 3 chars of the query as a loose prefix
+      const prefix = trimmed.slice(0, 3).replace(/[%_]/g, '\\$&');
 
-  const { data } = await supabase
-    .from('resources')
-    .select('title')
-    .eq('is_published', true)
-    .ilike('title', `${prefix}%`)
-    .order('sort_order', { ascending: true, nullsFirst: false })
-    .limit(count * 3); // fetch more, dedupe by base title below
+      const { data } = await supabase
+        .from('resources')
+        .select('title')
+        .eq('is_published', true)
+        .ilike('title', `${prefix}%`)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .limit(count * 3); // fetch more, dedupe by base title below
 
-  if (!data) return [];
+      if (!data) return [];
 
-  // Deduplicate by stripping year/part suffixes, then return unique base titles
-  const seen = new Set<string>();
-  const results: string[] = [];
-  for (const row of data) {
-    const base = row.title
-      .replace(/\s*\(\d{4}\)\s*/g, '') // strip (2026)
-      .replace(/\s*[—–-]\s*Part\s+\d+\s*$/i, '') // strip — Part 2
-      .replace(/\s+Part\s+\d+\s*$/i, '')
-      .trim();
-    if (!seen.has(base) && base.toLowerCase() !== trimmed.toLowerCase()) {
-      seen.add(base);
-      results.push(base);
-      if (results.length >= count) break;
-    }
-  }
-  return results;
+      // Deduplicate by stripping year/part suffixes, then return unique base titles
+      const seen = new Set<string>();
+      const results: string[] = [];
+      for (const row of data) {
+        const base = row.title
+          .replace(/\s*\(\d{4}\)\s*/g, '') // strip (2026)
+          .replace(/\s*[—–-]\s*Part\s+\d+\s*$/i, '') // strip — Part 2
+          .replace(/\s+Part\s+\d+\s*$/i, '')
+          .trim();
+        if (!seen.has(base) && base.toLowerCase() !== trimmed.toLowerCase()) {
+          seen.add(base);
+          results.push(base);
+          if (results.length >= count) break;
+        }
+      }
+      return results;
+    },
+    [`suggestions-${trimmed}-${count}`],
+    { revalidate: CACHE_5M, tags: ['resources'] },
+  )();
 }
 
 /**
@@ -462,27 +486,39 @@ export async function searchResourcesCategorised(query: string): Promise<Categor
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getBlogPosts(limit = 10): Promise<BlogPost[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('id, title, slug, created_at, is_published, author_id, content, updated_at')
-    .eq('is_published', true)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  if (error) throw new Error(`getBlogPosts: ${error.message}`);
-  return (data ?? []) as unknown as BlogPost[];
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, created_at, is_published, author_id, content, updated_at')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(`getBlogPosts: ${error.message}`);
+      return (data ?? []) as unknown as BlogPost[];
+    },
+    [`blog-posts-${limit}`],
+    { revalidate: CACHE_1H, tags: ['blog'] },
+  )();
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .single();
-  if (error && error.code !== 'PGRST116') {
-    throw new Error(`getBlogPostBySlug(${slug}): ${error.message}`);
-  }
-  return (data ?? null) as unknown as BlogPost | null;
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_published', true)
+        .single();
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(`getBlogPostBySlug(${slug}): ${error.message}`);
+      }
+      return (data ?? null) as unknown as BlogPost | null;
+    },
+    [`blog-post-${slug}`],
+    { revalidate: CACHE_1H, tags: ['blog'] },
+  )();
 }

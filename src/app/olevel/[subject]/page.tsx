@@ -33,8 +33,8 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {oLevelGrades.map((grade) => (
                 <Link key={grade.slug} href={`/olevel/${params.subject}/${grade.slug}`} className="block group">
-                  <div className="card-hover border border-navy-100 rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--bg-card)' }}>
-                    <div className="bg-gradient-to-r from-navy-800 to-navy-900 p-5">
+                  <div className="card-hover border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="bg-gradient-to-r from-[var(--hero-via)] to-[var(--hero-from)] p-5">
                       <h3 className="text-lg font-bold text-white group-hover:text-gold-500 transition-colors">{grade.label}</h3>
                       <p className="text-xs text-white/50 mt-1">{grade.description}</p>
                     </div>
@@ -46,10 +46,10 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
                         <FileText className="w-4 h-4 text-blue-500" /><span>Solved Past Papers</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        <PenTool className="w-4 h-4 text-green-500" /><span>Topical Worksheets</span>
+                        <PenTool className="w-4 h-4 text-[var(--accent)]" /><span>Topical Worksheets</span>
                       </div>
                       <div className="pt-2 flex items-center justify-end">
-                        <ArrowRight className="w-4 h-4 text-navy-300 group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
+                        <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
                       </div>
                     </div>
                   </div>
@@ -60,7 +60,7 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
 
           {/* Sidebar */}
           <div className="lg:w-80 space-y-6">
-            <div className="border border-navy-100 rounded-2xl p-5 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <div className="border border-[var(--border-subtle)] rounded-2xl p-5 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Quick Filter</h3>
               <div className="space-y-2">
                 {['Topical Questions', 'Solved Past Papers by Year', 'Video Lectures'].map(label => (

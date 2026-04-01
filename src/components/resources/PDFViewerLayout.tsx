@@ -53,7 +53,7 @@ export default function PDFViewerLayout({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="bg-navy-900 rounded-xl p-3 flex items-center justify-between">
+      <div className="bg-[var(--hero-from)] rounded-xl p-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white truncate mr-4">{title}</h2>
         <div className="flex items-center gap-1">
           <button
@@ -113,7 +113,7 @@ export default function PDFViewerLayout({
         {/* PDF Viewer */}
         <div className={`${hasSolutions ? 'lg:w-[60%]' : 'w-full'}`}>
           <div
-            className="bg-gray-100 rounded-xl overflow-hidden border border-navy-100"
+            className="bg-gray-100 rounded-xl overflow-hidden border border-[var(--border-subtle)]"
             style={{ height: '75vh' }}
           >
             <iframe

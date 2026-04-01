@@ -41,7 +41,7 @@
     --shadow-color:  rgba(12, 74, 110, 0.08);
 
     --wave-fill:     #FFF9F2;
-    --cta-orange:    #F97316;
+    --cta-orange:    #FF6B35;
   }
 
   /* ── Dark ───────────────────────────────────────────────────────────────── */
@@ -76,7 +76,7 @@
     --shadow-color:  rgba(0, 0, 0, 0.3);
 
     --wave-fill:     #0D0D14;
-    --cta-orange:    #F97316;
+    --cta-orange:    #FF6B35;
   }
 
   /* ── Navy & Gold ─────────────────────────────────────────────────────── */
@@ -111,7 +111,7 @@
     --shadow-color:  rgba(26, 43, 86, 0.08);
 
     --wave-fill:     #ffffff;
-    --cta-orange:    #F97316;
+    --cta-orange:    #FF6B35;
   }
 
   /* ── Forest ─────────────────────────────────────────────────────────────── */
@@ -146,7 +146,7 @@
     --shadow-color:  rgba(20, 83, 45, 0.08);
 
     --wave-fill:     #F0FDF4;
-    --cta-orange:    #F97316;
+    --cta-orange:    #FF6B35;
   }
 
   /* ── Base element styling ───────────────────────────────────────────────── */

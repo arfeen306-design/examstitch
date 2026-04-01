@@ -5,10 +5,10 @@ import { Sun, Moon, Waves, Leaf } from 'lucide-react';
 import { useTheme, type Theme } from '@/components/ui/ThemeProvider';
 
 const THEMES: { id: Theme; label: string; icon: React.ElementType; color: string }[] = [
-  { id: 'default', label: 'Navy',   icon: Sun,   color: '#D4AF37' },
-  { id: 'dark',    label: 'Dark',   icon: Moon,  color: '#A78BFA' },
-  { id: 'beach',   label: 'Beach',  icon: Waves, color: '#0E7EC0' },
-  { id: 'forest',  label: 'Forest', icon: Leaf,  color: '#4ADE80' },
+  { id: 'default', label: 'Navy',     icon: Sun,   color: '#D4AF37' },
+  { id: 'dark',    label: 'Midnight', icon: Moon,  color: '#A78BFA' },
+  { id: 'beach',   label: 'Beach',    icon: Waves, color: '#0E7EC0' },
+  { id: 'forest',  label: 'Forest',   icon: Leaf,  color: '#4ADE80' },
 ];
 
 export default function ThemeToggle() {

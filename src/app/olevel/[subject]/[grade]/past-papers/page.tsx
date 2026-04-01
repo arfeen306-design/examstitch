@@ -132,16 +132,16 @@ export default function PastPapersPage({
 
       {/* Filters + Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
-        <div className="bg-white border border-navy-100 rounded-2xl p-4 mb-6 shadow-sm flex flex-wrap gap-3">
-          <select className="px-3 py-2 text-sm border border-navy-200 rounded-xl bg-white text-navy-700 focus:outline-none focus:border-gold-500">
+        <div className="border border-[var(--border-subtle)] rounded-2xl p-4 mb-6 shadow-sm flex flex-wrap gap-3" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <select className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-gold-500" style={{ backgroundColor: 'var(--bg-card)' }}>
             <option>All Years</option>
             <option>2024</option><option>2023</option><option>2022</option><option>2021</option>
           </select>
-          <select className="px-3 py-2 text-sm border border-navy-200 rounded-xl bg-white text-navy-700 focus:outline-none focus:border-gold-500">
+          <select className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-gold-500" style={{ backgroundColor: 'var(--bg-card)' }}>
             <option>All Sessions</option>
             <option>May/June</option><option>Oct/Nov</option><option>Feb/Mar</option>
           </select>
-          <select className="px-3 py-2 text-sm border border-navy-200 rounded-xl bg-white text-navy-700 focus:outline-none focus:border-gold-500">
+          <select className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-gold-500" style={{ backgroundColor: 'var(--bg-card)' }}>
             <option>All Variants</option>
             <option>Variant 1</option><option>Variant 2</option><option>Variant 3</option>
           </select>

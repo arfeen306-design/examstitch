@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, LogIn, GraduationCap, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface PremiumGateProps {
   resourceTitle: string;
   redirectTo: string;
+  user?: User | null;
 }
 
 /**
@@ -17,11 +19,14 @@ interface PremiumGateProps {
  * On mount, we re-check auth client-side. If a valid session exists, we
  * call router.refresh() so the server re-renders with the actual content.
  */
-export default function PremiumGate({ resourceTitle, redirectTo }: PremiumGateProps) {
+export default function PremiumGate({ resourceTitle, redirectTo, user }: PremiumGateProps) {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    // If the server explicitly passed null, we still re-check on client mount
+    // to handle the edge case where the browser has a valid cookie/local session
+    // that the server missed.
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -37,7 +42,7 @@ export default function PremiumGate({ resourceTitle, redirectTo }: PremiumGatePr
     return (
       <div className="min-h-screen pt-24 pb-16 flex items-center justify-center"
            style={{ backgroundColor: 'var(--bg-subtle)' }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#FF6B35' }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--cta-orange)' }} />
       </div>
     );
   }
@@ -51,7 +56,7 @@ export default function PremiumGate({ resourceTitle, redirectTo }: PremiumGatePr
 
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
                style={{ backgroundColor: 'var(--border-subtle)' }}>
-            <Lock className="w-8 h-8" style={{ color: '#FF6B35' }} />
+            <Lock className="w-8 h-8" style={{ color: 'var(--cta-orange)' }} />
           </div>
 
           <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
@@ -70,7 +75,7 @@ export default function PremiumGate({ resourceTitle, redirectTo }: PremiumGatePr
             <Link
               href={`/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition hover:opacity-90"
-              style={{ backgroundColor: '#FF6B35', color: '#fff' }}
+              style={{ backgroundColor: 'var(--cta-orange)', color: '#fff' }}
             >
               <LogIn className="w-4 h-4" />
               Sign In to Access

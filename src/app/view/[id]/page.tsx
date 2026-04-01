@@ -83,7 +83,7 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return <PremiumGate resourceTitle={resource.title} redirectTo={`/view/${params.id}`} />;
+      return <PremiumGate resourceTitle={resource.title} redirectTo={`/view/${params.id}`} user={null} />;
     }
   }
   // ─────────────────────────────────────────────────────────────────────────

@@ -106,7 +106,7 @@ function ActionPills({ mod }: { mod: LearningModule }) {
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5
                      text-xs font-semibold rounded-full shadow-sm
                      transition-all duration-150 hover:shadow-md whitespace-nowrap"
-          style={{ backgroundColor: '#FF6B35', color: '#fff' }}
+          style={{ backgroundColor: 'var(--cta-orange)', color: '#fff' }}
         >
           <Lock className="w-3 h-3" />
           Members Only
@@ -182,7 +182,7 @@ function SingleRow({
           {group.baseTitle}
           {mod.isLocked && (
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                  style={{ backgroundColor: '#FF6B351A', color: '#FF6B35' }}>
+                  style={{ backgroundColor: 'rgba(255, 107, 53, 0.1)', color: 'var(--cta-orange)' }}>
               <Lock className="w-2.5 h-2.5" /> Locked
             </span>
           )}

@@ -39,7 +39,7 @@ export default function ALevelSubjectPage({ params }: { params: { subject: strin
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {aLevelPapers['as-level'].map((paper) => (
                   <Link key={paper.slug} href={`/alevel/${params.subject}/as-level/${paper.slug}`} className="block group">
-                    <div className="card-hover border border-navy-100 rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="card-hover border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4">
                         <h3 className="text-base font-bold text-white group-hover:text-gold-300 transition-colors">{paper.label}</h3>
                         <p className="text-xs text-white/60 mt-1">{paper.description}</p>
@@ -48,10 +48,10 @@ export default function ALevelSubjectPage({ params }: { params: { subject: strin
                         <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                           <PlayCircle className="w-3.5 h-3.5 text-red-500" /> Videos
                           <FileText className="w-3.5 h-3.5 text-blue-500 ml-2" /> Papers
-                          <PenTool className="w-3.5 h-3.5 text-green-500 ml-2" /> Topical
+                          <PenTool className="w-3.5 h-3.5 text-[var(--accent)] ml-2" /> Topical
                         </div>
                         <div className="flex justify-end">
-                          <ArrowRight className="w-4 h-4 text-navy-300 group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
+                          <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
                     </div>
@@ -71,7 +71,7 @@ export default function ALevelSubjectPage({ params }: { params: { subject: strin
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {aLevelPapers['a2-level'].map((paper) => (
                   <Link key={paper.slug} href={`/alevel/${params.subject}/a2-level/${paper.slug}`} className="block group">
-                    <div className="card-hover border border-navy-100 rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="card-hover border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <div className="bg-gradient-to-r from-purple-600 to-violet-700 p-4">
                         <h3 className="text-base font-bold text-white group-hover:text-gold-300 transition-colors">{paper.label}</h3>
                         <p className="text-xs text-white/60 mt-1">{paper.description}</p>
@@ -80,10 +80,10 @@ export default function ALevelSubjectPage({ params }: { params: { subject: strin
                         <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                           <PlayCircle className="w-3.5 h-3.5 text-red-500" /> Videos
                           <FileText className="w-3.5 h-3.5 text-blue-500 ml-2" /> Papers
-                          <PenTool className="w-3.5 h-3.5 text-green-500 ml-2" /> Topical
+                          <PenTool className="w-3.5 h-3.5 text-[var(--accent)] ml-2" /> Topical
                         </div>
                         <div className="flex justify-end">
-                          <ArrowRight className="w-4 h-4 text-navy-300 group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
+                          <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-gold-500 group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
                     </div>

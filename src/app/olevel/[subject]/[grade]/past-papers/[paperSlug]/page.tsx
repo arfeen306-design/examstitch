@@ -72,7 +72,7 @@ export default async function PaperViewerPage({
   return (
     <div className="min-h-screen pt-24 pb-16">
       {/* Breadcrumb */}
-      <div className="bg-navy-900 py-6">
+      <div className="bg-[var(--hero-from)] py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm flex-wrap">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
@@ -128,7 +128,7 @@ function DemoViewer({
 
   return (
     <div className="min-h-screen pt-24 pb-16">
-      <div className="bg-navy-900 py-6">
+      <div className="bg-[var(--hero-from)] py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm flex-wrap">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
