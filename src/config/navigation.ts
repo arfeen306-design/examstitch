@@ -87,10 +87,6 @@ export const mainNavItems = [
     href: '/digital-skills',
   },
   {
-    label: 'Search',
-    href: '/search',
-  },
-  {
     label: 'Blog',
     href: '/blog',
   },

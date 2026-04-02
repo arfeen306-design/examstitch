@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, GraduationCap, LogOut, User } from 'lucide-react';
+import { Menu, X, ChevronDown, GraduationCap, LogOut, User, Search } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
@@ -16,6 +16,11 @@ export default function Navbar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Search state
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -33,6 +38,10 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (searchOpen && searchRef.current) searchRef.current.focus();
+  }, [searchOpen]);
+
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -40,12 +49,20 @@ export default function Navbar() {
     router.refresh();
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearchOpen(false);
+    router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    setSearchQuery('');
+  };
+
   return (
     <header className="glass-navbar fixed top-0 left-0 right-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="w-9 h-9 rounded-lg gradient-gold flex items-center justify-center">
               <GraduationCap className="w-5 h-5 text-navy-900" />
             </div>
@@ -54,8 +71,8 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-0.5">
+          {/* Desktop Nav — flex-nowrap for clean single line */}
+          <div className="hidden lg:flex items-center gap-0.5 flex-nowrap">
             {mainNavItems.map((item) => (
               <div
                 key={item.href}
@@ -65,10 +82,10 @@ export default function Navbar() {
               >
                 <Link
                   href={item.href}
-                  className="px-3 py-2 text-sm font-medium text-white/75 hover:text-white transition-colors rounded-lg hover:bg-white/8 flex items-center gap-1"
+                  className="px-2.5 py-2 text-[13px] font-medium text-white/75 hover:text-white transition-colors rounded-lg hover:bg-white/[0.08] flex items-center gap-1 whitespace-nowrap"
                 >
                   {item.label}
-                  {item.children && <ChevronDown className="w-3.5 h-3.5" />}
+                  {item.children && <ChevronDown className="w-3 h-3" />}
                 </Link>
 
                 {/* Dropdown */}
@@ -107,23 +124,80 @@ export default function Navbar() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-
               </div>
             ))}
           </div>
 
-          {/* Right side */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* Right side — Search + Auth + Demo + Theme */}
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+            {/* Search bar */}
+            <div className="relative">
+              <AnimatePresence>
+                {searchOpen ? (
+                  <motion.form
+                    key="search-form"
+                    initial={{ width: 36, opacity: 0.5 }}
+                    animate={{ width: 220, opacity: 1 }}
+                    exit={{ width: 36, opacity: 0.5 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    onSubmit={handleSearch}
+                    className="flex items-center overflow-hidden rounded-lg"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      backdropFilter: 'blur(12px)',
+                    }}
+                  >
+                    <Search className="w-4 h-4 text-white/50 ml-2.5 shrink-0" />
+                    <input
+                      ref={searchRef}
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      placeholder="Search…"
+                      className="bg-transparent text-sm text-white placeholder-white/40 outline-none px-2 py-2 w-full"
+                      onBlur={() => {
+                        if (!searchQuery.trim()) setSearchOpen(false);
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); }
+                      }}
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => { setSearchQuery(''); searchRef.current?.focus(); }}
+                        className="p-1.5 mr-1 text-white/40 hover:text-white/70 transition"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </motion.form>
+                ) : (
+                  <motion.button
+                    key="search-btn"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setSearchOpen(true)}
+                    className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors"
+                    title="Search"
+                  >
+                    <Search className="w-4 h-4" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+
             {!authLoading && (
               user ? (
                 <>
-                  <span className="flex items-center gap-1.5 px-3 py-2 text-sm text-white/70 rounded-lg">
+                  <span className="flex items-center gap-1.5 px-2.5 py-2 text-xs text-white/60 rounded-lg">
                     <User className="w-3.5 h-3.5" />
                     {user.email?.split('@')[0]}
                   </span>
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/5"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Sign Out
@@ -132,7 +206,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/auth/login"
-                  className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                  className="px-3 py-2 text-xs font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/5"
                 >
                   Log In
                 </Link>
@@ -140,7 +214,7 @@ export default function Navbar() {
             )}
             <Link
               href="/demo"
-              className="px-5 py-2 text-sm font-bold text-white rounded-lg transition-all duration-200 hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,107,53,0.4)]"
+              className="px-4 py-2 text-xs font-bold text-white rounded-lg transition-all duration-200 hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,107,53,0.4)]"
               style={{ backgroundColor: '#FF6B35' }}
             >
               Book a Demo
@@ -148,14 +222,50 @@ export default function Navbar() {
             <ThemeToggle />
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 text-white/80 hover:text-white"
-          >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile: search icon + hamburger */}
+          <div className="lg:hidden flex items-center gap-1">
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="p-2 text-white/70 hover:text-white"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 text-white/80 hover:text-white"
+            >
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile search bar */}
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.form
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onSubmit={handleSearch}
+              className="lg:hidden overflow-hidden border-t border-white/10"
+            >
+              <div className="flex items-center gap-2 px-4 py-3">
+                <Search className="w-4 h-4 text-white/50 shrink-0" />
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search resources…"
+                  className="bg-transparent text-sm text-white placeholder-white/40 outline-none w-full"
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button type="submit" className="text-xs font-semibold text-gold-400 shrink-0">Go</button>
+                )}
+              </div>
+            </motion.form>
+          )}
+        </AnimatePresence>
 
         {/* Mobile Menu */}
         <AnimatePresence>
@@ -165,7 +275,7 @@ export default function Navbar() {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden border-t border-white/10"
+              className="lg:hidden overflow-hidden border-t border-white/10"
             >
               <div className="py-4 space-y-1">
                 {mainNavItems.map((item) => (

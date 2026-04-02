@@ -162,49 +162,51 @@ export default async function BlogPage() {
           </div>
         )}
 
-        {/* ── Upcoming articles (placeholders) ── */}
-        <div>
-          <div className="flex items-center gap-3 mb-5">
-            <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
-              Coming Soon
-            </h2>
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
-          </div>
-          <div className="space-y-5">
-            {PLACEHOLDER_POSTS.map((post, i) => (
-              <div
-                key={i}
-                className="rounded-2xl p-6 shadow-sm relative overflow-hidden opacity-70"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                <div className="absolute top-4 right-4">
-                  <span className="text-xs font-semibold px-3 py-1 rounded-full"
-                        style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent-text)' }}>
-                    Coming Soon
-                  </span>
+        {/* ── Upcoming articles (only show if no real posts yet) ── */}
+        {blogs.length === 0 && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                Coming Soon
+              </h2>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
+            </div>
+            <div className="space-y-5">
+              {PLACEHOLDER_POSTS.map((post, i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl p-6 shadow-sm relative overflow-hidden opacity-70"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <div className="absolute top-4 right-4">
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                          style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent-text)' }}>
+                      Coming Soon
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+                          style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
+                      {post.category}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <Clock className="w-3 h-3" /> {post.readTime}
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    {post.title}
+                  </h2>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    {post.excerpt}
+                  </p>
                 </div>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-medium px-2.5 py-0.5 rounded-full"
-                        style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
-                    {post.category}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <Clock className="w-3 h-3" /> {post.readTime}
-                  </span>
-                </div>
-                <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  {post.title}
-                </h2>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  {post.excerpt}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* CTA */}
         <div className="mt-4 text-center rounded-2xl p-8 shadow-lg"
