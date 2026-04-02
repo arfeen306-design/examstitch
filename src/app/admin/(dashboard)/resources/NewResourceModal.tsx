@@ -3,11 +3,17 @@ import { createBrowserClient } from '@supabase/ssr';
 import { X, PlayCircle, FileText, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
+interface SubjectRow {
+  id: string;
+  name: string;
+  code: string;
+  slug: string;
+}
+
 interface Category {
   id: string;
   name: string;
   subject_id: string;
-  subject: { name: string; code: string };
 }
 
 type ModuleType = 'video_topical' | 'solved_past_paper';
@@ -36,6 +42,7 @@ export default function NewResourceModal({
   onSuccess: () => void;
 }) {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
   const [moduleType, setModuleType] = useState<ModuleType>('video_topical');
@@ -44,7 +51,7 @@ export default function NewResourceModal({
 
   const [formData, setFormData] = useState({
     title: '',
-    subject: 'mathematics-9709',
+    subject_id: '',
     category_id: '',
     paper: '',
     year: new Date().getFullYear().toString(),
@@ -57,16 +64,32 @@ export default function NewResourceModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
-      const { data } = await supabase.from('categories').select('*, subject:subjects(name, code)');
-      if (data) setCategories(data as any[]);
+      // Fetch only Mathematics subjects (codes 4024 and 9709)
+      const { data: subjectData } = await supabase
+        .from('subjects')
+        .select('id, name, code, slug')
+        .in('slug', ['mathematics-4024', 'mathematics-9709'])
+        .order('sort_order');
+      if (subjectData) {
+        setSubjects(subjectData as SubjectRow[]);
+        // Auto-select first subject if none selected
+        if (!formData.subject_id && subjectData.length > 0) {
+          setFormData(prev => ({ ...prev, subject_id: subjectData[0].id }));
+        }
+      }
+      // Fetch all categories (filtered client-side by selected subject)
+      const { data: catData } = await supabase
+        .from('categories')
+        .select('id, name, subject_id')
+        .order('sort_order');
+      if (catData) setCategories(catData as Category[]);
     };
-    fetchCategories();
-    // Auto-focus the title field when modal opens
+    fetchData();
     setTimeout(() => titleRef.current?.focus(), 80);
   }, [isOpen]);
 
@@ -74,7 +97,7 @@ export default function NewResourceModal({
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.subject) {
+    if (!formData.subject_id) {
       showToast({ message: 'Please select a Subject.', type: 'error' });
       setLoading(false);
       return;
@@ -97,6 +120,10 @@ export default function NewResourceModal({
 
     const payloads = [];
 
+    // Resolve the subject slug for the DB `subject` column
+    const selectedSubject = subjects.find(s => s.id === formData.subject_id);
+    const subjectSlug = selectedSubject?.slug ?? '';
+
     if (moduleType === 'video_topical') {
       // Must have at least a video URL
       if (!formData.video_url) {
@@ -117,7 +144,7 @@ export default function NewResourceModal({
 
       payloads.push({
         title: richTitle,
-        subject: formData.subject,
+        subject: subjectSlug,
         category_id: formData.category_id,
         source_url: formData.video_url,
         worksheet_url: formData.worksheet_url || null,
@@ -149,7 +176,7 @@ export default function NewResourceModal({
       if (hasVideo) {
         payloads.push({
           title: richTitle,
-          subject: formData.subject,
+          subject: subjectSlug,
           category_id: formData.category_id,
           source_url: formData.video_url,
           worksheet_url: formData.solution_url,
@@ -163,7 +190,7 @@ export default function NewResourceModal({
       } else {
         payloads.push({
           title: richTitle,
-          subject: formData.subject,
+          subject: subjectSlug,
           category_id: formData.category_id,
           source_url: formData.solution_url,
           source_type: 'google_drive',
@@ -202,8 +229,8 @@ export default function NewResourceModal({
 
   if (!isOpen) return null;
 
-  const subjectCode = formData.subject.split('-')[1];
-  const activeCategories = categories.filter(c => c.subject?.code === subjectCode);
+  // Filter categories to only show those belonging to the selected subject
+  const activeCategories = categories.filter(c => c.subject_id === formData.subject_id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
@@ -313,9 +340,11 @@ export default function NewResourceModal({
 
             <div>
               <label className="block text-sm font-medium text-navy-700 mb-1">Subject</label>
-              <select value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500">
-                <option value="mathematics-4024">O-Level / IGCSE (4024/0580)</option>
-                <option value="mathematics-9709">A-Level (9709)</option>
+              <select value={formData.subject_id} onChange={e => setFormData({ ...formData, subject_id: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500">
+                <option value="" disabled>Select subject…</option>
+                {subjects.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                ))}
               </select>
             </div>
 

@@ -32,9 +32,23 @@ export async function POST(request: Request) {
     const salt = crypto.randomUUID();
     const password_hash = await hashPassword(password, salt);
 
+    // Create Supabase Auth user first to get a stable UUID
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email: email.trim().toLowerCase(),
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: full_name.trim(), role: 'student' },
+    });
+
+    if (authError || !authUser?.user) {
+      console.error('[admin/students] Auth user creation failed:', authError);
+      return NextResponse.json({ error: 'Failed to create student auth account.' }, { status: 500 });
+    }
+
     const { data: student, error } = await supabase
       .from('student_accounts')
       .insert({
+        id: authUser.user.id,
         full_name: full_name.trim(),
         email: email.trim().toLowerCase(),
         level,
@@ -82,6 +96,10 @@ export async function PATCH(request: Request) {
         .eq('id', body.id);
 
       if (error) return NextResponse.json({ error: 'Failed to reset password.' }, { status: 500 });
+
+      // Sync password to Supabase Auth (if auth user exists)
+      await supabase.auth.admin.updateUserById(body.id, { password }).catch(() => {});
+
       return NextResponse.json({ success: true, password });
     }
 
@@ -113,6 +131,10 @@ export async function DELETE(request: Request) {
     const { error } = await supabase.from('student_accounts').delete().eq('id', id);
 
     if (error) return NextResponse.json({ error: 'Failed to delete student.' }, { status: 500 });
+
+    // Also remove the Supabase Auth user
+    await supabase.auth.admin.deleteUser(id).catch(() => {});
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('[admin/students] DELETE error:', err);

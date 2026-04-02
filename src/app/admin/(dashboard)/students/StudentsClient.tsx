@@ -105,8 +105,8 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
     }
   }
 
-  function copyCredentials(email: string, password: string) {
-    navigator.clipboard.writeText(`Email: ${email}\nPassword: ${password}`);
+  function copyPassword(password: string) {
+    navigator.clipboard.writeText(password);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -156,7 +156,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
               Password: <strong>{createdPassword}</strong>
             </code>
             <button
-              onClick={() => copyCredentials(form.email || rows.find(r => r.full_name === createdName)?.email || '', createdPassword)}
+              onClick={() => copyPassword(createdPassword)}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white hover:bg-green-700 transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}

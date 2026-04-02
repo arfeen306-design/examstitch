@@ -201,18 +201,23 @@ function CSUploadModal({
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
-  // Load CS categories on mount
+  // Load CS categories filtered by subject ID
   useEffect(() => {
     import('@supabase/ssr').then(({ createBrowserClient }) => {
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       );
-      supabase.from('categories').select('id, name').then(({ data }) => {
-        if (data) setCategories(data);
-      });
+      supabase
+        .from('categories')
+        .select('id, name')
+        .eq('subject_id', subjectId)
+        .order('sort_order')
+        .then(({ data }) => {
+          if (data) setCategories(data);
+        });
     });
-  }, []);
+  }, [subjectId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

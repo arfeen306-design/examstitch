@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,30 +18,30 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error: authError, data: { user } } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const res = await fetch('/api/auth/student-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (authError || !user) {
-      setError(authError?.message || 'Login failed');
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      // Determine redirect — use query param if present, otherwise API suggestion
+      const redirectTo = searchParams.get('redirectTo') || json.redirectTo || '/dashboard';
+
+      // Full page navigation to pick up new session cookies
+      window.location.href = redirectTo;
+    } catch {
+      setError('Network error. Please try again.');
       setLoading(false);
-      return;
     }
-
-    // Determine redirect
-    let redirectTo = searchParams.get('redirectTo');
-    if (!redirectTo) {
-      // Check if student has a level
-      const { data: student } = await supabase
-        .from('student_accounts')
-        .select('level')
-        .eq('id', user.id)
-        .single();
-      
-      redirectTo = student?.level ? '/dashboard' : '/';
-    }
-
-    // Use window.location for a full page navigation
-    window.location.href = redirectTo;
   };
 
   return (
