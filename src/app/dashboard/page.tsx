@@ -2,13 +2,14 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { 
   getStudentAccountByAuthId, 
   getUserProgress, 
   countResourcesByLevel 
 } from '@/lib/supabase/queries';
 import ResourceCard from '@/components/resources/ResourceCard';
-import { LayoutDashboard, Clock, CheckCircle, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Clock, CheckCircle, GraduationCap, Sparkles } from 'lucide-react';
 
 const ProgressStats = nextDynamic(() => import('@/components/dashboard/ProgressStats'), { 
   ssr: false,
@@ -38,6 +39,29 @@ export default async function DashboardPage() {
     getUserProgress(student.id),
     countResourcesByLevel(student.level || 'olevel')
   ]);
+
+  // Fetch unlocked skills for this student
+  let unlockedSkills: { id: string; name: string; slug: string; icon: string; gradient: string; description: string | null }[] = [];
+  try {
+    const admin = createAdminClient();
+    const { data: access } = await admin
+      .from('student_skill_access')
+      .select('skill_id')
+      .eq('student_id', student.id);
+
+    if (access && access.length > 0) {
+      const ids = access.map(a => a.skill_id);
+      const { data: skills } = await admin
+        .from('skills')
+        .select('id, name, slug, icon, gradient, description')
+        .in('id', ids)
+        .eq('is_active', true)
+        .order('sort_order');
+      unlockedSkills = skills ?? [];
+    }
+  } catch {
+    // Skills feature may not be set up yet — silently ignore
+  }
 
   const completedCount = progress.filter(p => p.is_completed).length;
   const recentlyViewed = progress.slice(0, 5);
@@ -125,6 +149,37 @@ export default async function DashboardPage() {
 
           {/* Sidebar (1/3) */}
           <div className="space-y-6">
+            {/* Unlocked Skills */}
+            {unlockedSkills.length > 0 && (
+              <div className="rounded-2xl p-6 border" 
+                   style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}>
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <Sparkles className="w-5 h-5 text-violet-500" />
+                  Your Skills
+                </h3>
+                <div className="space-y-2">
+                  {unlockedSkills.map(skill => (
+                    <Link
+                      key={skill.id}
+                      href={`/digital-skills?skill=${skill.slug}`}
+                      className="flex items-center gap-3 p-3 rounded-xl border hover:shadow-sm transition-all group"
+                      style={{ borderColor: 'var(--border-subtle)' }}
+                    >
+                      <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${skill.gradient} flex items-center justify-center shrink-0 shadow-sm`}>
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold truncate group-hover:underline" style={{ color: 'var(--text-primary)' }}>{skill.name}</p>
+                        {skill.description && (
+                          <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{skill.description}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-2xl p-6 border" 
                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}>
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>

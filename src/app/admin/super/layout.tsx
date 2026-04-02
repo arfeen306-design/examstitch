@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {
   Globe, LogOut, Shield, Home, Database, FolderTree,
-  Newspaper, Users, CalendarCheck, GraduationCap, Monitor,
+  Newspaper, Users, CalendarCheck, GraduationCap, Monitor, Sparkles,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -48,6 +48,8 @@ export default async function SuperAdminLayout({ children }: { children: React.R
     { label: 'Students',           href: '/admin/students',     icon: GraduationCap,  section: 'maths' },
     // CS Dashboard
     { label: 'CS Dashboard',       href: '/admin/cs',           icon: Monitor,        section: 'cs' },
+    // Digital Skills
+    { label: 'Digital Skills',     href: '/admin/super/digital-skills', icon: Sparkles, section: 'skills' },
   ];
 
   return (
@@ -64,9 +66,9 @@ export default async function SuperAdminLayout({ children }: { children: React.R
           </div>
 
           <nav className="flex-1 px-4 space-y-0.5 overflow-y-auto">
-            {(['super', 'maths', 'cs'] as const).map((section) => {
+            {(['super', 'maths', 'cs', 'skills'] as const).map((section) => {
               const items = navItems.filter(i => i.section === section);
-              const sectionLabel = section === 'super' ? 'Global' : section === 'maths' ? 'Mathematics' : 'Computer Science';
+              const sectionLabel = section === 'super' ? 'Global' : section === 'maths' ? 'Mathematics' : section === 'cs' ? 'Computer Science' : 'Digital Skills';
               return (
                 <div key={section} className={section !== 'super' ? 'pt-4' : ''}>
                   <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-violet-500">

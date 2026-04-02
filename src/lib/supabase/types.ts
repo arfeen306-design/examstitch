@@ -222,6 +222,68 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['media_widgets']['Row'], 'id' | 'created_at' | 'view_count'>;
         Update: Partial<Database['public']['Tables']['media_widgets']['Row']>;
       };
+
+      // ── Digital Skills ──────────────────────────────────────────────
+      skills: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          icon: string;
+          description: string | null;
+          gradient: string;
+          glow_color: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['skills']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['skills']['Row']>;
+      };
+
+      skill_playlists: {
+        Row: {
+          id: string;
+          skill_id: string;
+          title: string;
+          description: string | null;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['skill_playlists']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['skill_playlists']['Row']>;
+      };
+
+      skill_lessons: {
+        Row: {
+          id: string;
+          playlist_id: string;
+          title: string;
+          video_url: string | null;
+          resource_url: string | null;
+          duration: string | null;
+          sort_order: number;
+          is_free: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['skill_lessons']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['skill_lessons']['Row']>;
+      };
+
+      student_skill_access: {
+        Row: {
+          id: string;
+          student_id: string;
+          skill_id: string;
+          granted_at: string;
+          granted_by: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['student_skill_access']['Row'], 'id' | 'granted_at'>;
+        Update: Partial<Database['public']['Tables']['student_skill_access']['Row']>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -249,3 +311,9 @@ export type DemoBooking = Database['public']['Tables']['demo_bookings']['Row'];
 export type StudentAccount = Database['public']['Tables']['student_accounts']['Row'];
 export type UserProgress = Database['public']['Tables']['user_progress']['Row'];
 export type MediaWidget = Database['public']['Tables']['media_widgets']['Row'];
+
+// ── Digital Skills ────────────────────────────────────────────────────────
+export type Skill = Database['public']['Tables']['skills']['Row'];
+export type SkillPlaylist = Database['public']['Tables']['skill_playlists']['Row'];
+export type SkillLesson = Database['public']['Tables']['skill_lessons']['Row'];
+export type StudentSkillAccess = Database['public']['Tables']['student_skill_access']['Row'];
