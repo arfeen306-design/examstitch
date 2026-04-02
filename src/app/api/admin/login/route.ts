@@ -75,24 +75,34 @@ export async function POST(request: Request) {
 
     // ── Step 4: Determine smart redirect based on role ───────────────────────
     let redirectTo = '/admin';
+    let landing = 'default'; // 'super' | 'cs' | 'default'
+
+    const managedSubjects = (profile.managed_subjects as string[]) ?? [];
+
     if (profile.is_super_admin) {
       redirectTo = '/admin/super';
-    } else {
-      // Resolve subject slugs to determine the right dashboard
-      const subjects = (profile.managed_subjects as string[]) ?? [];
-      if (subjects.length > 0) {
-        const { data: subjectRows } = await adminSupabase
-          .from('subjects')
-          .select('slug')
-          .in('id', subjects);
-        const slugs = subjectRows?.map(s => s.slug) ?? [];
+      landing = 'super';
+    } else if (managedSubjects.length > 0) {
+      const { data: subjectRows } = await adminSupabase
+        .from('subjects')
+        .select('slug')
+        .in('id', managedSubjects);
+      const slugs = subjectRows?.map(s => s.slug) ?? [];
 
-        if (slugs.length === 1 && slugs[0] === 'computer-science') {
-          redirectTo = '/admin/cs';
-        }
-        // Default /admin for Maths-only or multi-subject admins
+      if (slugs.length === 1 && slugs[0] === 'computer-science') {
+        redirectTo = '/admin/cs';
+        landing = 'cs';
       }
     }
+
+    // Store landing preference so middleware can enforce role-based routing
+    cookieStore.set('admin_landing', landing, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
 
     return NextResponse.json({ success: true, redirectTo });
   } catch (err) {

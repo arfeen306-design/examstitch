@@ -51,16 +51,43 @@ export async function middleware(request: NextRequest) {
   // value matches the authenticated user's ID. A student with a normal session
   // cannot access /admin/* because they will never hold a matching cookie.
   if (pathname.startsWith('/admin')) {
-    if (pathname === '/admin/login') return response;
+    if (pathname === '/admin/login' || pathname === '/admin/forbidden') return response;
 
     const adminCookie = request.cookies.get('admin_session');
 
     if (!user || !adminCookie || adminCookie.value !== user.id) {
       const loginUrl = new URL('/admin/login', request.url);
       const redirectResponse = NextResponse.redirect(loginUrl);
-      // Clear any stale admin cookie
       redirectResponse.cookies.delete('admin_session');
+      redirectResponse.cookies.delete('admin_landing');
       return redirectResponse;
+    }
+
+    // ── Role-based routing & subject isolation ─────────────────────────────
+    const landing = request.cookies.get('admin_landing')?.value ?? 'default';
+
+    // Auto-redirect bare /admin to the user's landing page
+    if (pathname === '/admin' || pathname === '/admin/') {
+      if (landing === 'super') {
+        return NextResponse.redirect(new URL('/admin/super', request.url));
+      }
+      if (landing === 'cs') {
+        return NextResponse.redirect(new URL('/admin/cs', request.url));
+      }
+      // 'default' stays at /admin (Maths dashboard)
+    }
+
+    // Subject isolation: CS-only admins cannot access Maths dashboard routes
+    if (landing === 'cs') {
+      const isCsRoute = pathname.startsWith('/admin/cs') || pathname === '/admin/login';
+      if (!isCsRoute) {
+        return NextResponse.redirect(new URL('/admin/forbidden', request.url));
+      }
+    }
+
+    // /admin/super is restricted to super admins
+    if (pathname.startsWith('/admin/super') && landing !== 'super') {
+      return NextResponse.redirect(new URL('/admin/forbidden', request.url));
     }
   }
   // ─────────────────────────────────────────────────────────────────────────

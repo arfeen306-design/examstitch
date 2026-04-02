@@ -78,7 +78,7 @@ export default async function CSAdminPage() {
       {/* Resource Table */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">CS Resource Manager</h3>
-        <CSResourceTable initialResources={csResources} subjectId={subject.id} />
+        <CSResourceTable initialResources={csResources} subjectId={subject.id} allowedLevels={subject.levels ?? []} />
       </div>
     </div>
   );

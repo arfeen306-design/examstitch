@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Trash2, ExternalLink, Plus, FileText, Video, FileSpreadsheet, Search, X } from 'lucide-react';
 import { deleteCSResource, createCSResource } from './actions';
 import { useToast } from '@/components/ui/Toast';
@@ -26,9 +26,11 @@ const CONTENT_ICONS: Record<string, typeof FileText> = {
 export default function CSResourceTable({
   initialResources,
   subjectId,
+  allowedLevels,
 }: {
   initialResources: Resource[];
   subjectId: string;
+  allowedLevels: string[];
 }) {
   const [resources, setResources] = useState(initialResources);
   const [search, setSearch] = useState('');
@@ -160,6 +162,7 @@ export default function CSResourceTable({
       {showUpload && (
         <CSUploadModal
           subjectId={subjectId}
+          allowedLevels={allowedLevels}
           onClose={() => setShowUpload(false)}
           onSuccess={(newResource) => {
             setResources(prev => [newResource, ...prev]);
@@ -175,10 +178,12 @@ export default function CSResourceTable({
 
 function CSUploadModal({
   subjectId,
+  allowedLevels,
   onClose,
   onSuccess,
 }: {
   subjectId: string;
+  allowedLevels: string[];
   onClose: () => void;
   onSuccess: (r: Resource) => void;
 }) {
@@ -191,28 +196,23 @@ function CSUploadModal({
     source_url: '',
     topic: '',
     category_id: '',
+    level: allowedLevels[0] ?? '',
   });
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   // Load CS categories on mount
-  useState(() => {
-    fetch(`/api/admin/cs/resources`)
-      .then(res => res.json())
-      .then(() => {
-        // Fetch categories separately
-        import('@supabase/ssr').then(({ createBrowserClient }) => {
-          const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          );
-          supabase.from('categories').select('id, name').then(({ data }) => {
-            if (data) setCategories(data);
-          });
-        });
-      })
-      .catch(() => {});
-  });
+  useEffect(() => {
+    import('@supabase/ssr').then(({ createBrowserClient }) => {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      supabase.from('categories').select('id, name').then(({ data }) => {
+        if (data) setCategories(data);
+      });
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -269,7 +269,7 @@ function CSUploadModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Content Type</label>
               <select
@@ -280,6 +280,19 @@ function CSUploadModal({
                 <option value="pdf">PDF</option>
                 <option value="video">Video</option>
                 <option value="worksheet">Worksheet</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Level *</label>
+              <select
+                required
+                value={form.level}
+                onChange={e => setForm({ ...form, level: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                {allowedLevels.map(l => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
               </select>
             </div>
             <div>
