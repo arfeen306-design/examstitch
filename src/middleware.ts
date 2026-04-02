@@ -36,13 +36,17 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // Guard: /dashboard and /premium require an active session.
+  // Admins with a valid admin_session cookie bypass this check.
   const isProtected =
     pathname.startsWith('/dashboard') || pathname.startsWith('/premium');
 
   if (isProtected && !user) {
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
+    const adminCookie = request.cookies.get('admin_session');
+    if (!adminCookie?.value) {
+      const loginUrl = new URL('/auth/login', request.url);
+      loginUrl.searchParams.set('redirectTo', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
   // ─────────────────────────────────────────────────────────────────────────
 

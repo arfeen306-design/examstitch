@@ -70,14 +70,20 @@ export async function GET(
 
   // ── 2. Auth gate for locked resources ──────────────────────────────────
   if (resource.is_locked) {
-    const userClient = createClient();
-    const { data: { user } } = await userClient.auth.getUser();
+    // Admin bypass: admins with a valid session cookie skip the paywall
+    const adminCookie = request.cookies.get('admin_session');
+    const isAdmin = !!adminCookie?.value;
 
-    if (!user) {
-      return errorResponse(
-        'This resource requires a free ExamStitch account. Sign in at /auth/login.',
-        401,
-      );
+    if (!isAdmin) {
+      const userClient = createClient();
+      const { data: { user } } = await userClient.auth.getUser();
+
+      if (!user) {
+        return errorResponse(
+          'This resource requires a free ExamStitch account. Sign in at /auth/login.',
+          401,
+        );
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
+import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import PremiumGate from '@/components/resources/PremiumGate';
@@ -98,11 +99,17 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
 
   // ── Auth gate for locked resources ───────────────────────────────────────
   if ((resource as any).is_locked) {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Admin bypass: admins with a valid session cookie skip the paywall
+    const adminCookie = (await cookies()).get('admin_session');
+    const isAdmin = !!adminCookie?.value;
 
-    if (!user) {
-      return <PremiumGate resourceTitle={resource.title} redirectTo={`/view/${params.id}`} user={null} />;
+    if (!isAdmin) {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        return <PremiumGate resourceTitle={resource.title} redirectTo={`/view/${params.id}`} user={null} />;
+      }
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
