@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Printer, Download, ExternalLink, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { ExternalLink, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import VideoSolutionsSidebar from './VideoSolutionsSidebar';
+import FramedPDFViewer from './FramedPDFViewer';
 import type { SolutionRow } from './VideoSolutionsSidebar';
 
 interface PDFViewerLayoutProps {
@@ -25,12 +26,10 @@ export default function PDFViewerLayout({
 }: PDFViewerLayoutProps) {
   const [activeQuestion, setActiveQuestion] = useState<number | undefined>();
   const [videoStartTime, setVideoStartTime] = useState(0);
-  const [zoom, setZoom] = useState(100);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleTimestampClick = (seconds: number) => {
     setVideoStartTime(seconds);
-    // Support both snake_case (DB) and camelCase (demo) naming
     const solution = solutions.find(
       (s) => (s.timestamp_seconds ?? s.timestampSeconds) === seconds,
     );
@@ -39,56 +38,14 @@ export default function PDFViewerLayout({
     }
   };
 
-  const handlePrint = () => {
-    const printWindow = window.open(pdfUrl, '_blank');
-    if (printWindow) {
-      printWindow.addEventListener('load', () => {
-        printWindow.print();
-      });
-    }
-  };
-
   const hasSolutions = videoId && solutions.length > 0;
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
+      {/* Zoom / Utility Toolbar */}
       <div className="bg-[var(--hero-from)] rounded-xl p-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white truncate mr-4">{title}</h2>
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setZoom((z) => Math.max(50, z - 10))}
-            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="Zoom Out"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <span className="text-xs text-white/50 w-12 text-center">{zoom}%</span>
-          <button
-            onClick={() => setZoom((z) => Math.min(200, z + 10))}
-            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="Zoom In"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <div className="w-px h-5 bg-white/20 mx-1" />
-          <button
-            onClick={handlePrint}
-            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="Print"
-          >
-            <Printer className="w-4 h-4" />
-          </button>
-          {downloadUrl && (
-            <a
-              href={downloadUrl}
-              download
-              className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              title="Download"
-            >
-              <Download className="w-4 h-4" />
-            </a>
-          )}
           <a
             href={pdfUrl}
             target="_blank"
@@ -99,7 +56,7 @@ export default function PDFViewerLayout({
             <ExternalLink className="w-4 h-4" />
           </a>
           <button
-            onClick={() => iframeRef.current?.requestFullscreen()}
+            onClick={() => containerRef.current?.requestFullscreen()}
             className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             title="Fullscreen"
           >
@@ -110,20 +67,15 @@ export default function PDFViewerLayout({
 
       {/* Main Content: PDF + Video Sidebar */}
       <div className={`flex flex-col ${hasSolutions ? 'lg:flex-row' : ''} gap-4`}>
-        {/* PDF Viewer */}
-        <div className={`${hasSolutions ? 'lg:w-[60%]' : 'w-full'}`}>
-          <div
-            className="bg-gray-100 rounded-xl overflow-hidden border border-[var(--border-subtle)]"
-            style={{ height: '75vh' }}
-          >
-            <iframe
-              ref={iframeRef}
-              src={`${pdfUrl}#zoom=${zoom}`}
-              title={title}
-              className="w-full h-full"
-              style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
-            />
-          </div>
+        {/* PDF Viewer — FramedPDFViewer with mandatory header */}
+        <div ref={containerRef} className={`${hasSolutions ? 'lg:w-[60%]' : 'w-full'}`}>
+          <FramedPDFViewer
+            embedUrl={`${pdfUrl}#toolbar=0&navpanes=0`}
+            downloadUrl={downloadUrl || pdfUrl}
+            title={title}
+            label="Resource Document"
+            minHeight="75vh"
+          />
         </div>
 
         {/* Video Solutions Sidebar */}

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { toEmbedUrl } from '@/lib/url-transform';
 import VideoContainer from './VideoContainer';
+import FramedPDFViewer from './FramedPDFViewer';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -207,47 +208,26 @@ function SolverYouTubePlayer({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PDF Viewer — React.memo'd to prevent reload on parent re-renders
+// PDF Viewer — React.memo'd FramedPDFViewer to prevent reload on parent re-renders
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SolverPdfViewer = memo(function SolverPdfViewer({
   embedUrl,
+  downloadUrl,
   title,
 }: {
   embedUrl: string;
+  downloadUrl: string | null;
   title: string;
 }) {
-  const beige = '#f5f0e8';
   return (
-    <div className="relative w-full h-full rounded-lg overflow-hidden"
-         style={{ backgroundColor: beige, border: `1px solid #e8e0d0` }}>
-      <iframe
-        src={embedUrl}
-        title={title}
-        className="w-full h-full border-0"
-        style={{ minHeight: '500px' }}
-        allow="autoplay"
-        loading="lazy"
-      />
-
-      {/* ── Edge overlays to mask Google Drive's internal black borders ── */}
-      {/* Top edge */}
-      <div className="absolute top-0 left-0 right-0 pointer-events-none z-10"
-           style={{ height: '3px', backgroundColor: beige }} />
-      {/* Bottom edge */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
-           style={{ height: '3px', backgroundColor: beige }} />
-      {/* Left edge */}
-      <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-10"
-           style={{ width: '3px', backgroundColor: beige }} />
-      {/* Right edge (wider — covers Drive's scrollbar border) */}
-      <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-10"
-           style={{ width: '6px', backgroundColor: beige }} />
-
-      {/* Cover Google Drive's "open in new window" icon (top-right) */}
-      <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-20 rounded-bl-lg"
-           style={{ backgroundColor: beige }} />
-    </div>
+    <FramedPDFViewer
+      embedUrl={embedUrl}
+      downloadUrl={downloadUrl}
+      title={title}
+      label="Resource Document"
+      minHeight="100%"
+    />
   );
 });
 
@@ -491,6 +471,7 @@ export default function InteractiveSolver({
             </div>
             <SolverPdfViewer
               embedUrl={pdfEmbedUrl}
+              downloadUrl={pdfUrl}
               title={`${title} — Paper`}
             />
           </div>

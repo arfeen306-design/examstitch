@@ -1,7 +1,8 @@
 'use client';
 
-import { Download, Printer, FileText, PlayCircle, Eye } from 'lucide-react';
-import { useRef, useCallback, useEffect, useMemo } from 'react';
+import { PlayCircle, Eye } from 'lucide-react';
+import { useRef, useEffect, useMemo } from 'react';
+import FramedPDFViewer from '@/components/resources/FramedPDFViewer';
 
 interface MediaFrameProps {
   id: string;
@@ -56,7 +57,6 @@ function trackView(widgetId: string, interactionType: 'view' | 'download' | 'pri
 }
 
 export default function MediaFrame({ id, mediaType, title, url, permissions, viewCount, subject, isAdmin }: MediaFrameProps) {
-  const printFrameRef = useRef<HTMLIFrameElement>(null);
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<unknown>(null);
 
@@ -130,30 +130,6 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
     }
   }, [id, mediaType]);
 
-  const handleDownload = useCallback(async () => {
-    trackView(id, 'download');
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `${title.replace(/[^a-zA-Z0-9 ]/g, '')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(a.href);
-    } catch {
-      window.open(url, '_blank');
-    }
-  }, [id, url, title]);
-
-  const handlePrint = useCallback(() => {
-    trackView(id, 'print');
-    if (printFrameRef.current?.contentWindow) {
-      printFrameRef.current.contentWindow.print();
-    }
-  }, [id]);
-
   // Admin-only view count badge — completely removed from DOM for non-admins
   const viewBadge = showAnalytics && viewCount != null && viewCount > 0 ? (
     <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
@@ -192,52 +168,24 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
     );
   }
 
-  // PDF viewer
+  // PDF viewer — uses FramedPDFViewer for mandatory header + Download/Print
   return (
     <div className="overflow-hidden transition-shadow hover:shadow-lg"
          style={containerStyle}>
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b"
-           style={{ borderColor: 'var(--border-subtle)' }}>
-        <div className="flex items-center gap-2 min-w-0">
-          <FileText className="w-4 h-4 shrink-0" style={{ color: theme.border }} />
-          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{title}</p>
+      {/* Admin-only view badge */}
+      {viewBadge && (
+        <div className="flex items-center justify-end px-4 py-1.5 border-b"
+             style={{ borderColor: 'var(--border-subtle)' }}>
           {viewBadge}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {permissions.allow_download && (
-            <button
-              onClick={handleDownload}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors hover:opacity-80"
-              style={{ backgroundColor: theme.accent, color: theme.border }}
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download
-            </button>
-          )}
-          {permissions.allow_print && (
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors hover:opacity-80"
-              style={{ backgroundColor: theme.accent, color: theme.border }}
-            >
-              <Printer className="w-3.5 h-3.5" />
-              Print
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* PDF embed */}
-      <div className="relative w-full" style={{ height: '500px' }}>
-        <iframe
-          ref={printFrameRef}
-          className="w-full h-full"
-          src={`${url}#toolbar=0&navpanes=0`}
-          title={title}
-          loading="lazy"
-        />
-      </div>
+      )}
+      <FramedPDFViewer
+        embedUrl={`${url}#toolbar=0&navpanes=0`}
+        downloadUrl={permissions.allow_download ? url : null}
+        title={title}
+        label="Resource Document"
+        minHeight="500px"
+      />
     </div>
   );
 }
