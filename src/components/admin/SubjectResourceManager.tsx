@@ -26,7 +26,7 @@ import {
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
   FolderOpen, FileVideo, FileText, ChevronRight, Clock, Lock,
-  Search, Upload,
+  Search, Upload, Loader2, AlertTriangle,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
@@ -203,6 +203,7 @@ export default function SubjectResourceManager({
   // ── New Resource form state ───────────────────────────────────────────────
   const [showNewResource, setShowNewResource] = useState(false);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [newRes, setNewRes] = useState({
     title: '', source_url: '', worksheet_url: '', content_type: 'video' as 'video' | 'pdf' | 'worksheet',
     category_id: '', module_type: '' as '' | 'video_topical' | 'solved_past_paper',
@@ -211,13 +212,17 @@ export default function SubjectResourceManager({
   // Fetch categories for this subject on first open
   useEffect(() => {
     if (!showNewResource || categories.length > 0) return;
+    setCategoriesLoading(true);
     const supabase = createClient();
     supabase
       .from('categories')
       .select('id, name')
       .eq('subject_id', subjectId)
       .order('sort_order')
-      .then(({ data }) => setCategories(data ?? []));
+      .then(({ data }) => {
+        setCategories(data ?? []);
+        setCategoriesLoading(false);
+      });
   }, [showNewResource, subjectId, categories.length]);
 
   const handleAddResource = () => {
@@ -798,14 +803,26 @@ export default function SubjectResourceManager({
               placeholder="Worksheet / PDF URL (optional)"
               className="px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:ring-2 outline-none"
             />
-            <select
-              value={newRes.category_id}
-              onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
-            >
-              <option value="">Category (optional)</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            {categoriesLoading ? (
+              <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Loading…
+              </div>
+            ) : categories.length === 0 ? (
+              <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-amber-600 border border-amber-200 rounded-lg bg-amber-50">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                No modules found. Create one in Taxonomy Manager.
+              </div>
+            ) : (
+              <select
+                value={newRes.category_id}
+                onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+              >
+                <option value="">Category (optional)</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
             {showModuleTypeFilter && (
               <select
                 value={newRes.module_type}

@@ -98,16 +98,31 @@ export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Resolves a subject_papers slug (e.g. 'mathematics-4024') to the parent
+ * subjects UUID. After migration 016 categories reference the new subjects table.
+ */
+async function resolveSubjectId(supabase: ReturnType<typeof createAdminClient>, paperSlug: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('subject_papers')
+    .select('parent_subject_id')
+    .eq('slug', paperSlug)
+    .single();
+  return data?.parent_subject_id ?? null;
+}
+
+/**
  * Returns all top-level categories for a subject (grades or papers).
  */
 export async function getCategoriesBySubjectSlug(subjectSlug: string): Promise<Category[]> {
   return unstable_cache(
     async () => {
       const supabase = createAdminClient();
+      const parentId = await resolveSubjectId(supabase, subjectSlug);
+      if (!parentId) return [];
       const { data, error } = await supabase
         .from('categories')
-        .select('*, subject_papers!inner ( slug )')
-        .eq('subject_papers.slug', subjectSlug)
+        .select('*')
+        .eq('subject_id', parentId)
         .is('parent_id', null)
         .order('sort_order', { ascending: true });
       if (error) throw new Error(`getCategoriesBySubjectSlug(${subjectSlug}): ${error.message}`);
@@ -129,10 +144,12 @@ export async function getCategoryBySlug(
   return unstable_cache(
     async () => {
       const supabase = createAdminClient();
+      const parentId = await resolveSubjectId(supabase, subjectSlug);
+      if (!parentId) return null;
       const { data, error } = await supabase
         .from('categories')
-        .select('*, subject_papers!inner ( slug )')
-        .eq('subject_papers.slug', subjectSlug)
+        .select('*')
+        .eq('subject_id', parentId)
         .eq('slug', categorySlug)
         .single();
       if (error && error.code !== 'PGRST116') {

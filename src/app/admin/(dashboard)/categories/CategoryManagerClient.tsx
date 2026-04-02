@@ -8,7 +8,7 @@ import { Plus } from 'lucide-react';
 interface Subject {
   id: string;
   name: string;
-  code: string;
+  slug: string;
 }
 
 export default function CategoryManagerClient({ subjects }: { subjects: Subject[] }) {
@@ -55,7 +55,7 @@ export default function CategoryManagerClient({ subjects }: { subjects: Subject[
           >
             <option value="" disabled>Select Subject...</option>
             {subjects.map(sub => (
-              <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
+              <option key={sub.id} value={sub.id}>{sub.name}</option>
             ))}
           </select>
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { X, PlayCircle, FileText, RotateCcw } from 'lucide-react';
+import { X, PlayCircle, FileText, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
 interface SubjectRow {
@@ -44,6 +44,7 @@ export default function NewResourceModal({
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const { showToast } = useToast();
   const [moduleType, setModuleType] = useState<ModuleType>('video_topical');
   const [keepOpen, setKeepOpen] = useState(false);
@@ -65,21 +66,25 @@ export default function NewResourceModal({
   useEffect(() => {
     if (!isOpen) return;
     const fetchData = async () => {
+      setCategoriesLoading(true);
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
-      // Fetch only Mathematics subjects (codes 4024 and 9709)
+      // Fetch all subjects from the new subjects table (post-migration 012)
       const { data: subjectData } = await supabase
         .from('subjects')
-        .select('id, name, code, slug')
-        .in('slug', ['mathematics-4024', 'mathematics-9709'])
-        .order('sort_order');
+        .select('id, name, slug')
+        .order('name');
       if (subjectData) {
-        setSubjects(subjectData as SubjectRow[]);
-        // Auto-select first subject if none selected
-        if (!formData.subject_id && subjectData.length > 0) {
-          setFormData(prev => ({ ...prev, subject_id: subjectData[0].id }));
+        // Map slug to a display code for backward compatibility
+        const mapped = subjectData.map(s => ({
+          ...s,
+          code: s.slug === 'maths' ? '4024/9709' : s.slug === 'computer-science' ? '0478/9618' : s.slug,
+        }));
+        setSubjects(mapped as SubjectRow[]);
+        if (!formData.subject_id && mapped.length > 0) {
+          setFormData(prev => ({ ...prev, subject_id: mapped[0].id }));
         }
       }
       // Fetch all categories (filtered client-side by selected subject)
@@ -88,6 +93,7 @@ export default function NewResourceModal({
         .select('id, name, subject_id')
         .order('sort_order');
       if (catData) setCategories(catData as Category[]);
+      setCategoriesLoading(false);
     };
     fetchData();
     setTimeout(() => titleRef.current?.focus(), 80);
@@ -123,6 +129,7 @@ export default function NewResourceModal({
     // Resolve the subject slug for the DB `subject` column
     const selectedSubject = subjects.find(s => s.id === formData.subject_id);
     const subjectSlug = selectedSubject?.slug ?? '';
+    const subjectId = formData.subject_id;
 
     if (moduleType === 'video_topical') {
       // Must have at least a video URL
@@ -145,6 +152,7 @@ export default function NewResourceModal({
       payloads.push({
         title: richTitle,
         subject: subjectSlug,
+        subject_id: subjectId,
         category_id: formData.category_id,
         source_url: formData.video_url,
         worksheet_url: formData.worksheet_url || null,
@@ -177,6 +185,7 @@ export default function NewResourceModal({
         payloads.push({
           title: richTitle,
           subject: subjectSlug,
+          subject_id: subjectId,
           category_id: formData.category_id,
           source_url: formData.video_url,
           worksheet_url: formData.solution_url,
@@ -191,6 +200,7 @@ export default function NewResourceModal({
         payloads.push({
           title: richTitle,
           subject: subjectSlug,
+          subject_id: subjectId,
           category_id: formData.category_id,
           source_url: formData.solution_url,
           source_type: 'google_drive',
@@ -350,12 +360,24 @@ export default function NewResourceModal({
 
             <div>
               <label className="block text-sm font-medium text-navy-700 mb-1">Target Module</label>
-              <select required value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500">
-                <option value="" disabled>Select mapping...</option>
-                {activeCategories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              {categoriesLoading ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-navy-400 border border-navy-100 rounded-lg bg-navy-50/30">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading modules…
+                </div>
+              ) : activeCategories.length === 0 && formData.subject_id ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-amber-600 border border-amber-200 rounded-lg bg-amber-50">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>No modules found for this subject. Create one in Taxonomy Manager.</span>
+                </div>
+              ) : (
+                <select required value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500">
+                  <option value="" disabled>Select mapping...</option>
+                  {activeCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Dynamic Link Inputs */}

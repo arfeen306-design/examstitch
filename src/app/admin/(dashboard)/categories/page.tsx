@@ -9,7 +9,7 @@ export default async function AdminCategoriesPage() {
 
   const [{ data: categories, error: catError }, { data: subjects, error: subError }] = await Promise.all([
     supabase.from('categories').select(`*, subject:subjects(name), resources(count)`).order('sort_order', { ascending: true }),
-    supabase.from('subjects').select('id, name, code').order('sort_order', { ascending: true })
+    supabase.from('subjects').select('id, name, slug').order('name')
   ]);
 
   if (catError || subError) {
