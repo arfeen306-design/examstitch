@@ -57,59 +57,10 @@ export async function POST(request: Request) {
     }
 
     // ── Step 3: Ensure a Supabase Auth user exists (lazy migration) ─────────
-    // Students created before this fix won't have an Auth user. We create one
-    // on first successful login so middleware/session guards work correctly.
-    const { data: existingAuth } = await admin.auth.admin.getUserById(student.id);
+    // Strategy: try signInWithPassword first. If it works, the auth user
+    // exists and the password is correct. If it fails, create or fix the
+    // auth user, then sign in again.
 
-    if (!existingAuth?.user) {
-      // No auth user with this ID — check by email
-      const { data: byEmail } = await admin.auth.admin.listUsers({
-        page: 1,
-        perPage: 1,
-      });
-      const emailMatch = byEmail?.users?.find(u => u.email === normalizedEmail);
-
-      if (emailMatch) {
-        // Auth user exists with different ID — update password and remap
-        await admin.auth.admin.updateUserById(emailMatch.id, { password });
-        // Update student_accounts to use the auth user's ID
-        await admin
-          .from('student_accounts')
-          .update({ id: emailMatch.id })
-          .eq('id', student.id);
-        student.id = emailMatch.id;
-      } else {
-        // Create a brand-new Supabase Auth user with the student's ID
-        const { data: newAuth, error: createError } = await admin.auth.admin.createUser({
-          email: normalizedEmail,
-          password,
-          email_confirm: true,
-          user_metadata: { full_name: student.full_name, role: 'student' },
-        });
-
-        if (createError || !newAuth?.user) {
-          console.error('[student-login] Failed to create auth user:', createError);
-          return NextResponse.json(
-            { error: 'Login system error. Please try again.' },
-            { status: 500 },
-          );
-        }
-
-        // Update student_accounts.id to match the auth user's UUID
-        if (newAuth.user.id !== student.id) {
-          await admin
-            .from('student_accounts')
-            .update({ id: newAuth.user.id })
-            .eq('id', student.id);
-          student.id = newAuth.user.id;
-        }
-      }
-    } else {
-      // Auth user exists — ensure password is in sync
-      await admin.auth.admin.updateUserById(student.id, { password });
-    }
-
-    // ── Step 4: Sign in via cookie-writing server client ────────────────────
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -128,26 +79,92 @@ export async function POST(request: Request) {
       },
     );
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    // First attempt: sign in directly (works if auth user exists with correct password)
+    let { error: signInError } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password,
     });
 
     if (signInError) {
-      console.error('[student-login] Supabase sign-in failed:', signInError);
-      return NextResponse.json(
-        { error: 'Login failed. Please try again.' },
-        { status: 500 },
-      );
+      // Auth user may not exist, or password may be out of sync — fix it
+      const { data: existingAuth } = await admin.auth.admin.getUserById(student.id);
+
+      if (existingAuth?.user) {
+        // Auth user exists with matching ID — sync password and retry
+        await admin.auth.admin.updateUserById(student.id, { password });
+      } else {
+        // Try to create the auth user
+        const { data: newAuth, error: createError } = await admin.auth.admin.createUser({
+          email: normalizedEmail,
+          password,
+          email_confirm: true,
+          user_metadata: { full_name: student.full_name, role: 'student' },
+        });
+
+        if (createError) {
+          // User with this email may already exist in Auth — find and update
+          const errMsg = createError.message?.toLowerCase() || '';
+          if (errMsg.includes('already') || errMsg.includes('exists') || errMsg.includes('duplicate')) {
+            // Fetch all auth users to find by email (paginated search)
+            let found = false;
+            for (let page = 1; page <= 10; page++) {
+              const { data: batch } = await admin.auth.admin.listUsers({ page, perPage: 100 });
+              const match = batch?.users?.find(u => u.email === normalizedEmail);
+              if (match) {
+                await admin.auth.admin.updateUserById(match.id, { password });
+                // Remap student_accounts.id if needed
+                if (match.id !== student.id) {
+                  await admin.from('student_accounts').update({ id: match.id }).eq('id', student.id);
+                  student.id = match.id;
+                }
+                found = true;
+                break;
+              }
+              if (!batch?.users?.length || batch.users.length < 100) break;
+            }
+            if (!found) {
+              console.error('[student-login] Auth user exists but could not be found:', createError);
+              return NextResponse.json(
+                { error: 'Login system error. Please contact support.' },
+                { status: 500 },
+              );
+            }
+          } else {
+            console.error('[student-login] Failed to create auth user:', createError);
+            return NextResponse.json(
+              { error: 'Login system error. Please try again.' },
+              { status: 500 },
+            );
+          }
+        } else if (newAuth?.user && newAuth.user.id !== student.id) {
+          // Remap student_accounts.id to match the new auth user's UUID
+          await admin.from('student_accounts').update({ id: newAuth.user.id }).eq('id', student.id);
+          student.id = newAuth.user.id;
+        }
+      }
+
+      // Retry sign-in after fixing the auth user
+      const retry = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+      if (retry.error) {
+        console.error('[student-login] Sign-in failed after auth fix:', retry.error);
+        return NextResponse.json(
+          { error: 'Login failed. Please try again.' },
+          { status: 500 },
+        );
+      }
     }
 
-    // ── Step 5: Update last_login timestamp ─────────────────────────────────
+    // ── Step 4: Update last_login timestamp ─────────────────────────────────
     await admin
       .from('student_accounts')
       .update({ last_login: new Date().toISOString() })
       .eq('id', student.id);
 
-    // ── Step 6: Determine redirect ──────────────────────────────────────────
+    // ── Step 5: Determine redirect ──────────────────────────────────────────
     const redirectTo = student.level ? '/dashboard' : '/';
 
     return NextResponse.json({ success: true, redirectTo });
