@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, Layers } from 'lucide-react';
 import { getCategoryBySlug, getTopicsByCategory } from '@/lib/supabase/queries';
 import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
+import { getSubjectLabel } from '@/config/navigation';
 
 function formatGrade(slug: string): string {
   return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -110,7 +111,7 @@ export default function TopicalPage({ params }: { params: { subject: string; gra
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
+            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(params.subject)}</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>

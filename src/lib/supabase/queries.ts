@@ -58,7 +58,7 @@ export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject
     async () => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
-        .from('subjects')
+        .from('subject_papers')
         .select('*, levels!inner ( slug )')
         .eq('levels.slug', levelSlug)
         .order('sort_order', { ascending: true });
@@ -71,15 +71,15 @@ export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject
 }
 
 /**
- * Fetches a single subject by its slug.
- * Example slug: 'mathematics-4024'
+ * Fetches a single subject_paper by its slug.
+ * Example slug: 'mathematics-4024', 'computer-science-0478'
  */
 export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
   return unstable_cache(
     async () => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
-        .from('subjects')
+        .from('subject_papers')
         .select('*')
         .eq('slug', slug)
         .single();
@@ -106,8 +106,8 @@ export async function getCategoriesBySubjectSlug(subjectSlug: string): Promise<C
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('categories')
-        .select('*, subjects!inner ( slug )')
-        .eq('subjects.slug', subjectSlug)
+        .select('*, subject_papers!inner ( slug )')
+        .eq('subject_papers.slug', subjectSlug)
         .is('parent_id', null)
         .order('sort_order', { ascending: true });
       if (error) throw new Error(`getCategoriesBySubjectSlug(${subjectSlug}): ${error.message}`);
@@ -131,8 +131,8 @@ export async function getCategoryBySlug(
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('categories')
-        .select('*, subjects!inner ( slug )')
-        .eq('subjects.slug', subjectSlug)
+        .select('*, subject_papers!inner ( slug )')
+        .eq('subject_papers.slug', subjectSlug)
         .eq('slug', categorySlug)
         .single();
       if (error && error.code !== 'PGRST116') {
@@ -399,7 +399,7 @@ export async function countResourcesByLevel(levelSlug: string): Promise<number> 
       const supabase = createAdminClient();
       const { count, error } = await supabase
         .from('resources')
-        .select('*, category:categories!inner(subject:subjects!inner(level:levels!inner(slug)))', { count: 'exact', head: true })
+        .select('*, category:categories!inner(subject:subject_papers!inner(level:levels!inner(slug)))', { count: 'exact', head: true })
         .eq('is_published', true)
         .eq('category.subject.level.slug', levelSlug);
       

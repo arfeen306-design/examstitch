@@ -22,6 +22,14 @@ const subjects = [
     papers: 4,
     color: 'from-gold-500 to-gold-700',
   },
+  {
+    name: 'Computer Science',
+    code: '9618',
+    slug: 'computer-science-9618',
+    description: 'Theory, Problem-solving, Programming & Practical — AS & A2 Level',
+    papers: 4,
+    color: 'from-emerald-500 to-teal-600',
+  },
 ];
 
 export default function ALevelPage() {

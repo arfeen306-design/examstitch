@@ -3,6 +3,7 @@ import Link from 'next/link';
 import PDFViewerLayout from '@/components/resources/PDFViewerLayout';
 import { getResourceById, getSolutionsForPaper, getSolutionVideo } from '@/lib/supabase/queries';
 import type { ResourceSolution } from '@/lib/supabase/types';
+import { getSubjectLabel } from '@/config/navigation';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ export default async function PaperViewerPage({
           <div className="flex items-center gap-2 text-sm flex-wrap">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
+            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(params.subject)}</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
@@ -133,7 +134,7 @@ function DemoViewer({
           <div className="flex items-center gap-2 text-sm flex-wrap">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
+            <Link href={`/olevel/${subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(subject)}</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${subject}/${grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>
@@ -146,7 +147,7 @@ function DemoViewer({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <PDFViewerLayout
           pdfUrl="https://www.africau.edu/images/default/sample.pdf"
-          title={`Mathematics 4024/0580 — ${gradeName} — ${paperTitle}`}
+          title={`${getSubjectLabel(subject)} — ${gradeName} — ${paperTitle}`}
           videoId="dQw4w9WgXcQ"
           videoTitle={`${paperTitle} — Full Video Solution`}
           solutions={demoSolutions}

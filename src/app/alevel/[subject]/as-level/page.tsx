@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, FileText, PlayCircle, PenTool } from 'lucide-react';
-import { aLevelPapers } from '@/config/navigation';
+import { aLevelPapers, aLevelPapersBySubject, getSubjectLabel } from '@/config/navigation';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -23,7 +23,7 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
             <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-sm mb-3">
               <Link href="/alevel" className="text-white/50 hover:text-white/70 transition-colors">A-Level</Link>
               <span className="text-white/30">/</span>
-              <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (9709)</Link>
+              <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(params.subject)}</Link>
               <span className="text-white/30">/</span>
               <span style={{ color: "var(--accent)" }} className="font-medium">AS Level</span>
             </motion.div>
@@ -39,7 +39,7 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
         <motion.div initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {aLevelPapers['as-level'].map((paper, i) => (
+          {(aLevelPapersBySubject[params.subject] ?? aLevelPapers)['as-level'].map((paper, i) => (
             <motion.div key={paper.slug} variants={fadeUp} custom={i + 3}>
               <Link href={`/alevel/${params.subject}/as-level/${paper.slug}`} className="block group">
                 <div className="card-hover rounded-2xl p-8 shadow-sm h-full" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>

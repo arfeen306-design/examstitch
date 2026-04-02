@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FileText, PlayCircle, BookOpen, ArrowRight } from 'lucide-react';
+import { getSubjectLabel } from '@/config/navigation';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -33,7 +34,7 @@ export default function ASPaperPage({ params }: { params: { subject: string; pap
             <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-sm mb-3 flex-wrap">
               <Link href="/alevel" className="text-white/50 hover:text-white/70 transition-colors">A-Level</Link>
               <span className="text-white/30">/</span>
-              <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (9709)</Link>
+              <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(params.subject)}</Link>
               <span className="text-white/30">/</span>
               <Link href={`/alevel/${params.subject}/as-level`} className="text-white/50 hover:text-white/70 transition-colors">AS Level</Link>
               <span className="text-white/30">/</span>

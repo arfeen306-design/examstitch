@@ -4,7 +4,7 @@ import UnifiedModuleGrid from '@/components/resources/UnifiedModuleGrid';
 import type { LearningModule } from '@/components/resources/UnifiedModuleGrid';
 import { getCategoryBySlug, getResourcesByCategory } from '@/lib/supabase/queries';
 import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
-import { aLevelPapers } from '@/config/navigation';
+import { aLevelPapers, aLevelPapersBySubject, getSubjectLabel } from '@/config/navigation';
 
 async function VideoModules({ subject, paper }: { subject: string; paper: string }) {
   if (!isSupabaseConfigured()) {
@@ -41,11 +41,12 @@ async function VideoModules({ subject, paper }: { subject: string; paper: string
 }
 
 export default function VideoLecturesPage({ params }: { params: { subject: string; paper: string } }) {
-  const allPapers = [...aLevelPapers['as-level'], ...aLevelPapers['a2-level']];
+  const papers = aLevelPapersBySubject[params.subject] ?? aLevelPapers;
+  const allPapers = [...papers['as-level'], ...papers['a2-level']];
   const paperConfig = allPapers.find(p => p.slug === params.paper);
   const paperName = paperConfig?.label || params.paper.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   
-  const levelSlug = aLevelPapers['as-level'].find(p => p.slug === params.paper) ? 'as-level' : 'a2-level';
+  const levelSlug = papers['as-level'].find(p => p.slug === params.paper) ? 'as-level' : 'a2-level';
   const levelName = levelSlug === 'as-level' ? 'AS Level' : 'A2 Level';
 
   return (
@@ -55,7 +56,7 @@ export default function VideoLecturesPage({ params }: { params: { subject: strin
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
             <Link href="/alevel" className="text-white/50 hover:text-white/70 transition-colors">A-Level</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (9709)</Link>
+            <Link href={`/alevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(params.subject)}</Link>
             <span className="text-white/30">/</span>
             <Link href={`/alevel/${params.subject}/${levelSlug}`} className="text-white/50 hover:text-white/70 transition-colors">{levelName}</Link>
             <span className="text-white/30">/</span>

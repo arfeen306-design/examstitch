@@ -1,16 +1,22 @@
 import Link from 'next/link';
 import { ArrowRight, FileText, PlayCircle, PenTool } from 'lucide-react';
-import { oLevelGrades } from '@/config/navigation';
+import { oLevelGrades, getSubjectLabel, getSubjectHeading } from '@/config/navigation';
 import NotifyMeBox from '@/components/lead-gen/NotifyMeBox';
 
 // Pre-render known subject slugs at build time; revalidate daily
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
-  return [{ subject: 'mathematics-4024' }];
+  return [
+    { subject: 'mathematics-4024' },
+    { subject: 'computer-science-0478' },
+  ];
 }
 
 export default function OLevelSubjectPage({ params }: { params: { subject: string } }) {
+  const label = getSubjectLabel(params.subject);
+  const heading = getSubjectHeading(params.subject);
+
   return (
     <div className="min-h-screen pt-24 pb-16">
       {/* Header */}
@@ -19,9 +25,9 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
           <div className="flex items-center gap-2 text-sm mb-3">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <span className="text-gold-500 font-medium">Mathematics (4024/0580)</span>
+            <span className="text-gold-500 font-medium">{label}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Mathematics — 4024/0580</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{heading}</h1>
           <p className="text-white/60 max-w-xl">Select your grade to access past papers, video solutions, and topical worksheets.</p>
         </div>
       </div>

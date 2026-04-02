@@ -5,6 +5,7 @@ import { getCategoryBySlug, getResourcesByCategory } from '@/lib/supabase/querie
 import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
 import type { Resource } from '@/lib/supabase/types';
 import type { ResourceItem } from '@/components/resources/ResourceGrid';
+import { getSubjectLabel } from '@/config/navigation';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export default function PastPapersPage({
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
             <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
             <span className="text-white/30">/</span>
-            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
+            <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(params.subject)}</Link>
             <span className="text-white/30">/</span>
             <Link href={`/olevel/${params.subject}/${params.grade}`} className="text-white/50 hover:text-white/70 transition-colors">{gradeName}</Link>
             <span className="text-white/30">/</span>

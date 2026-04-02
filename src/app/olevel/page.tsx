@@ -22,6 +22,14 @@ const subjects = [
     papers: 2,
     color: 'from-blue-500 to-indigo-600',
   },
+  {
+    name: 'Computer Science',
+    code: '0478',
+    slug: 'computer-science-0478',
+    description: 'Theory, Problem-solving & Programming — Grades 9, 10 & 11',
+    papers: 2,
+    color: 'from-emerald-500 to-teal-600',
+  },
 ];
 
 export default function OLevelPage() {

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FileText, PlayCircle, BookOpen, ArrowRight } from 'lucide-react';
+import { getSubjectLabel } from '@/config/navigation';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -53,7 +54,7 @@ export default function GradePage({ params }: { params: { subject: string; grade
             <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 text-sm mb-3">
               <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
               <span className="text-white/30">/</span>
-              <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">Mathematics (4024/0580)</Link>
+              <Link href={`/olevel/${params.subject}`} className="text-white/50 hover:text-white/70 transition-colors">{getSubjectLabel(params.subject)}</Link>
               <span className="text-white/30">/</span>
               <span className="text-gold-500 font-medium">{gradeName}</span>
             </motion.div>
