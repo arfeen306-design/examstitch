@@ -16,7 +16,7 @@
  *   />
  */
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import {
   toggleResourceFlag,
   deleteResource,
@@ -26,9 +26,10 @@ import {
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
   FolderOpen, FileVideo, FileText, ChevronRight, Clock, Lock,
-  Search,
+  Search, Upload,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
+import { createClient } from '@/lib/supabase/client';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -198,6 +199,56 @@ export default function SubjectResourceManager({
 
   const [mappingEditId, setMappingEditId] = useState<string | null>(null);
   const [mappingDraft, setMappingDraft] = useState<any[]>([]);
+
+  // ── New Resource form state ───────────────────────────────────────────────
+  const [showNewResource, setShowNewResource] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [newRes, setNewRes] = useState({
+    title: '', source_url: '', worksheet_url: '', content_type: 'video' as 'video' | 'pdf' | 'worksheet',
+    category_id: '', module_type: '' as '' | 'video_topical' | 'solved_past_paper',
+  });
+
+  // Fetch categories for this subject on first open
+  useEffect(() => {
+    if (!showNewResource || categories.length > 0) return;
+    const supabase = createClient();
+    supabase
+      .from('categories')
+      .select('id, name')
+      .eq('subject_id', subjectId)
+      .order('sort_order')
+      .then(({ data }) => setCategories(data ?? []));
+  }, [showNewResource, subjectId, categories.length]);
+
+  const handleAddResource = () => {
+    if (!newRes.title.trim() || !newRes.source_url.trim()) {
+      showToast({ message: 'Title and Source URL are required.', type: 'error' });
+      return;
+    }
+    startTransition(async () => {
+      const payload: Record<string, unknown> = {
+        title: newRes.title.trim(),
+        content_type: newRes.content_type,
+        source_url: newRes.source_url.trim(),
+        subject_id: subjectId,
+        is_locked: false,
+      };
+      if (newRes.category_id) payload.category_id = newRes.category_id;
+      if (newRes.module_type) payload.module_type = newRes.module_type;
+      if (newRes.worksheet_url.trim()) payload.worksheet_url = newRes.worksheet_url.trim();
+      payload.is_published = true;
+
+      const result = await bulkInsertResources([payload]);
+      if (result.success) {
+        showToast({ message: 'Resource added!', type: 'success' });
+        setShowNewResource(false);
+        setNewRes({ title: '', source_url: '', worksheet_url: '', content_type: 'video', category_id: '', module_type: '' });
+        window.location.reload();
+      } else {
+        showToast({ message: result.error || 'Failed to add resource', type: 'error' });
+      }
+    });
+  };
 
   // ── Timestamp mapping ─────────────────────────────────────────────────────
 
@@ -695,8 +746,96 @@ export default function SubjectResourceManager({
           </span>
         </div>
 
-        {renderAddButton ? renderAddButton(() => {}) : null}
+        {renderAddButton ? renderAddButton(() => setShowNewResource(true)) : (
+          <button
+            onClick={() => setShowNewResource(!showNewResource)}
+            className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition shadow-sm hover:opacity-90"
+            style={{ backgroundColor: accentColor }}
+          >
+            <Plus className="w-4 h-4" /> Add Resource
+          </button>
+        )}
       </div>
+
+      {/* ── Inline New Resource Form ─────────────────────────────────────── */}
+      {showNewResource && (
+        <div className="border rounded-xl p-5 space-y-3 bg-gray-50 mb-4" style={{ borderColor: accentColor + '40' }}>
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <Upload className="w-4 h-4" style={{ color: accentColor }} />
+              New Resource
+            </h4>
+            <button onClick={() => setShowNewResource(false)} className="text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <input
+              value={newRes.title}
+              onChange={e => setNewRes(s => ({ ...s, title: e.target.value }))}
+              placeholder="Title (e.g. Binary Search — Part 1)"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+              style={{ '--tw-ring-color': accentColor } as any}
+            />
+            <select
+              value={newRes.content_type}
+              onChange={e => setNewRes(s => ({ ...s, content_type: e.target.value as any }))}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+            >
+              <option value="video">Video</option>
+              <option value="pdf">PDF</option>
+              <option value="worksheet">Worksheet</option>
+            </select>
+            <input
+              value={newRes.source_url}
+              onChange={e => setNewRes(s => ({ ...s, source_url: e.target.value }))}
+              placeholder="YouTube or Google Drive URL"
+              className="px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:ring-2 outline-none"
+            />
+            <input
+              value={newRes.worksheet_url}
+              onChange={e => setNewRes(s => ({ ...s, worksheet_url: e.target.value }))}
+              placeholder="Worksheet / PDF URL (optional)"
+              className="px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:ring-2 outline-none"
+            />
+            <select
+              value={newRes.category_id}
+              onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+            >
+              <option value="">Category (optional)</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            {showModuleTypeFilter && (
+              <select
+                value={newRes.module_type}
+                onChange={e => setNewRes(s => ({ ...s, module_type: e.target.value as any }))}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+              >
+                <option value="">Module type (optional)</option>
+                <option value="video_topical">Video Topical</option>
+                <option value="solved_past_paper">Solved Past Paper</option>
+              </select>
+            )}
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={handleAddResource}
+              disabled={isPending || !newRes.title.trim() || !newRes.source_url.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 hover:opacity-90"
+              style={{ backgroundColor: accentColor }}
+            >
+              <Check className="w-4 h-4" /> {isPending ? 'Adding…' : 'Add Resource'}
+            </button>
+            <button
+              onClick={() => setShowNewResource(false)}
+              className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Hierarchical table */}
       <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm border border-gray-200">

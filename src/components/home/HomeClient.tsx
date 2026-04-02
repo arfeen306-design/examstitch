@@ -59,6 +59,14 @@ const levelCards = [
     gradient: 'from-gold-500 to-gold-700',
     count: 'Mathematics 9709',
   },
+  {
+    title: 'Digital Skills',
+    description: 'Master Coding, AI, Design & more — interactive video courses',
+    href: '/digital-skills',
+    icon: Globe,
+    gradient: 'from-violet-500 to-fuchsia-600',
+    count: 'New — 8 Tracks',
+  },
 ];
 
 const stats = [
@@ -998,7 +1006,7 @@ export default function HomeClient({ feedItems }: { feedItems: FeedItem[] }) {
             Select your academic level to access organized resources for every paper and topic.
           </motion.p>
         </motion.div>
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {levelCards.map((card, i) => (
             <motion.div key={card.title} variants={fadeUp} custom={i + 2}>
               <Link href={card.href} className="block group">

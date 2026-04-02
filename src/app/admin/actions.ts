@@ -16,6 +16,7 @@ const ResourceSchema = z.object({
   is_locked: z.boolean().default(false),
   source_type: z.string().optional(),
   subject: z.string().optional(),
+  subject_id: z.string().uuid('Invalid subject ID').optional(),
   category_id: z.string().uuid('Invalid category ID').optional(),
   description: z.string().max(2000).optional(),
   topic: z.string().max(200).optional(),
@@ -79,6 +80,7 @@ export async function bulkInsertResources(resources: unknown[]) {
 
     if (res.source_type)               item.source_type   = res.source_type;
     if (res.subject)                   item.subject       = res.subject;
+    if (res.subject_id)                item.subject_id    = res.subject_id;
     if (res.category_id)               item.category_id   = res.category_id;
     if (res.description)               item.description   = res.description;
     if (res.topic)                     item.topic         = res.topic;

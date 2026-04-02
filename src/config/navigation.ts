@@ -83,6 +83,10 @@ export const mainNavItems = [
     ],
   },
   {
+    label: 'Digital Skills',
+    href: '/digital-skills',
+  },
+  {
     label: 'Search',
     href: '/search',
   },
