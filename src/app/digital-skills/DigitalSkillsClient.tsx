@@ -31,149 +31,168 @@ import {
   Volume2,
   Maximize2,
   ListVideo,
+  ImageIcon,
+  PenLine,
+  ExternalLink,
+  Clock,
 } from 'lucide-react';
 import TrendingRow from '@/components/digital-skills/TrendingRow';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SKILL CATALOGUE — easy to extend
+   TYPES & HELPERS
    ═══════════════════════════════════════════════════════════════════════════ */
 
+// DB types coming from server props
+interface DBLesson {
+  id: string;
+  title: string;
+  video_url: string | null;
+  duration: string | null;
+  sort_order: number;
+  is_free: boolean;
+  notes_url: string | null;
+  exercises_url: string | null;
+  cheatsheet_url: string | null;
+  quiz_url: string | null;
+  resource_url: string | null;
+}
+
+interface DBPlaylist {
+  id: string;
+  title: string;
+  description: string | null;
+  sort_order: number;
+  skill_lessons: DBLesson[];
+}
+
+interface DBSkill {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  tagline: string | null;
+  description: string | null;
+  gradient: string | null;
+  glow_color: string | null;
+  is_active: boolean;
+  sort_order: number;
+  skill_playlists: DBPlaylist[];
+}
+
+// UI types used by components
 interface Lesson {
   id: string;
   title: string;
   duration: string;
-  videoId: string; // YouTube video ID
+  videoId: string;
+  notesUrl: string | null;
+  exercisesUrl: string | null;
+  cheatsheetUrl: string | null;
+  quizUrl: string | null;
 }
 
 interface Skill {
   id: string;
+  slug: string;
   title: string;
   tagline: string;
   icon: React.ElementType;
   gradient: string;
   glowColor: string;
   lessons: Lesson[];
+  hasRealData: boolean;
 }
 
-const SKILLS: Skill[] = [
-  {
-    id: 'coding',
-    title: 'Coding',
-    tagline: 'Build the future, one line at a time',
-    icon: Code2,
-    gradient: 'from-violet-600 to-indigo-700',
-    glowColor: 'rgba(124,58,237,0.35)',
-    lessons: [
-      { id: 'c1', title: 'Variables & Data Types', duration: '12:30', videoId: 'dQw4w9WgXcQ' },
-      { id: 'c2', title: 'Control Flow & Loops', duration: '18:45', videoId: 'dQw4w9WgXcQ' },
-      { id: 'c3', title: 'Functions & Scope', duration: '15:20', videoId: 'dQw4w9WgXcQ' },
-      { id: 'c4', title: 'Arrays & Objects', duration: '20:10', videoId: 'dQw4w9WgXcQ' },
-      { id: 'c5', title: 'DOM Manipulation', duration: '22:05', videoId: 'dQw4w9WgXcQ' },
-      { id: 'c6', title: 'Async & Promises', duration: '19:50', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-  {
-    id: 'design',
-    title: 'Design',
-    tagline: 'Where pixels meet purpose',
-    icon: Palette,
-    gradient: 'from-pink-500 to-rose-600',
-    glowColor: 'rgba(236,72,153,0.35)',
-    lessons: [
-      { id: 'd1', title: 'Color Theory Essentials', duration: '14:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'd2', title: 'Typography & Hierarchy', duration: '16:30', videoId: 'dQw4w9WgXcQ' },
-      { id: 'd3', title: 'Layout & Composition', duration: '18:15', videoId: 'dQw4w9WgXcQ' },
-      { id: 'd4', title: 'Figma Masterclass', duration: '25:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'd5', title: 'Responsive Design', duration: '20:45', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-  {
-    id: 'ai',
-    title: 'Artificial Intelligence',
-    tagline: 'Teach machines to think',
-    icon: Brain,
-    gradient: 'from-cyan-500 to-blue-600',
-    glowColor: 'rgba(6,182,212,0.35)',
-    lessons: [
-      { id: 'a1', title: 'What is AI? History & Ethics', duration: '11:30', videoId: 'dQw4w9WgXcQ' },
-      { id: 'a2', title: 'Machine Learning Basics', duration: '19:20', videoId: 'dQw4w9WgXcQ' },
-      { id: 'a3', title: 'Neural Networks Explained', duration: '23:50', videoId: 'dQw4w9WgXcQ' },
-      { id: 'a4', title: 'Prompt Engineering', duration: '15:10', videoId: 'dQw4w9WgXcQ' },
-      { id: 'a5', title: 'Building with AI APIs', duration: '21:30', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-  {
-    id: 'web',
-    title: 'Web Development',
-    tagline: 'Craft experiences for the world',
-    icon: Globe,
-    gradient: 'from-emerald-500 to-teal-600',
-    glowColor: 'rgba(16,185,129,0.35)',
-    lessons: [
-      { id: 'w1', title: 'HTML5 Semantics', duration: '10:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'w2', title: 'CSS Grid & Flexbox', duration: '17:25', videoId: 'dQw4w9WgXcQ' },
-      { id: 'w3', title: 'JavaScript in the Browser', duration: '20:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'w4', title: 'React Fundamentals', duration: '24:15', videoId: 'dQw4w9WgXcQ' },
-      { id: 'w5', title: 'Next.js & Deployment', duration: '22:40', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-  {
-    id: 'cyber',
-    title: 'Cybersecurity',
-    tagline: 'Defend the digital frontier',
-    icon: Shield,
-    gradient: 'from-amber-500 to-orange-600',
-    glowColor: 'rgba(245,158,11,0.35)',
-    lessons: [
-      { id: 'cy1', title: 'Threat Landscape 101', duration: '13:40', videoId: 'dQw4w9WgXcQ' },
-      { id: 'cy2', title: 'Encryption & Hashing', duration: '16:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'cy3', title: 'Network Security', duration: '19:30', videoId: 'dQw4w9WgXcQ' },
-      { id: 'cy4', title: 'Ethical Hacking Basics', duration: '21:15', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-  {
-    id: 'data',
-    title: 'Data Science',
-    tagline: 'Turn data into decisions',
-    icon: Database,
-    gradient: 'from-fuchsia-500 to-purple-600',
-    glowColor: 'rgba(192,38,211,0.35)',
-    lessons: [
-      { id: 'ds1', title: 'Data Thinking', duration: '12:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'ds2', title: 'Python for Data', duration: '18:50', videoId: 'dQw4w9WgXcQ' },
-      { id: 'ds3', title: 'Pandas & Visualisation', duration: '20:25', videoId: 'dQw4w9WgXcQ' },
-      { id: 'ds4', title: 'Statistics Essentials', duration: '17:10', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-  {
-    id: 'mobile',
-    title: 'Mobile Apps',
-    tagline: 'Apps that live in your pocket',
-    icon: Smartphone,
-    gradient: 'from-sky-500 to-blue-600',
-    glowColor: 'rgba(14,165,233,0.35)',
-    lessons: [
-      { id: 'm1', title: 'React Native Setup', duration: '14:30', videoId: 'dQw4w9WgXcQ' },
-      { id: 'm2', title: 'Components & Navigation', duration: '19:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'm3', title: 'State & APIs', duration: '22:10', videoId: 'dQw4w9WgXcQ' },
-      { id: 'm4', title: 'Publishing to Stores', duration: '16:45', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-  {
-    id: 'analytics',
-    title: 'Digital Analytics',
-    tagline: 'Measure what matters',
-    icon: BarChart3,
-    gradient: 'from-lime-500 to-green-600',
-    glowColor: 'rgba(132,204,22,0.35)',
-    lessons: [
-      { id: 'an1', title: 'Analytics Foundations', duration: '11:20', videoId: 'dQw4w9WgXcQ' },
-      { id: 'an2', title: 'Google Analytics Deep Dive', duration: '18:00', videoId: 'dQw4w9WgXcQ' },
-      { id: 'an3', title: 'A/B Testing & CRO', duration: '15:40', videoId: 'dQw4w9WgXcQ' },
-      { id: 'an4', title: 'Dashboard Building', duration: '20:30', videoId: 'dQw4w9WgXcQ' },
-    ],
-  },
-];
+// Icon name → component map
+const ICON_MAP: Record<string, React.ElementType> = {
+  Code2, Palette, Brain, Globe, Shield, Database, Smartphone, BarChart3,
+  Monitor, Zap, FileText, BookOpen,
+};
+
+function resolveIcon(name: string): React.ElementType {
+  return ICON_MAP[name] || Code2;
+}
+
+// Extract YouTube video ID from various URL formats
+function extractYouTubeId(url: string | null): string {
+  if (!url) return '';
+  // youtube.com/watch?v=ID  |  youtu.be/ID  |  youtube.com/embed/ID
+  const m = url.match(/(?:v=|\/embed\/|youtu\.be\/|\/v\/)([a-zA-Z0-9_-]{11})/);
+  if (m) return m[1];
+  // Could be a bare 11-char ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+  return '';
+}
+
+// Transform DB data → UI format
+function transformDBSkills(dbSkills: DBSkill[]): Skill[] {
+  return dbSkills.map((s) => {
+    // Flatten all lessons from all playlists into one list
+    const allLessons: Lesson[] = s.skill_playlists.flatMap((pl) =>
+      pl.skill_lessons
+        .filter((l) => l.video_url) // only include lessons with a video
+        .map((l) => ({
+          id: l.id,
+          title: l.title,
+          duration: l.duration || '',
+          videoId: extractYouTubeId(l.video_url),
+          notesUrl: l.notes_url,
+          exercisesUrl: l.exercises_url,
+          cheatsheetUrl: l.cheatsheet_url,
+          quizUrl: l.quiz_url,
+        })),
+    );
+
+    return {
+      id: s.slug,
+      slug: s.slug,
+      title: s.name,
+      tagline: s.tagline || '',
+      icon: resolveIcon(s.icon),
+      gradient: s.gradient || 'from-violet-600 to-indigo-700',
+      glowColor: s.glow_color || 'rgba(124,58,237,0.35)',
+      lessons: allLessons,
+      hasRealData: allLessons.length > 0,
+    };
+  });
+}
+
+// Fallback demo lessons for skills that have no real content yet
+const DEMO_LESSONS: Record<string, Lesson[]> = {
+  coding: [
+    { id: 'c1', title: 'Variables & Data Types', duration: '12:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'c2', title: 'Control Flow & Loops', duration: '18:45', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'c3', title: 'Functions & Scope', duration: '15:20', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+  design: [
+    { id: 'd1', title: 'Color Theory Essentials', duration: '14:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'd2', title: 'Typography & Hierarchy', duration: '16:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+  ai: [
+    { id: 'a1', title: 'What is AI? History & Ethics', duration: '11:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'a2', title: 'Machine Learning Basics', duration: '19:20', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+  'web-development': [
+    { id: 'w1', title: 'HTML5 Semantics', duration: '10:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'w2', title: 'CSS Grid & Flexbox', duration: '17:25', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+  cybersecurity: [
+    { id: 'cy1', title: 'Threat Landscape 101', duration: '13:40', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'cy2', title: 'Encryption & Hashing', duration: '16:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+  'data-science': [
+    { id: 'ds1', title: 'Data Thinking', duration: '12:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'ds2', title: 'Python for Data', duration: '18:50', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+  'mobile-apps': [
+    { id: 'm1', title: 'React Native Setup', duration: '14:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'm2', title: 'Components & Navigation', duration: '19:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+  'digital-analytics': [
+    { id: 'an1', title: 'Analytics Foundations', duration: '11:20', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+    { id: 'an2', title: 'Google Analytics Deep Dive', duration: '18:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
+  ],
+};
 
 const QUOTES = [
   'Master the Future.',
@@ -477,20 +496,48 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
                         <BookOpen className="w-4 h-4 text-white/50" /> Lesson Resources
                       </h3>
                       <div className="grid sm:grid-cols-2 gap-3">
-                        {['Lesson Notes (PDF)', 'Practice Exercises', 'Cheat Sheet', 'Quiz'].map((r, i) => (
-                          <div
-                            key={r}
-                            className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.06] transition-all cursor-pointer group"
-                          >
-                            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${skill.gradient} flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity`}>
-                              <FileText className="w-4 h-4 text-white" />
+                        {[
+                          { label: 'Lesson Notes', type: 'PDF', url: activeLesson.notesUrl, icon: FileText, color: 'from-blue-500 to-blue-600' },
+                          { label: 'Practice Exercises', type: 'PDF', url: activeLesson.exercisesUrl, icon: PenLine, color: 'from-amber-500 to-amber-600' },
+                          { label: 'Cheat Sheet', type: 'Image / PDF', url: activeLesson.cheatsheetUrl, icon: ImageIcon, color: 'from-purple-500 to-purple-600' },
+                          { label: 'Interactive Quiz', type: 'Quiz', url: activeLesson.quizUrl, icon: Brain, color: 'from-emerald-500 to-emerald-600' },
+                        ].map((r) => {
+                          const RIcon = r.icon;
+                          const hasUrl = !!r.url;
+                          return hasUrl ? (
+                            <a
+                              key={r.label}
+                              href={r.url!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.08] transition-all cursor-pointer group"
+                            >
+                              <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${r.color} flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity`}>
+                                <RIcon className="w-4 h-4 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white/80 text-sm font-medium">{r.label}</p>
+                                <p className="text-white/30 text-xs">{r.type}</p>
+                              </div>
+                              <ExternalLink className="w-3.5 h-3.5 text-white/30 group-hover:text-white/60 transition-colors" />
+                            </a>
+                          ) : (
+                            <div
+                              key={r.label}
+                              className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] opacity-50"
+                            >
+                              <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${r.color} flex items-center justify-center opacity-40`}>
+                                <RIcon className="w-4 h-4 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white/50 text-sm font-medium">{r.label}</p>
+                                <p className="text-white/20 text-xs flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> Coming Soon
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-white/80 text-sm font-medium">{r}</p>
-                              <p className="text-white/30 text-xs">{['PDF', 'PDF', 'PNG', 'Interactive'][i]}</p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
@@ -592,7 +639,17 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
    MAIN LANDING PAGE
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export default function DigitalSkillsClient() {
+export default function DigitalSkillsClient({ dbSkills = [] }: { dbSkills?: DBSkill[] }) {
+  // Transform DB skills and merge with demo fallback
+  const SKILLS = useMemo(() => {
+    const transformed = transformDBSkills(dbSkills);
+    // For skills with no real lessons, inject demo placeholders
+    return transformed.map((s) => ({
+      ...s,
+      lessons: s.hasRealData ? s.lessons : (DEMO_LESSONS[s.slug] || s.lessons),
+    }));
+  }, [dbSkills]);
+
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [quoteIdx, setQuoteIdx] = useState(0);
@@ -617,7 +674,7 @@ export default function DigitalSkillsClient() {
           s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.tagline.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
-    [searchQuery],
+    [searchQuery, SKILLS],
   );
 
   // Transition to cinema mode
@@ -629,13 +686,13 @@ export default function DigitalSkillsClient() {
   // Select skill by slug (for trending row)
   const handleTrendingSelect = useCallback((slug: string) => {
     const match = SKILLS.find(
-      (s) => s.id === slug || s.title.toLowerCase().replace(/\s+/g, '-') === slug,
+      (s) => s.slug === slug || s.id === slug || s.title.toLowerCase().replace(/\s+/g, '-') === slug,
     );
     if (match) {
       setSelectedSkill(match);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, []);
+  }, [SKILLS]);
 
   return (
     <AnimatePresence mode="wait">
