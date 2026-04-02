@@ -111,6 +111,7 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
             questionMapping={questionMapping!}
             backHref={backHref}
             backLabel={backLabel}
+            resourceId={resource.id}
           />
         </div>
       </div>
@@ -133,6 +134,7 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
           contentType={contentType}
           backHref={backHref}
           backLabel={backLabel}
+          resourceId={resource.id}
         />
       </div>
     </div>

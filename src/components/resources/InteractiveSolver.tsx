@@ -48,6 +48,7 @@ interface InteractiveSolverProps {
   questionMapping: QuestionMapping[];
   backHref: string;
   backLabel: string;
+  resourceId?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,10 +66,12 @@ function SolverYouTubePlayer({
   embedUrl,
   title,
   onPlayerReady,
+  resourceId,
 }: {
   embedUrl: string;
   title: string;
   onPlayerReady: (player: any) => void;
+  resourceId?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -76,6 +79,34 @@ function SolverYouTubePlayer({
   const [apiReady, setApiReady] = useState(false);
   const readyCbRef = useRef(onPlayerReady);
   readyCbRef.current = onPlayerReady;
+  const progressUpdateRef = useRef<string | null>(null);
+
+  const updateProgress = useCallback(async (isCompleted: boolean = false) => {
+    if (!resourceId) return;
+    
+    const updateKey = `${resourceId}-${isCompleted}`;
+    if (progressUpdateRef.current === updateKey) return;
+    progressUpdateRef.current = updateKey;
+
+    try {
+      let watchTime = 0;
+      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        watchTime = Math.floor(playerRef.current.getCurrentTime());
+      }
+
+      await fetch('/api/progress/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resourceId,
+          isCompleted,
+          watchTime,
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to update progress:', err);
+    }
+  }, [resourceId]);
 
   // Load YouTube IFrame API once
   useEffect(() => {
@@ -90,12 +121,10 @@ function SolverYouTubePlayer({
     return () => { window.onYouTubeIframeAPIReady = () => {}; };
   }, []);
 
-  // Create the player using the YT.Player constructor with a div target
-  // This gives us full API control including seekTo, playVideo, pauseVideo
+  // Create the player
   useEffect(() => {
     if (!apiReady || !containerRef.current || playerRef.current) return;
 
-    // Extract video ID from embed URL
     const vidMatch = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
     if (!vidMatch) return;
 
@@ -112,7 +141,10 @@ function SolverYouTubePlayer({
       events: {
         onReady: () => readyCbRef.current(playerRef.current),
         onStateChange: (e: any) => {
-          if (e.data === 0) setEnded(true); // YT.PlayerState.ENDED
+          if (e.data === 0) { // ENDED
+            setEnded(true);
+            updateProgress(true);
+          }
         },
       },
     });
@@ -121,8 +153,20 @@ function SolverYouTubePlayer({
       try { playerRef.current?.destroy(); } catch (_) {}
       playerRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiReady, embedUrl]);
+  }, [apiReady, embedUrl, updateProgress]);
+
+  // Periodic progress update
+  useEffect(() => {
+    if (!apiReady) return;
+    const interval = setInterval(() => {
+      if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
+        if (playerRef.current.getPlayerState() === 1) { // PLAYING
+          updateProgress(false);
+        }
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [apiReady, updateProgress]);
 
   const handleReplay = useCallback(() => {
     setEnded(false);
@@ -350,6 +394,7 @@ export default function InteractiveSolver({
   questionMapping,
   backHref,
   backLabel,
+  resourceId,
 }: InteractiveSolverProps) {
   const { embedUrl: ytEmbedUrl } = toEmbedUrl(videoUrl);
   const { embedUrl: pdfEmbedUrl } = toEmbedUrl(pdfUrl);
@@ -458,6 +503,7 @@ export default function InteractiveSolver({
             embedUrl={ytEmbedUrl}
             title={title}
             onPlayerReady={handlePlayerReady}
+            resourceId={resourceId}
           />
 
           {/* Question Navigation Console */}

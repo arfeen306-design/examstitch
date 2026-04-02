@@ -137,8 +137,8 @@ async function SearchResults({ query }: { query: string }) {
         <div className="w-16 h-16 bg-navy-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Search className="w-8 h-8 text-[var(--text-muted)]" />
         </div>
-        <h2 className="text-lg font-bold text-navy-900 mb-1">No results for "{query}"</h2>
-        <p className="text-sm text-navy-400 mb-8">
+        <h2 className="text-lg font-bold text-[var(--text-primary)] mb-1">No results for &quot;{query}&quot;</h2>
+        <p className="text-sm text-[var(--text-muted)] mb-8">
           Try checking your spelling or searching for a broader topic.
         </p>
         {suggestions.length > 0 && (

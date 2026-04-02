@@ -15,6 +15,7 @@ interface EmbeddedViewerProps {
   backLabel: string;
   nextHref?: string;
   nextTitle?: string;
+  resourceId?: string;
 }
 
 // ── YouTube IFrame API types ───────────────────────────────────────────────
@@ -33,16 +34,47 @@ function VideoFrame({
   title,
   nextHref,
   nextTitle,
+  resourceId,
 }: {
   embedUrl: string;
   title: string;
   nextHref?: string;
   nextTitle?: string;
+  resourceId?: string;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<any>(null);
   const [ended, setEnded] = useState(false);
   const [apiReady, setApiReady] = useState(false);
+  const progressUpdateRef = useRef<string | null>(null);
+
+  const updateProgress = useCallback(async (isCompleted: boolean = false) => {
+    if (!resourceId) return;
+    
+    // Simple deduplication to avoid redundant updates if component re-renders
+    const updateKey = `${resourceId}-${isCompleted}`;
+    if (progressUpdateRef.current === updateKey) return;
+    progressUpdateRef.current = updateKey;
+
+    try {
+      let watchTime = 0;
+      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        watchTime = Math.floor(playerRef.current.getCurrentTime());
+      }
+
+      await fetch('/api/progress/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resourceId,
+          isCompleted,
+          watchTime,
+        }),
+      });
+    } catch (err) {
+      console.error('Failed to update progress:', err);
+    }
+  }, [resourceId]);
 
   // Load YouTube IFrame API once
   useEffect(() => {
@@ -63,12 +95,33 @@ function VideoFrame({
     playerRef.current = new window.YT.Player(iframeRef.current, {
       events: {
         onStateChange: (e: any) => {
-          if (e.data === 0) setEnded(true);
+          // YT.PlayerState.ENDED = 0
+          if (e.data === 0) {
+            setEnded(true);
+            updateProgress(true);
+          }
         },
       },
     });
     return () => { try { playerRef.current?.destroy(); } catch (_) {} };
-  }, [apiReady]);
+  }, [apiReady, updateProgress]);
+
+  // Periodically update progress (every 30s) while playing
+  useEffect(() => {
+    if (!apiReady) return;
+    
+    const interval = setInterval(() => {
+      if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
+        const state = playerRef.current.getPlayerState();
+        // YT.PlayerState.PLAYING = 1
+        if (state === 1) {
+          updateProgress(false);
+        }
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [apiReady, updateProgress]);
 
   const handleReplay = useCallback(() => {
     setEnded(false);
@@ -83,10 +136,6 @@ function VideoFrame({
       style={{ willChange: 'opacity, transform' }}
     >
       <VideoContainer title={title} showBadge>
-        {/*
-         * Outer shell: aspect-ratio reserves space before iframe loads → zero CLS.
-         * Inner div clips the top YouTube bar (56px) without collapsing height.
-         */}
         <div
           className="relative w-full overflow-hidden"
           style={{ aspectRatio: '16 / 9', minHeight: '200px' }}
@@ -111,7 +160,6 @@ function VideoFrame({
             />
           </div>
 
-          {/* Top brand bar blocker */}
           <div
             aria-hidden="true"
             style={{
@@ -120,7 +168,6 @@ function VideoFrame({
               background: 'transparent', zIndex: 10,
             }}
           />
-          {/* Bottom-right YouTube logo blocker */}
           <div
             aria-hidden="true"
             style={{
@@ -131,7 +178,6 @@ function VideoFrame({
           />
         </div>
 
-        {/* End-of-video overlay */}
         <AnimatePresence>
           {ended && (
             <motion.div
@@ -196,7 +242,6 @@ function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
         loading="lazy"
       />
 
-      {/* Edge overlays to mask Google Drive's internal black borders */}
       <div className="absolute top-0 left-0 right-0 pointer-events-none z-10"
            style={{ height: '3px', backgroundColor: beige }} />
       <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
@@ -221,6 +266,7 @@ export default function EmbeddedViewer({
   backLabel,
   nextHref,
   nextTitle,
+  resourceId,
 }: EmbeddedViewerProps) {
   const { embedUrl, type } = toEmbedUrl(sourceUrl);
   const downloadUrl = toDownloadUrl(sourceUrl);
@@ -233,7 +279,6 @@ export default function EmbeddedViewer({
       transition={{ duration: 0.35 }}
       className="space-y-5"
     >
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href={backHref}
@@ -262,7 +307,6 @@ export default function EmbeddedViewer({
         </div>
       </div>
 
-      {/* Title */}
       <h1
         className="text-xl sm:text-2xl font-bold tracking-tight"
         style={{ color: 'var(--text-primary, #1A2B56)', fontFamily: 'Inter, system-ui, sans-serif' }}
@@ -270,19 +314,18 @@ export default function EmbeddedViewer({
         {title}
       </h1>
 
-      {/* Embedded Content */}
       {isVideo ? (
         <VideoFrame
           embedUrl={embedUrl}
           title={title}
           nextHref={nextHref}
           nextTitle={nextTitle}
+          resourceId={resourceId}
         />
       ) : (
         <DriveViewer embedUrl={embedUrl} title={title} />
       )}
 
-      {/* Content type badge — for PDFs only (video badge is inside VideoFrame) */}
       {!isVideo && (
         <div className="flex items-center gap-2 pt-1">
           <span

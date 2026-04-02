@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
+import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 
 async function getNewBookingsCount(): Promise<number> {
   try {
@@ -30,6 +31,20 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   }
 
   const newBookings = await getNewBookingsCount();
+
+  // Check if current user is a super admin (for subject switcher)
+  const cookieStore = await cookies();
+  const adminCookie = cookieStore.get('admin_session');
+  let isSuperAdmin = false;
+  if (adminCookie?.value) {
+    const adminClient = createAdminClient();
+    const { data: profile } = await adminClient
+      .from('student_accounts')
+      .select('is_super_admin')
+      .eq('id', adminCookie.value)
+      .single();
+    isSuperAdmin = profile?.is_super_admin ?? false;
+  }
 
   const navItems = [
     { label: 'Dashboard Overview', href: '/admin',             icon: Home },
@@ -88,8 +103,9 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="bg-white border-b border-navy-50 h-16 shrink-0 flex items-center px-8 shadow-sm">
+          <header className="bg-white border-b border-navy-50 h-16 shrink-0 flex items-center justify-between px-8 shadow-sm">
             <h1 className="text-lg font-semibold text-navy-900">Dashboard</h1>
+            {isSuperAdmin && <SubjectSwitcher />}
           </header>
           <div className="flex-1 overflow-y-auto p-8">
             {children}

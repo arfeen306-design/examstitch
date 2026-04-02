@@ -22,13 +22,25 @@ export type Database = {
         Row: {
           id: string;
           name: string;
+          slug: string;
+          levels: string[];
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['subjects']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['subjects']['Row']>;
+      };
+      subject_papers: {
+        Row: {
+          id: string;
+          name: string;
           code: string;
           level_id: string;
           slug: string;
           sort_order: number;
+          parent_subject_id: string | null;
         };
-        Insert: Omit<Database['public']['Tables']['subjects']['Row'], 'id'>;
-        Update: Partial<Database['public']['Tables']['subjects']['Row']>;
+        Insert: Omit<Database['public']['Tables']['subject_papers']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['subject_papers']['Row']>;
       };
       categories: {
         Row: {
@@ -67,6 +79,7 @@ export type Database = {
           source_url: string;
           topic: string | null;
           subject: string;
+          subject_id: string;
           is_watermarked: boolean;
           is_locked: boolean;
           is_published: boolean;
@@ -170,12 +183,28 @@ export type Database = {
           password_hash: string;
           salt: string;
           level: string;
+          role: string;
           is_active: boolean;
+          is_super_admin: boolean;
+          managed_subjects: string[];
           created_at: string;
           last_login: string | null;
         };
         Insert: Omit<Database['public']['Tables']['student_accounts']['Row'], 'id' | 'created_at' | 'last_login'>;
         Update: Partial<Database['public']['Tables']['student_accounts']['Row']>;
+      };
+      user_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          resource_id: string;
+          is_completed: boolean;
+          watch_time: number;
+          last_viewed_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_progress']['Row'], 'id' | 'updated_at' | 'last_viewed_at'>;
+        Update: Partial<Database['public']['Tables']['user_progress']['Row']>;
       };
     };
     Views: Record<string, never>;
@@ -192,6 +221,7 @@ export type Database = {
 // Convenience row types
 export type Level = Database['public']['Tables']['levels']['Row'];
 export type Subject = Database['public']['Tables']['subjects']['Row'];
+export type SubjectPaper = Database['public']['Tables']['subject_papers']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
 export type ExamSeries = Database['public']['Tables']['exam_series']['Row'];
 export type Resource = Database['public']['Tables']['resources']['Row'];
@@ -201,3 +231,4 @@ export type User = Database['public']['Tables']['users']['Row'];
 export type BlogPost = Database['public']['Tables']['blog_posts']['Row'];
 export type DemoBooking = Database['public']['Tables']['demo_bookings']['Row'];
 export type StudentAccount = Database['public']['Tables']['student_accounts']['Row'];
+export type UserProgress = Database['public']['Tables']['user_progress']['Row'];

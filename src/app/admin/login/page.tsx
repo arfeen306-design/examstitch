@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.push('/admin/resources');
+      router.push(data.redirectTo || '/admin');
       router.refresh();
     } catch {
       setError('Network error. Please try again.');

@@ -24,6 +24,8 @@ import type {
   Resource,
   ResourceSolution,
   BlogPost,
+  UserProgress,
+  StudentAccount,
 } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,6 +318,99 @@ export async function getSolutionsForPaper(paperId: string): Promise<ResourceSol
 export async function getSolutionVideo(videoResourceId: string): Promise<Resource | null> {
   return getResourceById(videoResourceId);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User Progress
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type UserProgressWithResource = UserProgress & { resource: Resource };
+
+export async function getUserProgress(userId: string): Promise<UserProgressWithResource[]> {
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('user_progress')
+        .select('*, resource:resources(*)')
+        .eq('user_id', userId)
+        .order('last_viewed_at', { ascending: false });
+      if (error) throw new Error(`getUserProgress(${userId}): ${error.message}`);
+      return (data ?? []) as unknown as UserProgressWithResource[];
+    },
+    [`user-progress-${userId}`],
+    { revalidate: 60, tags: [`progress-${userId}`] }, // Short cache for progress
+  )();
+}
+
+export async function getStudentAccount(userId: string): Promise<StudentAccount | null> {
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('student_accounts')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(`getStudentAccount(${userId}): ${error.message}`);
+      }
+      return (data ?? null) as StudentAccount | null;
+    },
+    [`student-account-${userId}`],
+    { revalidate: CACHE_1H, tags: [`student-${userId}`] },
+  )();
+}
+
+export async function getStudentAccountByEmail(email: string): Promise<StudentAccount | null> {
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+          .from('student_accounts')
+          .select('*')
+          .eq('email', email.trim().toLowerCase())
+          .single();
+        if (error && error.code !== 'PGRST116') {
+          throw new Error(`getStudentAccountByEmail(${email}): ${error.message}`);
+        }
+
+      return (data ?? null) as StudentAccount | null;
+    },
+    [`student-account-email-${email.toLowerCase()}`],
+    { revalidate: CACHE_1H },
+  )();
+}
+
+/**
+ * Maps Supabase Auth ID (UUID) to Student Account ID (if they match).
+ * In this project, student_accounts.id is the primary key.
+ */
+export async function getStudentAccountByAuthId(authId: string): Promise<StudentAccount | null> {
+  return getStudentAccount(authId);
+}
+
+/**
+ * Counts total published resources for a given level (e.g. 'olevel', 'alevel').
+ * Joins through categories -> subjects -> levels.
+ */
+export async function countResourcesByLevel(levelSlug: string): Promise<number> {
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const { count, error } = await supabase
+        .from('resources')
+        .select('*, category:categories!inner(subject:subjects!inner(level:levels!inner(slug)))', { count: 'exact', head: true })
+        .eq('is_published', true)
+        .eq('category.subject.level.slug', levelSlug);
+      
+      if (error) throw new Error(`countResourcesByLevel(${levelSlug}): ${error.message}`);
+      return count ?? 0;
+    },
+    [`resource-count-${levelSlug}`],
+    { revalidate: CACHE_1H, tags: ['resources'] },
+  )();
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Search

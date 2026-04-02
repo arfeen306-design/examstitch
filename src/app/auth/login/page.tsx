@@ -20,17 +20,28 @@ export default function LoginPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: authError, data: { user } } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (authError) {
-      setError(authError.message);
+    if (authError || !user) {
+      setError(authError?.message || 'Login failed');
       setLoading(false);
       return;
     }
 
-    const redirectTo = searchParams.get('redirectTo') || '/';
-    // Use window.location for a full page navigation so the browser sends
-    // the newly-set session cookie to the server on the very next request.
+    // Determine redirect
+    let redirectTo = searchParams.get('redirectTo');
+    if (!redirectTo) {
+      // Check if student has a level
+      const { data: student } = await supabase
+        .from('student_accounts')
+        .select('level')
+        .eq('id', user.id)
+        .single();
+      
+      redirectTo = student?.level ? '/dashboard' : '/';
+    }
+
+    // Use window.location for a full page navigation
     window.location.href = redirectTo;
   };
 

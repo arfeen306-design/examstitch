@@ -50,8 +50,8 @@ export async function POST(request: Request) {
     // ── Step 2: Verify admin role (service-role bypasses RLS) ────────────────
     const adminSupabase = createAdminClient();
     const { data: profile, error: profileError } = await adminSupabase
-      .from('users')
-      .select('role')
+      .from('student_accounts')
+      .select('role, is_super_admin, managed_subjects')
       .eq('id', authData.user.id)
       .single();
 
@@ -73,7 +73,28 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
-    return NextResponse.json({ success: true });
+    // ── Step 4: Determine smart redirect based on role ───────────────────────
+    let redirectTo = '/admin';
+    if (profile.is_super_admin) {
+      redirectTo = '/admin/super';
+    } else {
+      // Resolve subject slugs to determine the right dashboard
+      const subjects = (profile.managed_subjects as string[]) ?? [];
+      if (subjects.length > 0) {
+        const { data: subjectRows } = await adminSupabase
+          .from('subjects')
+          .select('slug')
+          .in('id', subjects);
+        const slugs = subjectRows?.map(s => s.slug) ?? [];
+
+        if (slugs.length === 1 && slugs[0] === 'computer-science') {
+          redirectTo = '/admin/cs';
+        }
+        // Default /admin for Maths-only or multi-subject admins
+      }
+    }
+
+    return NextResponse.json({ success: true, redirectTo });
   } catch (err) {
     console.error('[admin/login] Unexpected error:', err);
     return NextResponse.json(
