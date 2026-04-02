@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Link as LinkIcon } from 'lucide-react';
-import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin } from './actions';
+import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Link as LinkIcon, Shield } from 'lucide-react';
+import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
 
@@ -227,6 +227,14 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
   const [isPending, startTransition] = useTransition();
   const [assignTarget, setAssignTarget] = useState<string | null>(null);
   const [selectedSubject, setSelectedSubject] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({
+    email: '',
+    full_name: '',
+    password: '',
+    managed_subjects: [] as string[],
+    is_super_admin: false,
+  });
 
   const subjectMap = new Map(subjects.map(s => [s.id, s.name]));
 
@@ -255,55 +263,244 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
     });
   }
 
+  function handleCreateAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    startTransition(async () => {
+      const result = await createAdminAccount(newAdmin);
+      if (result.success) {
+        showToast({ message: `Admin "${newAdmin.full_name}" created successfully!`, type: 'success' });
+        setNewAdmin({ email: '', full_name: '', password: '', managed_subjects: [], is_super_admin: false });
+        setShowCreateForm(false);
+      } else {
+        showToast({ message: result.error || 'Failed to create admin.', type: 'error' });
+      }
+    });
+  }
+
+  function handleDeleteAdmin(userId: string, email: string) {
+    if (!confirm(`Permanently delete admin "${email}"? This removes their Auth account and all access.`)) return;
+    startTransition(async () => {
+      const result = await deleteAdminAccount(userId);
+      if (result.success) {
+        showToast({ message: `Admin "${email}" deleted.`, type: 'success' });
+      } else {
+        showToast({ message: result.error || 'Failed.', type: 'error' });
+      }
+    });
+  }
+
+  function handleToggleSuperAdmin(userId: string, currentlySuper: boolean) {
+    const action = currentlySuper ? 'demote from' : 'promote to';
+    if (!confirm(`Are you sure you want to ${action} Super Admin?`)) return;
+    startTransition(async () => {
+      const result = await toggleSuperAdmin(userId, !currentlySuper);
+      if (result.success) {
+        showToast({ message: currentlySuper ? 'Demoted to regular admin.' : 'Promoted to Super Admin!', type: 'success' });
+      } else {
+        showToast({ message: result.error || 'Failed.', type: 'error' });
+      }
+    });
+  }
+
+  function toggleNewAdminSubject(subjectId: string) {
+    setNewAdmin(prev => ({
+      ...prev,
+      managed_subjects: prev.managed_subjects.includes(subjectId)
+        ? prev.managed_subjects.filter(id => id !== subjectId)
+        : [...prev.managed_subjects, subjectId],
+    }));
+  }
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h4 className="font-semibold text-gray-900">Admin Users</h4>
-        <p className="text-xs text-gray-500 mt-0.5">Manage subject assignments for each admin.</p>
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="font-semibold text-gray-900">Admin Users</h4>
+          <p className="text-xs text-gray-500 mt-0.5">{admins.length} admin{admins.length !== 1 ? 's' : ''} · Manage access &amp; subject assignments</p>
+        </div>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-navy-900 text-white text-xs font-medium rounded-lg hover:bg-navy-800 transition"
+        >
+          <UserPlus className="w-3.5 h-3.5" />
+          Create Admin
+        </button>
       </div>
 
+      {/* Create Admin Form */}
+      {showCreateForm && (
+        <form onSubmit={handleCreateAdmin} className="p-5 border-2 border-dashed border-indigo-200 rounded-xl space-y-4 bg-indigo-50/30">
+          <p className="text-sm font-semibold text-indigo-900">New Admin Account</p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Full Name *</label>
+              <input
+                required
+                value={newAdmin.full_name}
+                onChange={e => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="e.g. Sarah Khan"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Email *</label>
+              <input
+                required
+                type="email"
+                value={newAdmin.email}
+                onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="teacher@school.edu"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Temporary Password *</label>
+            <input
+              required
+              type="text"
+              value={newAdmin.password}
+              onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Min 6 characters — share with the teacher securely"
+              minLength={6}
+            />
+          </div>
+
+          {/* Subject Assignment */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-2">Assign Subjects *</label>
+            <div className="flex flex-wrap gap-2">
+              {subjects.map(s => {
+                const selected = newAdmin.managed_subjects.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => toggleNewAdminSubject(s.id)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
+                      selected
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    {s.name}
+                    {selected && <span className="ml-1">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">Admin can only upload/manage resources for assigned subjects.</p>
+          </div>
+
+          {/* Super Admin Toggle */}
+          <label className="flex items-center gap-2 text-xs text-gray-700">
+            <input
+              type="checkbox"
+              checked={newAdmin.is_super_admin}
+              onChange={e => setNewAdmin({ ...newAdmin, is_super_admin: e.target.checked })}
+              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span>Grant Super Admin access <span className="text-gray-400">(full platform control)</span></span>
+          </label>
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={() => setShowCreateForm(false)} className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending || newAdmin.managed_subjects.length === 0}
+              className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
+            >
+              {isPending ? 'Creating…' : 'Create Admin Account'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Admin List */}
       <div className="space-y-3">
         {admins.map(admin => (
           <div key={admin.id} className="p-4 rounded-xl border border-gray-100 bg-gray-50">
+            {/* Admin Header */}
             <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  {admin.full_name}
-                  {admin.is_super_admin && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700">
-                      SUPER
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-gray-400">{admin.email}</p>
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
+                  admin.is_super_admin ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
+                }`}>
+                  {admin.full_name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {admin.full_name}
+                    {admin.is_super_admin && (
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700">
+                        SUPER ADMIN
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400">{admin.email}</p>
+                </div>
               </div>
-              <button
-                onClick={() => setAssignTarget(assignTarget === admin.id ? null : admin.id)}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                Assign
-              </button>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setAssignTarget(assignTarget === admin.id ? null : admin.id)}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                  title="Assign subject"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Assign</span>
+                </button>
+                <button
+                  onClick={() => handleToggleSuperAdmin(admin.id, admin.is_super_admin)}
+                  disabled={isPending}
+                  className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg transition ${
+                    admin.is_super_admin
+                      ? 'text-amber-600 hover:bg-amber-50'
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                  title={admin.is_super_admin ? 'Demote from Super Admin' : 'Promote to Super Admin'}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                </button>
+                {admin.email !== 'arfeen306@gmail.com' && (
+                  <button
+                    onClick={() => handleDeleteAdmin(admin.id, admin.email)}
+                    disabled={isPending}
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg transition"
+                    title="Delete admin"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Current subjects */}
+            {/* Assigned Subjects */}
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {admin.managed_subjects.length === 0 && !admin.is_super_admin && (
-                <span className="text-xs text-gray-400 italic">No subjects assigned</span>
-              )}
               {admin.is_super_admin && (
-                <span className="text-xs text-amber-600 font-medium">Access to all subjects</span>
+                <span className="text-xs text-amber-600 font-medium">⚡ Full access to all subjects</span>
+              )}
+              {!admin.is_super_admin && admin.managed_subjects.length === 0 && (
+                <span className="text-xs text-red-400 italic">⚠ No subjects assigned — cannot access any content</span>
               )}
               {!admin.is_super_admin && admin.managed_subjects.map(sid => (
                 <span
                   key={sid}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
                 >
                   {subjectMap.get(sid) || sid.slice(0, 8)}
                   <button
                     onClick={() => handleRemove(admin.id, sid)}
                     disabled={isPending}
                     className="hover:text-red-600 transition"
+                    title="Remove subject"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -311,7 +508,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
               ))}
             </div>
 
-            {/* Assign dropdown */}
+            {/* Assign Subject Dropdown */}
             {assignTarget === admin.id && (
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
                 <select
@@ -339,7 +536,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
         ))}
 
         {admins.length === 0 && (
-          <p className="text-sm text-gray-400 py-8 text-center">No admin accounts found.</p>
+          <p className="text-sm text-gray-400 py-8 text-center">No admin accounts found. Create one above.</p>
         )}
       </div>
     </div>
