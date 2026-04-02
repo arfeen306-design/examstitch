@@ -45,6 +45,7 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
   // Revalidate admin and public resource paths + unstable_cache tags
   revalidateTag('resources');
   revalidatePath('/admin/resources');
+  revalidatePath('/admin/cs');
   revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/video-lectures', 'page');
@@ -99,6 +100,7 @@ export async function bulkInsertResources(resources: unknown[]) {
 
     revalidateTag('resources');
     revalidatePath('/admin/resources');
+    revalidatePath('/admin/cs');
     revalidatePath('/', 'layout');
     return { success: true };
   } catch (err: unknown) {
@@ -119,6 +121,7 @@ export async function createResource(data: any) {
 
   revalidateTag('resources');
   revalidatePath('/admin/resources');
+  revalidatePath('/admin/cs');
   revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/video-lectures', 'page');
@@ -139,6 +142,7 @@ export async function deleteResource(id: string) {
 
   revalidateTag('resources');
   revalidatePath('/admin/resources');
+  revalidatePath('/admin/cs');
   revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
   revalidatePath('/alevel/[subject]/[level]/[paper]/video-lectures', 'page');
@@ -160,6 +164,7 @@ export async function updateResource(id: string, updates: { title?: string; sour
 
   revalidateTag('resources');
   revalidatePath('/admin/resources');
+  revalidatePath('/admin/cs');
   revalidatePath('/', 'layout');
   return { success: true };
 }

@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FileText, Video, BookOpen, TrendingUp } from 'lucide-react';
-import CSResourceTable from './CSResourceTable';
+import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
+import type { Resource } from '@/components/admin/SubjectResourceManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,19 +24,17 @@ export default async function CSAdminPage() {
     );
   }
 
-  // Fetch all CS resources
+  // Fetch all CS resources with full fields needed by SubjectResourceManager
   const { data: resources, count } = await supabase
     .from('resources')
     .select('*, category:categories(id, name, slug)', { count: 'exact' })
     .eq('subject_id', subject.id)
+    .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
-  const csResources = resources ?? [];
+  const csResources = (resources ?? []) as Resource[];
   const totalCount = count ?? 0;
 
-  // Compute level distribution from resource subjects (O Level vs A Level)
-  // Resources don't have a direct `level` column — we derive from their category chain.
-  // For now, count by content_type
   const pdfCount = csResources.filter(r => r.content_type === 'pdf').length;
   const videoCount = csResources.filter(r => r.content_type === 'video').length;
   const worksheetCount = csResources.filter(r => r.content_type === 'worksheet').length;
@@ -75,10 +74,16 @@ export default async function CSAdminPage() {
         })}
       </div>
 
-      {/* Resource Table */}
+      {/* Resource Manager — same component used by Maths */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">CS Resource Manager</h3>
-        <CSResourceTable initialResources={csResources} subjectId={subject.id} allowedLevels={subject.levels ?? []} />
+        <SubjectResourceManager
+          initialResources={csResources}
+          subjectId={subject.id}
+          subjectSlug="computer-science"
+          accentColor="#6366f1"
+          showModuleTypeFilter={true}
+        />
       </div>
     </div>
   );

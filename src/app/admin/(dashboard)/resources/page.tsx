@@ -1,20 +1,21 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import ResourceGridClient from './ResourceGridClient';
 import BulkUploadPreview from './BulkUploadPreview';
-import { Database } from '@/lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminResourcesPage() {
   const supabase = createAdminClient();
 
-  // Fetch all resources with joined category data
+  // Fetch all maths resources with joined category data
   const { data: resources, error } = await supabase
     .from('resources')
     .select(`
       *,
       category:categories(id, name, slug, parent_id)
     `)
+    .or('subject.ilike.%math%,subject.ilike.%4024%,subject.ilike.%9709%')
+    .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
   if (error) {
