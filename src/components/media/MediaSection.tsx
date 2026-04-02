@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { isAdminRequest } from '@/lib/admin-mode';
 import MediaFrame from './MediaFrame';
 
 interface MediaSectionProps {
@@ -7,6 +8,8 @@ interface MediaSectionProps {
   heading?: string;
   /** Number of columns on large screens (default 2) */
   columns?: 1 | 2 | 3;
+  /** Subject context for themed borders */
+  subject?: 'maths' | 'computer-science' | string;
 }
 
 const colClasses = {
@@ -23,8 +26,10 @@ export default async function MediaSection({
   pageSlug,
   heading,
   columns = 2,
+  subject,
 }: MediaSectionProps) {
   const supabase = createClient();
+  const adminMode = isAdminRequest();
 
   const { data: widgets } = await supabase
     .from('media_widgets')
@@ -55,6 +60,8 @@ export default async function MediaSection({
             url={w.url}
             permissions={w.permissions as { allow_print: boolean; allow_download: boolean }}
             viewCount={(w as Record<string, unknown>).view_count as number | undefined}
+            subject={subject}
+            isAdmin={adminMode}
           />
         ))}
       </div>

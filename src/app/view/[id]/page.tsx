@@ -100,9 +100,10 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
 
   // ── Auth gate for locked resources ───────────────────────────────────────
   if ((resource as any).is_locked) {
-    // Admin bypass: admins with a valid session cookie skip the paywall
-    const adminCookie = (await cookies()).get('admin_session');
-    const isAdmin = !!adminCookie?.value;
+    // Admin bypass: either httpOnly admin_session OR client admin_mode flag
+    const cookieStore = await cookies();
+    const isAdmin = !!cookieStore.get('admin_session')?.value
+                 || cookieStore.get('admin_mode')?.value === '1';
 
     if (!isAdmin) {
       const supabase = createClient();

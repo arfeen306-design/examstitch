@@ -35,6 +35,19 @@ export async function middleware(request: NextRequest) {
   // Refresh the session (rotates tokens if needed).
   const { data: { user } } = await supabase.auth.getUser();
 
+  // ── Admin mode sync: ensure admin_mode cookie exists when admin_session is set ─
+  // This retroactively grants the client-readable flag to existing admin sessions.
+  const adminSessionCookie = request.cookies.get('admin_session');
+  if (adminSessionCookie?.value && !request.cookies.get('admin_mode')?.value) {
+    response.cookies.set('admin_mode', '1', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+  }
+
   // Guard: /dashboard and /premium require an active session.
   // Admins with a valid admin_session cookie bypass this check.
   const isProtected =
@@ -60,11 +73,10 @@ export async function middleware(request: NextRequest) {
     const adminCookie = request.cookies.get('admin_session');
 
     if (!user || !adminCookie || adminCookie.value !== user.id) {
-      const loginUrl = new URL('/admin/login', request.url);
-      const redirectResponse = NextResponse.redirect(loginUrl);
-      redirectResponse.cookies.delete('admin_session');
-      redirectResponse.cookies.delete('admin_landing');
-      return redirectResponse;
+      // Redirect to admin login but preserve admin_session + admin_mode cookies.
+      // They'll still work for public content bypass even if the Supabase JWT expired.
+      // Re-login at /admin/login will refresh everything.
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
     // ── Role-based routing & subject isolation ─────────────────────────────

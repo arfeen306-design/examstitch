@@ -70,9 +70,10 @@ export async function GET(
 
   // ── 2. Auth gate for locked resources ──────────────────────────────────
   if (resource.is_locked) {
-    // Admin bypass: admins with a valid session cookie skip the paywall
+    // Admin bypass: either httpOnly admin_session OR client admin_mode flag
     const adminCookie = request.cookies.get('admin_session');
-    const isAdmin = !!adminCookie?.value;
+    const adminMode = request.cookies.get('admin_mode');
+    const isAdmin = !!adminCookie?.value || adminMode?.value === '1';
 
     if (!isAdmin) {
       const userClient = createClient();

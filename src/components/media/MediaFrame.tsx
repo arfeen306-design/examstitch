@@ -1,7 +1,7 @@
 'use client';
 
 import { Download, Printer, FileText, PlayCircle, Eye } from 'lucide-react';
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 
 interface MediaFrameProps {
   id: string;
@@ -10,7 +10,34 @@ interface MediaFrameProps {
   url: string;
   permissions: { allow_print: boolean; allow_download: boolean };
   viewCount?: number;
+  subject?: 'maths' | 'computer-science' | string;
+  isAdmin?: boolean;
 }
+
+// Subject-themed styles
+const subjectThemes: Record<string, { border: string; glow: string; accent: string }> = {
+  'maths': {
+    border: '#FF6B00',
+    glow: '0 0 18px rgba(255, 107, 0, 0.25), 0 4px 16px rgba(255, 107, 0, 0.10)',
+    accent: 'rgba(255, 107, 0, 0.08)',
+  },
+  'mathematics': {
+    border: '#FF6B00',
+    glow: '0 0 18px rgba(255, 107, 0, 0.25), 0 4px 16px rgba(255, 107, 0, 0.10)',
+    accent: 'rgba(255, 107, 0, 0.08)',
+  },
+  'computer-science': {
+    border: '#4F46E5',
+    glow: '0 2px 12px rgba(79, 70, 229, 0.30), 0 1px 4px rgba(79, 70, 229, 0.15)',
+    accent: 'rgba(79, 70, 229, 0.08)',
+  },
+};
+
+const defaultTheme = {
+  border: 'var(--border-subtle)',
+  glow: '0 4px 12px rgba(0, 0, 0, 0.06)',
+  accent: 'var(--accent-subtle)',
+};
 
 // Session-based debounce: track which widgets have been counted this session
 const viewedThisSession = new Set<string>();
@@ -28,10 +55,24 @@ function trackView(widgetId: string, interactionType: 'view' | 'download' | 'pri
   }).catch(() => {});
 }
 
-export default function MediaFrame({ id, mediaType, title, url, permissions, viewCount }: MediaFrameProps) {
+export default function MediaFrame({ id, mediaType, title, url, permissions, viewCount, subject, isAdmin }: MediaFrameProps) {
   const printFrameRef = useRef<HTMLIFrameElement>(null);
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<unknown>(null);
+
+  // Resolve subject theme
+  const theme = useMemo(() => {
+    if (!subject) return defaultTheme;
+    const key = subject.toLowerCase().replace(/\s+/g, '-');
+    return subjectThemes[key] || defaultTheme;
+  }, [subject]);
+
+  // Admin detection: prop or admin_mode cookie
+  const showAnalytics = useMemo(() => {
+    if (isAdmin) return true;
+    if (typeof document !== 'undefined' && document.cookie.includes('admin_mode=1')) return true;
+    return false;
+  }, [isAdmin]);
 
   // YouTube: use IFrame API to detect play
   useEffect(() => {
@@ -113,7 +154,8 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
     }
   }, [id]);
 
-  const viewBadge = viewCount != null && viewCount > 0 ? (
+  // Admin-only view count badge — completely removed from DOM for non-admins
+  const viewBadge = showAnalytics && viewCount != null && viewCount > 0 ? (
     <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
           style={{ backgroundColor: 'var(--bg-surface, #f3f4f6)', color: 'var(--text-muted, #6b7280)' }}>
       <Eye className="w-3 h-3" />
@@ -121,17 +163,28 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
     </span>
   ) : null;
 
+  // Glassmorphism container style
+  const containerStyle = {
+    border: `4px solid ${theme.border}`,
+    borderRadius: '12px',
+    boxShadow: theme.glow,
+    backgroundColor: 'var(--bg-card)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    background: `linear-gradient(135deg, ${theme.accent}, var(--bg-card) 40%, var(--bg-card))`,
+  };
+
   if (mediaType === 'youtube') {
     return (
-      <div className="group rounded-2xl overflow-hidden shadow-sm border transition-shadow hover:shadow-md"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}>
+      <div className="group overflow-hidden transition-shadow hover:shadow-lg"
+           style={containerStyle}>
         <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
           <div ref={ytContainerRef} className="absolute inset-0">
             <div id={`yt-player-${id}`} className="w-full h-full" />
           </div>
         </div>
         <div className="px-4 py-3 flex items-center gap-2">
-          <PlayCircle className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />
+          <PlayCircle className="w-4 h-4 shrink-0" style={{ color: theme.border }} />
           <p className="text-sm font-medium truncate flex-1" style={{ color: 'var(--text-primary)' }}>{title}</p>
           {viewBadge}
         </div>
@@ -141,13 +194,13 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
 
   // PDF viewer
   return (
-    <div className="rounded-2xl overflow-hidden shadow-sm border transition-shadow hover:shadow-md"
-         style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}>
+    <div className="overflow-hidden transition-shadow hover:shadow-lg"
+         style={containerStyle}>
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b"
            style={{ borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center gap-2 min-w-0">
-          <FileText className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />
+          <FileText className="w-4 h-4 shrink-0" style={{ color: theme.border }} />
           <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{title}</p>
           {viewBadge}
         </div>
@@ -156,7 +209,7 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
             <button
               onClick={handleDownload}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors hover:opacity-80"
-              style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent-text)' }}
+              style={{ backgroundColor: theme.accent, color: theme.border }}
             >
               <Download className="w-3.5 h-3.5" />
               Download
@@ -166,7 +219,7 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
             <button
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors hover:opacity-80"
-              style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent-text)' }}
+              style={{ backgroundColor: theme.accent, color: theme.border }}
             >
               <Printer className="w-3.5 h-3.5" />
               Print
