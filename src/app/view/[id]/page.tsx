@@ -20,14 +20,33 @@ interface ViewerPageProps {
 
 async function getResource(id: string) {
   const supabase = createAdminClient();
+
+  // Try full query with category + subject_papers join
   const { data, error } = await supabase
     .from('resources')
-    .select('*, category:categories(id, name, slug, subject_id, subjects!categories_subject_id_fkey(slug, code))')
+    .select('*, category:categories(id, name, slug, subject_id, subjects:subject_papers!categories_subject_id_fkey(slug, code))')
     .eq('id', id)
     .single();
 
-  if (error || !data) return null;
-  return data;
+  if (data) return data;
+
+  // Fallback: fetch resource without the deep join (in case FK is misconfigured)
+  if (error) {
+    console.error('[view] Primary query failed:', error.message, '— trying fallback');
+    const { data: fallback, error: fallbackErr } = await supabase
+      .from('resources')
+      .select('*, category:categories(id, name, slug, subject_id)')
+      .eq('id', id)
+      .single();
+
+    if (fallbackErr) {
+      console.error('[view] Fallback query also failed:', fallbackErr.message);
+      return null;
+    }
+    return fallback;
+  }
+
+  return null;
 }
 
 function buildBackPath(resource: any): { href: string; label: string } {
