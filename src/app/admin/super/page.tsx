@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireSuperAdmin } from '@/lib/supabase/guards';
 import { redirect } from 'next/navigation';
-import { Globe, BookOpen, Users, Shield } from 'lucide-react';
+import { Globe, BookOpen, Users, Shield, TrendingUp, Video, FileText } from 'lucide-react';
 import SuperAdminClient from './SuperAdminClient';
 
 export const dynamic = 'force-dynamic';
@@ -110,6 +110,58 @@ export default async function SuperAdminPage() {
         </div>
       </div>
 
+      {/* Top Performing Content */}
+      {mediaList.length > 0 && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-navy-50">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-rose-500" />
+            <h3 className="text-lg font-semibold text-navy-900">Top Performing Content</h3>
+          </div>
+          <div className="space-y-2">
+            {[...mediaList]
+              .sort((a, b) => ((b as Record<string, unknown>).view_count as number ?? 0) - ((a as Record<string, unknown>).view_count as number ?? 0))
+              .slice(0, 10)
+              .map((w, i) => {
+                const views = (w as Record<string, unknown>).view_count as number ?? 0;
+                const maxViews = Math.max(
+                  ...mediaList.map(m => ((m as Record<string, unknown>).view_count as number) ?? 0),
+                  1
+                );
+                return (
+                  <div key={w.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 w-5 text-right shrink-0">
+                      {i + 1}
+                    </span>
+                    {(w.media_type as string) === 'youtube' ? (
+                      <Video className="w-4 h-4 text-red-500 shrink-0" />
+                    ) : (
+                      <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{w.title}</p>
+                      <div className="mt-1 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-rose-400 to-rose-600 transition-all"
+                          style={{ width: `${maxViews > 0 ? (views / maxViews) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
+                      </p>
+                      <p className="text-[10px] text-gray-500">views</p>
+                    </div>
+                  </div>
+                );
+              })}
+            {mediaList.every(m => ((m as Record<string, unknown>).view_count as number ?? 0) === 0) && (
+              <p className="text-sm text-gray-400 py-4 text-center">No views recorded yet.</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Client-side interactive panels */}
       <SuperAdminClient
         subjects={subjectList}
@@ -129,6 +181,7 @@ export default async function SuperAdminPage() {
           url: m.url,
           permissions: m.permissions as { allow_print: boolean; allow_download: boolean },
           is_active: m.is_active,
+          view_count: (m as Record<string, unknown>).view_count as number ?? 0,
           created_at: m.created_at,
         }))}
       />

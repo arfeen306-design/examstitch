@@ -30,6 +30,7 @@ interface MediaWidgetItem {
   url: string;
   permissions: { allow_print: boolean; allow_download: boolean };
   is_active: boolean;
+  view_count: number;
   created_at: string;
 }
 
@@ -546,6 +547,9 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[11px] font-medium text-gray-500 px-1.5 py-0.5 rounded bg-gray-100">
+                      {w.view_count} views
+                    </span>
                     <button
                       onClick={() => handleToggle(w.id, w.is_active)}
                       disabled={isPending}

@@ -54,6 +54,7 @@ export default async function MediaSection({
             title={w.title}
             url={w.url}
             permissions={w.permissions as { allow_print: boolean; allow_download: boolean }}
+            viewCount={(w as Record<string, unknown>).view_count as number | undefined}
           />
         ))}
       </div>

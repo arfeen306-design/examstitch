@@ -216,9 +216,10 @@ export type Database = {
           url: string;
           permissions: { allow_print: boolean; allow_download: boolean };
           is_active: boolean;
+          view_count: number;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['media_widgets']['Row'], 'id' | 'created_at'>;
+        Insert: Omit<Database['public']['Tables']['media_widgets']['Row'], 'id' | 'created_at' | 'view_count'>;
         Update: Partial<Database['public']['Tables']['media_widgets']['Row']>;
       };
     };
