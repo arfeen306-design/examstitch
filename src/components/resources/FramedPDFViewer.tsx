@@ -24,7 +24,7 @@ export default function FramedPDFViewer({
   embedUrl,
   downloadUrl,
   title,
-  label = 'PDF Resource',
+  label = 'Resource Document',
   minHeight = '600px',
 }: FramedPDFViewerProps) {
   const handlePrint = useCallback(() => {
@@ -38,11 +38,11 @@ export default function FramedPDFViewer({
 
   return (
     <div
-      className="flex flex-col overflow-hidden transition-shadow hover:shadow-xl"
+      className="flex flex-col overflow-hidden transition-shadow hover:shadow-2xl"
       style={{
         borderRadius: '12px',
         border: '2px solid #E2E8F0',
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 12px 24px -8px rgba(0, 0, 0, 0.06)',
         backgroundColor: 'var(--bg-card, #fff)',
       }}
     >

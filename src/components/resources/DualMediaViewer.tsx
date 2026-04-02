@@ -103,7 +103,15 @@ function DualVideoPlayer({
   }, [updateProgress]);
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden shadow-sm" style={{ backgroundColor: '#000' }}>
+    <div
+      className="relative w-full overflow-hidden transition-shadow hover:shadow-2xl"
+      style={{
+        backgroundColor: '#000',
+        borderRadius: '12px',
+        border: '2px solid #E2E8F0',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 12px 24px -8px rgba(0, 0, 0, 0.06)',
+      }}
+    >
       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
         <iframe
           ref={iframeRef}
@@ -183,24 +191,9 @@ export default function DualMediaViewer({
         {title}
       </h1>
 
-      {/* Dual pane layout: 60% Video / 40% PDF — stacked below lg */}
-      <div className={`flex gap-4 ${expanded ? '' : 'flex-col lg:flex-row'}`}>
-        {/* Video pane — 60% */}
-        <div
-          className={`transition-all duration-300 ${
-            expanded === 'pdf'
-              ? 'hidden'
-              : expanded === 'video'
-                ? 'w-full'
-                : 'w-full lg:w-[60%]'
-          }`}
-        >
-          <div className="sticky top-24">
-            <DualVideoPlayer embedUrl={videoEmbed} title={title} resourceId={resourceId} />
-          </div>
-        </div>
-
-        {/* PDF pane — 40% */}
+      {/* Dual pane layout: PDF 40% LEFT / Video 60% RIGHT — mobile: video top, PDF bottom */}
+      <div className={`flex gap-4 ${expanded ? '' : 'flex-col-reverse lg:flex-row'}`}>
+        {/* PDF pane — LEFT 40% (desktop) / BOTTOM (mobile) */}
         <div
           className={`transition-all duration-300 ${
             expanded === 'video'
@@ -217,6 +210,21 @@ export default function DualMediaViewer({
             title={`${title} — PDF`}
             minHeight="600px"
           />
+        </div>
+
+        {/* Video pane — RIGHT 60% (desktop) / TOP (mobile) */}
+        <div
+          className={`transition-all duration-300 ${
+            expanded === 'pdf'
+              ? 'hidden'
+              : expanded === 'video'
+                ? 'w-full'
+                : 'w-full lg:w-[60%]'
+          }`}
+        >
+          <div className="sticky top-24">
+            <DualVideoPlayer embedUrl={videoEmbed} title={title} resourceId={resourceId} />
+          </div>
         </div>
       </div>
     </motion.div>

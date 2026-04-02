@@ -259,10 +259,6 @@ export default function EmbeddedViewer({
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           {backLabel}
         </Link>
-
-        <div className="flex items-center gap-2">
-          {/* Download button only shown for video content; PDFs have it in the FramedPDFViewer header */}
-        </div>
       </div>
 
       <h1
@@ -285,7 +281,7 @@ export default function EmbeddedViewer({
           embedUrl={embedUrl}
           downloadUrl={downloadUrl}
           title={title}
-          label={contentType === 'worksheet' ? 'Worksheet' : 'Past Paper'}
+          label={contentType === 'worksheet' ? 'Worksheet' : 'Resource Document'}
           minHeight="max(800px, 85vh)"
         />
       )}
