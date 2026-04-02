@@ -230,6 +230,7 @@ export type Database = {
           name: string;
           slug: string;
           icon: string;
+          tagline: string | null;
           description: string | null;
           gradient: string;
           glow_color: string;
@@ -263,6 +264,10 @@ export type Database = {
           title: string;
           video_url: string | null;
           resource_url: string | null;
+          notes_url: string | null;
+          exercises_url: string | null;
+          cheatsheet_url: string | null;
+          quiz_url: string | null;
           duration: string | null;
           sort_order: number;
           is_free: boolean;

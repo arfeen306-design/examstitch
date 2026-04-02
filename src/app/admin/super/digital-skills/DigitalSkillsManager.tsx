@@ -1,15 +1,18 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useCallback } from 'react';
 import {
   createSkill, updateSkill, deleteSkill,
   createPlaylist, updatePlaylist, deletePlaylist,
   createLesson, updateLesson, deleteLesson,
+  reorderPlaylists, reorderLessons,
 } from './actions';
 import {
   Plus, Trash2, Pencil, Check, X, ChevronDown, ChevronRight,
-  GripVertical, Video, FileText, Eye, EyeOff, Layers, BookOpen,
-  Users, Sparkles, ListVideo,
+  Video, FileText, Eye, EyeOff, Layers, BookOpen,
+  Users, Sparkles, ListVideo, ArrowUp, ArrowDown,
+  Play, FileDown, PenLine, BrainCircuit, Image,
+  GripVertical, ExternalLink, Save,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
@@ -20,6 +23,7 @@ interface SkillRow {
   name: string;
   slug: string;
   icon: string;
+  tagline: string | null;
   description: string | null;
   gradient: string;
   glow_color: string;
@@ -41,6 +45,10 @@ interface LessonRow {
   title: string;
   video_url: string | null;
   resource_url: string | null;
+  notes_url: string | null;
+  exercises_url: string | null;
+  cheatsheet_url: string | null;
+  quiz_url: string | null;
   duration: string | null;
   sort_order: number;
   is_free: boolean;
@@ -53,7 +61,6 @@ interface Props {
   skillAccessCounts: Record<string, number>;
 }
 
-// Available gradient presets
 const GRADIENT_PRESETS = [
   { label: 'Violet', value: 'from-violet-600 to-indigo-700', glow: 'rgba(124,58,237,0.35)' },
   { label: 'Pink', value: 'from-pink-500 to-rose-600', glow: 'rgba(236,72,153,0.35)' },
@@ -69,6 +76,40 @@ const ICON_OPTIONS = [
   'Code2', 'Palette', 'Brain', 'Globe', 'Shield', 'Database',
   'Smartphone', 'BarChart3', 'Cpu', 'Camera', 'Music', 'Pen',
 ];
+
+type LessonFormData = {
+  title: string;
+  video_url: string;
+  notes_url: string;
+  exercises_url: string;
+  cheatsheet_url: string;
+  quiz_url: string;
+  resource_url: string;
+  duration: string;
+  is_free: boolean;
+};
+
+const EMPTY_LESSON_FORM: LessonFormData = {
+  title: '', video_url: '', notes_url: '', exercises_url: '',
+  cheatsheet_url: '', quiz_url: '', resource_url: '', duration: '', is_free: false,
+};
+
+// ─── Helper: Extract YouTube video ID for thumbnail preview ─────────────────
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  // Could be a raw video ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+  return null;
+}
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
@@ -89,15 +130,54 @@ export default function DigitalSkillsManager({
   const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>(null);
   const [showNewSkill, setShowNewSkill] = useState(false);
   const [newPlaylistSkillId, setNewPlaylistSkillId] = useState<string | null>(null);
-  const [newLessonPlaylistId, setNewLessonPlaylistId] = useState<string | null>(null);
-  const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
-  const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
-  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
 
-  // Form state
-  const [skillForm, setSkillForm] = useState({ name: '', slug: '', icon: 'Code2', description: '', gradient: GRADIENT_PRESETS[0].value });
+  // Lesson modal state
+  const [lessonModal, setLessonModal] = useState<{
+    open: boolean;
+    mode: 'create' | 'edit';
+    playlistId: string;
+    lessonId?: string;
+  }>({ open: false, mode: 'create', playlistId: '' });
+  const [lessonForm, setLessonForm] = useState<LessonFormData>(EMPTY_LESSON_FORM);
+
+  // Skill editing
+  const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
+  const [editSkillForm, setEditSkillForm] = useState({ name: '', tagline: '', description: '', icon: '', gradient: '' });
+
+  // Playlist editing
+  const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
+  const [editPlaylistForm, setEditPlaylistForm] = useState({ title: '', description: '' });
+
+  // Form state for new skill / new playlist
+  const [skillForm, setSkillForm] = useState({ name: '', slug: '', icon: 'Code2', tagline: '', description: '', gradient: GRADIENT_PRESETS[0].value });
   const [playlistForm, setPlaylistForm] = useState({ title: '', description: '' });
-  const [lessonForm, setLessonForm] = useState({ title: '', video_url: '', resource_url: '', duration: '', is_free: false });
+
+  // ── Lesson Modal Helpers ──────────────────────────────────────────────────
+
+  const openCreateLessonModal = useCallback((playlistId: string) => {
+    setLessonForm(EMPTY_LESSON_FORM);
+    setLessonModal({ open: true, mode: 'create', playlistId });
+  }, []);
+
+  const openEditLessonModal = useCallback((lesson: LessonRow) => {
+    setLessonForm({
+      title: lesson.title,
+      video_url: lesson.video_url || '',
+      notes_url: lesson.notes_url || '',
+      exercises_url: lesson.exercises_url || '',
+      cheatsheet_url: lesson.cheatsheet_url || '',
+      quiz_url: lesson.quiz_url || '',
+      resource_url: lesson.resource_url || '',
+      duration: lesson.duration || '',
+      is_free: lesson.is_free,
+    });
+    setLessonModal({ open: true, mode: 'edit', playlistId: lesson.playlist_id, lessonId: lesson.id });
+  }, []);
+
+  const closeLessonModal = useCallback(() => {
+    setLessonModal({ open: false, mode: 'create', playlistId: '' });
+    setLessonForm(EMPTY_LESSON_FORM);
+  }, []);
 
   // ── Skill CRUD ────────────────────────────────────────────────────────────
 
@@ -108,6 +188,7 @@ export default function DigitalSkillsManager({
         name: skillForm.name,
         slug: skillForm.slug || skillForm.name.toLowerCase().replace(/\s+/g, '-'),
         icon: skillForm.icon,
+        tagline: skillForm.tagline || undefined,
         description: skillForm.description || undefined,
         gradient: preset.value,
         glow_color: preset.glow,
@@ -115,8 +196,37 @@ export default function DigitalSkillsManager({
       if (result.success) {
         showToast({ message: 'Skill created!', type: 'success' });
         setShowNewSkill(false);
-        setSkillForm({ name: '', slug: '', icon: 'Code2', description: '', gradient: GRADIENT_PRESETS[0].value });
+        setSkillForm({ name: '', slug: '', icon: 'Code2', tagline: '', description: '', gradient: GRADIENT_PRESETS[0].value });
         window.location.reload();
+      } else {
+        showToast({ message: result.error || 'Failed', type: 'error' });
+      }
+    });
+  };
+
+  const handleSaveSkillEdit = (skill: SkillRow) => {
+    const preset = GRADIENT_PRESETS.find(p => p.value === editSkillForm.gradient);
+    startTransition(async () => {
+      const result = await updateSkill(skill.id, {
+        name: editSkillForm.name || undefined,
+        tagline: editSkillForm.tagline || undefined,
+        description: editSkillForm.description || undefined,
+        icon: editSkillForm.icon || undefined,
+        gradient: editSkillForm.gradient || undefined,
+        glow_color: preset?.glow || undefined,
+      });
+      if (result.success) {
+        setSkills(prev => prev.map(s => s.id === skill.id ? {
+          ...s,
+          name: editSkillForm.name || s.name,
+          tagline: editSkillForm.tagline || s.tagline,
+          description: editSkillForm.description || s.description,
+          icon: editSkillForm.icon || s.icon,
+          gradient: editSkillForm.gradient || s.gradient,
+          glow_color: preset?.glow || s.glow_color,
+        } : s));
+        setEditingSkillId(null);
+        showToast({ message: 'Skill updated', type: 'success' });
       } else {
         showToast({ message: result.error || 'Failed', type: 'error' });
       }
@@ -168,6 +278,26 @@ export default function DigitalSkillsManager({
     });
   };
 
+  const handleSavePlaylistEdit = (playlist: PlaylistRow) => {
+    startTransition(async () => {
+      const result = await updatePlaylist(playlist.id, {
+        title: editPlaylistForm.title || undefined,
+        description: editPlaylistForm.description || undefined,
+      });
+      if (result.success) {
+        setPlaylists(prev => prev.map(p => p.id === playlist.id ? {
+          ...p,
+          title: editPlaylistForm.title || p.title,
+          description: editPlaylistForm.description || p.description,
+        } : p));
+        setEditingPlaylistId(null);
+        showToast({ message: 'Playlist updated', type: 'success' });
+      } else {
+        showToast({ message: result.error || 'Failed', type: 'error' });
+      }
+    });
+  };
+
   const handleDeletePlaylist = (playlist: PlaylistRow) => {
     if (!confirm(`Delete playlist "${playlist.title}" and all its lessons?`)) return;
     startTransition(async () => {
@@ -182,25 +312,85 @@ export default function DigitalSkillsManager({
     });
   };
 
+  // ── Playlist reorder ──────────────────────────────────────────────────────
+
+  const movePlaylist = (skillId: string, playlistId: string, dir: -1 | 1) => {
+    const group = playlists.filter(p => p.skill_id === skillId).sort((a, b) => a.sort_order - b.sort_order);
+    const idx = group.findIndex(p => p.id === playlistId);
+    if ((dir === -1 && idx === 0) || (dir === 1 && idx === group.length - 1)) return;
+    const swapWith = group[idx + dir];
+    const newOrder = group.map((p, i) => {
+      if (p.id === playlistId) return { id: p.id, sort_order: swapWith.sort_order };
+      if (p.id === swapWith.id) return { id: p.id, sort_order: group[idx].sort_order };
+      return { id: p.id, sort_order: p.sort_order };
+    });
+    setPlaylists(prev => {
+      const rest = prev.filter(p => p.skill_id !== skillId);
+      const updated = prev.filter(p => p.skill_id === skillId).map(p => {
+        const match = newOrder.find(o => o.id === p.id);
+        return match ? { ...p, sort_order: match.sort_order } : p;
+      });
+      return [...rest, ...updated].sort((a, b) => a.sort_order - b.sort_order);
+    });
+    startTransition(async () => {
+      await reorderPlaylists(newOrder);
+    });
+  };
+
   // ── Lesson CRUD ───────────────────────────────────────────────────────────
 
-  const handleCreateLesson = (playlistId: string) => {
+  const handleSubmitLesson = () => {
     startTransition(async () => {
-      const result = await createLesson({
-        playlist_id: playlistId,
-        title: lessonForm.title,
-        video_url: lessonForm.video_url || undefined,
-        resource_url: lessonForm.resource_url || undefined,
-        duration: lessonForm.duration || undefined,
-        is_free: lessonForm.is_free,
-      });
-      if (result.success) {
-        showToast({ message: 'Lesson added!', type: 'success' });
-        setNewLessonPlaylistId(null);
-        setLessonForm({ title: '', video_url: '', resource_url: '', duration: '', is_free: false });
-        window.location.reload();
-      } else {
-        showToast({ message: result.error || 'Failed', type: 'error' });
+      if (lessonModal.mode === 'create') {
+        const result = await createLesson({
+          playlist_id: lessonModal.playlistId,
+          title: lessonForm.title,
+          video_url: lessonForm.video_url || undefined,
+          notes_url: lessonForm.notes_url || undefined,
+          exercises_url: lessonForm.exercises_url || undefined,
+          cheatsheet_url: lessonForm.cheatsheet_url || undefined,
+          quiz_url: lessonForm.quiz_url || undefined,
+          resource_url: lessonForm.resource_url || undefined,
+          duration: lessonForm.duration || undefined,
+          is_free: lessonForm.is_free,
+        });
+        if (result.success) {
+          showToast({ message: 'Lesson added!', type: 'success' });
+          closeLessonModal();
+          window.location.reload();
+        } else {
+          showToast({ message: result.error || 'Failed', type: 'error' });
+        }
+      } else if (lessonModal.lessonId) {
+        const result = await updateLesson(lessonModal.lessonId, {
+          title: lessonForm.title,
+          video_url: lessonForm.video_url || null,
+          notes_url: lessonForm.notes_url || null,
+          exercises_url: lessonForm.exercises_url || null,
+          cheatsheet_url: lessonForm.cheatsheet_url || null,
+          quiz_url: lessonForm.quiz_url || null,
+          resource_url: lessonForm.resource_url || null,
+          duration: lessonForm.duration || null,
+          is_free: lessonForm.is_free,
+        });
+        if (result.success) {
+          setLessons(prev => prev.map(l => l.id === lessonModal.lessonId ? {
+            ...l,
+            title: lessonForm.title,
+            video_url: lessonForm.video_url || null,
+            notes_url: lessonForm.notes_url || null,
+            exercises_url: lessonForm.exercises_url || null,
+            cheatsheet_url: lessonForm.cheatsheet_url || null,
+            quiz_url: lessonForm.quiz_url || null,
+            resource_url: lessonForm.resource_url || null,
+            duration: lessonForm.duration || null,
+            is_free: lessonForm.is_free,
+          } : l));
+          closeLessonModal();
+          showToast({ message: 'Lesson updated!', type: 'success' });
+        } else {
+          showToast({ message: result.error || 'Failed', type: 'error' });
+        }
       }
     });
   };
@@ -229,6 +419,44 @@ export default function DigitalSkillsManager({
     });
   };
 
+  // ── Lesson reorder ────────────────────────────────────────────────────────
+
+  const moveLesson = (playlistId: string, lessonId: string, dir: -1 | 1) => {
+    const group = lessons.filter(l => l.playlist_id === playlistId).sort((a, b) => a.sort_order - b.sort_order);
+    const idx = group.findIndex(l => l.id === lessonId);
+    if ((dir === -1 && idx === 0) || (dir === 1 && idx === group.length - 1)) return;
+    const swapWith = group[idx + dir];
+    const newOrder = group.map(l => {
+      if (l.id === lessonId) return { id: l.id, sort_order: swapWith.sort_order };
+      if (l.id === swapWith.id) return { id: l.id, sort_order: group[idx].sort_order };
+      return { id: l.id, sort_order: l.sort_order };
+    });
+    setLessons(prev => {
+      const rest = prev.filter(l => l.playlist_id !== playlistId);
+      const updated = prev.filter(l => l.playlist_id === playlistId).map(l => {
+        const match = newOrder.find(o => o.id === l.id);
+        return match ? { ...l, sort_order: match.sort_order } : l;
+      });
+      return [...rest, ...updated].sort((a, b) => a.sort_order - b.sort_order);
+    });
+    startTransition(async () => {
+      await reorderLessons(newOrder);
+    });
+  };
+
+  // ── Resource badges for lesson rows ───────────────────────────────────────
+
+  const resourceBadges = (lesson: LessonRow) => {
+    const badges: { label: string; color: string }[] = [];
+    if (lesson.video_url) badges.push({ label: 'Video', color: 'text-red-600 bg-red-50' });
+    if (lesson.notes_url) badges.push({ label: 'Notes', color: 'text-blue-600 bg-blue-50' });
+    if (lesson.exercises_url) badges.push({ label: 'Exercises', color: 'text-amber-600 bg-amber-50' });
+    if (lesson.cheatsheet_url) badges.push({ label: 'Cheat Sheet', color: 'text-purple-600 bg-purple-50' });
+    if (lesson.quiz_url) badges.push({ label: 'Quiz', color: 'text-emerald-600 bg-emerald-50' });
+    if (lesson.resource_url) badges.push({ label: 'Resource', color: 'text-green-600 bg-green-50' });
+    return badges;
+  };
+
   // ── Stats ─────────────────────────────────────────────────────────────────
 
   const totalLessons = lessons.length;
@@ -236,375 +464,566 @@ export default function DigitalSkillsManager({
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const ytPreviewId = extractYouTubeId(lessonForm.video_url);
+
   return (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'Skills', value: skills.length, icon: Sparkles, color: 'text-violet-600', bg: 'bg-violet-50' },
-          { label: 'Playlists', value: totalPlaylists, icon: Layers, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Lessons', value: totalLessons, icon: ListVideo, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Enrolled', value: Object.values(skillAccessCounts).reduce((a, b) => a + b, 0), icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-gray-100 rounded-2xl p-5 flex items-center gap-4">
-            <div className={`w-11 h-11 ${s.bg} rounded-xl flex items-center justify-center`}>
-              <s.icon className={`w-5 h-5 ${s.color}`} />
+    <>
+      <div className="space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Skills', value: skills.length, icon: Sparkles, color: 'text-violet-600', bg: 'bg-violet-50' },
+            { label: 'Playlists', value: totalPlaylists, icon: Layers, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Lessons', value: totalLessons, icon: ListVideo, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Enrolled', value: Object.values(skillAccessCounts).reduce((a, b) => a + b, 0), icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+          ].map(s => (
+            <div key={s.label} className="bg-white border border-gray-100 rounded-2xl p-5 flex items-center gap-4">
+              <div className={`w-11 h-11 ${s.bg} rounded-xl flex items-center justify-center`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500">{s.label}</p>
+                <p className="text-xl font-bold text-gray-900">{s.value}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">{s.label}</p>
-              <p className="text-xl font-bold text-gray-900">{s.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* New Skill Button */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-gray-900">Skill Tracks</h3>
-        <button
-          onClick={() => setShowNewSkill(!showNewSkill)}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-medium transition shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> New Skill
-        </button>
-      </div>
-
-      {/* New Skill Form */}
-      {showNewSkill && (
-        <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5 space-y-3">
-          <p className="text-sm font-bold text-violet-800">Create New Skill</p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <input
-              value={skillForm.name}
-              onChange={e => setSkillForm(f => ({ ...f, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
-              placeholder="Skill name (e.g. Web Development)"
-              className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
-            />
-            <input
-              value={skillForm.slug}
-              onChange={e => setSkillForm(f => ({ ...f, slug: e.target.value }))}
-              placeholder="Slug (auto-generated)"
-              className="px-3 py-2 text-sm font-mono border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
-            />
-            <select
-              value={skillForm.icon}
-              onChange={e => setSkillForm(f => ({ ...f, icon: e.target.value }))}
-              className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
-            >
-              {ICON_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
-            </select>
-            <select
-              value={skillForm.gradient}
-              onChange={e => setSkillForm(f => ({ ...f, gradient: e.target.value }))}
-              className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
-            >
-              {GRADIENT_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-            </select>
-          </div>
-          <textarea
-            value={skillForm.description}
-            onChange={e => setSkillForm(f => ({ ...f, description: e.target.value }))}
-            placeholder="Short description…"
-            rows={2}
-            className="w-full px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none resize-none"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleCreateSkill}
-              disabled={isPending || !skillForm.name.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
-            >
-              <Check className="w-4 h-4" /> Create
-            </button>
-            <button
-              onClick={() => setShowNewSkill(false)}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
-            >
-              Cancel
-            </button>
-          </div>
+          ))}
         </div>
-      )}
 
-      {/* Skills List */}
-      <div className="space-y-3">
-        {skills.length === 0 && (
-          <div className="text-center py-16 text-gray-400 text-sm bg-white rounded-2xl border border-gray-100">
-            No skills created yet. Click &ldquo;New Skill&rdquo; to get started.
+        {/* New Skill Button */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900">Skill Tracks</h3>
+          <button
+            onClick={() => setShowNewSkill(!showNewSkill)}
+            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-medium transition shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> New Skill
+          </button>
+        </div>
+
+        {/* New Skill Form */}
+        {showNewSkill && (
+          <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5 space-y-3">
+            <p className="text-sm font-bold text-violet-800">Create New Skill</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <input
+                value={skillForm.name}
+                onChange={e => setSkillForm(f => ({ ...f, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
+                placeholder="Skill name (e.g. Web Development)"
+                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+              />
+              <input
+                value={skillForm.slug}
+                onChange={e => setSkillForm(f => ({ ...f, slug: e.target.value }))}
+                placeholder="Slug (auto-generated)"
+                className="px-3 py-2 text-sm font-mono border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+              />
+              <input
+                value={skillForm.tagline}
+                onChange={e => setSkillForm(f => ({ ...f, tagline: e.target.value }))}
+                placeholder="Tagline (e.g. Build the future)"
+                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+              />
+              <select
+                value={skillForm.icon}
+                onChange={e => setSkillForm(f => ({ ...f, icon: e.target.value }))}
+                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+              >
+                {ICON_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+              <select
+                value={skillForm.gradient}
+                onChange={e => setSkillForm(f => ({ ...f, gradient: e.target.value }))}
+                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none col-span-full sm:col-span-1"
+              >
+                {GRADIENT_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+            <textarea
+              value={skillForm.description}
+              onChange={e => setSkillForm(f => ({ ...f, description: e.target.value }))}
+              placeholder="Short description…"
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none resize-none"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleCreateSkill}
+                disabled={isPending || !skillForm.name.trim()}
+                className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+              >
+                <Check className="w-4 h-4" /> Create
+              </button>
+              <button
+                onClick={() => setShowNewSkill(false)}
+                className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
-        {skills.map(skill => {
-          const isExpanded = expandedSkill === skill.id;
-          const skillPlaylists = playlists.filter(p => p.skill_id === skill.id);
-          const skillLessonCount = skillPlaylists.reduce(
-            (acc, p) => acc + lessons.filter(l => l.playlist_id === p.id).length,
-            0,
-          );
-          const enrolledCount = skillAccessCounts[skill.id] ?? 0;
+        {/* Skills List */}
+        <div className="space-y-3">
+          {skills.length === 0 && (
+            <div className="text-center py-16 text-gray-400 text-sm bg-white rounded-2xl border border-gray-100">
+              No skills created yet. Click &ldquo;New Skill&rdquo; to get started.
+            </div>
+          )}
 
-          return (
-            <div key={skill.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-              {/* Skill Header */}
-              <div
-                className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
-                onClick={() => setExpandedSkill(isExpanded ? null : skill.id)}
-              >
-                <button className="text-gray-400">
-                  {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                </button>
+          {skills.map(skill => {
+            const isExpanded = expandedSkill === skill.id;
+            const skillPlaylists = playlists.filter(p => p.skill_id === skill.id).sort((a, b) => a.sort_order - b.sort_order);
+            const skillLessonCount = skillPlaylists.reduce(
+              (acc, p) => acc + lessons.filter(l => l.playlist_id === p.id).length, 0,
+            );
+            const enrolledCount = skillAccessCounts[skill.id] ?? 0;
+            const isEditingThis = editingSkillId === skill.id;
 
-                {/* Gradient badge */}
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${skill.gradient} flex items-center justify-center shrink-0 shadow-md`}>
-                  <BookOpen className="w-5 h-5 text-white" />
+            return (
+              <div key={skill.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                {/* Skill Header */}
+                <div
+                  className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                  onClick={() => !isEditingThis && setExpandedSkill(isExpanded ? null : skill.id)}
+                >
+                  <button className="text-gray-400">
+                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  </button>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${skill.gradient} flex items-center justify-center shrink-0 shadow-md`}>
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-gray-900">{skill.name}</h4>
+                      <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{skill.slug}</span>
+                      {!skill.is_active && (
+                        <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">HIDDEN</span>
+                      )}
+                    </div>
+                    {skill.tagline && <p className="text-xs text-violet-500 italic mt-0.5">{skill.tagline}</p>}
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{skill.description || 'No description'}</p>
+                  </div>
+
+                  <div className="flex items-center gap-6 text-xs text-gray-500 shrink-0">
+                    <div className="text-center"><p className="text-sm font-bold text-gray-900">{skillPlaylists.length}</p><p>playlists</p></div>
+                    <div className="text-center"><p className="text-sm font-bold text-gray-900">{skillLessonCount}</p><p>lessons</p></div>
+                    <div className="text-center"><p className="text-sm font-bold text-gray-900">{enrolledCount}</p><p>students</p></div>
+                  </div>
+
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => {
+                        if (isEditingThis) {
+                          setEditingSkillId(null);
+                        } else {
+                          setEditingSkillId(skill.id);
+                          setEditSkillForm({
+                            name: skill.name,
+                            tagline: skill.tagline || '',
+                            description: skill.description || '',
+                            icon: skill.icon,
+                            gradient: skill.gradient,
+                          });
+                        }
+                      }}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                      title="Edit skill"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleSkillActive(skill)}
+                      title={skill.is_active ? 'Active — click to hide' : 'Hidden — click to activate'}
+                      className={`p-1.5 rounded-lg transition ${skill.is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-gray-400 hover:bg-gray-100'}`}
+                    >
+                      {skill.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSkill(skill)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-gray-900">{skill.name}</h4>
-                    <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{skill.slug}</span>
-                    {!skill.is_active && (
-                      <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">HIDDEN</span>
+                {/* Inline Skill Edit */}
+                {isEditingThis && (
+                  <div className="border-t border-violet-100 bg-violet-50/50 px-5 py-4 space-y-3">
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <input value={editSkillForm.name} onChange={e => setEditSkillForm(f => ({ ...f, name: e.target.value }))} placeholder="Name" className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none" />
+                      <input value={editSkillForm.tagline} onChange={e => setEditSkillForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Tagline" className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none" />
+                      <select value={editSkillForm.icon} onChange={e => setEditSkillForm(f => ({ ...f, icon: e.target.value }))} className="px-3 py-2 text-sm border border-violet-200 rounded-lg outline-none">
+                        {ICON_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
+                      </select>
+                      <select value={editSkillForm.gradient} onChange={e => setEditSkillForm(f => ({ ...f, gradient: e.target.value }))} className="px-3 py-2 text-sm border border-violet-200 rounded-lg outline-none">
+                        {GRADIENT_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                      </select>
+                    </div>
+                    <textarea value={editSkillForm.description} onChange={e => setEditSkillForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" rows={2} className="w-full px-3 py-2 text-sm border border-violet-200 rounded-lg outline-none resize-none" />
+                    <div className="flex gap-2">
+                      <button onClick={() => handleSaveSkillEdit(skill)} disabled={isPending} className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-500 transition disabled:opacity-50">
+                        <Save className="w-4 h-4" /> Save
+                      </button>
+                      <button onClick={() => setEditingSkillId(null)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Expanded: Playlists + Lessons */}
+                {isExpanded && (
+                  <div className="border-t border-gray-100 bg-gray-50/30 px-5 py-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Playlists</p>
+                      <button
+                        onClick={() => {
+                          setNewPlaylistSkillId(newPlaylistSkillId === skill.id ? null : skill.id);
+                          setPlaylistForm({ title: '', description: '' });
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-800 transition"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Playlist
+                      </button>
+                    </div>
+
+                    {/* New Playlist Form */}
+                    {newPlaylistSkillId === skill.id && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+                        <input
+                          value={playlistForm.title}
+                          onChange={e => setPlaylistForm(f => ({ ...f, title: e.target.value }))}
+                          placeholder="Playlist title (e.g. Getting Started)"
+                          className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                          autoFocus
+                        />
+                        <input
+                          value={playlistForm.description}
+                          onChange={e => setPlaylistForm(f => ({ ...f, description: e.target.value }))}
+                          placeholder="Description (optional)"
+                          className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCreatePlaylist(skill.id)}
+                            disabled={isPending || !playlistForm.title.trim()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Create
+                          </button>
+                          <button onClick={() => setNewPlaylistSkillId(null)} className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
+                        </div>
+                      </div>
                     )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5 truncate">{skill.description || 'No description'}</p>
-                </div>
 
-                <div className="flex items-center gap-6 text-xs text-gray-500 shrink-0">
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-gray-900">{skillPlaylists.length}</p>
-                    <p>playlists</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-gray-900">{skillLessonCount}</p>
-                    <p>lessons</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-gray-900">{enrolledCount}</p>
-                    <p>students</p>
-                  </div>
-                </div>
+                    {skillPlaylists.length === 0 && newPlaylistSkillId !== skill.id && (
+                      <p className="text-xs text-gray-400 py-4 text-center">No playlists yet.</p>
+                    )}
 
-                {/* Actions */}
-                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                  <button
-                    onClick={() => handleToggleSkillActive(skill)}
-                    title={skill.is_active ? 'Active — click to hide' : 'Hidden — click to activate'}
-                    className={`p-1.5 rounded-lg transition ${skill.is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-gray-400 hover:bg-gray-100'}`}
-                  >
-                    {skill.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSkill(skill)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    {skillPlaylists.map((playlist, pi) => {
+                      const isPlaylistExpanded = expandedPlaylist === playlist.id;
+                      const playlistLessons = lessons.filter(l => l.playlist_id === playlist.id).sort((a, b) => a.sort_order - b.sort_order);
+                      const isEditingPl = editingPlaylistId === playlist.id;
+
+                      return (
+                        <div key={playlist.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                          {/* Playlist header */}
+                          <div
+                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                            onClick={() => !isEditingPl && setExpandedPlaylist(isPlaylistExpanded ? null : playlist.id)}
+                          >
+                            <button className="text-gray-400">
+                              {isPlaylistExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                            </button>
+                            <Layers className="w-4 h-4 text-blue-500 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900">{playlist.title}</p>
+                              {playlist.description && <p className="text-xs text-gray-400 truncate">{playlist.description}</p>}
+                            </div>
+                            <span className="text-xs text-gray-400 font-mono">{playlistLessons.length} lessons</span>
+
+                            {/* Playlist actions */}
+                            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                              <button onClick={() => movePlaylist(skill.id, playlist.id, -1)} disabled={pi === 0} className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move up">
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => movePlaylist(skill.id, playlist.id, 1)} disabled={pi === skillPlaylists.length - 1} className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move down">
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (isEditingPl) { setEditingPlaylistId(null); }
+                                  else { setEditingPlaylistId(playlist.id); setEditPlaylistForm({ title: playlist.title, description: playlist.description || '' }); }
+                                }}
+                                className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => handleDeletePlaylist(playlist)} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Inline Playlist Edit */}
+                          {isEditingPl && (
+                            <div className="border-t border-blue-100 bg-blue-50/50 px-4 py-3 space-y-2">
+                              <input value={editPlaylistForm.title} onChange={e => setEditPlaylistForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg outline-none" />
+                              <input value={editPlaylistForm.description} onChange={e => setEditPlaylistForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg outline-none" />
+                              <div className="flex gap-2">
+                                <button onClick={() => handleSavePlaylistEdit(playlist)} disabled={isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"><Save className="w-3.5 h-3.5" /> Save</button>
+                                <button onClick={() => setEditingPlaylistId(null)} className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Lessons */}
+                          {isPlaylistExpanded && (
+                            <div className="border-t border-gray-100 bg-gray-50/40 px-4 py-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lessons</p>
+                                <button
+                                  onClick={() => openCreateLessonModal(playlist.id)}
+                                  className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 transition"
+                                >
+                                  <Plus className="w-3 h-3" /> Add Lesson
+                                </button>
+                              </div>
+
+                              {playlistLessons.length === 0 && (
+                                <p className="text-xs text-gray-400 py-3 text-center">No lessons yet.</p>
+                              )}
+
+                              {playlistLessons.map((lesson, li) => (
+                                <div
+                                  key={lesson.id}
+                                  className="flex items-center gap-3 px-3 py-2.5 bg-white border border-gray-100 rounded-lg group hover:border-gray-200 transition"
+                                >
+                                  {/* Order number */}
+                                  <span className="text-xs font-bold text-gray-400 w-5 text-right tabular-nums">{li + 1}</span>
+
+                                  {lesson.video_url ? (
+                                    <Video className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                                  ) : (
+                                    <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                  )}
+
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm text-gray-900 truncate">{lesson.title}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                      {lesson.duration && <span className="text-[10px] text-gray-400">{lesson.duration}</span>}
+                                      {lesson.is_free && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">FREE</span>}
+                                      {resourceBadges(lesson).map(b => (
+                                        <span key={b.label} className={`text-[10px] font-semibold px-1 py-0.5 rounded ${b.color}`}>{b.label}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Lesson actions */}
+                                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => moveLesson(playlist.id, lesson.id, -1)} disabled={li === 0} className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move up">
+                                      <ArrowUp className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={() => moveLesson(playlist.id, lesson.id, 1)} disabled={li === playlistLessons.length - 1} className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move down">
+                                      <ArrowDown className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={() => openEditLessonModal(lesson)} className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition" title="Edit">
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleToggleLessonFree(lesson)}
+                                      title={lesson.is_free ? 'Free — click to lock' : 'Locked — click to make free'}
+                                      className={`p-1 rounded transition ${lesson.is_free ? 'text-emerald-600 hover:bg-emerald-50' : 'text-gray-400 hover:bg-gray-100'}`}
+                                    >
+                                      {lesson.is_free ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteLesson(lesson)}
+                                      className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ═══ ADD / EDIT LESSON MODAL ═══ */}
+      {lessonModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeLessonModal} />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  {lessonModal.mode === 'create' ? 'Add New Lesson' : 'Edit Lesson'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">Fill in the fields that match your content tabs.</p>
+              </div>
+              <button onClick={closeLessonModal} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-5">
+              {/* Title + Duration */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Lesson Title *</label>
+                  <input
+                    value={lessonForm.title}
+                    onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="e.g. Color Theory Essentials"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Duration</label>
+                  <input
+                    value={lessonForm.duration}
+                    onChange={e => setLessonForm(f => ({ ...f, duration: e.target.value }))}
+                    placeholder="e.g. 12:30"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                  />
                 </div>
               </div>
 
-              {/* Expanded: Playlists + Lessons */}
-              {isExpanded && (
-                <div className="border-t border-gray-100 bg-gray-50/30 px-5 py-4 space-y-3">
-                  {/* Add playlist button */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Playlists</p>
-                    <button
-                      onClick={() => {
-                        setNewPlaylistSkillId(newPlaylistSkillId === skill.id ? null : skill.id);
-                        setPlaylistForm({ title: '', description: '' });
-                      }}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-800 transition"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add Playlist
-                    </button>
+              {/* Video URL with preview */}
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
+                  <Play className="w-3.5 h-3.5 text-red-500" /> Video URL (YouTube)
+                </label>
+                <input
+                  value={lessonForm.video_url}
+                  onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))}
+                  placeholder="https://youtube.com/watch?v=..."
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none"
+                />
+                {ytPreviewId && (
+                  <div className="mt-2 rounded-xl overflow-hidden border border-gray-200 bg-black aspect-video max-w-xs">
+                    <img
+                      src={`https://img.youtube.com/vi/${ytPreviewId}/mqdefault.jpg`}
+                      alt="Video thumbnail"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
+                )}
+              </div>
 
-                  {/* New Playlist Form */}
-                  {newPlaylistSkillId === skill.id && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
-                      <input
-                        value={playlistForm.title}
-                        onChange={e => setPlaylistForm(f => ({ ...f, title: e.target.value }))}
-                        placeholder="Playlist title (e.g. Getting Started)"
-                        className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-                        autoFocus
-                      />
-                      <input
-                        value={playlistForm.description}
-                        onChange={e => setPlaylistForm(f => ({ ...f, description: e.target.value }))}
-                        placeholder="Description (optional)"
-                        className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleCreatePlaylist(skill.id)}
-                          disabled={isPending || !playlistForm.title.trim()}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"
-                        >
-                          <Check className="w-3.5 h-3.5" /> Create
-                        </button>
-                        <button onClick={() => setNewPlaylistSkillId(null)} className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Playlist items */}
-                  {skillPlaylists.length === 0 && newPlaylistSkillId !== skill.id && (
-                    <p className="text-xs text-gray-400 py-4 text-center">No playlists yet.</p>
-                  )}
-
-                  {skillPlaylists.map(playlist => {
-                    const isPlaylistExpanded = expandedPlaylist === playlist.id;
-                    const playlistLessons = lessons.filter(l => l.playlist_id === playlist.id);
-
-                    return (
-                      <div key={playlist.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                        {/* Playlist header */}
-                        <div
-                          className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50/50 transition-colors"
-                          onClick={() => setExpandedPlaylist(isPlaylistExpanded ? null : playlist.id)}
-                        >
-                          <button className="text-gray-400">
-                            {isPlaylistExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                          </button>
-                          <Layers className="w-4 h-4 text-blue-500 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">{playlist.title}</p>
-                            {playlist.description && <p className="text-xs text-gray-400 truncate">{playlist.description}</p>}
-                          </div>
-                          <span className="text-xs text-gray-400 font-mono">{playlistLessons.length} lessons</span>
-                          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => handleDeletePlaylist(playlist)} className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Lessons */}
-                        {isPlaylistExpanded && (
-                          <div className="border-t border-gray-100 bg-gray-50/40 px-4 py-3 space-y-2">
-                            {/* Add lesson */}
-                            <div className="flex items-center justify-between">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lessons</p>
-                              <button
-                                onClick={() => {
-                                  setNewLessonPlaylistId(newLessonPlaylistId === playlist.id ? null : playlist.id);
-                                  setLessonForm({ title: '', video_url: '', resource_url: '', duration: '', is_free: false });
-                                }}
-                                className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 transition"
-                              >
-                                <Plus className="w-3 h-3" /> Add Lesson
-                              </button>
-                            </div>
-
-                            {/* New Lesson Form */}
-                            {newLessonPlaylistId === playlist.id && (
-                              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
-                                <div className="grid sm:grid-cols-2 gap-2">
-                                  <input
-                                    value={lessonForm.title}
-                                    onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))}
-                                    placeholder="Lesson title"
-                                    className="px-3 py-1.5 text-xs border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
-                                    autoFocus
-                                  />
-                                  <input
-                                    value={lessonForm.duration}
-                                    onChange={e => setLessonForm(f => ({ ...f, duration: e.target.value }))}
-                                    placeholder="Duration (e.g. 12:30)"
-                                    className="px-3 py-1.5 text-xs border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
-                                  />
-                                </div>
-                                <input
-                                  value={lessonForm.video_url}
-                                  onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))}
-                                  placeholder="YouTube URL"
-                                  className="w-full px-3 py-1.5 text-xs font-mono border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
-                                />
-                                <input
-                                  value={lessonForm.resource_url}
-                                  onChange={e => setLessonForm(f => ({ ...f, resource_url: e.target.value }))}
-                                  placeholder="Resource URL (PDF, Google Drive — optional)"
-                                  className="w-full px-3 py-1.5 text-xs font-mono border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
-                                />
-                                <div className="flex items-center gap-4">
-                                  <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={lessonForm.is_free}
-                                      onChange={e => setLessonForm(f => ({ ...f, is_free: e.target.checked }))}
-                                      className="rounded border-gray-300"
-                                    />
-                                    Free preview
-                                  </label>
-                                  <div className="flex gap-2 ml-auto">
-                                    <button
-                                      onClick={() => handleCreateLesson(playlist.id)}
-                                      disabled={isPending || !lessonForm.title.trim()}
-                                      className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"
-                                    >
-                                      <Check className="w-3 h-3" /> Add
-                                    </button>
-                                    <button onClick={() => setNewLessonPlaylistId(null)} className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Lesson rows */}
-                            {playlistLessons.length === 0 && newLessonPlaylistId !== playlist.id && (
-                              <p className="text-xs text-gray-400 py-3 text-center">No lessons yet.</p>
-                            )}
-
-                            {playlistLessons.map((lesson, li) => (
-                              <div
-                                key={lesson.id}
-                                className="flex items-center gap-3 px-3 py-2 bg-white border border-gray-100 rounded-lg group hover:border-gray-200 transition"
-                              >
-                                <span className="text-xs font-bold text-gray-400 w-5 text-right tabular-nums">{li + 1}</span>
-                                {lesson.video_url ? (
-                                  <Video className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                                ) : (
-                                  <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm text-gray-900 truncate">{lesson.title}</p>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    {lesson.duration && <span className="text-[10px] text-gray-400">{lesson.duration}</span>}
-                                    {lesson.is_free && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">FREE</span>}
-                                    {lesson.video_url && <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1 py-0.5 rounded">YT</span>}
-                                    {lesson.resource_url && <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1 py-0.5 rounded">PDF</span>}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => handleToggleLessonFree(lesson)}
-                                    title={lesson.is_free ? 'Free preview — click to lock' : 'Locked — click to make free'}
-                                    className={`p-1 rounded transition ${lesson.is_free ? 'text-emerald-600 hover:bg-emerald-50' : 'text-gray-400 hover:bg-gray-100'}`}
-                                  >
-                                    {lesson.is_free ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteLesson(lesson)}
-                                    className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+              {/* Resource files — 2-column grid */}
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Lesson Resources</p>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
+                      <FileDown className="w-3.5 h-3.5 text-blue-500" /> Lesson Notes (PDF)
+                    </label>
+                    <input
+                      value={lessonForm.notes_url}
+                      onChange={e => setLessonForm(f => ({ ...f, notes_url: e.target.value }))}
+                      placeholder="https://drive.google.com/..."
+                      className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-300 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
+                      <PenLine className="w-3.5 h-3.5 text-amber-500" /> Practice Exercises (PDF)
+                    </label>
+                    <input
+                      value={lessonForm.exercises_url}
+                      onChange={e => setLessonForm(f => ({ ...f, exercises_url: e.target.value }))}
+                      placeholder="https://drive.google.com/..."
+                      className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-300 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
+                      <Image className="w-3.5 h-3.5 text-purple-500" /> Cheat Sheet (Image/PDF)
+                    </label>
+                    <input
+                      value={lessonForm.cheatsheet_url}
+                      onChange={e => setLessonForm(f => ({ ...f, cheatsheet_url: e.target.value }))}
+                      placeholder="https://..."
+                      className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
+                      <BrainCircuit className="w-3.5 h-3.5 text-emerald-500" /> Interactive Quiz (Link)
+                    </label>
+                    <input
+                      value={lessonForm.quiz_url}
+                      onChange={e => setLessonForm(f => ({ ...f, quiz_url: e.target.value }))}
+                      placeholder="https://quiz.examstitch.com/..."
+                      className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-300 outline-none"
+                    />
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Legacy resource_url */}
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
+                  <ExternalLink className="w-3.5 h-3.5 text-green-500" /> General Resource URL (optional)
+                </label>
+                <input
+                  value={lessonForm.resource_url}
+                  onChange={e => setLessonForm(f => ({ ...f, resource_url: e.target.value }))}
+                  placeholder="Any additional resource link"
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-300 outline-none"
+                />
+              </div>
+
+              {/* Free preview toggle */}
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={lessonForm.is_free}
+                  onChange={e => setLessonForm(f => ({ ...f, is_free: e.target.checked }))}
+                  className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="font-medium">Free Preview</span>
+                <span className="text-xs text-gray-400">— available without enrollment</span>
+              </label>
             </div>
-          );
-        })}
-      </div>
-    </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+              <button
+                onClick={closeLessonModal}
+                className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitLesson}
+                disabled={isPending || !lessonForm.title.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition shadow-sm disabled:opacity-50"
+              >
+                {lessonModal.mode === 'create' ? <Plus className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                {lessonModal.mode === 'create' ? 'Add Lesson' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -17,6 +17,7 @@ export async function createSkill(payload: {
   name: string;
   slug: string;
   icon: string;
+  tagline?: string;
   description?: string;
   gradient?: string;
   glow_color?: string;
@@ -51,6 +52,7 @@ export async function createSkill(payload: {
     name: payload.name.trim(),
     slug,
     icon: payload.icon || 'Code2',
+    tagline: payload.tagline?.trim() || null,
     description: payload.description?.trim() || null,
     gradient: payload.gradient || 'from-violet-600 to-indigo-700',
     glow_color: payload.glow_color || 'rgba(124,58,237,0.35)',
@@ -69,6 +71,7 @@ export async function updateSkill(
   updates: {
     name?: string;
     icon?: string;
+    tagline?: string;
     description?: string;
     gradient?: string;
     glow_color?: string;
@@ -152,6 +155,10 @@ export async function createLesson(payload: {
   title: string;
   video_url?: string;
   resource_url?: string;
+  notes_url?: string;
+  exercises_url?: string;
+  cheatsheet_url?: string;
+  quiz_url?: string;
   duration?: string;
   is_free?: boolean;
 }) {
@@ -172,6 +179,10 @@ export async function createLesson(payload: {
     title: payload.title.trim(),
     video_url: payload.video_url?.trim() || null,
     resource_url: payload.resource_url?.trim() || null,
+    notes_url: payload.notes_url?.trim() || null,
+    exercises_url: payload.exercises_url?.trim() || null,
+    cheatsheet_url: payload.cheatsheet_url?.trim() || null,
+    quiz_url: payload.quiz_url?.trim() || null,
     duration: payload.duration?.trim() || null,
     sort_order: (maxRow?.sort_order ?? 0) + 1,
     is_free: payload.is_free ?? false,
@@ -188,6 +199,10 @@ export async function updateLesson(
     title?: string;
     video_url?: string | null;
     resource_url?: string | null;
+    notes_url?: string | null;
+    exercises_url?: string | null;
+    cheatsheet_url?: string | null;
+    quiz_url?: string | null;
     duration?: string | null;
     sort_order?: number;
     is_free?: boolean;
@@ -240,6 +255,36 @@ export async function revokeStudentAccess(studentId: string, skillId: string) {
     .eq('skill_id', skillId);
 
   if (error) return { success: false, error: error.message };
+  revalidateAll();
+  return { success: true };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REORDER
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function reorderPlaylists(ordered: { id: string; sort_order: number }[]) {
+  const supabase = createAdminClient();
+  for (const item of ordered) {
+    const { error } = await supabase
+      .from('skill_playlists')
+      .update({ sort_order: item.sort_order })
+      .eq('id', item.id);
+    if (error) return { success: false, error: error.message };
+  }
+  revalidateAll();
+  return { success: true };
+}
+
+export async function reorderLessons(ordered: { id: string; sort_order: number }[]) {
+  const supabase = createAdminClient();
+  for (const item of ordered) {
+    const { error } = await supabase
+      .from('skill_lessons')
+      .update({ sort_order: item.sort_order })
+      .eq('id', item.id);
+    if (error) return { success: false, error: error.message };
+  }
   revalidateAll();
   return { success: true };
 }
