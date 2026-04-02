@@ -33,7 +33,13 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh the session (rotates tokens if needed).
-  const { data: { user } } = await supabase.auth.getUser();
+  let user: { id: string; email?: string } | null = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data?.user ?? null;
+  } catch {
+    // Network / token parse error — treat as unauthenticated
+  }
 
   // ── Admin mode sync: ensure admin_mode cookie exists when admin_session is set ─
   // This retroactively grants the client-readable flag to existing admin sessions.
