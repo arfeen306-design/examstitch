@@ -1,13 +1,15 @@
 /**
  * Homepage — Server Component
- * Fetches feed data server-side, passes to client component for rendering.
+ * Fetches feed data + media widgets server-side, passes to client components.
  */
 
 import { createClient } from '@/lib/supabase/server';
 import dynamic from 'next/dynamic';
 import type { FeedItem } from '@/components/home/HomeClient';
+import { isAdminRequest } from '@/lib/admin-mode';
+
 const HomeClient = dynamic(() => import('@/components/home/HomeClient'), { ssr: false });
-import MediaSection from '@/components/media/MediaSection';
+const VideoCarousel = dynamic(() => import('@/components/home/VideoCarousel'), { ssr: false });
 
 async function getFeedItems(): Promise<FeedItem[]> {
   try {
@@ -48,19 +50,33 @@ async function getFeedItems(): Promise<FeedItem[]> {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
   } catch {
-    // If blogs table doesn't exist yet, return empty gracefully
+    return [];
+  }
+}
+
+async function getMediaWidgets() {
+  try {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('media_widgets')
+      .select('id, media_type, title, url, view_count, page_slug')
+      .eq('page_slug', 'home')
+      .eq('is_active', true)
+      .order('section_order', { ascending: true });
+    return data ?? [];
+  } catch {
     return [];
   }
 }
 
 export default async function HomePage() {
-  const feedItems = await getFeedItems();
+  const [feedItems, widgets] = await Promise.all([getFeedItems(), getMediaWidgets()]);
+  const adminMode = isAdminRequest();
+
   return (
     <>
       <HomeClient feedItems={feedItems} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <MediaSection pageSlug="home" heading="Featured Videos & Resources" columns={2} />
-      </div>
+      <VideoCarousel widgets={widgets} isAdmin={adminMode} />
     </>
   );
 }
