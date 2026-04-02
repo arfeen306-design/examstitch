@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { BookOpen, Clock, ArrowRight, Megaphone, Download, ExternalLink } from 'lucide-react';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
+import MediaSection from '@/components/media/MediaSection';
 
 export const metadata: Metadata = {
   title: 'Blog — ExamStitch',
@@ -219,6 +220,11 @@ export default async function BlogPage() {
           >
             Subscribe <ArrowRight className="w-4 h-4" />
           </Link>
+        </div>
+
+        {/* Media widgets */}
+        <div className="mt-10">
+          <MediaSection pageSlug="blog" heading="Featured Media" columns={2} />
         </div>
       </div>
     </div>

@@ -206,6 +206,21 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['user_progress']['Row'], 'id' | 'updated_at' | 'last_viewed_at'>;
         Update: Partial<Database['public']['Tables']['user_progress']['Row']>;
       };
+      media_widgets: {
+        Row: {
+          id: string;
+          page_slug: string;
+          section_order: number;
+          media_type: 'youtube' | 'pdf';
+          title: string;
+          url: string;
+          permissions: { allow_print: boolean; allow_download: boolean };
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['media_widgets']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['media_widgets']['Row']>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -232,3 +247,4 @@ export type BlogPost = Database['public']['Tables']['blog_posts']['Row'];
 export type DemoBooking = Database['public']['Tables']['demo_bookings']['Row'];
 export type StudentAccount = Database['public']['Tables']['student_accounts']['Row'];
 export type UserProgress = Database['public']['Tables']['user_progress']['Row'];
+export type MediaWidget = Database['public']['Tables']['media_widgets']['Row'];

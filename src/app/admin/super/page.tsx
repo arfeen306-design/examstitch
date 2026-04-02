@@ -30,12 +30,20 @@ export default async function SuperAdminPage() {
     .eq('role', 'admin')
     .order('email');
 
+  // Fetch all media widgets
+  const { data: mediaWidgets } = await supabase
+    .from('media_widgets')
+    .select('*')
+    .order('page_slug')
+    .order('section_order', { ascending: true });
+
   // Compute stats
   const subjectList = subjects ?? [];
   const resourceList = resources ?? [];
   const adminList = admins ?? [];
 
   const totalResources = resourceList.length;
+  const mediaList = mediaWidgets ?? [];
 
   const perSubject = subjectList.map(s => ({
     ...s,
@@ -111,6 +119,17 @@ export default async function SuperAdminPage() {
           full_name: a.full_name,
           is_super_admin: a.is_super_admin,
           managed_subjects: (a.managed_subjects as string[]) ?? [],
+        }))}
+        mediaWidgets={mediaList.map(m => ({
+          id: m.id,
+          page_slug: m.page_slug,
+          section_order: m.section_order,
+          media_type: m.media_type as 'youtube' | 'pdf',
+          title: m.title,
+          url: m.url,
+          permissions: m.permissions as { allow_print: boolean; allow_download: boolean },
+          is_active: m.is_active,
+          created_at: m.created_at,
         }))}
       />
     </div>

@@ -5,6 +5,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import HomeClient, { type FeedItem } from '@/components/home/HomeClient';
+import MediaSection from '@/components/media/MediaSection';
 
 async function getFeedItems(): Promise<FeedItem[]> {
   try {
@@ -52,5 +53,12 @@ async function getFeedItems(): Promise<FeedItem[]> {
 
 export default async function HomePage() {
   const feedItems = await getFeedItems();
-  return <HomeClient feedItems={feedItems} />;
+  return (
+    <>
+      <HomeClient feedItems={feedItems} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <MediaSection pageSlug="home" heading="Featured Videos & Resources" columns={2} />
+      </div>
+    </>
+  );
 }

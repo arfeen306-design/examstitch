@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plus, UserPlus, X, Trash2 } from 'lucide-react';
+import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Link as LinkIcon } from 'lucide-react';
 import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin } from './actions';
+import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
 
 interface Subject {
@@ -20,18 +21,33 @@ interface Admin {
   managed_subjects: string[];
 }
 
+interface MediaWidgetItem {
+  id: string;
+  page_slug: string;
+  section_order: number;
+  media_type: 'youtube' | 'pdf';
+  title: string;
+  url: string;
+  permissions: { allow_print: boolean; allow_download: boolean };
+  is_active: boolean;
+  created_at: string;
+}
+
 export default function SuperAdminClient({
   subjects: initialSubjects,
   admins: initialAdmins,
+  mediaWidgets: initialMedia,
 }: {
   subjects: Subject[];
   admins: Admin[];
+  mediaWidgets: MediaWidgetItem[];
 }) {
-  const [tab, setTab] = useState<'subjects' | 'admins'>('subjects');
+  const [tab, setTab] = useState<'subjects' | 'admins' | 'media'>('subjects');
 
   const tabs = [
     { id: 'subjects' as const, label: 'Subject Factory' },
     { id: 'admins' as const, label: 'Admin Manager' },
+    { id: 'media' as const, label: 'Media Manager' },
   ];
 
   return (
@@ -56,8 +72,10 @@ export default function SuperAdminClient({
       <div className="p-6">
         {tab === 'subjects' ? (
           <SubjectFactory subjects={initialSubjects} />
-        ) : (
+        ) : tab === 'admins' ? (
           <AdminManager admins={initialAdmins} subjects={initialSubjects} />
+        ) : (
+          <MediaManager widgets={initialMedia} />
         )}
       </div>
     </div>
@@ -323,6 +341,238 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
           <p className="text-sm text-gray-400 py-8 text-center">No admin accounts found.</p>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Media Manager ───────────────────────────────────────────────────────────
+
+const PAGE_OPTIONS = [
+  { value: 'home', label: 'Home Page' },
+  { value: 'blog', label: 'Blog' },
+  { value: 'pre-o-level', label: 'Pre O-Level' },
+] as const;
+
+function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
+  const { showToast } = useToast();
+  const [isPending, startTransition] = useTransition();
+  const [showForm, setShowForm] = useState(false);
+  const [items, setItems] = useState(widgets);
+  const [form, setForm] = useState({
+    page_slug: 'home',
+    media_type: 'youtube' as 'youtube' | 'pdf',
+    title: '',
+    url: '',
+    allow_print: true,
+    allow_download: true,
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    startTransition(async () => {
+      const result = await createMediaWidget({
+        page_slug: form.page_slug,
+        media_type: form.media_type,
+        title: form.title,
+        url: form.url,
+        permissions: { allow_print: form.allow_print, allow_download: form.allow_download },
+      });
+      if (result.success) {
+        showToast({ message: 'Media widget added!', type: 'success' });
+        setForm({ page_slug: 'home', media_type: 'youtube', title: '', url: '', allow_print: true, allow_download: true });
+        setShowForm(false);
+      } else {
+        showToast({ message: result.error || 'Failed.', type: 'error' });
+      }
+    });
+  }
+
+  function handleDelete(id: string) {
+    if (!confirm('Delete this media widget?')) return;
+    startTransition(async () => {
+      const result = await deleteMediaWidget(id);
+      if (result.success) {
+        setItems(prev => prev.filter(w => w.id !== id));
+        showToast({ message: 'Widget deleted.', type: 'success' });
+      } else {
+        showToast({ message: result.error || 'Failed.', type: 'error' });
+      }
+    });
+  }
+
+  function handleToggle(id: string, currentlyActive: boolean) {
+    startTransition(async () => {
+      const result = await toggleMediaWidget(id, !currentlyActive);
+      if (result.success) {
+        setItems(prev => prev.map(w => w.id === id ? { ...w, is_active: !currentlyActive } : w));
+        showToast({ message: currentlyActive ? 'Widget hidden.' : 'Widget visible.', type: 'success' });
+      } else {
+        showToast({ message: result.error || 'Failed.', type: 'error' });
+      }
+    });
+  }
+
+  const grouped = PAGE_OPTIONS.map(p => ({
+    ...p,
+    widgets: items.filter(w => w.page_slug === p.value),
+  }));
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="font-semibold text-gray-900">Media Widgets</h4>
+          <p className="text-xs text-gray-500 mt-0.5">YouTube videos &amp; PDF viewers on public pages</p>
+        </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-navy-900 text-white text-xs font-medium rounded-lg hover:bg-navy-800 transition"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add Media
+        </button>
+      </div>
+
+      {/* Add form */}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="p-4 border-2 border-dashed border-navy-200 rounded-xl space-y-3 bg-navy-50/30">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Page Target *</label>
+              <select
+                value={form.page_slug}
+                onChange={e => setForm({ ...form, page_slug: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-navy-500 focus:border-navy-500"
+              >
+                {PAGE_OPTIONS.map(p => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Media Type *</label>
+              <select
+                value={form.media_type}
+                onChange={e => setForm({ ...form, media_type: e.target.value as 'youtube' | 'pdf' })}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-navy-500 focus:border-navy-500"
+              >
+                <option value="youtube">YouTube Video</option>
+                <option value="pdf">PDF Document</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Title *</label>
+            <input
+              required
+              value={form.title}
+              onChange={e => setForm({ ...form, title: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-navy-500 focus:border-navy-500"
+              placeholder={form.media_type === 'youtube' ? 'e.g. O-Level Paper 1 Walkthrough' : 'e.g. 2024 Specimen Paper'}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              {form.media_type === 'youtube' ? 'YouTube URL or Video ID *' : 'PDF URL (Supabase Storage) *'}
+            </label>
+            <input
+              required
+              value={form.url}
+              onChange={e => setForm({ ...form, url: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:ring-navy-500 focus:border-navy-500"
+              placeholder={form.media_type === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://...supabase.co/storage/v1/...'}
+            />
+          </div>
+
+          {form.media_type === 'pdf' && (
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 text-xs text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={form.allow_download}
+                  onChange={e => setForm({ ...form, allow_download: e.target.checked })}
+                  className="rounded border-gray-300 text-navy-600 focus:ring-navy-500"
+                />
+                Allow Download
+              </label>
+              <label className="flex items-center gap-2 text-xs text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={form.allow_print}
+                  onChange={e => setForm({ ...form, allow_print: e.target.checked })}
+                  className="rounded border-gray-300 text-navy-600 focus:ring-navy-500"
+                />
+                Allow Print
+              </label>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="px-4 py-1.5 text-xs font-medium text-white bg-navy-900 rounded-lg hover:bg-navy-800 disabled:opacity-50 transition"
+            >
+              {isPending ? 'Adding…' : 'Add Widget'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Grouped widgets by page */}
+      {grouped.map(group => (
+        <div key={group.value}>
+          <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{group.label}</h5>
+          {group.widgets.length === 0 ? (
+            <p className="text-xs text-gray-400 italic py-2">No media widgets</p>
+          ) : (
+            <div className="space-y-2">
+              {group.widgets.map(w => (
+                <div key={w.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {w.media_type === 'youtube' ? (
+                      <Video className="w-4 h-4 text-red-500 shrink-0" />
+                    ) : (
+                      <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{w.title}</p>
+                      <p className="text-[11px] text-gray-400 font-mono truncate">{w.url}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => handleToggle(w.id, w.is_active)}
+                      disabled={isPending}
+                      className="p-1.5 rounded-lg hover:bg-gray-200 transition"
+                      title={w.is_active ? 'Hide' : 'Show'}
+                    >
+                      {w.is_active ? (
+                        <Eye className="w-3.5 h-3.5 text-green-600" />
+                      ) : (
+                        <EyeOff className="w-3.5 h-3.5 text-gray-400" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(w.id)}
+                      disabled={isPending}
+                      className="p-1.5 rounded-lg hover:bg-red-50 transition"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
