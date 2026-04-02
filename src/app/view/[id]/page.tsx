@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 
 const EmbeddedViewer    = nextDynamic(() => import('@/components/resources/EmbeddedViewer'),    { ssr: false });
 const InteractiveSolver = nextDynamic(() => import('@/components/resources/InteractiveSolver'), { ssr: false });
+const DualMediaViewer   = nextDynamic(() => import('@/components/resources/DualMediaViewer'),   { ssr: false });
 
 // force-dynamic: this page checks the user session on every request
 // (ISR cannot be used for per-user auth-gated content)
@@ -135,6 +136,28 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
             videoUrl={resource.source_url}
             pdfUrl={worksheetUrl}
             questionMapping={questionMapping!}
+            backHref={backHref}
+            backLabel={backLabel}
+            resourceId={resource.id}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Dual Media mode ────────────────────────────────────────────────────────
+  // Video + PDF side-by-side when both exist but no question mappings
+  const useDualMedia = hasVideo && hasPdf && !hasMapping && !isWorksheet;
+
+  if (useDualMedia) {
+    const { href: backHref, label: backLabel } = buildBackPath(resource);
+    return (
+      <div className="min-h-screen pt-24 pb-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <DualMediaViewer
+            title={resource.title}
+            videoUrl={resource.source_url}
+            pdfUrl={worksheetUrl}
             backHref={backHref}
             backLabel={backLabel}
             resourceId={resource.id}
