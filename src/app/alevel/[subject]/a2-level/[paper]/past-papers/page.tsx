@@ -6,10 +6,11 @@ import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
 import type { Resource } from '@/lib/supabase/types';
 import type { ResourceItem } from '@/components/resources/ResourceGrid';
 import { aLevelPapers, aLevelPapersBySubject, getSubjectLabel } from '@/config/navigation';
+import { isAdminRequest } from '@/lib/admin-mode';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function toResourceItem(resource: Resource, basePath: string): ResourceItem {
+function toResourceItem(resource: Resource, basePath: string, adminBypass = false): ResourceItem {
   const examSeries = (resource as Resource & {
     exam_series?: { year: number; session: string; variant: number } | null;
   }).exam_series;
@@ -23,7 +24,7 @@ function toResourceItem(resource: Resource, basePath: string): ResourceItem {
     session: examSeries?.session,
     variant: examSeries?.variant,
     subject: resource.subject,
-    isLocked: (resource as any).is_locked ?? false,
+    isLocked: adminBypass ? false : ((resource as any).is_locked ?? false),
   };
 }
 
@@ -72,7 +73,7 @@ async function PastPapersGrid({
     }
 
     const resources = await getResourcesByCategory(category.id, 'pdf', 'solved_past_paper');
-    const items: ResourceItem[] = resources.map((r) => toResourceItem(r, basePath));
+    const items: ResourceItem[] = resources.map((r) => toResourceItem(r, basePath, isAdminRequest()));
 
     return (
       <ResourceGrid

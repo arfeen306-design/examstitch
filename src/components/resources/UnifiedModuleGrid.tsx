@@ -342,6 +342,12 @@ export default function UnifiedModuleGrid({
 }: UnifiedModuleGridProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  // Admin bypass: strip lock state client-side when admin_mode cookie is set
+  const isAdmin = typeof document !== 'undefined' && document.cookie.includes('admin_mode=1');
+  const effectiveModules = isAdmin
+    ? modules.map(m => m.isLocked ? { ...m, isLocked: false } : m)
+    : modules;
+
   if (isLoading) {
     return (
       <div className="rounded-2xl overflow-hidden"
@@ -351,11 +357,11 @@ export default function UnifiedModuleGrid({
     );
   }
 
-  if (!modules.length) {
+  if (!effectiveModules.length) {
     return <EmptyState title={emptyTitle} message={emptyMessage} />;
   }
 
-  const groups = groupModules(modules);
+  const groups = groupModules(effectiveModules);
 
   return (
     <motion.div

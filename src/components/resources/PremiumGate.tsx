@@ -24,6 +24,11 @@ export default function PremiumGate({ resourceTitle, redirectTo, user }: Premium
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    // Admin bypass: if admin_mode cookie exists, go straight to content
+    if (document.cookie.includes('admin_mode=1')) {
+      router.refresh();
+      return;
+    }
     // If the server explicitly passed null, we still re-check on client mount
     // to handle the edge case where the browser has a valid cookie/local session
     // that the server missed.

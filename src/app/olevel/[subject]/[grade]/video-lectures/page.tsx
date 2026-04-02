@@ -5,6 +5,7 @@ import type { LearningModule } from '@/components/resources/UnifiedModuleGrid';
 import { getCategoryBySlug, getResourcesByCategory } from '@/lib/supabase/queries';
 import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
 import { getSubjectLabel } from '@/config/navigation';
+import { isAdminRequest } from '@/lib/admin-mode';
 
 function formatGrade(slug: string): string {
   return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -22,12 +23,13 @@ async function VideoModules({ subject, grade }: { subject: string; grade: string
     // Fetch ALL published videos (no module_type filter)
     const resources = await getResourcesByCategory(category.id, 'video');
 
+    const adminBypass = isAdminRequest();
     const modules: LearningModule[] = resources.map(r => ({
       id: r.id,
       title: r.title,
       videoUrl: r.source_url,
       worksheetUrl: (r as any).worksheet_url || null,
-      isLocked: (r as any).is_locked ?? false,
+      isLocked: adminBypass ? false : ((r as any).is_locked ?? false),
     }));
 
     return (

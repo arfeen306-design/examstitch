@@ -33,8 +33,10 @@ export default function ResourceCard({
   variant,
   subject,
   index = 0,
-  isLocked = false,
+  isLocked: isLockedProp = false,
 }: ResourceCardProps) {
+  // Admin bypass: admin_mode cookie (non-httpOnly) overrides lock state client-side
+  const isLocked = isLockedProp && !(typeof document !== 'undefined' && document.cookie.includes('admin_mode=1'));
   const config = typeConfig[contentType];
   const Icon = config.icon;
   // Locked cards link to login instead of the resource

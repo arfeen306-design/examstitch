@@ -26,8 +26,10 @@ export async function POST() {
     // Sign out of Supabase (clears auth cookies via setAll)
     await supabase.auth.signOut();
 
-    // Clear the admin session cookie
+    // Clear admin cookies
     cookieStore.delete('admin_session');
+    cookieStore.delete('admin_mode');
+    cookieStore.delete('admin_landing');
 
     return NextResponse.json({ success: true });
   } catch (err) {

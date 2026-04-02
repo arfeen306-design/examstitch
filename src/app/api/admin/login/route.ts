@@ -95,6 +95,16 @@ export async function POST(request: Request) {
       }
     }
 
+    // Client-readable flag so front-end components can hide lock badges.
+    // NOT a security gate — actual content gating uses the httpOnly admin_session cookie.
+    cookieStore.set('admin_mode', '1', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
     // Store landing preference so middleware can enforce role-based routing
     cookieStore.set('admin_landing', landing, {
       httpOnly: true,
