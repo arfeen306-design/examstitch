@@ -8,6 +8,9 @@
 --
 -- Fix: Remap categories.subject_id to the new subjects table using the
 -- parent_subject_id bridge column, then seed CS categories.
+--
+-- NOTE: This migration was applied with manual cleanup for orphaned categories
+-- that had been created through the admin UI before the FK was fixed.
 -- ============================================================================
 
 BEGIN;
@@ -16,15 +19,14 @@ BEGIN;
 ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_subject_id_fkey;
 
 -- ─── Step 2: Remap existing category subject_ids ────────────────────────────
--- categories.subject_id currently holds subject_papers UUIDs.
--- subject_papers.parent_subject_id was set to the new subjects UUID in migration 012.
 UPDATE categories c
 SET subject_id = sp.parent_subject_id
 FROM subject_papers sp
 WHERE c.subject_id = sp.id
   AND sp.parent_subject_id IS NOT NULL;
 
--- ─── Step 3: Re-establish FK to the correct (new) subjects table ────────────
+-- ─── Step 3: Restore unique constraint + new FK ─────────────────────────────
+ALTER TABLE categories ADD CONSTRAINT categories_subject_id_slug_key UNIQUE (subject_id, slug);
 ALTER TABLE categories
   ADD CONSTRAINT categories_subject_id_fkey
   FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE;
@@ -86,5 +88,28 @@ FROM subjects s
 JOIN categories c ON c.subject_id = s.id AND c.slug = 'cs-alevel'
 WHERE s.slug = 'computer-science'
 ON CONFLICT (subject_id, slug) DO NOTHING;
+
+-- ─── Step 5: Restore Maths parent categories (AS Level / A2 Level) ──────────
+INSERT INTO categories (subject_id, name, slug, sort_order)
+SELECT id, 'AS Level', 'as-level', 4 FROM subjects WHERE slug = 'maths'
+ON CONFLICT (subject_id, slug) DO NOTHING;
+
+INSERT INTO categories (subject_id, name, slug, sort_order)
+SELECT id, 'A2 Level', 'a2-level', 5 FROM subjects WHERE slug = 'maths'
+ON CONFLICT (subject_id, slug) DO NOTHING;
+
+-- Re-parent AS-Level papers
+UPDATE categories SET parent_id = (
+  SELECT id FROM categories WHERE slug = 'as-level' AND subject_id = (SELECT id FROM subjects WHERE slug = 'maths')
+)
+WHERE slug IN ('paper-1-pure-mathematics', 'paper-5-probability-statistics')
+AND subject_id = (SELECT id FROM subjects WHERE slug = 'maths');
+
+-- Re-parent A2-Level papers
+UPDATE categories SET parent_id = (
+  SELECT id FROM categories WHERE slug = 'a2-level' AND subject_id = (SELECT id FROM subjects WHERE slug = 'maths')
+)
+WHERE slug IN ('paper-3-pure-mathematics', 'paper-4-mechanics')
+AND subject_id = (SELECT id FROM subjects WHERE slug = 'maths');
 
 COMMIT;
