@@ -192,7 +192,7 @@ export default function DualMediaViewer({
       </h1>
 
       {/* Dual pane layout: PDF 40% LEFT / Video 60% RIGHT — mobile: video top, PDF bottom */}
-      <div className={`flex gap-4 ${expanded ? '' : 'flex-col-reverse lg:flex-row'}`}>
+      <div className={`flex gap-4 ${expanded ? '' : 'flex-col-reverse lg:flex-row lg:items-start'}`}>
         {/* PDF pane — LEFT 40% (desktop) / BOTTOM (mobile) */}
         <div
           className={`transition-all duration-300 ${
@@ -208,7 +208,7 @@ export default function DualMediaViewer({
             embedUrl={pdfEmbed}
             downloadUrl={pdfDownload}
             title={`${title} — PDF`}
-            minHeight="600px"
+            minHeight="max(600px, 80vh)"
           />
         </div>
 

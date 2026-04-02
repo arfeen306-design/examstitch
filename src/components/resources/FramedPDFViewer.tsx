@@ -9,7 +9,7 @@ interface FramedPDFViewerProps {
   title: string;
   /** Optional label shown in the header (defaults to "PDF Resource") */
   label?: string;
-  /** Minimum height for the iframe — defaults to 600px */
+  /** Minimum height for the iframe — defaults to 80vh */
   minHeight?: string;
 }
 
@@ -25,7 +25,7 @@ export default function FramedPDFViewer({
   downloadUrl,
   title,
   label = 'Resource Document',
-  minHeight = '600px',
+  minHeight = '80vh',
 }: FramedPDFViewerProps) {
   const handlePrint = useCallback(() => {
     const printWindow = window.open(embedUrl, '_blank');
@@ -38,7 +38,7 @@ export default function FramedPDFViewer({
 
   return (
     <div
-      className="flex flex-col overflow-hidden transition-shadow hover:shadow-2xl"
+      className="flex flex-col overflow-hidden transition-shadow hover:shadow-2xl h-full"
       style={{
         borderRadius: '12px',
         border: '2px solid #E2E8F0',
