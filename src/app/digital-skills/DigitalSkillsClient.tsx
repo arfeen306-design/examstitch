@@ -32,6 +32,7 @@ import {
   Maximize2,
   ListVideo,
 } from 'lucide-react';
+import TrendingRow from '@/components/digital-skills/TrendingRow';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SKILL CATALOGUE — easy to extend
@@ -625,6 +626,17 @@ export default function DigitalSkillsClient() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  // Select skill by slug (for trending row)
+  const handleTrendingSelect = useCallback((slug: string) => {
+    const match = SKILLS.find(
+      (s) => s.id === slug || s.title.toLowerCase().replace(/\s+/g, '-') === slug,
+    );
+    if (match) {
+      setSelectedSkill(match);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
   return (
     <AnimatePresence mode="wait">
       {selectedSkill ? (
@@ -753,6 +765,13 @@ export default function DigitalSkillsClient() {
               </div>
             </motion.div>
           </motion.section>
+
+          {/* ═══ TRENDING NOW ═══ */}
+          <section className="relative bg-gradient-to-b from-[#08081a] to-[#08081a] pt-12 pb-0">
+            <div className="max-w-6xl mx-auto px-6">
+              <TrendingRow onSelectSkill={handleTrendingSelect} />
+            </div>
+          </section>
 
           {/* ═══ SKILLS GRID ═══ */}
           <section
