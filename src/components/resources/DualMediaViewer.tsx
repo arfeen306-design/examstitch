@@ -5,14 +5,13 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  Download,
-  Printer,
   Maximize2,
   Minimize2,
   Video,
   FileText,
 } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
+import FramedPDFViewer from './FramedPDFViewer';
 
 declare global {
   interface Window {
@@ -120,81 +119,6 @@ function DualVideoPlayer({
   );
 }
 
-// ── PDF Viewer ──────────────────────────────────────────────────────────────
-
-function DualPdfViewer({
-  embedUrl,
-  downloadUrl,
-  title,
-}: {
-  embedUrl: string;
-  downloadUrl: string | null;
-  title: string;
-}) {
-  const beige = '#f5f0e8';
-
-  function handlePrint() {
-    const printWindow = window.open(embedUrl, '_blank');
-    if (printWindow) {
-      printWindow.addEventListener('load', () => {
-        setTimeout(() => printWindow.print(), 500);
-      });
-    }
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* PDF toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 rounded-t-xl border border-b-0"
-           style={{ backgroundColor: 'var(--bg-subtle, #f8f5f0)', borderColor: '#e8e0d0' }}>
-        <span className="text-xs font-medium flex items-center gap-1.5"
-              style={{ color: 'var(--text-secondary, #3B4F80)' }}>
-          <FileText className="w-3.5 h-3.5" /> PDF Viewer
-        </span>
-        <div className="flex items-center gap-1.5">
-          {downloadUrl && (
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors hover:opacity-80"
-              style={{ backgroundColor: 'var(--badge-bg, #1A2B56)', color: '#fff' }}
-            >
-              <Download className="w-3 h-3" /> Download
-            </a>
-          )}
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-colors hover:bg-gray-100"
-            style={{ borderColor: '#d1d5db', color: 'var(--text-secondary, #3B4F80)' }}
-          >
-            <Printer className="w-3 h-3" /> Print
-          </button>
-        </div>
-      </div>
-
-      {/* PDF iframe */}
-      <div className="relative flex-1 rounded-b-xl overflow-hidden"
-           style={{ backgroundColor: beige, border: '1px solid #e8e0d0', minHeight: '500px' }}>
-        <iframe
-          src={embedUrl}
-          title={title}
-          className="w-full h-full border-0"
-          style={{ minHeight: '500px' }}
-          allow="autoplay"
-          loading="lazy"
-        />
-        {/* Mask Drive UI borders */}
-        <div className="absolute top-0 left-0 right-0 pointer-events-none z-10" style={{ height: '3px', backgroundColor: beige }} />
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10" style={{ height: '3px', backgroundColor: beige }} />
-        <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-10" style={{ width: '3px', backgroundColor: beige }} />
-        <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-10" style={{ width: '6px', backgroundColor: beige }} />
-        <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-20 rounded-bl-lg" style={{ backgroundColor: beige }} />
-      </div>
-    </div>
-  );
-}
-
 // ── Main DualMediaViewer ────────────────────────────────────────────────────
 
 export default function DualMediaViewer({
@@ -259,16 +183,16 @@ export default function DualMediaViewer({
         {title}
       </h1>
 
-      {/* Dual pane layout */}
+      {/* Dual pane layout: 60% Video / 40% PDF — stacked below lg */}
       <div className={`flex gap-4 ${expanded ? '' : 'flex-col lg:flex-row'}`}>
-        {/* Video pane */}
+        {/* Video pane — 60% */}
         <div
           className={`transition-all duration-300 ${
             expanded === 'pdf'
               ? 'hidden'
               : expanded === 'video'
                 ? 'w-full'
-                : 'w-full lg:w-1/2'
+                : 'w-full lg:w-[60%]'
           }`}
         >
           <div className="sticky top-24">
@@ -276,18 +200,23 @@ export default function DualMediaViewer({
           </div>
         </div>
 
-        {/* PDF pane */}
+        {/* PDF pane — 40% */}
         <div
           className={`transition-all duration-300 ${
             expanded === 'video'
               ? 'hidden'
               : expanded === 'pdf'
                 ? 'w-full'
-                : 'w-full lg:w-1/2'
+                : 'w-full lg:w-[40%]'
           }`}
           style={{ minHeight: expanded === 'pdf' ? '85vh' : undefined }}
         >
-          <DualPdfViewer embedUrl={pdfEmbed} downloadUrl={pdfDownload} title={`${title} — PDF`} />
+          <FramedPDFViewer
+            embedUrl={pdfEmbed}
+            downloadUrl={pdfDownload}
+            title={`${title} — PDF`}
+            minHeight="600px"
+          />
         </div>
       </div>
     </motion.div>

@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Download, RotateCcw, ChevronRight } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronRight } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
 import VideoContainer from './VideoContainer';
+import FramedPDFViewer from './FramedPDFViewer';
 
 interface EmbeddedViewerProps {
   title: string;
@@ -226,36 +227,6 @@ function VideoFrame({
   );
 }
 
-// ── Google Drive / PDF Viewer ──────────────────────────────────────────────
-
-function DriveViewer({ embedUrl, title }: { embedUrl: string; title: string }) {
-  const beige = '#f5f0e8';
-  return (
-    <div className="relative w-full rounded-lg overflow-hidden"
-         style={{ backgroundColor: beige, border: '1px solid #e8e0d0' }}>
-      <iframe
-        src={embedUrl}
-        title={title}
-        className="w-full border-0"
-        style={{ minHeight: 'max(800px, 85vh)' }}
-        allow="autoplay"
-        loading="lazy"
-      />
-
-      <div className="absolute top-0 left-0 right-0 pointer-events-none z-10"
-           style={{ height: '3px', backgroundColor: beige }} />
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
-           style={{ height: '3px', backgroundColor: beige }} />
-      <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-10"
-           style={{ width: '3px', backgroundColor: beige }} />
-      <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-10"
-           style={{ width: '6px', backgroundColor: beige }} />
-      <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-20 rounded-bl-lg"
-           style={{ backgroundColor: beige }} />
-    </div>
-  );
-}
-
 // ── Main EmbeddedViewer ────────────────────────────────────────────────────
 
 export default function EmbeddedViewer({
@@ -290,20 +261,7 @@ export default function EmbeddedViewer({
         </Link>
 
         <div className="flex items-center gap-2">
-          {downloadUrl && (contentType === 'worksheet' || contentType === 'pdf') && (
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-              style={{
-                backgroundColor: 'var(--badge-bg, #1A2B56)',
-                color: 'var(--badge-text, #ffffff)',
-              }}
-            >
-              <Download className="w-3.5 h-3.5" /> Download PDF
-            </a>
-          )}
+          {/* Download button only shown for video content; PDFs have it in the FramedPDFViewer header */}
         </div>
       </div>
 
@@ -323,7 +281,13 @@ export default function EmbeddedViewer({
           resourceId={resourceId}
         />
       ) : (
-        <DriveViewer embedUrl={embedUrl} title={title} />
+        <FramedPDFViewer
+          embedUrl={embedUrl}
+          downloadUrl={downloadUrl}
+          title={title}
+          label={contentType === 'worksheet' ? 'Worksheet' : 'Past Paper'}
+          minHeight="max(800px, 85vh)"
+        />
       )}
 
       {!isVideo && (
