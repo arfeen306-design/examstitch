@@ -4,7 +4,9 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
-import HomeClient, { type FeedItem } from '@/components/home/HomeClient';
+import dynamic from 'next/dynamic';
+import type { FeedItem } from '@/components/home/HomeClient';
+const HomeClient = dynamic(() => import('@/components/home/HomeClient'), { ssr: false });
 import MediaSection from '@/components/media/MediaSection';
 
 async function getFeedItems(): Promise<FeedItem[]> {

@@ -2,7 +2,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireSuperAdmin } from '@/lib/supabase/guards';
 import { redirect } from 'next/navigation';
 import { Globe, BookOpen, Users, Shield, TrendingUp, Video, FileText } from 'lucide-react';
-import SuperAdminClient from './SuperAdminClient';
+import nextDynamic from 'next/dynamic';
+const SuperAdminClient = nextDynamic(() => import('./SuperAdminClient'), { ssr: false });
 
 export const dynamic = 'force-dynamic';
 
