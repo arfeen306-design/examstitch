@@ -9,6 +9,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
+import AdminThemeButton from '@/components/admin/AdminThemeButton';
 
 async function getAdminProfile(userId: string) {
   const admin = createAdminClient();
@@ -187,11 +188,12 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             ))}
           </nav>
 
-          {/* Sign out */}
-          <div className="p-4 mt-auto">
-            <div className="h-px mb-4"
+          {/* Theme & Sign out */}
+          <div className="p-4 mt-auto space-y-2">
+            <div className="h-px mb-2"
               style={{ background: 'linear-gradient(90deg, transparent, rgba(251,146,60,0.15), transparent)' }}
             />
+            <AdminThemeButton />
             <form action={handleLogout}>
               <button
                 type="submit"
@@ -208,7 +210,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
         {/* ── Main Content ── */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-14 shrink-0 flex items-center justify-between px-6 relative"
+          <header className="h-14 shrink-0 flex items-center justify-between px-6 relative z-[100]"
             style={{
               background: 'linear-gradient(90deg, rgba(11,17,32,0.8) 0%, rgba(11,17,32,0.6) 100%)',
               backdropFilter: 'blur(20px)',

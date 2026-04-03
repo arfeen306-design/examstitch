@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { Database, BarChart3, LogOut, ArrowLeft, Monitor, Terminal } from 'lucide-react';
+import { Database, BarChart3, LogOut, ArrowLeft, Monitor, Terminal, Palette } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
+import AdminThemeButton from '@/components/admin/AdminThemeButton';
 
 export default async function CSAdminLayout({ children }: { children: React.ReactNode }) {
   async function handleLogout() {
@@ -127,6 +128,7 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
             <div className="h-px mb-2"
               style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent)' }}
             />
+            <AdminThemeButton />
             <Link
               href="/admin"
               className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
@@ -152,7 +154,7 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
 
         {/* ── Main Content ── */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-14 shrink-0 flex items-center justify-between px-6 relative"
+          <header className="h-14 shrink-0 flex items-center justify-between px-6 relative z-[100]"
             style={{
               background: 'linear-gradient(90deg, rgba(11,17,32,0.8) 0%, rgba(11,17,32,0.6) 100%)',
               backdropFilter: 'blur(20px)',

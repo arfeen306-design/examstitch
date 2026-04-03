@@ -265,6 +265,74 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN PANEL THEME OVERRIDES — applied via data-admin-theme attribute.
+   These override the hardcoded navy colors in admin layouts.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Navy (default) — no overrides needed, layouts use navy natively */
+
+/* Pure Dark */
+[data-admin-theme="dark"] .min-h-screen.bg-\[\#0B1120\] {
+  background-color: #09090b !important;
+}
+[data-admin-theme="dark"] aside {
+  background: linear-gradient(180deg, #0c0c0f 0%, #09090b 40%, #0e0e12 100%) !important;
+  border-right-color: rgba(113,113,122,0.1) !important;
+}
+[data-admin-theme="dark"] header {
+  background: linear-gradient(90deg, rgba(9,9,11,0.8) 0%, rgba(9,9,11,0.6) 100%) !important;
+  border-bottom-color: rgba(113,113,122,0.08) !important;
+}
+
+/* Beach */
+[data-admin-theme="beach"] .min-h-screen.bg-\[\#0B1120\] {
+  background-color: #FFF9F2 !important;
+}
+[data-admin-theme="beach"] aside {
+  background: linear-gradient(180deg, #0C4A6E 0%, #075985 40%, #0C4A6E 100%) !important;
+  border-right-color: rgba(14,165,233,0.15) !important;
+}
+[data-admin-theme="beach"] header {
+  background: linear-gradient(90deg, rgba(12,74,110,0.95) 0%, rgba(7,89,133,0.9) 100%) !important;
+  border-bottom-color: rgba(14,165,233,0.12) !important;
+}
+[data-admin-theme="beach"] main > div {
+  color: #0C4A6E;
+}
+[data-admin-theme="beach"] main .text-white {
+  color: #0C4A6E !important;
+}
+[data-admin-theme="beach"] main .text-white\/40,
+[data-admin-theme="beach"] main .text-white\/30 {
+  color: rgba(12,74,110,0.5) !important;
+}
+[data-admin-theme="beach"] main .text-white\/70,
+[data-admin-theme="beach"] main .text-white\/60,
+[data-admin-theme="beach"] main .text-white\/50 {
+  color: rgba(12,74,110,0.7) !important;
+}
+[data-admin-theme="beach"] main .bg-white\/\[0\.04\],
+[data-admin-theme="beach"] main .bg-white\/\[0\.03\] {
+  background-color: rgba(12,74,110,0.04) !important;
+}
+[data-admin-theme="beach"] main .border-white\/\[0\.06\] {
+  border-color: rgba(12,74,110,0.1) !important;
+}
+
+/* Forest Green */
+[data-admin-theme="forest"] .min-h-screen.bg-\[\#0B1120\] {
+  background-color: #052e16 !important;
+}
+[data-admin-theme="forest"] aside {
+  background: linear-gradient(180deg, #052e16 0%, #022c22 40%, #064e3b 100%) !important;
+  border-right-color: rgba(34,197,94,0.1) !important;
+}
+[data-admin-theme="forest"] header {
+  background: linear-gradient(90deg, rgba(5,46,22,0.8) 0%, rgba(5,46,22,0.6) 100%) !important;
+  border-bottom-color: rgba(34,197,94,0.08) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ANIMATIONS — hero art overlays
    ═══════════════════════════════════════════════════════════════════════════ */
 
