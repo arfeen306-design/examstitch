@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { X, PlayCircle, FileText, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
@@ -243,11 +245,11 @@ export default function NewResourceModal({
   const activeCategories = categories.filter(c => c.subject_id === formData.subject_id);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
-        <div className="flex items-center justify-between p-6 border-b border-navy-50 bg-navy-50/50 sticky top-0 z-10">
-          <h2 className="text-xl font-semibold text-navy-900">Link Teaching Materials</h2>
-          <button onClick={onClose} className="text-navy-400 hover:text-navy-700 transition">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-[#131B2E] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 border border-white/[0.08]">
+        <div className="flex items-center justify-between p-6 border-b border-white/[0.06] bg-white/[0.02] sticky top-0 z-10">
+          <h2 className="text-xl font-semibold text-white">Link Teaching Materials</h2>
+          <button onClick={onClose} className="text-white/30 hover:text-white/70 transition">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -255,15 +257,15 @@ export default function NewResourceModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Module Type Radio Toggle */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-navy-400 mb-2">Content Type</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-white/30 mb-2">Content Type</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setModuleType('video_topical')}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                   moduleType === 'video_topical'
-                    ? 'border-red-500 bg-red-50 text-red-700'
-                    : 'border-navy-100 text-navy-500 hover:border-navy-200'
+                    ? 'border-red-500/50 bg-red-500/10 text-red-300'
+                    : 'border-white/[0.08] text-white/40 hover:border-white/[0.15]'
                 }`}
               >
                 <PlayCircle className="w-5 h-5" />
@@ -275,10 +277,10 @@ export default function NewResourceModal({
               <button
                 type="button"
                 onClick={() => setModuleType('solved_past_paper')}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                   moduleType === 'solved_past_paper'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-navy-100 text-navy-500 hover:border-navy-200'
+                    ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
+                    : 'border-white/[0.08] text-white/40 hover:border-white/[0.15]'
                 }`}
               >
                 <FileText className="w-5 h-5" />
@@ -294,26 +296,26 @@ export default function NewResourceModal({
             {/* ── Title section: Topic Name for videos, Session/Year/Variant for past papers ── */}
             {moduleType === 'video_topical' ? (
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-navy-700 mb-1">Topic Name</label>
+                <label className="block text-sm font-medium text-white/60 mb-1">Topic Name</label>
                 <input
                   ref={titleRef}
                   required
                   value={formData.title}
                   onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                  className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
                   placeholder="e.g. Differentiation Rules"
                 />
               </div>
             ) : (
               <div className="col-span-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-navy-400 mb-2">Paper Identity</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/30 mb-2">Paper Identity</label>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-navy-700 mb-1">Session</label>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Session</label>
                     <select
                       value={formData.session}
                       onChange={e => setFormData({ ...formData, session: e.target.value })}
-                      className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                      className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
                     >
                       {SESSION_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -321,36 +323,36 @@ export default function NewResourceModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-navy-700 mb-1">Year</label>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Year</label>
                     <input
                       ref={titleRef}
                       required
                       value={formData.year}
                       onChange={e => setFormData({ ...formData, year: e.target.value })}
-                      className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                      className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
                       placeholder="e.g. 2024"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-navy-700 mb-1">Paper Variant</label>
+                    <label className="block text-sm font-medium text-white/60 mb-1">Paper Variant</label>
                     <input
                       required
                       value={formData.variant}
                       onChange={e => setFormData({ ...formData, variant: e.target.value })}
-                      className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500"
+                      className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
                       placeholder="e.g. 12, 22"
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-navy-400 mt-1.5">
-                  Preview: <span className="font-semibold text-navy-600">{generateDisplayTitle(formData.session, formData.year, formData.variant) || '—'}</span>
+                <p className="text-[10px] text-white/30 mt-1.5">
+                  Preview: <span className="font-semibold text-white/70">{generateDisplayTitle(formData.session, formData.year, formData.variant) || '—'}</span>
                 </p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-navy-700 mb-1">Subject</label>
-              <select value={formData.subject_id} onChange={e => setFormData({ ...formData, subject_id: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500">
+              <label className="block text-sm font-medium text-white/60 mb-1">Subject</label>
+              <select value={formData.subject_id} onChange={e => setFormData({ ...formData, subject_id: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white">
                 <option value="" disabled>Select subject…</option>
                 {subjects.map(s => (
                   <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
@@ -359,19 +361,19 @@ export default function NewResourceModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-navy-700 mb-1">Target Module</label>
+              <label className="block text-sm font-medium text-white/60 mb-1">Target Module</label>
               {categoriesLoading ? (
-                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-navy-400 border border-navy-100 rounded-lg bg-navy-50/30">
+                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/30 border border-white/[0.08] rounded-lg bg-white/[0.02]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading modules…
                 </div>
               ) : activeCategories.length === 0 && formData.subject_id ? (
-                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-amber-600 border border-amber-200 rounded-lg bg-amber-50">
+                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-amber-400 border border-amber-500/20 rounded-lg bg-amber-500/10">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>No modules found for this subject. Create one in Taxonomy Manager.</span>
                 </div>
               ) : (
-                <select required value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-gold-500 focus:border-gold-500">
+                <select required value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white">
                   <option value="" disabled>Select mapping...</option>
                   {activeCategories.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
@@ -381,8 +383,8 @@ export default function NewResourceModal({
             </div>
 
             {/* Dynamic Link Inputs */}
-            <div className="col-span-2 pt-2 border-t border-navy-50">
-              <label className="block text-xs font-bold uppercase tracking-wider text-navy-400 mb-3">
+            <div className="col-span-2 pt-2 border-t border-white/[0.06]">
+              <label className="block text-xs font-bold uppercase tracking-wider text-white/30 mb-3">
                 {moduleType === 'video_topical' ? 'Resource Links' : 'PDF Solution Link'}
               </label>
               
@@ -391,23 +393,23 @@ export default function NewResourceModal({
                   <>
                     <div>
                       <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Link *</label>
-                      <input required value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-red-500 focus:border-red-500 font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
+                      <input required value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-green-600 mb-1">Worksheet Drive Link (Optional)</label>
-                      <input value={formData.worksheet_url} onChange={e => setFormData({ ...formData, worksheet_url: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-green-500 focus:border-green-500 font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
+                      <input value={formData.worksheet_url} onChange={e => setFormData({ ...formData, worksheet_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-emerald-500/50 focus:border-emerald-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
                     </div>
                   </>
                 ) : (
                   <>
                     <div>
                       <label className="block text-xs font-medium text-blue-600 mb-1">PDF Solution Link *</label>
-                      <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
+                      <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Walkthrough (Optional)</label>
-                      <input value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-navy-100 rounded-lg focus:ring-red-500 focus:border-red-500 font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
-                      <p className="text-[10px] text-navy-400 mt-1">Adding a video enables the Interactive Solver (split-screen PDF + Video)</p>
+                      <input value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
+                      <p className="text-[10px] text-white/30 mt-1">Adding a video enables the Interactive Solver (split-screen PDF + Video)</p>
                     </div>
                   </>
                 )}
@@ -415,8 +417,8 @@ export default function NewResourceModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-navy-50 mt-6 sticky bottom-0 bg-white">
-            <label className="flex items-center gap-2 text-sm text-navy-500 cursor-pointer select-none">
+          <div className="flex items-center justify-between pt-4 border-t border-white/[0.06] mt-6 sticky bottom-0 bg-[#131B2E]">
+            <label className="flex items-center gap-2 text-sm text-white/40 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={keepOpen}
@@ -427,8 +429,8 @@ export default function NewResourceModal({
               Keep open after save
             </label>
             <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50 rounded-lg transition">Cancel</button>
-              <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-[#FF6B35] hover:bg-[#e55a2b]">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.04] rounded-lg transition">Cancel</button>
+              <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700">
                 {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === 'video_topical' ? 'Link Video + Topical' : 'Link Past Paper'}
               </button>
             </div>

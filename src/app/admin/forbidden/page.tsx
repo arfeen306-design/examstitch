@@ -3,7 +3,7 @@ import { ShieldX, ArrowLeft } from 'lucide-react';
 
 export default function ForbiddenPage() {
   return (
-    <div className="min-h-screen bg-[#1e293b] flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="w-20 h-20 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-500/20">
           <ShieldX className="w-10 h-10 text-red-400" />

@@ -9,6 +9,9 @@ export async function generateStaticParams() {
   return [
     { subject: 'mathematics-9709' },
     { subject: 'computer-science-9618' },
+    { subject: 'physics-9702' },
+    { subject: 'chemistry-9701' },
+    { subject: 'biology-9700' },
   ];
 }
 

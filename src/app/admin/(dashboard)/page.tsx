@@ -1,42 +1,165 @@
-import { Layers, Box, Eye, MessageSquare } from 'lucide-react';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { cookies } from 'next/headers';
+import {
+  Database, FolderTree, Eye, Users, FileText, Video,
+  ArrowUpRight, Clock,
+} from 'lucide-react';
+import Link from 'next/link';
 
-export default function AdminOverview() {
+export const dynamic = 'force-dynamic';
+
+export default async function AdminOverview() {
+  const supabase = createAdminClient();
+
+  // Get admin profile for subject-aware stats
+  const cookieStore = await cookies();
+  const adminId = cookieStore.get('admin_session')?.value;
+  let isSuperAdmin = false;
+  let managedSubjects: string[] = [];
+
+  if (adminId) {
+    const { data: profile } = await supabase
+      .from('student_accounts')
+      .select('is_super_admin, managed_subjects')
+      .eq('id', adminId)
+      .single();
+    isSuperAdmin = profile?.is_super_admin ?? false;
+    managedSubjects = (profile?.managed_subjects as string[]) ?? [];
+  }
+
+  // Fetch stats
+  const [resourcesRes, categoriesRes, subscribersRes, studentsRes] = await Promise.all([
+    supabase.from('resources').select('id, content_type, is_published, subject_id', { count: 'exact' }),
+    supabase.from('categories').select('id', { count: 'exact' }),
+    supabase.from('subscribers').select('id', { count: 'exact' }).eq('is_active', true),
+    supabase.from('student_accounts').select('id', { count: 'exact' }).eq('role', 'student'),
+  ]);
+
+  const allResources = resourcesRes.data ?? [];
+  // Filter by managed subjects if not super admin
+  const resources = isSuperAdmin
+    ? allResources
+    : allResources.filter(r => managedSubjects.includes(r.subject_id));
+
+  const totalResources = resources.length;
+  const publishedResources = resources.filter(r => r.is_published).length;
+  const totalVideos = resources.filter(r => r.content_type === 'video').length;
+  const totalPDFs = resources.filter(r => r.content_type === 'pdf').length;
+  const totalCategories = categoriesRes.count ?? 0;
+  const totalSubscribers = subscribersRes.count ?? 0;
+  const totalStudents = studentsRes.count ?? 0;
+
   const stats = [
-    { label: 'Total Resources', value: '142', icon: Box, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: 'Categories active', value: '28', icon: Layers, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'Public Views', value: '3,492', icon: Eye, color: 'text-purple-500', bg: 'bg-purple-50' },
-    { label: 'Waitlist Subs', value: '56', icon: MessageSquare, color: 'text-orange-500', bg: 'bg-orange-50' },
+    {
+      label: 'Total Resources',
+      value: totalResources.toString(),
+      sub: `${publishedResources} published`,
+      icon: Database,
+      gradient: 'from-blue-500 to-indigo-600',
+    },
+    {
+      label: 'Categories',
+      value: totalCategories.toString(),
+      sub: 'active modules',
+      icon: FolderTree,
+      gradient: 'from-emerald-500 to-teal-600',
+    },
+    {
+      label: 'Videos',
+      value: totalVideos.toString(),
+      sub: `${totalPDFs} PDFs`,
+      icon: Video,
+      gradient: 'from-red-500 to-rose-600',
+    },
+    {
+      label: isSuperAdmin ? 'Students' : 'Subscribers',
+      value: isSuperAdmin ? totalStudents.toString() : totalSubscribers.toString(),
+      sub: isSuperAdmin ? `${totalSubscribers} subscribers` : 'active leads',
+      icon: Users,
+      gradient: 'from-amber-500 to-orange-600',
+    },
+  ];
+
+  const quickActions = [
+    { label: 'Upload Resources', href: '/admin/resources', icon: FileText },
+    { label: 'Manage Categories', href: '/admin/categories', icon: FolderTree },
+    { label: 'View Subscribers', href: '/admin/subscribers', icon: Users },
   ];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-navy-900 tracking-tight">System Overview</h2>
-        <p className="text-sm text-navy-500">Welcome back, Administrator.</p>
+        <h2 className="text-2xl font-bold text-white tracking-tight">
+          {isSuperAdmin ? 'System Overview' : 'Dashboard'}
+        </h2>
+        <p className="text-sm text-white/40 mt-1">
+          {isSuperAdmin
+            ? 'Global platform statistics across all subjects.'
+            : `Showing stats for your managed subjects.`}
+        </p>
       </div>
 
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-white border border-navy-50 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-              <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center shrink-0`}>
-                <Icon className={`w-6 h-6 ${stat.color}`} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-navy-500">{stat.label}</p>
-                <div className="flex items-baseline">
-                  <p className="text-2xl font-semibold text-navy-900">{stat.value}</p>
+            <div
+              key={stat.label}
+              className="relative overflow-hidden rounded-2xl p-5
+                         bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]
+                         hover:border-white/[0.12] transition-all"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-white/30 uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
+                  <p className="text-xs text-white/30 mt-1">{stat.sub}</p>
+                </div>
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
+                  <Icon className="w-5 h-5 text-white" />
                 </div>
               </div>
             </div>
           );
         })}
       </div>
-      
-      <div className="bg-white rounded-2xl border border-navy-50 p-6 mt-8 shadow-sm">
-        <h3 className="text-lg font-semibold text-navy-900 mb-4">Quick Actions</h3>
-        <p className="text-sm text-navy-500 mb-6">Use the sidebar to navigate to the bulk ingestion or subscriber lists.</p>
+
+      {/* Quick Actions */}
+      <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
+        <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl
+                           bg-white/[0.04] border border-white/[0.06]
+                           hover:bg-white/[0.08] hover:border-white/[0.12] transition-all group"
+              >
+                <Icon className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
+                <span className="text-sm font-medium text-white/50 group-hover:text-white/80 transition-colors flex-1">
+                  {action.label}
+                </span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent Activity placeholder */}
+      <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="w-4 h-4 text-white/30" />
+          <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Recent Activity</h3>
+        </div>
+        <p className="text-sm text-white/30">
+          Resource uploads, category changes, and user activity will appear here.
+        </p>
       </div>
     </div>
   );

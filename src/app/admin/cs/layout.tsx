@@ -12,7 +12,10 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
     'use server';
     const supabase = createServerSupabase();
     await supabase.auth.signOut();
-    (await cookies()).delete('admin_session');
+    const jar = await cookies();
+    jar.delete('admin_session');
+    jar.delete('admin_mode');
+    jar.delete('admin_landing');
     redirect('/admin/login');
   }
 
@@ -20,14 +23,16 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
   const cookieStore = await cookies();
   const adminCookie = cookieStore.get('admin_session');
   let isSuperAdmin = false;
+  let adminName = 'CS Admin';
   if (adminCookie?.value) {
     const admin = createAdminClient();
     const { data: profile } = await admin
       .from('student_accounts')
-      .select('is_super_admin')
+      .select('is_super_admin, full_name, email')
       .eq('id', adminCookie.value)
       .single();
     isSuperAdmin = profile?.is_super_admin ?? false;
+    adminName = profile?.full_name || profile?.email?.split('@')[0] || 'CS Admin';
   }
 
   const navItems = [
@@ -37,37 +42,57 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar — Indigo theme for Computer Science */}
-        <aside className="w-64 text-white flex flex-col items-stretch shrink-0 bg-[#1e1b4b]">
-          <div className="p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Monitor className="w-5 h-5 text-indigo-300" />
-              <h2 className="text-xl font-bold text-indigo-300 tracking-tight">CS Admin</h2>
+      <div className="min-h-screen bg-[#0B1120] flex">
+        {/* ── Sidebar ── */}
+        <aside className="w-[260px] flex flex-col shrink-0 border-r border-white/[0.06]
+                          bg-[#0B1120]/80 backdrop-blur-2xl">
+          <div className="p-5 pb-4">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Monitor className="w-4.5 h-4.5 text-indigo-400" />
+              <h2 className="text-lg font-bold text-white tracking-tight">CS Admin</h2>
             </div>
-            <p className="text-xs text-indigo-400/70 mt-1">Computer Science Portal</p>
+            <p className="text-[11px] text-white/30">Computer Science Portal</p>
           </div>
 
-          <nav className="flex-1 px-4 space-y-1">
+          {/* Profile badge */}
+          <div className="mx-4 mb-4 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-white">{adminName.charAt(0).toUpperCase()}</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-indigo-200 truncate">{adminName}</p>
+                <p className="text-[10px] text-indigo-400/60">Subject Admin</p>
+              </div>
+            </div>
+          </div>
+
+          <nav className="flex-1 px-3 space-y-0.5">
+            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/20">
+              Management
+            </p>
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-indigo-100 hover:text-white hover:bg-indigo-900/60 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium
+                             text-white/50 hover:text-white hover:bg-white/[0.06] transition-all"
                 >
-                  <Icon className="w-5 h-5 text-indigo-400 shrink-0" />
+                  <Icon className="w-[18px] h-[18px] shrink-0" />
                   <span className="flex-1">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="p-4 space-y-2 mt-auto">
+          <div className="p-4 space-y-2 mt-auto border-t border-white/[0.06]">
             <Link
               href="/admin"
-              className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-indigo-200 transition-colors border border-indigo-800 rounded-lg hover:bg-indigo-900/60"
+              className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium
+                         text-white/40 hover:text-white/70 transition-colors rounded-lg
+                         border border-white/[0.06] hover:bg-white/[0.04]"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Main
@@ -75,7 +100,9 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
             <form action={handleLogout}>
               <button
                 type="submit"
-                className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-indigo-200 transition-colors border border-indigo-800 rounded-lg hover:bg-indigo-900/60"
+                className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium
+                           text-white/40 hover:text-white/70 transition-colors rounded-lg
+                           border border-white/[0.06] hover:bg-white/[0.04]"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
@@ -84,16 +111,17 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
           </div>
         </aside>
 
-        {/* Main Content Area */}
+        {/* ── Main Content ── */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="bg-white border-b border-indigo-100 h-16 shrink-0 flex items-center justify-between px-8 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-indigo-500" />
-              <h1 className="text-lg font-semibold text-gray-900">Computer Science</h1>
+          <header className="h-14 shrink-0 flex items-center justify-between px-6
+                             bg-[#0B1120]/60 backdrop-blur-xl border-b border-white/[0.06]">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+              <h1 className="text-sm font-medium text-white/60">Computer Science</h1>
             </div>
             {isSuperAdmin && <SubjectSwitcher />}
           </header>
-          <div className="flex-1 overflow-y-auto p-8">
+          <div className="flex-1 overflow-y-auto p-6">
             {children}
           </div>
         </main>
