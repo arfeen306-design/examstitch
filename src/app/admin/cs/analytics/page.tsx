@@ -65,7 +65,7 @@ export default async function CSAnalyticsPage() {
   const statCards = [
     { label: 'Total Resources', value: total, icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { label: 'PDFs', value: pdfCount, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Videos', value: videoCount, icon: Video, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Videos', value: videoCount, icon: Video, color: 'text-blue-400', bg: 'bg-blue-500/15' },
     { label: 'Worksheets', value: worksheetCount, icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
   ];
 
@@ -181,7 +181,7 @@ export default async function CSAnalyticsPage() {
                 <div key={r.id} className="flex items-center gap-3 py-1">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     r.content_type === 'pdf' ? 'bg-emerald-50 text-emerald-600'
-                      : r.content_type === 'video' ? 'bg-blue-50 text-blue-600'
+                      : r.content_type === 'video' ? 'bg-blue-500/15 text-blue-400'
                       : 'bg-violet-50 text-violet-600'
                   }`}>
                     {r.content_type === 'pdf' ? <FileText className="w-4 h-4" /> :

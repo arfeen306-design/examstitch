@@ -41,7 +41,7 @@ export default async function CSAdminPage() {
 
   const stats = [
     { label: 'Total CS Resources', value: totalCount.toString(), icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Videos', value: videoCount.toString(), icon: Video, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Videos', value: videoCount.toString(), icon: Video, color: 'text-blue-400', bg: 'bg-blue-500/15' },
     { label: 'PDFs', value: pdfCount.toString(), icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Worksheets', value: worksheetCount.toString(), icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
   ];

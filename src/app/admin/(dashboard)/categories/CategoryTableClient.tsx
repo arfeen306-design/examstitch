@@ -80,7 +80,7 @@ export default function CategoryTableClient({ categories }: { categories: any[] 
                   <td className="px-4 py-3.5 text-right">
                     <button
                       onClick={() => handleDeleteClick(cat)}
-                      className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
                       title="Delete Category"
                     >
                       <Trash2 className="w-4 h-4" />

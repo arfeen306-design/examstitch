@@ -512,12 +512,12 @@ export default function DigitalSkillsManager({
 
   const resourceBadges = (lesson: LessonRow) => {
     const badges: { label: string; color: string }[] = [];
-    if (lesson.video_url) badges.push({ label: 'Video', color: 'text-red-600 bg-red-50' });
-    if (lesson.notes_url) badges.push({ label: 'Notes', color: 'text-blue-600 bg-blue-50' });
-    if (lesson.exercises_url) badges.push({ label: 'Exercises', color: 'text-amber-600 bg-amber-50' });
-    if (lesson.cheatsheet_url) badges.push({ label: 'Cheat Sheet', color: 'text-purple-600 bg-purple-50' });
+    if (lesson.video_url) badges.push({ label: 'Video', color: 'text-red-400 bg-red-500/15' });
+    if (lesson.notes_url) badges.push({ label: 'Notes', color: 'text-blue-400 bg-blue-500/15' });
+    if (lesson.exercises_url) badges.push({ label: 'Exercises', color: 'text-amber-400 bg-amber-500/15' });
+    if (lesson.cheatsheet_url) badges.push({ label: 'Cheat Sheet', color: 'text-purple-400 bg-purple-500/15' });
     if (lesson.quiz_url) badges.push({ label: 'Quiz', color: 'text-emerald-600 bg-emerald-50' });
-    if (lesson.resource_url) badges.push({ label: 'Resource', color: 'text-green-600 bg-green-50' });
+    if (lesson.resource_url) badges.push({ label: 'Resource', color: 'text-green-400 bg-green-500/15' });
     return badges;
   };
 
@@ -537,9 +537,9 @@ export default function DigitalSkillsManager({
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {[
             { label: 'Skills', value: skills.length, icon: Sparkles, color: 'text-violet-600', bg: 'bg-violet-50' },
-            { label: 'Playlists', value: totalPlaylists, icon: Layers, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Playlists', value: totalPlaylists, icon: Layers, color: 'text-blue-400', bg: 'bg-blue-500/15' },
             { label: 'Lessons', value: totalLessons, icon: ListVideo, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Enrolled', value: Object.values(skillAccessCounts).reduce((a, b) => a + b, 0), icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Enrolled', value: Object.values(skillAccessCounts).reduce((a, b) => a + b, 0), icon: Users, color: 'text-amber-400', bg: 'bg-amber-500/15' },
           ].map(s => (
             <div key={s.label} className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 flex items-center gap-4">
               <div className={`w-11 h-11 ${s.bg} rounded-xl flex items-center justify-center`}>
@@ -663,7 +663,7 @@ export default function DigitalSkillsManager({
                       <h4 className="font-bold text-white">{skill.name}</h4>
                       <span className="text-[10px] font-mono text-white/40 bg-white/[0.06] px-1.5 py-0.5 rounded">{skill.slug}</span>
                       {!skill.is_active && (
-                        <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">HIDDEN</span>
+                        <span className="text-[10px] font-bold text-red-400 bg-red-500/15 px-1.5 py-0.5 rounded">HIDDEN</span>
                       )}
                     </div>
                     {skill.tagline && <p className="text-xs text-violet-500 italic mt-0.5">{skill.tagline}</p>}
@@ -692,7 +692,7 @@ export default function DigitalSkillsManager({
                           });
                         }
                       }}
-                      className="p-1.5 rounded-lg text-white/30 hover:text-blue-600 hover:bg-blue-50 transition"
+                      className="p-1.5 rounded-lg text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition"
                       title="Edit skill"
                     >
                       <Pencil className="w-4 h-4" />
@@ -706,7 +706,7 @@ export default function DigitalSkillsManager({
                     </button>
                     <button
                       onClick={() => handleDeleteSkill(skill)}
-                      className="p-1.5 rounded-lg text-white/30 hover:text-red-500 hover:bg-red-50 transition"
+                      className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -754,7 +754,7 @@ export default function DigitalSkillsManager({
 
                     {/* New Playlist Form */}
                     {newPlaylistSkillId === skill.id && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 space-y-2">
                         <input
                           value={playlistForm.title}
                           onChange={e => setPlaylistForm(f => ({ ...f, title: e.target.value }))}
@@ -809,10 +809,10 @@ export default function DigitalSkillsManager({
 
                             {/* Playlist actions */}
                             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                              <button onClick={() => movePlaylist(skill.id, playlist.id, -1)} disabled={pi === 0} className="p-1 rounded text-white/30 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move up">
+                              <button onClick={() => movePlaylist(skill.id, playlist.id, -1)} disabled={pi === 0} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move up">
                                 <ArrowUp className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => movePlaylist(skill.id, playlist.id, 1)} disabled={pi === skillPlaylists.length - 1} className="p-1 rounded text-white/30 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move down">
+                              <button onClick={() => movePlaylist(skill.id, playlist.id, 1)} disabled={pi === skillPlaylists.length - 1} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move down">
                                 <ArrowDown className="w-3.5 h-3.5" />
                               </button>
                               <button
@@ -820,11 +820,11 @@ export default function DigitalSkillsManager({
                                   if (isEditingPl) { setEditingPlaylistId(null); }
                                   else { setEditingPlaylistId(playlist.id); setEditPlaylistForm({ title: playlist.title, description: playlist.description || '' }); }
                                 }}
-                                className="p-1 rounded text-white/30 hover:text-blue-600 hover:bg-blue-50 transition"
+                                className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => handleDeletePlaylist(playlist)} className="p-1 rounded text-white/30 hover:text-red-500 hover:bg-red-50 transition">
+                              <button onClick={() => handleDeletePlaylist(playlist)} className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -886,13 +886,13 @@ export default function DigitalSkillsManager({
 
                                   {/* Lesson actions */}
                                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => moveLesson(playlist.id, lesson.id, -1)} disabled={li === 0} className="p-1 rounded text-white/30 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move up">
+                                    <button onClick={() => moveLesson(playlist.id, lesson.id, -1)} disabled={li === 0} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move up">
                                       <ArrowUp className="w-3 h-3" />
                                     </button>
-                                    <button onClick={() => moveLesson(playlist.id, lesson.id, 1)} disabled={li === playlistLessons.length - 1} className="p-1 rounded text-white/30 hover:text-blue-600 hover:bg-blue-50 transition disabled:opacity-30" title="Move down">
+                                    <button onClick={() => moveLesson(playlist.id, lesson.id, 1)} disabled={li === playlistLessons.length - 1} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move down">
                                       <ArrowDown className="w-3 h-3" />
                                     </button>
-                                    <button onClick={() => openEditLessonModal(lesson)} className="p-1 rounded text-white/30 hover:text-blue-600 hover:bg-blue-50 transition" title="Edit">
+                                    <button onClick={() => openEditLessonModal(lesson)} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition" title="Edit">
                                       <Pencil className="w-3.5 h-3.5" />
                                     </button>
                                     <button
@@ -904,7 +904,7 @@ export default function DigitalSkillsManager({
                                     </button>
                                     <button
                                       onClick={() => handleDeleteLesson(lesson)}
-                                      className="p-1 rounded text-white/30 hover:text-red-500 hover:bg-red-50 transition"
+                                      className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>

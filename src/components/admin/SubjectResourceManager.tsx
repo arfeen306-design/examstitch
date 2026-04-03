@@ -146,26 +146,26 @@ function EditForm({ state, onChange }: { state: EditState; onChange: (s: EditSta
       <input
         value={state.title}
         onChange={e => onChange({ ...state, title: e.target.value })}
-        className="w-full px-2 py-1 text-sm border border-gold-300 rounded-md focus:ring-1 focus:ring-orange-500/50 outline-none"
+        className="w-full px-2 py-1 text-sm border border-gold-500/30 rounded-md focus:ring-1 focus:ring-orange-500/50 outline-none"
         placeholder="Title"
       />
       <div className="relative">
         <span className="absolute left-2 top-1.5 text-[10px] font-bold text-red-500">YT</span>
         <input value={state.videoUrl} onChange={e => onChange({ ...state, videoUrl: e.target.value })}
-          className="w-full pl-7 pr-2 py-1 text-xs font-mono border border-red-200 rounded-md focus:ring-1 focus:ring-red-400 outline-none"
+          className="w-full pl-7 pr-2 py-1 text-xs font-mono border border-red-500/30 rounded-md focus:ring-1 focus:ring-red-400 outline-none"
           placeholder="YouTube URL" />
       </div>
       <div className="relative">
         <span className="absolute left-2 top-1.5 text-[10px] font-bold text-green-600">PDF</span>
         <input value={state.worksheetUrl} onChange={e => onChange({ ...state, worksheetUrl: e.target.value })}
-          className="w-full pl-8 pr-2 py-1 text-xs font-mono border border-green-200 rounded-md focus:ring-1 focus:ring-green-400 outline-none"
+          className="w-full pl-8 pr-2 py-1 text-xs font-mono border border-green-500/30 rounded-md focus:ring-1 focus:ring-green-400 outline-none"
           placeholder="Drive PDF URL (optional)" />
       </div>
       <div className="relative">
-        <span className="absolute left-2 top-1.5 text-[10px] font-bold text-purple-600">#</span>
+        <span className="absolute left-2 top-1.5 text-[10px] font-bold text-purple-400">#</span>
         <input type="number" min="0" value={state.sortOrder}
           onChange={e => onChange({ ...state, sortOrder: e.target.value })}
-          className="w-full pl-6 pr-2 py-1 text-xs border border-purple-200 rounded-md focus:ring-1 focus:ring-purple-400 outline-none"
+          className="w-full pl-6 pr-2 py-1 text-xs border border-purple-500/30 rounded-md focus:ring-1 focus:ring-purple-400 outline-none"
           placeholder="Sort order (0 = first)" />
       </div>
     </div>
@@ -432,13 +432,13 @@ export default function SubjectResourceManager({
         <tr
           key={r.id}
           className={`transition-colors group
-            ${editingId === r.id ? 'bg-gold-50/40' : isSub ? 'bg-blue-50/20 hover:bg-blue-50/40' : 'hover:bg-white/[0.06]'}
-            ${isSub ? 'border-l-4 border-blue-300' : ''}`}
+            ${editingId === r.id ? 'bg-gold-500/10' : isSub ? 'bg-blue-500/10 hover:bg-blue-500/15' : 'hover:bg-white/[0.06]'}
+            ${isSub ? 'border-l-4 border-blue-500/30' : ''}`}
         >
           {/* # */}
           <td className="w-12 px-3 py-2.5 text-center">
             <span className={`inline-block text-xs font-bold tabular-nums rounded px-1.5 py-0.5
-              ${isSub ? 'text-blue-600 bg-blue-50' : 'text-white/40 bg-white/[0.06]'}`}>
+              ${isSub ? 'text-blue-400 bg-blue-500/20' : 'text-white/40 bg-white/[0.06]'}`}>
               {label}
             </span>
           </td>
@@ -466,10 +466,10 @@ export default function SubjectResourceManager({
                     )}
                   </span>
                   <div className="flex gap-1 mt-0.5 flex-wrap items-center">
-                    {r.source_url && <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">YT</span>}
-                    {r.worksheet_url && <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">PDF</span>}
+                    {r.source_url && <span className="text-[10px] font-semibold text-red-400 bg-red-500/15 px-1.5 py-0.5 rounded">YT</span>}
+                    {r.worksheet_url && <span className="text-[10px] font-semibold text-green-400 bg-green-500/15 px-1.5 py-0.5 rounded">PDF</span>}
                     {r.is_locked && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-orange-400 bg-orange-500/15 px-1.5 py-0.5 rounded">
                         <Lock className="w-2.5 h-2.5" /> Locked
                       </span>
                     )}
@@ -497,7 +497,7 @@ export default function SubjectResourceManager({
                     showToast({ message: 'Order saved', type: 'success' });
                   }
                 }}
-                className="w-14 text-center text-xs border border-purple-200 rounded-md px-1 py-1 focus:ring-1 focus:ring-purple-400 outline-none text-purple-700 hover:border-purple-400 transition"
+                className="w-14 text-center text-xs border border-purple-500/30 rounded-md px-1 py-1 focus:ring-1 focus:ring-purple-400 outline-none text-purple-400 hover:border-purple-500/40 transition"
                 placeholder="—"
                 title="Sort order — lower = first"
               />
@@ -524,8 +524,8 @@ export default function SubjectResourceManager({
           <td className="w-28 px-3 py-2.5">
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${
               r.module_type === 'solved_past_paper'
-                ? 'bg-blue-50 text-blue-700'
-                : 'bg-amber-50 text-amber-700'
+                ? 'bg-blue-500/15 text-blue-300'
+                : 'bg-amber-500/15 text-amber-300'
             }`}>
               {r.module_type === 'solved_past_paper' ? 'Past Paper' : 'Video Topical'}
             </span>
@@ -536,7 +536,7 @@ export default function SubjectResourceManager({
             <button
               onClick={() => handleToggle(r.id, 'is_published', r.is_published)}
               title={r.is_published ? 'Published — click to unpublish' : 'Unpublished — click to publish'}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_published ? 'bg-yellow-400' : 'bg-gray-300'}`}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${r.is_published ? 'bg-yellow-400' : 'bg-white/20'}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_published ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
@@ -546,7 +546,7 @@ export default function SubjectResourceManager({
               onClick={() => handleToggle(r.id, 'is_locked', r.is_locked)}
               title={r.is_locked ? 'Locked — click to unlock' : 'Public — click to lock'}
               style={r.is_locked ? { backgroundColor: accentColor } : undefined}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${!r.is_locked ? 'bg-gray-300' : ''}`}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${!r.is_locked ? 'bg-white/20' : ''}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_locked ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
@@ -556,7 +556,7 @@ export default function SubjectResourceManager({
               onClick={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)}
               title={r.is_watermarked ? 'Watermarked — click to remove' : 'No watermark — click to enable'}
               style={r.is_watermarked ? { backgroundColor: accentColor } : undefined}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${!r.is_watermarked ? 'bg-gray-300' : ''}`}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${!r.is_watermarked ? 'bg-white/20' : ''}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${r.is_watermarked ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
@@ -567,16 +567,16 @@ export default function SubjectResourceManager({
             <div className="flex items-center justify-end gap-1">
               {editingId === r.id ? (
                 <>
-                  <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-500 hover:text-green-700 p-1 rounded hover:bg-green-50 transition" title="Save"><Check className="w-4 h-4" /></button>
-                  <button onClick={cancelEdit} className="text-white/30 hover:text-white/60 p-1 rounded hover:bg-white/[0.06] transition" title="Cancel"><X className="w-4 h-4" /></button>
+                  <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-400 hover:text-green-300 p-1 rounded hover:bg-green-500/10 transition" title="Save"><Check className="w-4 h-4" /></button>
+                  <button onClick={cancelEdit} className="text-slate-400 hover:text-white/70 p-1 rounded hover:bg-white/[0.06] transition" title="Cancel"><X className="w-4 h-4" /></button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => startEdit(r)} className="text-white/30 hover:text-amber-500 p-1 rounded hover:bg-amber-50 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => openTimestampEditor(r)} className="text-white/30 hover:text-purple-500 p-1 rounded hover:bg-purple-50 transition" title="Mapping"><Clock className="w-4 h-4" /></button>
-                  <button onClick={() => openSubtopic(r)} className="text-white/30 hover:text-blue-500 p-1 rounded hover:bg-blue-50 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
-                  <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-white/30 hover:text-amber-500 p-1 rounded hover:bg-amber-50 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
-                  <button onClick={() => handleDelete(r.id, r.title)} className="text-white/30 hover:text-red-500 p-1 rounded hover:bg-red-50 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => startEdit(r)} className="text-slate-400 hover:text-amber-400 p-1 rounded hover:bg-amber-500/10 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => openTimestampEditor(r)} className="text-slate-400 hover:text-purple-400 p-1 rounded hover:bg-purple-500/10 transition" title="Mapping"><Clock className="w-4 h-4" /></button>
+                  <button onClick={() => openSubtopic(r)} className="text-slate-400 hover:text-blue-400 p-1 rounded hover:bg-blue-500/10 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
+                  <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-amber-400 p-1 rounded hover:bg-amber-500/10 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
+                  <button onClick={() => handleDelete(r.id, r.title)} className="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
                 </>
               )}
             </div>
@@ -585,23 +585,23 @@ export default function SubjectResourceManager({
 
         {/* Inline sub-topic form */}
         {subtopicParentId === r.id && (
-          <tr key={`sub-form-${r.id}`} className="bg-blue-50/50 border-l-4 border-blue-400">
+          <tr key={`sub-form-${r.id}`} className="bg-blue-500/10 border-l-4 border-blue-500/40">
             <td colSpan={9} className="px-4 py-3">
               <div className="flex flex-wrap gap-2 items-end">
                 <div className="flex flex-col gap-1 min-w-[160px]">
                   <label className="text-xs font-semibold text-white/40">Sub-topic Title</label>
                   <input value={subtopicState.title} onChange={e => setSubtopicState(s => ({ ...s, title: e.target.value }))}
-                    className="px-2 py-1 text-sm border border-blue-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" placeholder="Part 2" />
+                    className="px-2 py-1 text-sm border border-blue-500/30 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" placeholder="Part 2" />
                 </div>
                 <div className="flex flex-col gap-1 flex-1 min-w-[175px]">
                   <label className="text-xs font-semibold text-red-500">YouTube URL</label>
                   <input value={subtopicState.videoUrl} onChange={e => setSubtopicState(s => ({ ...s, videoUrl: e.target.value }))}
-                    className="px-2 py-1 text-xs font-mono border border-red-200 rounded-md focus:ring-1 focus:ring-red-400 outline-none" placeholder="https://www.youtube.com/watch?v=..." />
+                    className="px-2 py-1 text-xs font-mono border border-red-500/30 rounded-md focus:ring-1 focus:ring-red-400 outline-none" placeholder="https://www.youtube.com/watch?v=..." />
                 </div>
                 <div className="flex flex-col gap-1 flex-1 min-w-[175px]">
                   <label className="text-xs font-semibold text-green-600">Worksheet PDF (optional)</label>
                   <input value={subtopicState.worksheetUrl} onChange={e => setSubtopicState(s => ({ ...s, worksheetUrl: e.target.value }))}
-                    className="px-2 py-1 text-xs font-mono border border-green-200 rounded-md focus:ring-1 focus:ring-green-400 outline-none" placeholder="https://drive.google.com/..." />
+                    className="px-2 py-1 text-xs font-mono border border-green-500/30 rounded-md focus:ring-1 focus:ring-green-400 outline-none" placeholder="https://drive.google.com/..." />
                 </div>
                 <div className="flex gap-2 pb-0.5">
                   <button onClick={() => saveSubtopic(r)} disabled={isPending}
@@ -621,11 +621,11 @@ export default function SubjectResourceManager({
 
         {/* Inline timestamp mapping editor */}
         {mappingEditId === r.id && (
-          <tr key={`ts-editor-${r.id}`} className="bg-purple-50/50 border-l-4 border-purple-400">
+          <tr key={`ts-editor-${r.id}`} className="bg-purple-500/10 border-l-4 border-purple-500/40">
             <td colSpan={9} className="px-4 py-3">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-purple-700 uppercase tracking-widest flex items-center gap-1">
+                  <span className="text-xs font-bold text-purple-400 uppercase tracking-widest flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" /> Question Timestamps
                   </span>
                   <button
@@ -633,42 +633,42 @@ export default function SubjectResourceManager({
                       const next = mappingDraft.length + 1;
                       setMappingDraft([...mappingDraft, { question: next, label: `Q${next}`, start_time: 0, parts: [] }]);
                     }}
-                    className="text-xs font-semibold text-purple-600 hover:text-purple-800 px-2 py-1 rounded border border-purple-200 hover:bg-purple-100 transition"
+                    className="text-xs font-semibold text-purple-400 hover:text-purple-300 px-2 py-1 rounded border border-purple-500/30 hover:bg-purple-500/15 transition"
                   >+ Add Question</button>
                 </div>
 
                 {mappingDraft.map((q: any, qi: number) => (
-                  <div key={qi} className="flex flex-col gap-2 p-2 bg-white/[0.04] rounded-lg border border-purple-100">
+                  <div key={qi} className="flex flex-col gap-2 p-2 bg-white/[0.04] rounded-lg border border-purple-500/20">
                     <div className="flex items-center gap-2 flex-wrap">
                       <input value={q.label}
                         onChange={e => { const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], label: e.target.value }; setMappingDraft(copy); }}
-                        className="w-16 px-2 py-1 text-xs font-bold border border-purple-200 rounded-md text-center" placeholder="Q1" />
+                        className="w-16 px-2 py-1 text-xs font-bold border border-purple-500/30 rounded-md text-center" placeholder="Q1" />
                       <span className="text-xs text-white/40">@</span>
                       <input type="text"
                         value={(() => { const m = Math.floor(q.start_time / 60); const s = q.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
                         onChange={e => { const [mm, ss] = e.target.value.split(':').map(Number); const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], start_time: (mm || 0) * 60 + (ss || 0) }; setMappingDraft(copy); }}
-                        className="w-16 px-2 py-1 text-xs font-mono border border-purple-200 rounded-md text-center" placeholder="0:00" title="MM:SS" />
+                        className="w-16 px-2 py-1 text-xs font-mono border border-purple-500/30 rounded-md text-center" placeholder="0:00" title="MM:SS" />
                       <button
                         onClick={() => { const copy = [...mappingDraft]; const parts = copy[qi].parts || []; const nextPart = String.fromCharCode(97 + parts.length); copy[qi] = { ...copy[qi], parts: [...parts, { part: nextPart, start_time: q.start_time, pdf_page: 1 }] }; setMappingDraft(copy); }}
-                        className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold px-1.5 py-0.5 rounded border border-blue-200 hover:bg-blue-50 transition"
+                        className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold px-1.5 py-0.5 rounded border border-blue-500/30 hover:bg-blue-500/10 transition"
                       >+ Part</button>
                       <button
                         onClick={() => setMappingDraft(mappingDraft.filter((_: any, i: number) => i !== qi))}
-                        className="text-red-400 hover:text-red-600 p-0.5 rounded hover:bg-red-50 transition ml-auto" title="Remove"
+                        className="text-red-400 hover:text-red-600 p-0.5 rounded hover:bg-red-500/10 transition ml-auto" title="Remove"
                       ><Trash2 className="w-3 h-3" /></button>
                     </div>
                     {q.parts && q.parts.length > 0 && (
                       <div className="flex flex-wrap gap-2 pl-6">
                         {q.parts.map((part: any, pi: number) => (
-                          <div key={pi} className="flex items-center gap-1 bg-blue-50 rounded px-2 py-1">
-                            <span className="text-xs font-bold text-blue-700 w-4">{part.part.toUpperCase()}</span>
+                          <div key={pi} className="flex items-center gap-1 bg-blue-500/15 rounded px-2 py-1">
+                            <span className="text-xs font-bold text-blue-300 w-4">{part.part.toUpperCase()}</span>
                             <input type="text"
                               value={(() => { const m = Math.floor(part.start_time / 60); const s = part.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
                               onChange={e => { const [mm, ss] = e.target.value.split(':').map(Number); const copy = [...mappingDraft]; const pcopy = [...copy[qi].parts]; pcopy[pi] = { ...pcopy[pi], start_time: (mm || 0) * 60 + (ss || 0) }; copy[qi] = { ...copy[qi], parts: pcopy }; setMappingDraft(copy); }}
-                              className="w-14 px-1 py-0.5 text-[10px] font-mono border border-blue-200 rounded text-center" title="MM:SS" />
+                              className="w-14 px-1 py-0.5 text-[10px] font-mono border border-blue-500/30 rounded text-center" title="MM:SS" />
                             <input type="number" min="1" value={part.pdf_page || ''}
                               onChange={e => { const copy = [...mappingDraft]; const pcopy = [...copy[qi].parts]; pcopy[pi] = { ...pcopy[pi], pdf_page: parseInt(e.target.value) || 1 }; copy[qi] = { ...copy[qi], parts: pcopy }; setMappingDraft(copy); }}
-                              className="w-10 px-1 py-0.5 text-[10px] border border-blue-200 rounded text-center" placeholder="pg" title="PDF page" />
+                              className="w-10 px-1 py-0.5 text-[10px] border border-blue-500/30 rounded text-center" placeholder="pg" title="PDF page" />
                             <button onClick={() => { const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], parts: copy[qi].parts.filter((_: any, i: number) => i !== pi) }; setMappingDraft(copy); }}
                               className="text-red-400 hover:text-red-600 p-0.5"><X className="w-2.5 h-2.5" /></button>
                           </div>
@@ -718,7 +718,7 @@ export default function SubjectResourceManager({
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="w-4 h-4 text-white/30 hover:text-white/50" />
+                <X className="w-4 h-4 text-slate-400 hover:text-white/60" />
               </button>
             )}
           </div>
@@ -770,7 +770,7 @@ export default function SubjectResourceManager({
               <Upload className="w-4 h-4" style={{ color: accentColor }} />
               New Resource
             </h4>
-            <button onClick={() => setShowNewResource(false)} className="text-white/30 hover:text-white/50">
+            <button onClick={() => setShowNewResource(false)} className="text-slate-400 hover:text-white/60">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -809,7 +809,7 @@ export default function SubjectResourceManager({
                 Loading…
               </div>
             ) : categories.length === 0 ? (
-              <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-amber-600 border border-amber-200 rounded-lg bg-amber-50">
+              <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-amber-400 border border-amber-500/30 rounded-lg bg-amber-500/10">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                 No modules found. Create one in Taxonomy Manager.
               </div>
