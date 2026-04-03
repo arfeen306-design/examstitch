@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
@@ -14,7 +14,7 @@ interface SubjectCardProps {
   onComingSoon?: () => void; // called when an inactive card is clicked
 }
 
-export default function SubjectCard({ subject, index, basePath, resourceCount, onComingSoon }: SubjectCardProps) {
+const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resourceCount, onComingSoon }: SubjectCardProps) {
   const Icon = subject.icon;
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -25,13 +25,21 @@ export default function SubjectCard({ subject, index, basePath, resourceCount, o
   const springX = useSpring(rotateX, { stiffness: 200, damping: 20 });
   const springY = useSpring(rotateY, { stiffness: 200, damping: 20 });
 
-  const handleMouse = (e: React.MouseEvent) => {
+  const handleMouse = useCallback((e: React.MouseEvent) => {
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
     mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
     mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-  const resetMouse = () => { mouseX.set(0); mouseY.set(0); };
+  }, [mouseX, mouseY]);
+
+  const resetMouse = useCallback(() => {
+    mouseX.set(0);
+    mouseY.set(0);
+  }, [mouseX, mouseY]);
+
+  const handleComingSoon = useCallback(() => {
+    onComingSoon?.();
+  }, [onComingSoon]);
 
   const inner = (
     <motion.div
@@ -39,15 +47,15 @@ export default function SubjectCard({ subject, index, basePath, resourceCount, o
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
       style={{ rotateX: springX, rotateY: springY, transformPerspective: 800 }}
       onMouseMove={handleMouse}
       onMouseLeave={resetMouse}
       className="group relative cursor-pointer h-full"
     >
-      {/* Glow backdrop */}
-      <motion.div
-        className="absolute -inset-1 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+      {/* Glow backdrop — hidden on mobile for performance */}
+      <div
+        className="absolute -inset-1 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl hidden sm:block"
         style={{ background: subject.colorScheme.glow }}
       />
 
@@ -62,10 +70,10 @@ export default function SubjectCard({ subject, index, basePath, resourceCount, o
             {subject.code}
           </span>
 
-          {/* Floating icon */}
+          {/* Floating icon — simplified animation */}
           <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
+            animate={{ y: [0, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
             className={`w-12 h-12 rounded-xl bg-gradient-to-br ${subject.colorScheme.gradient} flex items-center justify-center shadow-lg`}
           >
             <Icon className="w-6 h-6 text-white" strokeWidth={1.8} />
@@ -79,14 +87,11 @@ export default function SubjectCard({ subject, index, basePath, resourceCount, o
           {subject.active ? (
             <>
               <span className="text-xs text-white/40 font-medium tabular-nums">
-                {resourceCount !== undefined ? `${resourceCount} resources` : '…'}
+                {resourceCount !== undefined ? `${resourceCount} resources` : '...'}
               </span>
-              <motion.div
-                whileHover={{ x: 4 }}
-                className="flex items-center gap-1 text-xs font-semibold text-white/60 group-hover:text-white transition-colors"
-              >
+              <span className="flex items-center gap-1 text-xs font-semibold text-white/60 group-hover:text-white transition-colors">
                 Explore <ArrowRight className="w-3.5 h-3.5" />
-              </motion.div>
+              </span>
             </>
           ) : (
             <span className="flex items-center gap-1.5 text-xs text-white/30 font-medium">
@@ -100,15 +105,17 @@ export default function SubjectCard({ subject, index, basePath, resourceCount, o
 
   if (subject.active) {
     return (
-      <Link href={`${basePath}/${subject.id}`} className="block h-full">
+      <Link href={`${basePath}/${subject.id}`} className="block h-full" prefetch={true}>
         {inner}
       </Link>
     );
   }
 
   return (
-    <div onClick={onComingSoon} className="h-full">
+    <div onClick={handleComingSoon} className="h-full">
       {inner}
     </div>
   );
-}
+});
+
+export default SubjectCard;

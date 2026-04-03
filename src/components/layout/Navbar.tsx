@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, GraduationCap, LogOut, User, Search, LayoutDashboard } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
@@ -12,6 +12,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -20,6 +21,12 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Auto-close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+    setSearchOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -57,7 +64,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="glass-navbar fixed top-0 left-0 right-0 z-50">
+    <header className="glass-navbar fixed top-0 left-0 right-0 z-[70]">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

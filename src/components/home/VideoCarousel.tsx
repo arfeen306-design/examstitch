@@ -163,10 +163,10 @@ function SpotlightPlayer({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)' }}
+      exit={{ opacity: 0, pointerEvents: 'none' as const }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[55] flex items-center justify-center px-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)', pointerEvents: 'auto' }}
       onClick={onClose}
     >
       <motion.div

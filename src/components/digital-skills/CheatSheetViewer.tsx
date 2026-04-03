@@ -62,10 +62,12 @@ export default function CheatSheetViewer({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        exit={{ opacity: 0, pointerEvents: 'none' as const }}
+        transition={{ duration: 0.2 }}
         className="fixed inset-0 z-[60] flex items-center justify-center"
+        style={{ pointerEvents: 'auto' }}
       >
-        {/* Backdrop */}
+        {/* Backdrop — clicks close modal but don't block navbar during exit */}
         <div
           className="absolute inset-0 bg-black/70 backdrop-blur-md"
           onClick={onClose}

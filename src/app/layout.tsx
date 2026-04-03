@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import WhatsAppFloat from '@/components/ui/WhatsAppFloat';
+import RouteProgress from '@/components/ui/RouteProgress';
 import './globals.css';
 
 const inter = Inter({
@@ -68,6 +69,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col">
         <ThemeProvider>
+          <RouteProgress />
           {isAdmin ? (
             // Admin pages: no public Navbar/Footer/WhatsAppFloat
             <>{children}</>
