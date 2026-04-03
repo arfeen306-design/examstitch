@@ -52,7 +52,7 @@ export default function SubjectCard({ subject, index, basePath, resourceCount, o
       />
 
       <div className="relative bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 h-full
-                      hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300 overflow-hidden flex flex-col">
+                      hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300 overflow-hidden flex flex-col glass-gpu">
         {/* Gradient accent line */}
         <div className={`absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r ${subject.colorScheme.gradient} rounded-full opacity-60`} />
 

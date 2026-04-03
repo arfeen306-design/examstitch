@@ -299,3 +299,26 @@
 .animate-marquee {
   animation: marquee 60s linear infinite;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE PERFORMANCE — reduce backdrop-blur on low-power devices
+   to maintain 60fps scrolling. Desktop keeps the full glassmorphism.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* Downgrade expensive xl/2xl blurs to lighter sm on mobile */
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl {
+    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(8px) !important;
+  }
+}
+
+/* GPU-accelerate glassmorphism cards to prevent paint jank */
+@layer utilities {
+  .glass-gpu {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+}

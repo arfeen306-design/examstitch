@@ -6,6 +6,34 @@ import { z } from 'zod';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
+/**
+ * Revalidate all public-facing resource pages so new/updated content
+ * appears instantly without a manual rebuild.
+ */
+function revalidateResourcePaths() {
+  revalidateTag('resources');
+  // Admin pages
+  revalidatePath('/admin/resources');
+  revalidatePath('/admin/cs');
+  // O-Level resource pages
+  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
+  revalidatePath('/olevel/[subject]/[grade]/video-lectures', 'page');
+  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
+  // A-Level resource pages
+  revalidatePath('/alevel/[subject]/as-level/[paper]/past-papers', 'page');
+  revalidatePath('/alevel/[subject]/as-level/[paper]/video-lectures', 'page');
+  revalidatePath('/alevel/[subject]/as-level/[paper]/topical', 'page');
+  revalidatePath('/alevel/[subject]/a2-level/[paper]/past-papers', 'page');
+  revalidatePath('/alevel/[subject]/a2-level/[paper]/video-lectures', 'page');
+  revalidatePath('/alevel/[subject]/a2-level/[paper]/topical', 'page');
+  // Subject landing pages (resource counts)
+  revalidatePath('/olevel/[subject]', 'page');
+  revalidatePath('/alevel/[subject]', 'page');
+  // Subject grid pages (resource counts via API)
+  revalidatePath('/olevel', 'page');
+  revalidatePath('/alevel', 'page');
+}
+
 const ResourceSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500),
   content_type: z.enum(['video', 'pdf', 'worksheet']),
@@ -43,16 +71,7 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
     return { success: false, error: error.message };
   }
 
-  // Revalidate admin and public resource paths + unstable_cache tags
-  revalidateTag('resources');
-  revalidatePath('/admin/resources');
-  revalidatePath('/admin/cs');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/video-lectures', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
-
+  revalidateResourcePaths();
   return { success: true };
 }
 
@@ -100,10 +119,7 @@ export async function bulkInsertResources(resources: unknown[]) {
       return { success: false, error: `Insert failed: ${error.message}. Run the schema repair script in Supabase SQL Editor.` };
     }
 
-    revalidateTag('resources');
-    revalidatePath('/admin/resources');
-    revalidatePath('/admin/cs');
-    revalidatePath('/', 'layout');
+    revalidateResourcePaths();
     return { success: true };
   } catch (err: unknown) {
     console.error('Bulk insert exception', err);
@@ -121,14 +137,7 @@ export async function createResource(data: any) {
     return { success: false, error: error.message };
   }
 
-  revalidateTag('resources');
-  revalidatePath('/admin/resources');
-  revalidatePath('/admin/cs');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/video-lectures', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
+  revalidateResourcePaths();
   return { success: true };
 }
 
@@ -142,15 +151,7 @@ export async function deleteResource(id: string) {
     return { success: false, error: error.message };
   }
 
-  revalidateTag('resources');
-  revalidatePath('/admin/resources');
-  revalidatePath('/admin/cs');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/topical', 'page');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/past-papers', 'page');
-  revalidatePath('/alevel/[subject]/[level]/[paper]/video-lectures', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
-  revalidatePath('/', 'layout');
+  revalidateResourcePaths();
   return { success: true };
 }
 
@@ -164,10 +165,7 @@ export async function updateResource(id: string, updates: { title?: string; sour
     return { success: false, error: error.message };
   }
 
-  revalidateTag('resources');
-  revalidatePath('/admin/resources');
-  revalidatePath('/admin/cs');
-  revalidatePath('/', 'layout');
+  revalidateResourcePaths();
   return { success: true };
 }
 

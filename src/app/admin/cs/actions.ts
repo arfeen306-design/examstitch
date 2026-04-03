@@ -34,6 +34,11 @@ export async function deleteCSResource(resourceId: string) {
 
   revalidateTag('resources');
   revalidatePath('/admin/cs');
+  revalidatePath('/olevel/[subject]/[grade]/video-lectures', 'page');
+  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
+  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
+  revalidatePath('/alevel/[subject]/as-level/[paper]/video-lectures', 'page');
+  revalidatePath('/alevel/[subject]/a2-level/[paper]/video-lectures', 'page');
   return { success: true };
 }
 
@@ -68,5 +73,10 @@ export async function createCSResource(payload: {
 
   revalidateTag('resources');
   revalidatePath('/admin/cs');
+  revalidatePath('/olevel/[subject]/[grade]/video-lectures', 'page');
+  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
+  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
+  revalidatePath('/alevel/[subject]/as-level/[paper]/video-lectures', 'page');
+  revalidatePath('/alevel/[subject]/a2-level/[paper]/video-lectures', 'page');
   return { success: true };
 }

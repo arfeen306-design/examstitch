@@ -90,7 +90,7 @@ export default function ResourceTypeSelector({
               <Link href={`${basePath}/${section.href}`} className="block group h-full">
                 <div className="relative overflow-hidden rounded-2xl p-8 text-center h-full flex flex-col items-center
                                 bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]
-                                hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300">
+                                hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300 glass-gpu">
                   {/* Glow on hover */}
                   <div
                     className="absolute -inset-1 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10"
