@@ -69,18 +69,10 @@ export const mainNavItems = [
   {
     label: 'O-Level / IGCSE',
     href: '/olevel',
-    children: [
-      { label: 'Mathematics (4024/0580)', href: '/olevel/mathematics-4024' },
-      { label: 'Computer Science (0478)', href: '/olevel/computer-science-0478' },
-    ],
   },
   {
     label: 'A-Level',
     href: '/alevel',
-    children: [
-      { label: 'Mathematics (9709)', href: '/alevel/mathematics-9709' },
-      { label: 'Computer Science (9618)', href: '/alevel/computer-science-9618' },
-    ],
   },
   {
     label: 'Digital Skills',

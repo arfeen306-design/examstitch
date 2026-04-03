@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, GraduationCap, LogOut, User, Search, LayoutDashboard } from 'lucide-react';
+import { Menu, X, GraduationCap, LogOut, User, Search, LayoutDashboard } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
@@ -13,7 +13,6 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 export default function Navbar() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -71,60 +70,16 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Nav — flex-nowrap for clean single line */}
+          {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-0.5 flex-nowrap">
             {mainNavItems.map((item) => (
-              <div
+              <Link
                 key={item.href}
-                className="relative"
-                onMouseEnter={() => item.children && setOpenDropdown(item.label)}
-                onMouseLeave={() => setOpenDropdown(null)}
+                href={item.href}
+                className="px-2.5 py-2 text-[13px] font-medium text-white/75 hover:text-white transition-colors rounded-lg hover:bg-white/[0.08] whitespace-nowrap"
               >
-                <Link
-                  href={item.href}
-                  className="px-2.5 py-2 text-[13px] font-medium text-white/75 hover:text-white transition-colors rounded-lg hover:bg-white/[0.08] flex items-center gap-1 whitespace-nowrap"
-                >
-                  {item.label}
-                  {item.children && <ChevronDown className="w-3 h-3" />}
-                </Link>
-
-                {/* Dropdown */}
-                <AnimatePresence>
-                  {item.children && openDropdown === item.label && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 8 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-1 w-56 rounded-xl shadow-2xl overflow-hidden"
-                      style={{
-                        backgroundColor: 'var(--bg-card)',
-                        border: '1px solid var(--border-subtle)',
-                        boxShadow: '0 8px 32px var(--shadow-color)',
-                      }}
-                    >
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className="block px-4 py-3 text-sm font-medium transition-colors"
-                          style={{ color: 'var(--text-secondary)' }}
-                          onMouseEnter={e => {
-                            (e.currentTarget as HTMLElement).style.color = 'var(--accent-text)';
-                            (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-subtle)';
-                          }}
-                          onMouseLeave={e => {
-                            (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
-                            (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                {item.label}
+              </Link>
             ))}
           </div>
 
@@ -286,25 +241,14 @@ export default function Navbar() {
             >
               <div className="py-4 space-y-1">
                 {mainNavItems.map((item) => (
-                  <div key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={() => !item.children && setMobileOpen(false)}
-                      className="block px-4 py-3 text-sm font-medium text-white/80 hover:text-gold-500 hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                    {item.children?.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="block pl-8 pr-4 py-2 text-sm text-white/60 hover:text-gold-500 transition-colors"
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-4 py-3 text-sm font-medium text-white/80 hover:text-gold-500 hover:bg-white/5 rounded-lg transition-colors"
+                  >
+                    {item.label}
+                  </Link>
                 ))}
                 <div className="pt-4 px-4 border-t border-white/10 mt-4 space-y-2">
                   {user ? (
