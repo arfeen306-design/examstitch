@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Database, BarChart3, LogOut, ArrowLeft, Monitor } from 'lucide-react';
+import { Database, BarChart3, LogOut, ArrowLeft, Monitor, Terminal } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -19,7 +19,6 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
     redirect('/admin/login');
   }
 
-  // Check if current user is super admin
   const cookieStore = await cookies();
   const adminCookie = cookieStore.get('admin_session');
   let isSuperAdmin = false;
@@ -44,31 +43,65 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
     <ToastProvider>
       <div className="min-h-screen bg-[#0B1120] flex">
         {/* ── Sidebar ── */}
-        <aside className="w-[260px] flex flex-col shrink-0 border-r border-white/[0.06]
-                          bg-[#0B1120]/80 backdrop-blur-2xl">
-          <div className="p-5 pb-4">
-            <div className="flex items-center gap-2 mb-0.5">
-              <Monitor className="w-4.5 h-4.5 text-indigo-400" />
-              <h2 className="text-lg font-bold text-white tracking-tight">CS Admin</h2>
+        <aside className="w-[260px] flex flex-col shrink-0 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(180deg, #0c1225 0%, #0B1120 35%, #0a1028 100%)',
+            borderRight: '1px solid rgba(99,102,241,0.1)',
+          }}
+        >
+          {/* Ambient glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-40 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse at 50% -10%, rgba(99,102,241,0.08) 0%, transparent 65%)' }}
+          />
+          <div className="absolute bottom-20 right-0 w-32 h-32 pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 100% 50%, rgba(59,130,246,0.05) 0%, transparent 60%)' }}
+          />
+
+          {/* Brand */}
+          <div className="relative p-5 pb-4">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-indigo-400/20">
+                <Terminal className="w-3.5 h-3.5 text-white" />
+              </div>
+              <h2 className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-200 to-blue-300 bg-clip-text text-transparent">
+                CS Admin
+              </h2>
             </div>
-            <p className="text-[11px] text-white/30">Computer Science Portal</p>
+            <p className="text-[11px] text-indigo-400/40 font-medium pl-[38px]">Computer Science Portal</p>
           </div>
+
+          {/* Accent line */}
+          <div className="mx-4 h-px mb-4"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.3), rgba(59,130,246,0.15), transparent)' }}
+          />
 
           {/* Profile badge */}
-          <div className="mx-4 mb-4 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-white">{adminName.charAt(0).toUpperCase()}</span>
+          <div className="relative mx-4 mb-4 p-3 rounded-xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(59,130,246,0.04) 50%, rgba(99,102,241,0.06) 100%)',
+              border: '1px solid rgba(99,102,241,0.15)',
+            }}
+          >
+            <div className="absolute inset-0 opacity-30"
+              style={{ background: 'radial-gradient(circle at 80% 50%, rgba(99,102,241,0.12) 0%, transparent 50%)' }}
+            />
+            <div className="relative flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/25 ring-2 ring-indigo-400/20">
+                <span className="text-sm font-bold text-white drop-shadow-sm">{adminName.charAt(0).toUpperCase()}</span>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-indigo-200 truncate">{adminName}</p>
-                <p className="text-[10px] text-indigo-400/60">Subject Admin</p>
+                <p className="text-sm font-semibold text-indigo-100 truncate">{adminName}</p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
+                  <p className="text-[10px] font-semibold text-indigo-400/70 uppercase tracking-wider">Subject Admin</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <nav className="flex-1 px-3 space-y-0.5">
-            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/20">
+          {/* Nav */}
+          <nav className="flex-1 px-3 space-y-1 relative">
+            <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-400/30">
               Management
             </p>
             {navItems.map((item) => {
@@ -77,22 +110,28 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium
-                             text-white/50 hover:text-white hover:bg-white/[0.06] transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
+                             text-slate-400 hover:text-indigo-100 transition-all group"
                 >
-                  <Icon className="w-[18px] h-[18px] shrink-0" />
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.03] group-hover:bg-indigo-500/10 transition-colors">
+                    <Icon className="w-4 h-4 shrink-0 group-hover:text-indigo-400 transition-colors" />
+                  </div>
                   <span className="flex-1">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="p-4 space-y-2 mt-auto border-t border-white/[0.06]">
+          {/* Footer */}
+          <div className="p-4 space-y-2 mt-auto">
+            <div className="h-px mb-2"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent)' }}
+            />
             <Link
               href="/admin"
-              className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium
-                         text-white/40 hover:text-white/70 transition-colors rounded-lg
-                         border border-white/[0.06] hover:bg-white/[0.04]"
+              className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
+                         text-slate-500 hover:text-indigo-300 transition-all rounded-xl
+                         border border-white/[0.06] hover:border-indigo-500/20 hover:bg-indigo-500/5"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Main
@@ -100,9 +139,9 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
             <form action={handleLogout}>
               <button
                 type="submit"
-                className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium
-                           text-white/40 hover:text-white/70 transition-colors rounded-lg
-                           border border-white/[0.06] hover:bg-white/[0.04]"
+                className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
+                           text-slate-500 hover:text-indigo-300 transition-all rounded-xl
+                           border border-white/[0.06] hover:border-indigo-500/20 hover:bg-indigo-500/5"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
@@ -113,11 +152,20 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
 
         {/* ── Main Content ── */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="h-14 shrink-0 flex items-center justify-between px-6
-                             bg-[#0B1120]/60 backdrop-blur-xl border-b border-white/[0.06]">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-              <h1 className="text-sm font-medium text-white/60">Computer Science</h1>
+          <header className="h-14 shrink-0 flex items-center justify-between px-6 relative"
+            style={{
+              background: 'linear-gradient(90deg, rgba(11,17,32,0.8) 0%, rgba(11,17,32,0.6) 100%)',
+              backdropFilter: 'blur(20px)',
+              borderBottom: '1px solid rgba(99,102,241,0.08)',
+            }}
+          >
+            {/* Bottom accent line */}
+            <div className="absolute bottom-0 left-0 right-0 h-px"
+              style={{ background: 'linear-gradient(90deg, rgba(99,102,241,0.25), rgba(59,130,246,0.1), transparent 60%)' }}
+            />
+            <div className="flex items-center gap-2.5">
+              <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/40 animate-pulse" />
+              <h1 className="text-sm font-semibold text-white/70">Computer Science</h1>
             </div>
             {isSuperAdmin && <SubjectSwitcher />}
           </header>
