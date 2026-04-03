@@ -45,6 +45,11 @@ const CheatSheetViewer = dynamic(
   { ssr: false },
 );
 
+const InteractiveSolver = dynamic(
+  () => import('@/components/digital-skills/InteractiveSolver'),
+  { ssr: false },
+);
+
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPES & HELPERS
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -645,27 +650,13 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-white/50" /> Interactive Solver
-                      </h3>
-                      <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-6 text-center">
-                        <motion.div
-                          animate={{ scale: [1, 1.05, 1], opacity: [0.7, 1, 0.7] }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                          className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${skill.gradient} flex items-center justify-center mb-4 shadow-lg`}
-                        >
-                          <Zap className="w-8 h-8 text-white" />
-                        </motion.div>
-                        <p className="text-white/70 text-sm font-medium mb-1">AI-Powered Practice</p>
-                        <p className="text-white/40 text-xs max-w-sm mx-auto leading-relaxed">
-                          Test your understanding with adaptive exercises that match the lesson you just watched.
-                        </p>
-                        <button className={`mt-4 px-5 py-2 rounded-xl bg-gradient-to-r ${skill.gradient} text-white text-xs font-bold shadow-lg hover:shadow-xl transition-shadow`}>
-                          Start Solving
-                        </button>
-                      </div>
-                    </div>
+                    <InteractiveSolver
+                      lessonId={activeLesson?.id || ''}
+                      lessonTitle={activeLesson?.title || ''}
+                      gradient={skill.gradient}
+                      glowColor={skill.glowColor}
+                      isAdmin={false}
+                    />
                   )}
                 </motion.div>
               </AnimatePresence>
