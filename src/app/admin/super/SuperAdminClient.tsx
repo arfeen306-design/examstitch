@@ -330,8 +330,8 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
 
       {/* Create Admin Form */}
       {showCreateForm && (
-        <form onSubmit={handleCreateAdmin} className="p-5 border-2 border-dashed border-indigo-200 rounded-xl space-y-4 bg-indigo-50/30">
-          <p className="text-sm font-semibold text-indigo-900">New Admin Account</p>
+        <form onSubmit={handleCreateAdmin} className="p-5 border-2 border-dashed border-white/[0.08] rounded-xl space-y-4 bg-white/[0.02]">
+          <p className="text-sm font-semibold text-white">New Admin Account</p>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -430,7 +430,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
-                  admin.is_super_admin ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
+                  admin.is_super_admin ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'
                 }`}>
                   {admin.full_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
@@ -438,7 +438,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                   <p className="text-sm font-medium text-white">
                     {admin.full_name}
                     {admin.is_super_admin && (
-                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700">
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-400">
                         SUPER ADMIN
                       </span>
                     )}
@@ -451,7 +451,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setAssignTarget(assignTarget === admin.id ? null : admin.id)}
-                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition"
                   title="Assign subject"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
@@ -462,7 +462,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                   disabled={isPending}
                   className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg transition ${
                     admin.is_super_admin
-                      ? 'text-amber-600 hover:bg-amber-50'
+                      ? 'text-amber-400 hover:bg-amber-500/10'
                       : 'text-white/40 hover:bg-white/[0.08]'
                   }`}
                   title={admin.is_super_admin ? 'Demote from Super Admin' : 'Promote to Super Admin'}
@@ -473,7 +473,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                   <button
                     onClick={() => handleDeleteAdmin(admin.id, admin.email)}
                     disabled={isPending}
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg transition"
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition"
                     title="Delete admin"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -493,7 +493,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
               {!admin.is_super_admin && admin.managed_subjects.map(sid => (
                 <span
                   key={sid}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
                 >
                   {subjectMap.get(sid) || sid.slice(0, 8)}
                   <button
@@ -750,7 +750,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                     <button
                       onClick={() => handleToggle(w.id, w.is_active)}
                       disabled={isPending}
-                      className="p-1.5 rounded-lg hover:bg-gray-200 transition"
+                      className="p-1.5 rounded-lg hover:bg-white/[0.08] transition"
                       title={w.is_active ? 'Hide' : 'Show'}
                     >
                       {w.is_active ? (
@@ -762,7 +762,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                     <button
                       onClick={() => handleDelete(w.id)}
                       disabled={isPending}
-                      className="p-1.5 rounded-lg hover:bg-red-50 transition"
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 transition"
                       title="Delete"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-500" />

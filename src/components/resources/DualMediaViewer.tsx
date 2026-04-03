@@ -200,7 +200,7 @@ export default function DualMediaViewer({
               ? 'hidden'
               : expanded === 'pdf'
                 ? 'w-full'
-                : 'w-full lg:w-[40%]'
+                : 'w-full lg:w-[55%]'
           }`}
           style={{ minHeight: expanded === 'pdf' ? '85vh' : undefined }}
         >
@@ -208,7 +208,7 @@ export default function DualMediaViewer({
             embedUrl={pdfEmbed}
             downloadUrl={pdfDownload}
             title={`${title} — PDF`}
-            minHeight="max(600px, 80vh)"
+            minHeight="max(650px, 85vh)"
           />
         </div>
 
@@ -219,7 +219,7 @@ export default function DualMediaViewer({
               ? 'hidden'
               : expanded === 'video'
                 ? 'w-full'
-                : 'w-full lg:w-[60%]'
+                : 'w-full lg:w-[45%]'
           }`}
         >
           <div className="sticky top-24">

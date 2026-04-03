@@ -175,9 +175,12 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
   const title = showWorksheet ? `${resource.title} — Worksheet` : resource.title;
   const { href: backHref, label: backLabel } = buildBackPath(resource);
 
+  // PDFs need more horizontal space than videos
+  const containerWidth = contentType === 'video' ? 'max-w-5xl' : 'max-w-7xl';
+
   return (
     <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={`${containerWidth} mx-auto px-4 sm:px-6 lg:px-8`}>
         <EmbeddedViewer
           title={title}
           sourceUrl={sourceUrl}

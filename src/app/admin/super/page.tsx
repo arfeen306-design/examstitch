@@ -18,7 +18,39 @@ export default async function SuperAdminPage() {
 
   const supabase = createAdminClient();
 
-  // Fetch all subjects
+  // ── Auto-sync: ensure all subjects from config exist in DB ──────────────
+  const allConfigSubjectsRaw = [...O_LEVEL_SUBJECTS, ...A_LEVEL_SUBJECTS];
+  // Deduplicate by name (e.g. "Computer Science" appears in both O and A level)
+  const configByName = new Map<string, { name: string; slug: string; levels: string[] }>();
+  for (const cs of allConfigSubjectsRaw) {
+    const existing = configByName.get(cs.name);
+    if (existing) {
+      // Merge levels (e.g. "O Level" + "A Level")
+      const mergedLevels = [...new Set([...existing.levels, cs.id.includes('9') ? 'A Level' : 'O Level'])];
+      configByName.set(cs.name, { ...existing, levels: mergedLevels });
+    } else {
+      const level = cs.id.match(/^[a-z]+-(\d+)$/)?.[1];
+      const isALevel = level && parseInt(level) >= 9000;
+      configByName.set(cs.name, {
+        name: cs.name,
+        slug: cs.name.toLowerCase().replace(/\s+/g, '-'),
+        levels: [isALevel ? 'A Level' : 'O Level'],
+      });
+    }
+  }
+
+  const { data: existingSubjects } = await supabase
+    .from('subjects')
+    .select('slug');
+  const existingSlugs = new Set((existingSubjects ?? []).map(s => s.slug));
+
+  const toInsert = [...configByName.values()].filter(s => !existingSlugs.has(s.slug));
+  if (toInsert.length > 0) {
+    await supabase.from('subjects').insert(toInsert);
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
+  // Fetch all subjects (now guaranteed complete)
   const { data: subjects } = await supabase
     .from('subjects')
     .select('*')
