@@ -288,3 +288,43 @@ export async function reorderLessons(ordered: { id: string; sort_order: number }
   revalidateAll();
   return { success: true };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FILE UPLOAD (Supabase Storage)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function uploadDigitalSkillAsset(formData: FormData) {
+  const file = formData.get('file') as File | null;
+  const folder = (formData.get('folder') as string) || 'cheatsheets';
+
+  if (!file) return { success: false as const, error: 'No file provided' };
+
+  const supabase = createAdminClient();
+
+  // Generate a unique filename: folder/timestamp-originalname
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'bin';
+  const safeName = file.name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .slice(0, 60);
+  const path = `${folder}/${Date.now()}-${safeName}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('digital-skills-assets')
+    .upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    console.error('[upload] Storage error:', uploadError);
+    return { success: false as const, error: uploadError.message };
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('digital-skills-assets')
+    .getPublicUrl(path);
+
+  revalidateAll();
+  return { success: true as const, url: urlData.publicUrl };
+}

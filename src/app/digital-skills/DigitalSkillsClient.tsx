@@ -37,6 +37,12 @@ import {
   Clock,
 } from 'lucide-react';
 import TrendingRow from '@/components/digital-skills/TrendingRow';
+import dynamic from 'next/dynamic';
+
+const CheatSheetViewer = dynamic(
+  () => import('@/components/digital-skills/CheatSheetViewer'),
+  { ssr: false },
+);
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPES & HELPERS
@@ -371,6 +377,7 @@ interface CinemaPlayerProps {
 function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
   const [activeLesson, setActiveLesson] = useState(skill.lessons[0]);
   const [activeTab, setActiveTab] = useState<'resources' | 'solver'>('resources');
+  const [viewerOpen, setViewerOpen] = useState<{ url: string; title: string } | null>(null);
   const Icon = skill.icon;
 
   return (
@@ -497,14 +504,55 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
                       </h3>
                       <div className="grid sm:grid-cols-2 gap-3">
                         {[
-                          { label: 'Lesson Notes', type: 'PDF', url: activeLesson.notesUrl, icon: FileText, color: 'from-blue-500 to-blue-600' },
-                          { label: 'Practice Exercises', type: 'PDF', url: activeLesson.exercisesUrl, icon: PenLine, color: 'from-amber-500 to-amber-600' },
-                          { label: 'Cheat Sheet', type: 'Image / PDF', url: activeLesson.cheatsheetUrl, icon: ImageIcon, color: 'from-purple-500 to-purple-600' },
-                          { label: 'Interactive Quiz', type: 'Quiz', url: activeLesson.quizUrl, icon: Brain, color: 'from-emerald-500 to-emerald-600' },
+                          { label: 'Lesson Notes', type: 'PDF', url: activeLesson.notesUrl, icon: FileText, color: 'from-blue-500 to-blue-600', viewable: true },
+                          { label: 'Practice Exercises', type: 'PDF', url: activeLesson.exercisesUrl, icon: PenLine, color: 'from-amber-500 to-amber-600', viewable: true },
+                          { label: 'Cheat Sheet', type: 'Image / PDF', url: activeLesson.cheatsheetUrl, icon: ImageIcon, color: 'from-purple-500 to-purple-600', viewable: true },
+                          { label: 'Interactive Quiz', type: 'Quiz', url: activeLesson.quizUrl, icon: Brain, color: 'from-emerald-500 to-emerald-600', viewable: false },
                         ].map((r) => {
                           const RIcon = r.icon;
                           const hasUrl = !!r.url;
-                          return hasUrl ? (
+
+                          if (!hasUrl) {
+                            return (
+                              <div
+                                key={r.label}
+                                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] opacity-50"
+                              >
+                                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${r.color} flex items-center justify-center opacity-40`}>
+                                  <RIcon className="w-4 h-4 text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white/50 text-sm font-medium">{r.label}</p>
+                                  <p className="text-white/20 text-xs flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> Coming Soon
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          // Viewable resources open in the in-app viewer
+                          if (r.viewable) {
+                            return (
+                              <button
+                                key={r.label}
+                                onClick={() => setViewerOpen({ url: r.url!, title: `${activeLesson.title} — ${r.label}` })}
+                                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.08] transition-all cursor-pointer group text-left w-full"
+                              >
+                                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${r.color} flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity`}>
+                                  <RIcon className="w-4 h-4 text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white/80 text-sm font-medium">{r.label}</p>
+                                  <p className="text-white/30 text-xs">{r.type}</p>
+                                </div>
+                                <Play className="w-3.5 h-3.5 text-white/30 group-hover:text-white/60 transition-colors" />
+                              </button>
+                            );
+                          }
+
+                          // Non-viewable (quiz) opens in new tab
+                          return (
                             <a
                               key={r.label}
                               href={r.url!}
@@ -521,21 +569,6 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
                               </div>
                               <ExternalLink className="w-3.5 h-3.5 text-white/30 group-hover:text-white/60 transition-colors" />
                             </a>
-                          ) : (
-                            <div
-                              key={r.label}
-                              className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] opacity-50"
-                            >
-                              <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${r.color} flex items-center justify-center opacity-40`}>
-                                <RIcon className="w-4 h-4 text-white" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-white/50 text-sm font-medium">{r.label}</p>
-                                <p className="text-white/20 text-xs flex items-center gap-1">
-                                  <Clock className="w-3 h-3" /> Coming Soon
-                                </p>
-                              </div>
-                            </div>
                           );
                         })}
                       </div>
@@ -631,6 +664,16 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
           </div>
         </div>
       </div>
+
+      {/* ── CheatSheet / Resource Viewer Modal ─────────────────────── */}
+      {viewerOpen && (
+        <CheatSheetViewer
+          url={viewerOpen.url}
+          title={viewerOpen.title}
+          onClose={() => setViewerOpen(null)}
+          accentGradient={skill.gradient}
+        />
+      )}
     </motion.div>
   );
 }

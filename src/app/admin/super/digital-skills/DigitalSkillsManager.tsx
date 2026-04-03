@@ -6,13 +6,14 @@ import {
   createPlaylist, updatePlaylist, deletePlaylist,
   createLesson, updateLesson, deleteLesson,
   reorderPlaylists, reorderLessons,
+  uploadDigitalSkillAsset,
 } from './actions';
 import {
   Plus, Trash2, Pencil, Check, X, ChevronDown, ChevronRight,
   Video, FileText, Eye, EyeOff, Layers, BookOpen,
   Users, Sparkles, ListVideo, ArrowUp, ArrowDown,
   Play, FileDown, PenLine, BrainCircuit, Image,
-  GripVertical, ExternalLink, Save,
+  GripVertical, ExternalLink, Save, Upload, Loader2,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
@@ -93,6 +94,69 @@ const EMPTY_LESSON_FORM: LessonFormData = {
   title: '', video_url: '', notes_url: '', exercises_url: '',
   cheatsheet_url: '', quiz_url: '', resource_url: '', duration: '', is_free: false,
 };
+
+// ─── Helper: Upload-or-URL field ─────────────────────────────────────────────
+
+function UploadableField({
+  label, icon, value, onChange, placeholder, ringColor, folder, accept,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  ringColor: string;
+  folder: string;
+  accept: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('folder', folder);
+      const res = await uploadDigitalSkillAsset(fd);
+      if (res.success && res.url) {
+        onChange(res.url);
+      } else {
+        alert('Upload failed: ' + (res.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Upload error: ' + (err instanceof Error ? err.message : 'Unknown'));
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
+        {icon} {label}
+      </label>
+      <div className="flex gap-1.5">
+        <input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`flex-1 px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 ${ringColor} outline-none`}
+        />
+        <label className={`shrink-0 px-3 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-1.5 text-xs font-semibold text-gray-600 ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          {uploading ? 'Uploading…' : 'Upload'}
+          <input type="file" accept={accept} onChange={handleFile} className="hidden" disabled={uploading} />
+        </label>
+      </div>
+      {value && (
+        <p className="text-xs text-green-600 mt-1 truncate">✓ {value.split('/').pop()}</p>
+      )}
+    </div>
+  );
+}
 
 // ─── Helper: Extract YouTube video ID for thumbnail preview ─────────────────
 function extractYouTubeId(url: string): string | null {
@@ -931,39 +995,36 @@ export default function DigitalSkillsManager({
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Lesson Resources</p>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <FileDown className="w-3.5 h-3.5 text-blue-500" /> Lesson Notes (PDF)
-                    </label>
-                    <input
-                      value={lessonForm.notes_url}
-                      onChange={e => setLessonForm(f => ({ ...f, notes_url: e.target.value }))}
-                      placeholder="https://drive.google.com/..."
-                      className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-300 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <PenLine className="w-3.5 h-3.5 text-amber-500" /> Practice Exercises (PDF)
-                    </label>
-                    <input
-                      value={lessonForm.exercises_url}
-                      onChange={e => setLessonForm(f => ({ ...f, exercises_url: e.target.value }))}
-                      placeholder="https://drive.google.com/..."
-                      className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-300 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <Image className="w-3.5 h-3.5 text-purple-500" /> Cheat Sheet (Image/PDF)
-                    </label>
-                    <input
-                      value={lessonForm.cheatsheet_url}
-                      onChange={e => setLessonForm(f => ({ ...f, cheatsheet_url: e.target.value }))}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2.5 text-sm font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-300 outline-none"
-                    />
-                  </div>
+                  <UploadableField
+                    label="Lesson Notes (PDF)"
+                    icon={<FileDown className="w-3.5 h-3.5 text-blue-500" />}
+                    value={lessonForm.notes_url}
+                    onChange={(v) => setLessonForm(f => ({ ...f, notes_url: v }))}
+                    placeholder="https://drive.google.com/..."
+                    ringColor="focus:ring-blue-300"
+                    folder="notes"
+                    accept="application/pdf"
+                  />
+                  <UploadableField
+                    label="Practice Exercises (PDF)"
+                    icon={<PenLine className="w-3.5 h-3.5 text-amber-500" />}
+                    value={lessonForm.exercises_url}
+                    onChange={(v) => setLessonForm(f => ({ ...f, exercises_url: v }))}
+                    placeholder="https://drive.google.com/..."
+                    ringColor="focus:ring-amber-300"
+                    folder="exercises"
+                    accept="application/pdf"
+                  />
+                  <UploadableField
+                    label="Cheat Sheet (Image/PDF)"
+                    icon={<Image className="w-3.5 h-3.5 text-purple-500" />}
+                    value={lessonForm.cheatsheet_url}
+                    onChange={(v) => setLessonForm(f => ({ ...f, cheatsheet_url: v }))}
+                    placeholder="https://..."
+                    ringColor="focus:ring-purple-300"
+                    folder="cheatsheets"
+                    accept="image/*,application/pdf"
+                  />
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
                       <BrainCircuit className="w-3.5 h-3.5 text-emerald-500" /> Interactive Quiz (Link)
