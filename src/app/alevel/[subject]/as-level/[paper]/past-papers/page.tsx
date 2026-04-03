@@ -114,9 +114,9 @@ export default function PastPapersPage({
   const basePath = `/alevel/${params.subject}/${levelSlug}/${params.paper}/past-papers`;
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
+    <div className="min-h-screen bg-[#0a0a1a]">
       {/* Header */}
-      <div className="gradient-hero py-12">
+      <div className="gradient-hero pt-32 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
             <Link href="/alevel" className="text-white/50 hover:text-white/70 transition-colors">A-Level</Link>
@@ -139,17 +139,19 @@ export default function PastPapersPage({
       </div>
 
       {/* Filters + Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
-        <div className="rounded-2xl p-4 mb-6 shadow-sm flex flex-wrap gap-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-          <select className="px-3 py-2 text-sm rounded-xl focus:outline-none" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+        {/* Filters */}
+        <div className="rounded-2xl p-4 mb-6 flex flex-wrap gap-3
+                        bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]">
+          <select className="px-3 py-2 text-sm rounded-xl bg-white/[0.06] border border-white/[0.1] text-white/70 focus:outline-none focus:border-gold-500/50">
             <option>All Years</option>
             <option>2024</option><option>2023</option><option>2022</option><option>2021</option>
           </select>
-          <select className="px-3 py-2 text-sm rounded-xl focus:outline-none" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
+          <select className="px-3 py-2 text-sm rounded-xl bg-white/[0.06] border border-white/[0.1] text-white/70 focus:outline-none focus:border-gold-500/50">
             <option>All Sessions</option>
             <option>May/June</option><option>Oct/Nov</option><option>Feb/Mar</option>
           </select>
-          <select className="px-3 py-2 text-sm rounded-xl focus:outline-none" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
+          <select className="px-3 py-2 text-sm rounded-xl bg-white/[0.06] border border-white/[0.1] text-white/70 focus:outline-none focus:border-gold-500/50">
             <option>All Variants</option>
             <option>Variant 1</option><option>Variant 2</option><option>Variant 3</option>
           </select>

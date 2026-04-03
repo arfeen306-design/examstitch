@@ -26,7 +26,6 @@ interface UnifiedModuleGridProps {
 }
 
 // ── Grouping logic ────────────────────────────────────────────────────────────
-// Strips " — Part N", " Part N", " (Part N)" suffixes to get the base name.
 
 function getBaseTitle(title: string): string {
   return title
@@ -38,37 +37,29 @@ function getBaseTitle(title: string): string {
 
 function groupModules(modules: LearningModule[]): TopicGroup[] {
   const map = new Map<string, LearningModule[]>();
-
   for (const mod of modules) {
     const base = getBaseTitle(mod.title);
     if (!map.has(base)) map.set(base, []);
     map.get(base)!.push(mod);
   }
-
-  return Array.from(map.entries()).map(([baseTitle, parts]) => ({
-    baseTitle,
-    parts,
-  }));
+  return Array.from(map.entries()).map(([baseTitle, parts]) => ({ baseTitle, parts }));
 }
 
 // ── Loading skeleton ───────────────────────────────────────────────────────────
 
 function SkeletonRow() {
   return (
-    <div
-      className="flex items-center justify-between px-5 py-4 animate-pulse"
-      style={{ borderBottom: '1px solid var(--border-subtle)' }}
-    >
+    <div className="flex items-center justify-between px-5 py-4 animate-pulse border-b border-white/[0.06]">
       <div className="flex items-center gap-4 flex-1">
-        <div className="w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'var(--border-subtle)' }} />
+        <div className="w-7 h-7 rounded-lg shrink-0 bg-white/[0.08]" />
         <div className="space-y-1.5 flex-1">
-          <div className="h-4 rounded-full w-1/3" style={{ backgroundColor: 'var(--border-subtle)' }} />
-          <div className="h-3 rounded-full w-1/5" style={{ backgroundColor: 'var(--bg-surface)' }} />
+          <div className="h-4 rounded-full w-1/3 bg-white/[0.08]" />
+          <div className="h-3 rounded-full w-1/5 bg-white/[0.04]" />
         </div>
       </div>
       <div className="flex gap-2">
-        <div className="h-7 w-24 rounded-full" style={{ backgroundColor: 'var(--accent-subtle)' }} />
-        <div className="h-7 w-20 rounded-full" style={{ backgroundColor: 'var(--bg-surface)' }} />
+        <div className="h-7 w-24 rounded-full bg-white/[0.06]" />
+        <div className="h-7 w-20 rounded-full bg-white/[0.04]" />
       </div>
     </div>
   );
@@ -83,12 +74,11 @@ function EmptyState({ title, message }: { title: string; message: string }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-20 text-center"
     >
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-           style={{ backgroundColor: 'var(--bg-surface)' }}>
-        <BookOpen className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
+      <div className="w-14 h-14 rounded-2xl bg-white/[0.06] border border-white/[0.1] flex items-center justify-center mb-4">
+        <BookOpen className="w-7 h-7 text-white/30" />
       </div>
-      <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>{title}</h3>
-      <p className="text-xs max-w-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{message}</p>
+      <h3 className="text-sm font-semibold text-white/60 mb-1">{title}</h3>
+      <p className="text-xs text-white/30 max-w-xs leading-relaxed">{message}</p>
     </motion.div>
   );
 }
@@ -105,8 +95,8 @@ function ActionPills({ mod }: { mod: LearningModule }) {
           href={`/auth/login?redirectTo=${redirectTo}`}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5
                      text-xs font-semibold rounded-full shadow-sm
-                     transition-all duration-150 hover:shadow-md whitespace-nowrap"
-          style={{ backgroundColor: 'var(--cta-orange)', color: '#fff' }}
+                     transition-all duration-150 hover:shadow-md whitespace-nowrap
+                     bg-orange-500/20 text-orange-300 border border-orange-400/30 hover:bg-orange-500/30"
         >
           <Lock className="w-3 h-3" />
           Members Only
@@ -121,13 +111,10 @@ function ActionPills({ mod }: { mod: LearningModule }) {
         href={`/view/${mod.id}`}
         className="inline-flex items-center gap-1.5 px-3.5 py-1.5
                    text-xs font-semibold rounded-full shadow-sm
-                   transition-all duration-150 hover:shadow-md whitespace-nowrap"
-        style={{
-          backgroundColor: 'var(--cta-orange)',
-          color: 'var(--text-on-accent)',
-        }}
+                   transition-all duration-150 hover:shadow-md whitespace-nowrap
+                   bg-gradient-to-r from-red-500 to-rose-600 text-white"
       >
-        <Play className="w-3 h-3" style={{ fill: 'var(--text-on-accent)' }} />
+        <Play className="w-3 h-3 fill-white" />
         Watch Video
       </Link>
       {mod.worksheetUrl && (
@@ -135,12 +122,8 @@ function ActionPills({ mod }: { mod: LearningModule }) {
           href={`/view/${mod.id}?mode=worksheet`}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5
                      text-xs font-semibold rounded-full shadow-sm
-                     transition-all duration-150 hover:shadow-md whitespace-nowrap"
-          style={{
-            border: '1px solid var(--border-color)',
-            backgroundColor: 'var(--bg-card)',
-            color: 'var(--text-secondary)',
-          }}
+                     transition-all duration-150 hover:shadow-md whitespace-nowrap
+                     bg-white/[0.06] text-white/60 border border-white/[0.1] hover:bg-white/[0.1] hover:text-white/80"
         >
           <FileText className="w-3 h-3" />
           Worksheet
@@ -150,39 +133,27 @@ function ActionPills({ mod }: { mod: LearningModule }) {
   );
 }
 
-// ── Single topic row (no sub-topics) ─────────────────────────────────────────
+// ── Single topic row ─────────────────────────────────────────────────────────
 
-function SingleRow({
-  group,
-  globalIndex,
-}: {
-  group: TopicGroup;
-  globalIndex: number;
-}) {
+function SingleRow({ group, globalIndex }: { group: TopicGroup; globalIndex: number }) {
   const mod = group.parts[0];
   return (
     <motion.div
-      whileHover={{ scale: 1.005, boxShadow: '0 6px 24px var(--shadow-color)' }}
+      whileHover={{ scale: 1.005 }}
       className="flex flex-col sm:flex-row sm:items-center justify-between
-                 gap-3 px-5 py-4 rounded-xl transition-colors duration-200"
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border-subtle)',
-      }}
+                 gap-3 px-5 py-4 rounded-xl transition-all duration-200
+                 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.07] hover:border-white/[0.15]"
     >
       <div className="flex items-center gap-4 min-w-0 flex-1">
-        <span
-          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums"
-          style={{ backgroundColor: 'var(--badge-bg)', color: 'var(--badge-text)' }}
-        >
+        <span className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums
+                        bg-white/[0.08] text-white/50">
           {String(globalIndex + 1).padStart(2, '0')}
         </span>
-        <h3 className="text-sm font-semibold truncate transition-colors duration-150 flex items-center gap-2"
-            style={{ color: 'var(--text-primary)' }}>
+        <h3 className="text-sm font-semibold text-white/80 truncate transition-colors duration-150 flex items-center gap-2">
           {group.baseTitle}
           {mod.isLocked && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                  style={{ backgroundColor: 'rgba(255, 107, 53, 0.1)', color: 'var(--cta-orange)' }}>
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0
+                            bg-orange-500/10 text-orange-300">
               <Lock className="w-2.5 h-2.5" /> Locked
             </span>
           )}
@@ -195,76 +166,45 @@ function SingleRow({
   );
 }
 
-// ── Accordion row (has sub-topics) ────────────────────────────────────────────
+// ── Accordion row ────────────────────────────────────────────────────────────
 
 function AccordionRow({
-  group,
-  globalIndex,
-  isOpen,
-  onToggle,
+  group, globalIndex, isOpen, onToggle,
 }: {
-  group: TopicGroup;
-  globalIndex: number;
-  isOpen: boolean;
-  onToggle: () => void;
+  group: TopicGroup; globalIndex: number; isOpen: boolean; onToggle: () => void;
 }) {
   return (
-    <div
-      className="rounded-xl transition-all duration-200 overflow-hidden"
-      style={{
-        border: isOpen
-          ? '1px solid var(--accent)'
-          : '1px solid var(--border-subtle)',
-        boxShadow: isOpen ? '0 6px 24px var(--shadow-color)' : 'none',
-      }}
-    >
-      {/* Header — always visible */}
+    <div className={`rounded-xl transition-all duration-200 overflow-hidden border
+                    ${isOpen ? 'border-indigo-500/40 shadow-[0_6px_24px_rgba(99,102,241,0.1)]' : 'border-white/[0.08]'}`}>
       <motion.button
         onClick={onToggle}
         whileTap={{ scale: 0.998 }}
         className="w-full flex items-center justify-between gap-4 px-5 py-4
-                   transition-colors duration-150 text-left"
-        style={{ backgroundColor: 'var(--bg-card)' }}
+                   transition-colors duration-150 text-left bg-white/[0.04] hover:bg-white/[0.07]"
       >
         <div className="flex items-center gap-4 min-w-0 flex-1">
-          <span
-            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums transition-colors"
-            style={{
-              backgroundColor: isOpen ? 'var(--accent)' : 'var(--badge-bg)',
-              color: isOpen ? 'var(--text-on-accent)' : 'var(--badge-text)',
-            }}
-          >
+          <span className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums transition-colors
+                          ${isOpen ? 'bg-indigo-500 text-white' : 'bg-white/[0.08] text-white/50'}`}>
             {String(globalIndex + 1).padStart(2, '0')}
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-              {group.baseTitle}
-            </h3>
+            <h3 className="text-sm font-semibold text-white/80 truncate">{group.baseTitle}</h3>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <Layers className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {group.parts.length} parts
-              </span>
+              <Layers className="w-3 h-3 text-white/30" />
+              <span className="text-xs text-white/30">{group.parts.length} parts</span>
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.25 }}
-            className="w-6 h-6 rounded-full flex items-center justify-center"
-            style={{
-              backgroundColor: isOpen ? 'var(--accent-subtle)' : 'var(--bg-surface)',
-              color: isOpen ? 'var(--accent-text)' : 'var(--text-muted)',
-            }}
-          >
-            <ChevronDown className="w-4 h-4" />
-          </motion.div>
-        </div>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.25 }}
+          className={`w-6 h-6 rounded-full flex items-center justify-center
+                     ${isOpen ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/[0.06] text-white/30'}`}
+        >
+          <ChevronDown className="w-4 h-4" />
+        </motion.div>
       </motion.button>
 
-      {/* Expanded sub-topic list */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -275,10 +215,7 @@ function AccordionRow({
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div style={{
-              borderTop: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-surface)',
-            }}>
+            <div className="border-t border-white/[0.06] bg-white/[0.02]">
               {group.parts.map((part, partIndex) => (
                 <motion.div
                   key={part.id}
@@ -286,23 +223,15 @@ function AccordionRow({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: partIndex * 0.06, duration: 0.25 }}
                   className="flex flex-col sm:flex-row sm:items-center justify-between
-                             gap-3 px-5 py-3.5 transition-colors duration-150"
-                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                             gap-3 px-5 py-3.5 transition-colors duration-150 border-b border-white/[0.04]"
                 >
-                  {/* Sub-number + label */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span
-                      className="shrink-0 w-8 h-6 flex items-center justify-center
-                                 rounded-md text-xs font-bold tabular-nums"
-                      style={{
-                        backgroundColor: 'var(--bg-card)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
+                    <span className="shrink-0 w-8 h-6 flex items-center justify-center
+                                     rounded-md text-xs font-bold tabular-nums
+                                     bg-white/[0.06] border border-white/[0.08] text-white/40">
                       {globalIndex + 1}.{partIndex + 1}
                     </span>
-                    <span className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="text-sm text-white/50 truncate">
                       {part.title !== group.baseTitle
                         ? part.title.replace(group.baseTitle, '').replace(/^[\s—–-]+/, '').trim() || `Part ${partIndex + 1}`
                         : `Part ${partIndex + 1}`
@@ -342,7 +271,6 @@ export default function UnifiedModuleGrid({
 }: UnifiedModuleGridProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
-  // Admin bypass: strip lock state client-side when admin_mode cookie is set
   const isAdmin = typeof document !== 'undefined' && document.cookie.includes('admin_mode=1');
   const effectiveModules = isAdmin
     ? modules.map(m => m.isLocked ? { ...m, isLocked: false } : m)
@@ -350,8 +278,7 @@ export default function UnifiedModuleGrid({
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl overflow-hidden"
-           style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08]">
         {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
       </div>
     );
@@ -372,19 +299,19 @@ export default function UnifiedModuleGrid({
     >
       {/* Legend */}
       <div className="flex items-center justify-between px-1 pb-2 mb-1">
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs font-semibold uppercase tracking-widest text-white/30">
           {groups.length} topic{groups.length !== 1 ? 's' : ''}
           {groups.some(g => g.parts.length > 1) && (
-            <span className="ml-1" style={{ color: 'var(--border-color)' }}>· click to expand parts</span>
+            <span className="ml-1 text-white/15">· click to expand parts</span>
           )}
         </p>
-        <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <div className="flex items-center gap-4 text-xs text-white/30">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: 'var(--accent)' }} />
+            <span className="w-2 h-2 rounded-full inline-block bg-red-500" />
             Video
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: 'var(--border-color)' }} />
+            <span className="w-2 h-2 rounded-full inline-block bg-white/20" />
             Worksheet
           </span>
         </div>

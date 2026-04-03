@@ -51,8 +51,8 @@ export default function VideoLecturesPage({ params }: { params: { subject: strin
   const levelName = levelSlug === 'as-level' ? 'AS Level' : 'A2 Level';
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="gradient-hero py-12">
+    <div className="min-h-screen bg-[#0a0a1a]">
+      <div className="gradient-hero pt-32 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
             <Link href="/alevel" className="text-white/50 hover:text-white/70 transition-colors">A-Level</Link>
@@ -69,7 +69,7 @@ export default function VideoLecturesPage({ params }: { params: { subject: strin
           <p className="text-white/60">Topic-by-topic video explanations — each paired with a downloadable worksheet.</p>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <Suspense fallback={<UnifiedModuleGrid modules={[]} isLoading={true} />}>
           <VideoModules subject={params.subject} paper={params.paper} />
         </Suspense>
