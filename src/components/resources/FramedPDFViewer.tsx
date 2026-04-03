@@ -7,22 +7,20 @@ interface FramedPDFViewerProps {
   embedUrl: string;
   downloadUrl: string | null;
   title: string;
-  /** Optional label shown in the header (defaults to "PDF Resource") */
   label?: string;
-  /** Minimum height for the iframe — defaults to 80vh */
   minHeight?: string;
-  /** Resource ID — when provided, the PDF is proxied through /api/pdf/[id] to avoid Drive 403s */
   resourceId?: string;
 }
 
 /**
  * Branded PDF viewer frame used across all resource pages.
- * When a resourceId is provided, the PDF is served through our own API
- * (server-side fetch + optional watermarking) instead of embedding Google Drive
- * directly — this eliminates 403 errors from Drive sharing restrictions.
  *
- * Uses <object> with <iframe> fallback for maximum compatibility.
- * Includes a 5-second timeout fallback with navy-themed error UI.
+ * When a resourceId is provided the PDF is served through /api/pdf/[id]
+ * (server-side proxy + optional watermarking) to avoid Google Drive 403s.
+ *
+ * Uses a pre-flight fetch to verify the PDF endpoint is reachable before
+ * rendering the iframe — this catches X-Frame-Options / CSP / network issues
+ * immediately instead of showing a blank frame.
  */
 export default function FramedPDFViewer({
   embedUrl,
@@ -32,46 +30,85 @@ export default function FramedPDFViewer({
   minHeight = '80vh',
   resourceId,
 }: FramedPDFViewerProps) {
-  const [loadState, setLoadState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [loadState, setLoadState] = useState<'checking' | 'ready' | 'loaded' | 'error'>('checking');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Use our own PDF API proxy when we have a resourceId — avoids Google 403
+  // Use our own PDF API proxy when we have a resourceId
   const iframeSrc = resourceId
     ? `/api/pdf/${resourceId}?inline=1`
     : embedUrl;
 
-  // Download via our API too (includes watermark)
   const resolvedDownloadUrl = resourceId
     ? `/api/pdf/${resourceId}`
     : downloadUrl;
 
-  // 5-second timeout: if the embed hasn't signalled success, show fallback
+  // Pre-flight check: verify the PDF endpoint returns 200 + application/pdf
   useEffect(() => {
-    setLoadState('loading');
-    timerRef.current = setTimeout(() => {
-      setLoadState((prev) => (prev === 'loading' ? 'error' : prev));
-    }, 5000);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+    let cancelled = false;
+    setLoadState('checking');
+
+    (async () => {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+
+        const res = await fetch(iframeSrc, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: { Range: 'bytes=0-0' }, // request minimal data
+        });
+        clearTimeout(timer);
+
+        if (cancelled) return;
+
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && (ct.includes('application/pdf') || ct.includes('application/octet-stream'))) {
+          setLoadState('ready');
+        } else {
+          setLoadState('error');
+        }
+      } catch {
+        if (!cancelled) setLoadState('error');
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [iframeSrc]);
 
-  const handleLoad = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setLoadState('loaded');
-  }, []);
-
-  const handleError = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setLoadState('error');
+  const handleIframeLoad = useCallback(() => {
+    setLoadState((prev) => (prev === 'ready' ? 'loaded' : prev));
   }, []);
 
   const handleRetry = useCallback(() => {
-    setLoadState('loading');
-    timerRef.current = setTimeout(() => {
-      setLoadState((prev) => (prev === 'loading' ? 'error' : prev));
-    }, 5000);
-  }, []);
+    setLoadState('checking');
+    // Force re-run of the effect by toggling a key — simplest: just re-set
+    // We trigger via the loadState going back to 'checking', the effect runs on iframeSrc
+    // so we nudge the iframe src with a cache-buster
+    if (iframeRef.current) {
+      iframeRef.current.src = iframeSrc + (iframeSrc.includes('?') ? '&' : '?') + '_r=' + Date.now();
+    }
+    // Re-run preflight
+    (async () => {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(iframeSrc, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: { Range: 'bytes=0-0' },
+        });
+        clearTimeout(timer);
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && (ct.includes('application/pdf') || ct.includes('application/octet-stream'))) {
+          setLoadState('ready');
+        } else {
+          setLoadState('error');
+        }
+      } catch {
+        setLoadState('error');
+      }
+    })();
+  }, [iframeSrc]);
 
   const handlePrint = useCallback(() => {
     const printWindow = window.open(iframeSrc, '_blank');
@@ -81,6 +118,8 @@ export default function FramedPDFViewer({
       });
     }
   }, [iframeSrc]);
+
+  const showIframe = loadState === 'ready' || loadState === 'loaded';
 
   return (
     <div
@@ -141,7 +180,7 @@ export default function FramedPDFViewer({
         style={{ backgroundColor: '#525659', minHeight }}
       >
         {loadState === 'error' ? (
-          /* ── Navy-themed fallback: shown when PDF fails to load ──── */
+          /* ── Navy-themed fallback ──────────────────────────────────── */
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center"
             style={{ background: 'linear-gradient(180deg, #0d1526 0%, #111d35 100%)' }}
@@ -156,16 +195,10 @@ export default function FramedPDFViewer({
               <AlertTriangle className="w-8 h-8" style={{ color: '#fb923c' }} />
             </div>
             <div>
-              <h3
-                className="text-lg font-bold mb-1.5"
-                style={{ color: '#e2e8f0' }}
-              >
+              <h3 className="text-lg font-bold mb-1.5" style={{ color: '#e2e8f0' }}>
                 PDF Preview Unavailable
               </h3>
-              <p
-                className="text-sm max-w-md leading-relaxed"
-                style={{ color: '#64748b' }}
-              >
+              <p className="text-sm max-w-md leading-relaxed" style={{ color: '#64748b' }}>
                 The document couldn&apos;t be loaded in the viewer.
                 Try opening it in a new tab or downloading it directly.
               </p>
@@ -215,8 +248,8 @@ export default function FramedPDFViewer({
           </div>
         ) : (
           <>
-            {/* Loading overlay — visible until PDF loads */}
-            {loadState === 'loading' && (
+            {/* Loading spinner — visible during pre-flight check */}
+            {loadState === 'checking' && (
               <div
                 className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
                 style={{ background: 'linear-gradient(180deg, #0d1526 0%, #111d35 100%)' }}
@@ -228,28 +261,19 @@ export default function FramedPDFViewer({
               </div>
             )}
 
-            {/* Primary: <object> for native PDF rendering with <iframe> fallback */}
-            <object
-              data={iframeSrc}
-              type="application/pdf"
-              className="w-full border-0"
-              style={{ minHeight, height: '100%' }}
-              onLoad={handleLoad}
-              onError={handleError}
-            >
-              {/* Fallback: <iframe> for browsers that don't support <object> for PDFs */}
+            {/* iframe — only mounted once pre-flight confirms the PDF is accessible */}
+            {showIframe && (
               <iframe
+                ref={iframeRef}
                 src={iframeSrc}
                 title={title}
                 className="w-full border-0"
                 style={{ minHeight, height: '100%' }}
-                allow="autoplay"
                 referrerPolicy="no-referrer"
                 loading="lazy"
-                onLoad={handleLoad}
-                onError={handleError}
+                onLoad={handleIframeLoad}
               />
-            </object>
+            )}
           </>
         )}
       </div>

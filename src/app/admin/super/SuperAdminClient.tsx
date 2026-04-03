@@ -5,6 +5,7 @@ import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Link as LinkIc
 import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
+import { ALL_SUBJECTS } from '@/config/subjects';
 
 interface Subject {
   id: string;
@@ -236,7 +237,12 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
     is_super_admin: false,
   });
 
-  const subjectMap = new Map(subjects.map(s => [s.id, s.name]));
+  // Merge DB subjects + config subjects into a unified lookup map.
+  // Config subjects (ALL_SUBJECTS) are the authoritative list for role assignment.
+  // DB subjects are kept for backwards-compat with existing UUID-based assignments.
+  const subjectMap = new Map<string, string>();
+  for (const s of subjects) subjectMap.set(s.id, s.name);           // DB (may have UUIDs)
+  for (const s of ALL_SUBJECTS) subjectMap.set(s.id, s.name);       // Config (canonical IDs)
 
   function handleAssign(userId: string) {
     if (!selectedSubject) return;
@@ -370,11 +376,11 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
             />
           </div>
 
-          {/* Subject Assignment */}
+          {/* Subject Assignment — uses master config (all 13 subjects) */}
           <div>
             <label className="block text-xs font-medium text-white/60 mb-2">Assign Subjects *</label>
             <div className="flex flex-wrap gap-2">
-              {subjects.map(s => {
+              {ALL_SUBJECTS.map(s => {
                 const selected = newAdmin.managed_subjects.includes(s.id);
                 return (
                   <button
@@ -387,7 +393,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                         : 'bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-indigo-300'
                     }`}
                   >
-                    {s.name}
+                    {s.name} ({s.code})
                     {selected && <span className="ml-1">✓</span>}
                   </button>
                 );
@@ -508,19 +514,19 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
               ))}
             </div>
 
-            {/* Assign Subject Dropdown */}
+            {/* Assign Subject Dropdown — all 13 subjects from config */}
             {assignTarget === admin.id && (
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.08]">
                 <select
                   value={selectedSubject}
                   onChange={e => setSelectedSubject(e.target.value)}
-                  className="flex-1 px-2 py-1.5 text-xs border border-white/[0.08] rounded-lg focus:ring-indigo-500"
+                  className="flex-1 px-2 py-1.5 text-xs border border-white/[0.08] rounded-lg bg-white/[0.04] text-white focus:ring-indigo-500"
                 >
                   <option value="" disabled>Choose subject…</option>
-                  {subjects
+                  {ALL_SUBJECTS
                     .filter(s => !admin.managed_subjects.includes(s.id))
                     .map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
+                      <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
                     ))}
                 </select>
                 <button

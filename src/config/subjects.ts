@@ -157,3 +157,16 @@ export const A_LEVEL_SUBJECTS: SubjectEntry[] = [
     active: true,
   },
 ];
+
+// ─── Combined & deduplicated subject list for admin role assignment ─────────
+// Merges O-Level and A-Level, deduplicates by base name.
+// Each entry uses the O-Level ID as canonical (first seen wins).
+export const ALL_SUBJECTS: { id: string; name: string; code: string }[] = (() => {
+  const seen = new Map<string, { id: string; name: string; code: string }>();
+  for (const s of [...O_LEVEL_SUBJECTS, ...A_LEVEL_SUBJECTS]) {
+    if (!seen.has(s.name)) {
+      seen.set(s.name, { id: s.id, name: s.name, code: s.code });
+    }
+  }
+  return [...seen.values()];
+})();

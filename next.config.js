@@ -24,31 +24,24 @@ const nextConfig = {
   // ── HTTP response headers ──────────────────────────────────────────────────
   async headers() {
     return [
+      // Static asset cache
       {
-        // Cache static assets for 1 year
         source: '/_next/static/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+      // Image cache
       {
-        // Cache Next.js image responses for 1 hour
         source: '/_next/image',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=3600, stale-while-revalidate=86400' },
         ],
       },
+      // ── Page security headers (HTML pages only, not API binary responses) ──
+      // Use `has` to target only text/html responses, so binary endpoints like
+      // /api/pdf/* don't inherit CSP that could confuse browsers.
       {
-        // PDF API: allow same-origin framing so our FramedPDFViewer can embed it
-        source: '/api/pdf/:path*',
-        headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-        ],
-      },
-      {
-        // Security headers on all other pages
         source: '/(.*)',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
