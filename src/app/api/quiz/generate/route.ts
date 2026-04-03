@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(GEMINI_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
 
     const prompt = `You are an expert academic examiner. Based on the following lesson transcript, create exactly ${questionCount} high-quality multiple choice questions (MCQs).
 
@@ -124,8 +124,36 @@ Return ONLY a valid JSON array with this exact structure — no markdown, no bac
   }
 ]`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    let text: string | null = null;
+    let lastModelErr: unknown = null;
+    for (const modelName of MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        text = result.response.text();
+        break; // success
+      } catch (modelErr: unknown) {
+        lastModelErr = modelErr;
+        const errMsg = modelErr instanceof Error ? modelErr.message : String(modelErr);
+        console.warn(`[quiz/generate] Model ${modelName} failed: ${errMsg.slice(0, 200)}`);
+        continue; // try next model regardless of error type
+      }
+    }
+
+    if (!text) {
+      const errMsg = lastModelErr instanceof Error ? lastModelErr.message : '';
+      if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('Too Many Requests')) {
+        return NextResponse.json(
+          { error: 'AI quota exceeded. Please try again in a few minutes.' },
+          { status: 429 },
+        );
+      }
+      console.error('[quiz/generate] All models failed:', lastModelErr);
+      return NextResponse.json(
+        { error: 'AI service unavailable. Please try again later.' },
+        { status: 503 },
+      );
+    }
 
     // Parse the JSON response (handle potential markdown wrapping)
     let questions: QuizQuestion[];
