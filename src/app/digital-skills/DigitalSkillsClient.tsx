@@ -21,6 +21,7 @@ import {
   Search,
   Play,
   ChevronLeft,
+  ChevronRight,
   X,
   BookOpen,
   FileText,
@@ -97,6 +98,12 @@ interface Lesson {
   quizUrl: string | null;
 }
 
+interface Playlist {
+  id: string;
+  title: string;
+  lessons: Lesson[];
+}
+
 interface Skill {
   id: string;
   slug: string;
@@ -105,7 +112,8 @@ interface Skill {
   icon: React.ElementType;
   gradient: string;
   glowColor: string;
-  lessons: Lesson[];
+  playlists: Playlist[];
+  allLessons: Lesson[];      // flat list for quick lookups
   hasRealData: boolean;
 }
 
@@ -130,24 +138,29 @@ function extractYouTubeId(url: string | null): string {
   return '';
 }
 
-// Transform DB data → UI format
+// Transform DB data → UI format (preserving playlist hierarchy)
 function transformDBSkills(dbSkills: DBSkill[]): Skill[] {
   return dbSkills.map((s) => {
-    // Flatten all lessons from all playlists into one list
-    const allLessons: Lesson[] = s.skill_playlists.flatMap((pl) =>
-      pl.skill_lessons
-        .filter((l) => l.video_url) // only include lessons with a video
-        .map((l) => ({
-          id: l.id,
-          title: l.title,
-          duration: l.duration || '',
-          videoId: extractYouTubeId(l.video_url),
-          notesUrl: l.notes_url,
-          exercisesUrl: l.exercises_url,
-          cheatsheetUrl: l.cheatsheet_url,
-          quizUrl: l.quiz_url,
-        })),
-    );
+    const playlists: Playlist[] = s.skill_playlists
+      .map((pl) => ({
+        id: pl.id,
+        title: pl.title,
+        lessons: pl.skill_lessons
+          .filter((l) => l.video_url)
+          .map((l) => ({
+            id: l.id,
+            title: l.title,
+            duration: l.duration || '',
+            videoId: extractYouTubeId(l.video_url),
+            notesUrl: l.notes_url,
+            exercisesUrl: l.exercises_url,
+            cheatsheetUrl: l.cheatsheet_url,
+            quizUrl: l.quiz_url,
+          })),
+      }))
+      .filter((pl) => pl.lessons.length > 0);
+
+    const allLessons = playlists.flatMap((pl) => pl.lessons);
 
     return {
       id: s.slug,
@@ -157,47 +170,48 @@ function transformDBSkills(dbSkills: DBSkill[]): Skill[] {
       icon: resolveIcon(s.icon),
       gradient: s.gradient || 'from-violet-600 to-indigo-700',
       glowColor: s.glow_color || 'rgba(124,58,237,0.35)',
-      lessons: allLessons,
+      playlists,
+      allLessons,
       hasRealData: allLessons.length > 0,
     };
   });
 }
 
-// Fallback demo lessons for skills that have no real content yet
-const DEMO_LESSONS: Record<string, Lesson[]> = {
-  coding: [
+// Fallback demo playlists for skills that have no real content yet
+const DEMO_PLAYLISTS: Record<string, Playlist[]> = {
+  coding: [{ id: 'demo-coding', title: 'Getting Started', lessons: [
     { id: 'c1', title: 'Variables & Data Types', duration: '12:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'c2', title: 'Control Flow & Loops', duration: '18:45', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'c3', title: 'Functions & Scope', duration: '15:20', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
-  design: [
+  ]}],
+  design: [{ id: 'demo-design', title: 'Design Essentials', lessons: [
     { id: 'd1', title: 'Color Theory Essentials', duration: '14:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'd2', title: 'Typography & Hierarchy', duration: '16:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
-  ai: [
+  ]}],
+  ai: [{ id: 'demo-ai', title: 'AI Foundations', lessons: [
     { id: 'a1', title: 'What is AI? History & Ethics', duration: '11:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'a2', title: 'Machine Learning Basics', duration: '19:20', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
-  'web-development': [
+  ]}],
+  'web-development': [{ id: 'demo-web', title: 'Web Fundamentals', lessons: [
     { id: 'w1', title: 'HTML5 Semantics', duration: '10:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'w2', title: 'CSS Grid & Flexbox', duration: '17:25', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
-  cybersecurity: [
+  ]}],
+  cybersecurity: [{ id: 'demo-cyber', title: 'Security Basics', lessons: [
     { id: 'cy1', title: 'Threat Landscape 101', duration: '13:40', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'cy2', title: 'Encryption & Hashing', duration: '16:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
-  'data-science': [
+  ]}],
+  'data-science': [{ id: 'demo-ds', title: 'Data Essentials', lessons: [
     { id: 'ds1', title: 'Data Thinking', duration: '12:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'ds2', title: 'Python for Data', duration: '18:50', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
-  'mobile-apps': [
+  ]}],
+  'mobile-apps': [{ id: 'demo-mobile', title: 'Mobile Dev Intro', lessons: [
     { id: 'm1', title: 'React Native Setup', duration: '14:30', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'm2', title: 'Components & Navigation', duration: '19:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
-  'digital-analytics': [
+  ]}],
+  'digital-analytics': [{ id: 'demo-analytics', title: 'Analytics Intro', lessons: [
     { id: 'an1', title: 'Analytics Foundations', duration: '11:20', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
     { id: 'an2', title: 'Google Analytics Deep Dive', duration: '18:00', videoId: 'dQw4w9WgXcQ', notesUrl: null, exercisesUrl: null, cheatsheetUrl: null, quizUrl: null },
-  ],
+  ]}],
 };
 
 const QUOTES = [
@@ -352,7 +366,7 @@ function SkillCard({ skill, index, onSelect }: SkillCardProps) {
         <p className="text-sm text-white/50 mb-4 leading-relaxed">{skill.tagline}</p>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-white/40 font-medium">{skill.lessons.length} lessons</span>
+          <span className="text-xs text-white/40 font-medium">{skill.allLessons.length} lessons</span>
           <motion.div
             whileHover={{ x: 4 }}
             className="flex items-center gap-1 text-xs font-semibold text-white/60 group-hover:text-white transition-colors"
@@ -375,10 +389,50 @@ interface CinemaPlayerProps {
 }
 
 function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
-  const [activeLesson, setActiveLesson] = useState(skill.lessons[0]);
+  const [activeLesson, setActiveLesson] = useState(skill.allLessons[0]);
   const [activeTab, setActiveTab] = useState<'resources' | 'solver'>('resources');
   const [viewerOpen, setViewerOpen] = useState<{ url: string; title: string } | null>(null);
+  const [expandedPlaylists, setExpandedPlaylists] = useState<Set<string>>(() => {
+    // Auto-expand the playlist containing the first lesson
+    const firstPl = skill.playlists.find((pl) =>
+      pl.lessons.some((l) => l.id === skill.allLessons[0]?.id),
+    );
+    return new Set(firstPl ? [firstPl.id] : []);
+  });
   const Icon = skill.icon;
+
+  // Find which playlist owns the active lesson (for breadcrumb)
+  const activePlaylist = skill.playlists.find((pl) =>
+    pl.lessons.some((l) => l.id === activeLesson?.id),
+  );
+
+  // Auto-expand playlist when active lesson changes
+  useEffect(() => {
+    if (activePlaylist && !expandedPlaylists.has(activePlaylist.id)) {
+      setExpandedPlaylists((prev) => new Set([...prev, activePlaylist.id]));
+    }
+  }, [activePlaylist]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const togglePlaylist = useCallback((plId: string) => {
+    setExpandedPlaylists((prev) => {
+      const next = new Set(prev);
+      if (next.has(plId)) next.delete(plId);
+      else next.add(plId);
+      return next;
+    });
+  }, []);
+
+  // Compute global lesson index for numbering
+  const lessonGlobalIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    let idx = 0;
+    for (const pl of skill.playlists) {
+      for (const l of pl.lessons) {
+        map.set(l.id, idx++);
+      }
+    }
+    return map;
+  }, [skill.playlists]);
 
   return (
     <motion.div
@@ -388,22 +442,39 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-[#08080f]"
     >
-      {/* Top bar — glassmorphic */}
+      {/* Top bar — breadcrumb navigation */}
       <div className="sticky top-0 z-30 bg-white/[0.04] backdrop-blur-2xl border-b border-white/[0.06]">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm font-medium group"
-          >
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            All Skills
-          </button>
+          {/* Breadcrumbs: Digital Skills > Skill Title > Playlist Name */}
+          <nav className="flex items-center gap-1.5 text-sm min-w-0">
+            <button
+              onClick={onBack}
+              className="text-white/40 hover:text-white transition-colors font-medium shrink-0"
+            >
+              Digital Skills
+            </button>
+            <ChevronLeft className="w-3.5 h-3.5 text-white/20 rotate-180 shrink-0" />
+            <button
+              onClick={onBack}
+              className="text-white/40 hover:text-white transition-colors font-medium truncate max-w-[120px]"
+            >
+              {skill.title}
+            </button>
+            {activePlaylist && (
+              <>
+                <ChevronLeft className="w-3.5 h-3.5 text-white/20 rotate-180 shrink-0" />
+                <span className="text-white/70 font-medium truncate max-w-[180px]">
+                  {activePlaylist.title}
+                </span>
+              </>
+            )}
+          </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${skill.gradient} flex items-center justify-center`}>
               <Icon className="w-4 h-4 text-white" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-white font-bold text-sm leading-none">{skill.title}</h1>
               <p className="text-white/40 text-xs mt-0.5">{skill.tagline}</p>
             </div>
@@ -411,7 +482,7 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
 
           <button
             onClick={onBack}
-            className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] flex items-center justify-center transition-colors shrink-0"
           >
             <X className="w-4 h-4 text-white/60" />
           </button>
@@ -601,62 +672,112 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
             </div>
           </div>
 
-          {/* ── Right: Playlist Sidebar ───────────────────────────────── */}
+          {/* ── Right: Playlist Sidebar (grouped by playlist) ──────── */}
           <div className="lg:w-[340px] shrink-0">
             <div className="sticky top-[72px] bg-white/[0.04] backdrop-blur-2xl border border-white/[0.06] rounded-2xl overflow-hidden">
               {/* Sidebar header */}
               <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2">
                 <ListVideo className="w-4 h-4 text-white/50" />
                 <span className="text-white text-sm font-bold">Course Playlist</span>
-                <span className="ml-auto text-xs text-white/30 font-mono">{skill.lessons.length} lessons</span>
+                <span className="ml-auto text-xs text-white/30 font-mono">
+                  {skill.allLessons.length} lessons
+                </span>
               </div>
 
-              {/* Scrollable lesson list */}
-              <div className="max-h-[calc(100vh-200px)] overflow-y-auto divide-y divide-white/[0.04]
+              {/* Scrollable grouped playlist */}
+              <div className="max-h-[calc(100vh-200px)] overflow-y-auto
                              scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                {skill.lessons.map((lesson, i) => {
-                  const isActive = lesson.id === activeLesson.id;
+                {skill.playlists.map((pl) => {
+                  const isExpanded = expandedPlaylists.has(pl.id);
+                  const hasActiveLessonInPl = pl.lessons.some((l) => l.id === activeLesson?.id);
+
                   return (
-                    <motion.button
-                      key={lesson.id}
-                      onClick={() => setActiveLesson(lesson)}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05, duration: 0.3 }}
-                      className={`w-full text-left px-4 py-3.5 flex items-center gap-3 transition-all duration-200 group
-                        ${isActive
-                          ? 'bg-white/[0.08]'
-                          : 'hover:bg-white/[0.04]'}`}
-                    >
-                      {/* Lesson number */}
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold transition-all
-                        ${isActive
-                          ? `bg-gradient-to-br ${skill.gradient} text-white shadow-md`
-                          : 'bg-white/[0.06] text-white/40 group-hover:text-white/60'}`}
+                    <div key={pl.id}>
+                      {/* ── Playlist header (collapsible) ─────────────── */}
+                      <button
+                        onClick={() => togglePlaylist(pl.id)}
+                        className={`w-full text-left px-4 py-3 flex items-center gap-2.5 border-b border-white/[0.04] transition-colors
+                          ${hasActiveLessonInPl ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]'}`}
                       >
-                        {isActive ? (
-                          <Play className="w-3.5 h-3.5 fill-white" />
-                        ) : (
-                          i + 1
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate transition-colors
-                          ${isActive ? 'text-white' : 'text-white/60 group-hover:text-white/80'}`}>
-                          {lesson.title}
-                        </p>
-                        <p className="text-xs text-white/30 mt-0.5">{lesson.duration}</p>
-                      </div>
-
-                      {isActive && (
                         <motion.div
-                          layoutId="active-indicator"
-                          className={`w-1.5 h-8 rounded-full bg-gradient-to-b ${skill.gradient}`}
-                          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                        />
-                      )}
-                    </motion.button>
+                          animate={{ rotate: isExpanded ? 90 : 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ChevronRight className="w-3.5 h-3.5 text-white/40" />
+                        </motion.div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-bold truncate ${hasActiveLessonInPl ? 'text-white' : 'text-white/60'}`}>
+                            {pl.title}
+                          </p>
+                          <p className="text-[10px] text-white/30 mt-0.5">
+                            {pl.lessons.length} lesson{pl.lessons.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        {hasActiveLessonInPl && (
+                          <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${skill.gradient} shadow-sm`} />
+                        )}
+                      </button>
+
+                      {/* ── Lessons under this playlist ────────────── */}
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                            className="overflow-hidden"
+                          >
+                            <div className="divide-y divide-white/[0.03]">
+                              {pl.lessons.map((lesson) => {
+                                const isActive = lesson.id === activeLesson?.id;
+                                const gIdx = lessonGlobalIndex.get(lesson.id) ?? 0;
+
+                                return (
+                                  <motion.button
+                                    key={lesson.id}
+                                    onClick={() => setActiveLesson(lesson)}
+                                    initial={{ opacity: 0, x: 12 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className={`w-full text-left pl-10 pr-4 py-3 flex items-center gap-3 transition-all duration-200 group
+                                      ${isActive ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'}`}
+                                  >
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold transition-all
+                                      ${isActive
+                                        ? `bg-gradient-to-br ${skill.gradient} text-white shadow-md`
+                                        : 'bg-white/[0.06] text-white/40 group-hover:text-white/60'}`}
+                                    >
+                                      {isActive ? (
+                                        <Play className="w-3 h-3 fill-white" />
+                                      ) : (
+                                        gIdx + 1
+                                      )}
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`text-sm font-medium truncate transition-colors
+                                        ${isActive ? 'text-white' : 'text-white/60 group-hover:text-white/80'}`}>
+                                        {lesson.title}
+                                      </p>
+                                      <p className="text-xs text-white/30 mt-0.5">{lesson.duration}</p>
+                                    </div>
+
+                                    {isActive && (
+                                      <motion.div
+                                        layoutId="active-indicator"
+                                        className={`w-1.5 h-7 rounded-full bg-gradient-to-b ${skill.gradient}`}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                                      />
+                                    )}
+                                  </motion.button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   );
                 })}
               </div>
@@ -686,11 +807,13 @@ export default function DigitalSkillsClient({ dbSkills = [] }: { dbSkills?: DBSk
   // Transform DB skills and merge with demo fallback
   const SKILLS = useMemo(() => {
     const transformed = transformDBSkills(dbSkills);
-    // For skills with no real lessons, inject demo placeholders
-    return transformed.map((s) => ({
-      ...s,
-      lessons: s.hasRealData ? s.lessons : (DEMO_LESSONS[s.slug] || s.lessons),
-    }));
+    // For skills with no real lessons, inject demo playlists
+    return transformed.map((s) => {
+      if (s.hasRealData) return s;
+      const demoPlaylists = DEMO_PLAYLISTS[s.slug] || s.playlists;
+      const demoAllLessons = demoPlaylists.flatMap((pl) => pl.lessons);
+      return { ...s, playlists: demoPlaylists, allLessons: demoAllLessons };
+    });
   }, [dbSkills]);
 
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
@@ -839,7 +962,7 @@ export default function DigitalSkillsClient({ dbSkills = [] }: { dbSkills?: DBSk
               >
                 {[
                   { value: `${SKILLS.length}`, label: 'Skill Tracks' },
-                  { value: `${SKILLS.reduce((a, s) => a + s.lessons.length, 0)}`, label: 'Lessons' },
+                  { value: `${SKILLS.reduce((a, s) => a + s.allLessons.length, 0)}`, label: 'Lessons' },
                   { value: '4K', label: 'Quality' },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center">
