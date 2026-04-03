@@ -209,6 +209,7 @@ export default function DualMediaViewer({
             downloadUrl={pdfDownload}
             title={`${title} — PDF`}
             minHeight="max(650px, 85vh)"
+            resourceId={resourceId}
           />
         </div>
 

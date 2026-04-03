@@ -89,28 +89,42 @@ export async function GET(
   }
 
   // ── 3. Resolve the PDF URL ─────────────────────────────────────────────
-  const pdfUrl =
-    forceWorksheet && resource.worksheet_url
-      ? resource.worksheet_url
-      : resource.worksheet_url && resource.content_type !== 'video'
-      ? resource.worksheet_url
-      : resource.source_url;
+  // Always prefer worksheet_url when it exists (covers video+PDF dual-media)
+  const pdfUrl = resource.worksheet_url || resource.source_url;
 
   if (!pdfUrl) {
     return errorResponse('No PDF available for this resource.', 404);
   }
 
   // ── 4. Fetch raw PDF bytes ─────────────────────────────────────────────
+  // Convert Google Drive sharing URLs to direct download format
+  let fetchUrl = pdfUrl;
+  const driveFileMatch = pdfUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  const driveOpenMatch = pdfUrl.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  const driveId = driveFileMatch?.[1] || driveOpenMatch?.[1];
+  if (driveId) {
+    fetchUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+  }
+
   let pdfResponse: Response;
   try {
-    pdfResponse = await fetch(pdfUrl, { cache: 'no-store' });
+    pdfResponse = await fetch(fetchUrl, { cache: 'no-store', redirect: 'follow' });
   } catch {
     return errorResponse('Failed to fetch the PDF source.', 502);
   }
 
   if (!pdfResponse.ok) {
     return errorResponse(
-      `PDF source returned ${pdfResponse.status}. The file may have moved.`,
+      `PDF source returned ${pdfResponse.status}. The file may have moved or its sharing permissions need to be set to "Anyone with the link."`,
+      502,
+    );
+  }
+
+  // Verify we got a PDF, not an HTML error page
+  const contentType = pdfResponse.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    return errorResponse(
+      'The PDF source returned an HTML page instead of a PDF. Please check the file\'s sharing permissions in Google Drive — set to "Anyone with the link can view."',
       502,
     );
   }

@@ -215,10 +215,12 @@ const SolverPdfViewer = memo(function SolverPdfViewer({
   embedUrl,
   downloadUrl,
   title,
+  resourceId,
 }: {
   embedUrl: string;
   downloadUrl: string | null;
   title: string;
+  resourceId?: string;
 }) {
   return (
     <FramedPDFViewer
@@ -227,6 +229,7 @@ const SolverPdfViewer = memo(function SolverPdfViewer({
       title={title}
       label="Resource Document"
       minHeight="100%"
+      resourceId={resourceId}
     />
   );
 });
@@ -473,6 +476,7 @@ export default function InteractiveSolver({
               embedUrl={pdfEmbedUrl}
               downloadUrl={pdfUrl}
               title={`${title} — Paper`}
+              resourceId={resourceId}
             />
           </div>
         </div>

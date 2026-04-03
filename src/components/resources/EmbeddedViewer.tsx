@@ -283,6 +283,7 @@ export default function EmbeddedViewer({
           title={title}
           label={contentType === 'worksheet' ? 'Worksheet' : 'Resource Document'}
           minHeight="max(800px, 85vh)"
+          resourceId={resourceId}
         />
       )}
 

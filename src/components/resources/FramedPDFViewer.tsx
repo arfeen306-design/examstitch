@@ -11,15 +11,15 @@ interface FramedPDFViewerProps {
   label?: string;
   /** Minimum height for the iframe — defaults to 80vh */
   minHeight?: string;
+  /** Resource ID — when provided, the PDF is proxied through /api/pdf/[id] to avoid Drive 403s */
+  resourceId?: string;
 }
-
-const beige = '#f5f0e8';
 
 /**
  * Branded PDF viewer frame used across all resource pages.
- * Features a header bar with Download (primary) + Print (outline) buttons,
- * a subject-themed border, Drive UI masking overlays, and a fallback
- * message if the embed fails to load (e.g. Google 403).
+ * When a resourceId is provided, the PDF is served through our own API
+ * (server-side fetch + optional watermarking) instead of embedding Google Drive
+ * directly — this eliminates 403 errors from Drive sharing restrictions.
  */
 export default function FramedPDFViewer({
   embedUrl,
@@ -27,17 +27,28 @@ export default function FramedPDFViewer({
   title,
   label = 'Resource Document',
   minHeight = '80vh',
+  resourceId,
 }: FramedPDFViewerProps) {
   const [loadError, setLoadError] = useState(false);
 
+  // Use our own PDF API proxy when we have a resourceId — avoids Google 403
+  const iframeSrc = resourceId
+    ? `/api/pdf/${resourceId}?inline=1`
+    : embedUrl;
+
+  // Download via our API too (includes watermark)
+  const resolvedDownloadUrl = resourceId
+    ? `/api/pdf/${resourceId}`
+    : downloadUrl;
+
   const handlePrint = useCallback(() => {
-    const printWindow = window.open(embedUrl, '_blank');
+    const printWindow = window.open(iframeSrc, '_blank');
     if (printWindow) {
       printWindow.addEventListener('load', () => {
         setTimeout(() => printWindow.print(), 500);
       });
     }
-  }, [embedUrl]);
+  }, [iframeSrc]);
 
   return (
     <div
@@ -66,9 +77,9 @@ export default function FramedPDFViewer({
         </span>
 
         <div className="flex items-center gap-2">
-          {downloadUrl && (
+          {resolvedDownloadUrl && (
             <a
-              href={downloadUrl}
+              href={resolvedDownloadUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold rounded-lg transition-all hover:opacity-90 shadow-sm"
@@ -89,27 +100,27 @@ export default function FramedPDFViewer({
         </div>
       </div>
 
-      {/* ── PDF iframe with Drive UI masking ──────────────────────────── */}
+      {/* ── PDF iframe ────────────────────────────────────────────────── */}
       <div
         className="relative flex-1"
-        style={{ backgroundColor: beige, minHeight }}
+        style={{ backgroundColor: '#525659', minHeight }}
       >
         {loadError ? (
-          /* ── Fallback: shown when the iframe fails (403, CORS, etc.) ── */
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          /* ── Fallback: shown when the PDF fails to load ────────────── */
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center bg-slate-50">
             <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center">
               <AlertTriangle className="w-8 h-8 text-amber-600" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">PDF Preview Unavailable</h3>
               <p className="text-sm text-slate-500 max-w-md">
-                This PDF couldn't be embedded directly. This usually happens when the file's sharing permissions need updating.
+                This PDF couldn&apos;t be loaded. Try downloading it directly instead.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-2">
-              {downloadUrl && (
+              {resolvedDownloadUrl && (
                 <a
-                  href={downloadUrl}
+                  href={resolvedDownloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md transition-all hover:opacity-90"
@@ -131,42 +142,16 @@ export default function FramedPDFViewer({
             </div>
           </div>
         ) : (
-          <>
-            <iframe
-              src={embedUrl}
-              title={title}
-              className="w-full border-0"
-              style={{ minHeight, height: '100%' }}
-              allow="autoplay"
-              referrerPolicy="no-referrer"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              loading="lazy"
-              onError={() => setLoadError(true)}
-              onLoad={(e) => {
-                // Detect 403/blank embed — Google Drive returns a blank page on access denied
-                try {
-                  const iframe = e.currentTarget;
-                  // If iframe loaded but we can't access contentDocument due to CORS, that's normal
-                  // The iframe itself loading is a good sign — keep showing it
-                } catch {
-                  // Cross-origin: expected, embed is working
-                }
-              }}
-            />
-
-            {/* Mask Google Drive chrome */}
-            <div className="absolute top-0 left-0 right-0 pointer-events-none z-10"
-                 style={{ height: '3px', backgroundColor: beige }} />
-            <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
-                 style={{ height: '3px', backgroundColor: beige }} />
-            <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-10"
-                 style={{ width: '3px', backgroundColor: beige }} />
-            <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-10"
-                 style={{ width: '6px', backgroundColor: beige }} />
-            {/* Cover Drive's built-in open-in-new-window button */}
-            <div className="absolute top-0 right-0 w-14 h-12 pointer-events-auto z-20 rounded-bl-lg"
-                 style={{ backgroundColor: beige }} />
-          </>
+          <iframe
+            src={iframeSrc}
+            title={title}
+            className="w-full border-0"
+            style={{ minHeight, height: '100%' }}
+            allow="autoplay"
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            onError={() => setLoadError(true)}
+          />
         )}
       </div>
     </div>
