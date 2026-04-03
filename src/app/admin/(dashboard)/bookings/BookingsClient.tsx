@@ -159,7 +159,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-navy-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
             Demo Bookings
             {newCount > 0 && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-orange-500 text-white">
@@ -167,25 +167,25 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
               </span>
             )}
           </h2>
-          <p className="text-sm text-navy-500">Submitted via the public /demo booking form.</p>
+          <p className="text-sm text-white/40">Submitted via the public /demo booking form.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => downloadCSV(filtered)}
-            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-navy-200 text-navy-600 hover:bg-navy-50 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-white/[0.08] text-white/50 hover:bg-white/[0.03] transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV {hasFilter && `(${filtered.length})`}
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-navy-200 text-navy-600 hover:bg-navy-50 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-white/[0.08] text-white/50 hover:bg-white/[0.03] transition-colors"
           >
             <Printer className="w-3.5 h-3.5" />
             Print {hasFilter && `(${filtered.length})`}
           </button>
           <a href="/demo" target="_blank" rel="noopener noreferrer"
-            className="text-xs font-semibold px-4 py-2 rounded-lg border border-navy-200 text-navy-600 hover:bg-navy-50 transition-colors"
+            className="text-xs font-semibold px-4 py-2 rounded-lg border border-white/[0.08] text-white/50 hover:bg-white/[0.03] transition-colors"
           >
             View Public Form ↗
           </a>
@@ -195,36 +195,36 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total',   value: total,    color: 'text-navy-700',   bg: 'bg-navy-50'   },
+          { label: 'Total',   value: total,    color: 'text-white/60',   bg: 'bg-white/[0.03]'   },
           { label: 'New',     value: newCount, color: 'text-orange-600', bg: 'bg-orange-50' },
           { label: 'Pending', value: pending,  color: 'text-amber-600',  bg: 'bg-amber-50'  },
           { label: 'Booked',  value: booked,   color: 'text-green-600',  bg: 'bg-green-50'  },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-5`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-navy-400 mb-1">{s.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/30 mb-1">{s.label}</p>
             <p className={`text-3xl font-extrabold tabular-nums ${s.color}`}>{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-navy-100 px-5 py-4">
+      <div className="bg-white/[0.04] rounded-2xl border border-white/[0.08] px-5 py-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-semibold text-navy-500 uppercase tracking-wider">Filter:</span>
+          <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Filter:</span>
 
           {/* Status */}
           <div className="relative">
             <select
               value={filterStatus}
               onChange={e => setFStatus(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-navy-200 text-sm text-navy-700 bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Statuses</option>
               {ALL_STATUSES.map(s => (
                 <option key={s} value={s}>{STATUS_STYLE[s].label}</option>
               ))}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
           </div>
 
           {/* Level */}
@@ -232,12 +232,12 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
             <select
               value={filterLevel}
               onChange={e => setFLevel(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-navy-200 text-sm text-navy-700 bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Levels</option>
               {levels.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
           </div>
 
           {/* Subject */}
@@ -245,12 +245,12 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
             <select
               value={filterSubject}
               onChange={e => setFSubject(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-navy-200 text-sm text-navy-700 bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Subjects</option>
               {subjects.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
           </div>
 
           {/* Month */}
@@ -258,7 +258,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
             <select
               value={filterMonth}
               onChange={e => setFMonth(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-navy-200 text-sm text-navy-700 bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Months</option>
               {months.map(m => {
@@ -267,21 +267,21 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
                 return <option key={m} value={m}>{label}</option>;
               })}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
           </div>
 
           {hasFilter && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-navy-100 text-navy-600 hover:bg-navy-200 transition-colors"
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-white/[0.06] text-white/50 hover:bg-white/[0.08] transition-colors"
             >
               <X className="w-3.5 h-3.5" /> Clear
             </button>
           )}
 
           {hasFilter && (
-            <span className="text-xs text-navy-400 ml-auto">
-              Showing <strong className="text-navy-700">{filtered.length}</strong> of {total}
+            <span className="text-xs text-white/30 ml-auto">
+              Showing <strong className="text-white/60">{filtered.length}</strong> of {total}
             </span>
           )}
         </div>
@@ -294,15 +294,15 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-navy-50 overflow-hidden">
-        <div className="px-6 py-4 border-b border-navy-50">
-          <h3 className="text-base font-semibold text-navy-900">
+      <div className="bg-white/[0.04] rounded-2xl shadow-sm border border-white/[0.06] overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/[0.06]">
+          <h3 className="text-base font-semibold text-white">
             {hasFilter ? `Filtered Bookings (${filtered.length})` : `All Bookings (${total})`}
           </h3>
         </div>
         <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
           <table className="w-full text-sm text-left">
-            <thead className="text-xs uppercase bg-navy-50 text-navy-500 sticky top-0 z-10">
+            <thead className="text-xs uppercase bg-white/[0.03] text-white/40 sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3">Ref</th>
                 <th className="px-4 py-3">Name</th>
@@ -315,25 +315,25 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
                 <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-navy-50">
+            <tbody className="divide-y divide-white/[0.06]">
               {filtered.map(b => {
                 const st = STATUS_STYLE[b.status];
                 const busy = actionLoading === b.id;
                 return (
-                  <tr key={b.id} className={`hover:bg-gray-50 transition-colors ${busy ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-navy-600 whitespace-nowrap">
+                  <tr key={b.id} className={`hover:bg-white/[0.06] transition-colors ${busy ? 'opacity-50' : ''}`}>
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-white/50 whitespace-nowrap">
                       {b.booking_ref}
                       {isNew(b.created_at) && (
                         <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-orange-100 text-orange-600">New</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-medium text-navy-900 whitespace-nowrap">{b.name}</td>
-                    <td className="px-4 py-3 text-navy-500 text-xs">{b.email ?? '—'}</td>
-                    <td className="px-4 py-3 text-navy-600 font-mono text-xs whitespace-nowrap">{b.whatsapp}</td>
+                    <td className="px-4 py-3 font-medium text-white whitespace-nowrap">{b.name}</td>
+                    <td className="px-4 py-3 text-white/40 text-xs">{b.email ?? '—'}</td>
+                    <td className="px-4 py-3 text-white/50 font-mono text-xs whitespace-nowrap">{b.whatsapp}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="bg-navy-100 text-navy-700 px-2 py-0.5 rounded-full text-xs font-semibold">{b.level}</span>
+                      <span className="bg-white/[0.06] text-white/60 px-2 py-0.5 rounded-full text-xs font-semibold">{b.level}</span>
                     </td>
-                    <td className="px-4 py-3 text-navy-700">{b.subject}</td>
+                    <td className="px-4 py-3 text-white/60">{b.subject}</td>
 
                     {/* Editable status dropdown */}
                     <td className="px-4 py-3 text-center">
@@ -352,7 +352,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-navy-400 text-right whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-white/30 text-right whitespace-nowrap">
                       {new Date(b.created_at).toLocaleString('en-GB', {
                         day: '2-digit', month: 'short', year: 'numeric',
                         hour: '2-digit', minute: '2-digit',
@@ -375,7 +375,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-navy-400">
+                  <td colSpan={9} className="px-4 py-12 text-center text-white/30">
                     {hasFilter ? 'No bookings match the selected filters.' : 'No demo bookings yet.'}
                   </td>
                 </tr>

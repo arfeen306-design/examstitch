@@ -62,17 +62,17 @@ export default function CSResourceTable({
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by title, category, or topic…"
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+              <X className="w-4 h-4 text-white/30 hover:text-white/50" />
             </button>
           )}
         </div>
@@ -86,13 +86,13 @@ export default function CSResourceTable({
       </div>
 
       {/* Stats bar */}
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-white/40">
         Showing {filtered.length} of {resources.length} resources
       </p>
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-white/30">
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-50" />
           <p className="text-sm font-medium">No CS resources found.</p>
           <p className="text-xs mt-1">Upload your first resource to get started.</p>
@@ -101,7 +101,7 @@ export default function CSResourceTable({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-100">
+              <tr className="text-left text-xs font-medium text-white/40 uppercase tracking-wider border-b border-white/[0.06]">
                 <th className="pb-3 pr-4">Type</th>
                 <th className="pb-3 pr-4">Title</th>
                 <th className="pb-3 pr-4">Category</th>
@@ -109,24 +109,24 @@ export default function CSResourceTable({
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-white/[0.06]">
               {filtered.map(r => {
                 const Icon = CONTENT_ICONS[r.content_type] || FileText;
                 return (
-                  <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={r.id} className="hover:bg-white/[0.06] transition-colors">
                     <td className="py-3 pr-4">
                       <Icon className="w-4 h-4 text-indigo-500" />
                     </td>
                     <td className="py-3 pr-4">
-                      <div className="font-medium text-gray-900 truncate max-w-xs">{r.title}</div>
-                      {r.topic && <div className="text-xs text-gray-400">{r.topic}</div>}
+                      <div className="font-medium text-white truncate max-w-xs">{r.title}</div>
+                      {r.topic && <div className="text-xs text-white/30">{r.topic}</div>}
                     </td>
                     <td className="py-3 pr-4">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
                         {r.category?.name || '—'}
                       </span>
                     </td>
-                    <td className="py-3 pr-4 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="py-3 pr-4 text-white/40 text-xs whitespace-nowrap">
                       {new Date(r.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-3 text-right">
@@ -135,7 +135,7 @@ export default function CSResourceTable({
                           href={r.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 text-gray-400 hover:text-indigo-600 transition"
+                          className="p-1.5 text-white/30 hover:text-indigo-600 transition"
                           title="Open source"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -143,7 +143,7 @@ export default function CSResourceTable({
                         <button
                           onClick={() => handleDelete(r.id, r.title)}
                           disabled={isPending}
-                          className="p-1.5 text-gray-400 hover:text-red-600 transition disabled:opacity-50"
+                          className="p-1.5 text-white/30 hover:text-red-600 transition disabled:opacity-50"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -254,33 +254,33 @@ function CSUploadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-indigo-50/50">
-          <h2 className="text-xl font-semibold text-gray-900">Add CS Resource</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition">
+      <div className="bg-white/[0.04] rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-white/[0.06] bg-indigo-50/50">
+          <h2 className="text-xl font-semibold text-white">Add CS Resource</h2>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+            <label className="block text-sm font-medium text-white/60 mb-1">Title *</label>
             <input
               required
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="e.g. Binary Search Algorithm"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Content Type</label>
+              <label className="block text-sm font-medium text-white/60 mb-1">Content Type</label>
               <select
                 value={form.content_type}
                 onChange={e => setForm({ ...form, content_type: e.target.value, source_type: e.target.value === 'video' ? 'youtube' : 'google_drive' })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="pdf">PDF</option>
                 <option value="video">Video</option>
@@ -288,12 +288,12 @@ function CSUploadModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Level *</label>
+              <label className="block text-sm font-medium text-white/60 mb-1">Level *</label>
               <select
                 required
                 value={form.level}
                 onChange={e => setForm({ ...form, level: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               >
                 {allowedLevels.map(l => (
                   <option key={l} value={l}>{l}</option>
@@ -301,12 +301,12 @@ function CSUploadModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+              <label className="block text-sm font-medium text-white/60 mb-1">Category *</label>
               <select
                 required
                 value={form.category_id}
                 onChange={e => setForm({ ...form, category_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="" disabled>Select…</option>
                 {categories.map(c => (
@@ -317,28 +317,28 @@ function CSUploadModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Source URL *</label>
+            <label className="block text-sm font-medium text-white/60 mb-1">Source URL *</label>
             <input
               required
               value={form.source_url}
               onChange={e => setForm({ ...form, source_url: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg font-mono text-sm focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg font-mono text-sm focus:ring-indigo-500 focus:border-indigo-500"
               placeholder={form.content_type === 'video' ? 'https://www.youtube.com/watch?v=...' : 'https://drive.google.com/file/d/...'}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic (optional)</label>
+            <label className="block text-sm font-medium text-white/60 mb-1">Topic (optional)</label>
             <input
               value={form.topic}
               onChange={e => setForm({ ...form, topic: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="e.g. Algorithms"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.06]">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-white/60 hover:bg-white/[0.06] rounded-lg transition">
               Cancel
             </button>
             <button

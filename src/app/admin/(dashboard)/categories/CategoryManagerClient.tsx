@@ -39,19 +39,19 @@ export default function CategoryManagerClient({ subjects }: { subjects: Subject[
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-navy-50 mb-8">
-      <h3 className="text-lg font-semibold text-navy-900 mb-4">Add Taxonomy Mapping</h3>
+    <div className="bg-white/[0.04] p-6 rounded-2xl shadow-sm border border-white/[0.06] mb-8">
+      <h3 className="text-lg font-semibold text-white mb-4">Add Taxonomy Mapping</h3>
       
       <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-4 items-end">
         <div className="flex-1 w-full relative group">
-          <label className="block text-xs font-semibold tracking-wider text-navy-400 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-gold-500">
+          <label className="block text-xs font-semibold tracking-wider text-white/30 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-gold-500">
             Syllabus
           </label>
           <select 
             required
             value={formData.subject_id}
             onChange={e => setFormData({ ...formData, subject_id: e.target.value })}
-            className="w-full px-4 py-2.5 bg-gray-50/50 border border-navy-100 rounded-xl focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 focus:bg-white outline-none transition-all shadow-sm shadow-navy-900/5 appearance-none"
+            className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-orange-500/50/20 focus:border-orange-500/50 focus:bg-white/[0.04] outline-none transition-all shadow-sm shadow-navy-900/5 appearance-none"
           >
             <option value="" disabled>Select Subject...</option>
             {subjects.map(sub => (
@@ -61,7 +61,7 @@ export default function CategoryManagerClient({ subjects }: { subjects: Subject[
         </div>
 
         <div className="flex-1 w-full relative group">
-          <label className="block text-xs font-semibold tracking-wider text-navy-400 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-gold-500">
+          <label className="block text-xs font-semibold tracking-wider text-white/30 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-gold-500">
             Topic Name
           </label>
           <input 
@@ -72,12 +72,12 @@ export default function CategoryManagerClient({ subjects }: { subjects: Subject[
               const name = e.target.value;
               setFormData({ ...formData, name, slug: handleSlugify(name) });
             }}
-            className="w-full px-4 py-2.5 bg-gray-50/50 border border-navy-100 rounded-xl focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 focus:bg-white outline-none transition-all shadow-sm shadow-navy-900/5 placeholder:text-gray-400"
+            className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-orange-500/50/20 focus:border-orange-500/50 focus:bg-white/[0.04] outline-none transition-all shadow-sm shadow-navy-900/5 placeholder:text-white/30"
           />
         </div>
 
         <div className="flex-1 w-full relative group">
-          <label className="block text-xs font-semibold tracking-wider text-navy-400 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-gold-500">
+          <label className="block text-xs font-semibold tracking-wider text-white/30 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-gold-500">
             URL Slug
           </label>
           <input 
@@ -85,7 +85,7 @@ export default function CategoryManagerClient({ subjects }: { subjects: Subject[
             placeholder="e.g. differentiation"
             value={formData.slug}
             onChange={e => setFormData({ ...formData, slug: handleSlugify(e.target.value) })}
-            className="w-full px-4 py-2.5 bg-gray-50/50 border border-navy-100 rounded-xl focus:ring-2 focus:ring-gold-500/20 focus:border-gold-500 focus:bg-white outline-none font-mono text-sm transition-all shadow-sm shadow-navy-900/5 placeholder:text-gray-400"
+            className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-orange-500/50/20 focus:border-orange-500/50 focus:bg-white/[0.04] outline-none font-mono text-sm transition-all shadow-sm shadow-navy-900/5 placeholder:text-white/30"
           />
         </div>
 

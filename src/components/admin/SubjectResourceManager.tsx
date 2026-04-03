@@ -146,7 +146,7 @@ function EditForm({ state, onChange }: { state: EditState; onChange: (s: EditSta
       <input
         value={state.title}
         onChange={e => onChange({ ...state, title: e.target.value })}
-        className="w-full px-2 py-1 text-sm border border-gold-300 rounded-md focus:ring-1 focus:ring-gold-500 outline-none"
+        className="w-full px-2 py-1 text-sm border border-gold-300 rounded-md focus:ring-1 focus:ring-orange-500/50 outline-none"
         placeholder="Title"
       />
       <div className="relative">
@@ -432,13 +432,13 @@ export default function SubjectResourceManager({
         <tr
           key={r.id}
           className={`transition-colors group
-            ${editingId === r.id ? 'bg-gold-50/40' : isSub ? 'bg-blue-50/20 hover:bg-blue-50/40' : 'hover:bg-gray-50/50'}
+            ${editingId === r.id ? 'bg-gold-50/40' : isSub ? 'bg-blue-50/20 hover:bg-blue-50/40' : 'hover:bg-white/[0.06]'}
             ${isSub ? 'border-l-4 border-blue-300' : ''}`}
         >
           {/* # */}
           <td className="w-12 px-3 py-2.5 text-center">
             <span className={`inline-block text-xs font-bold tabular-nums rounded px-1.5 py-0.5
-              ${isSub ? 'text-blue-600 bg-blue-50' : 'text-gray-500 bg-gray-100'}`}>
+              ${isSub ? 'text-blue-600 bg-blue-50' : 'text-white/40 bg-white/[0.06]'}`}>
               {label}
             </span>
           </td>
@@ -459,7 +459,7 @@ export default function SubjectResourceManager({
                     : <FileText className="w-3.5 h-3.5 shrink-0 text-green-500 mt-0.5" />
                 )}
                 <div className="min-w-0">
-                  <span className="truncate block text-sm text-gray-900" title={r.title}>
+                  <span className="truncate block text-sm text-white" title={r.title}>
                     {subLabel}
                     {isSub && partSuffix && (
                       <span className="text-[10px] font-normal text-blue-400 ml-1.5">— {partSuffix}</span>
@@ -474,7 +474,7 @@ export default function SubjectResourceManager({
                       </span>
                     )}
                     {totalParts > 1 && !isSub && (
-                      <span className="text-[10px] text-gray-400">{totalParts} parts</span>
+                      <span className="text-[10px] text-white/30">{totalParts} parts</span>
                     )}
                   </div>
                 </div>
@@ -508,13 +508,13 @@ export default function SubjectResourceManager({
           <td className="w-24 px-3 py-2.5">
             {editingId === r.id ? (
               <select value={editState.contentType} onChange={e => setEditState(s => ({ ...s, contentType: e.target.value }))}
-                className="px-2 py-1 text-xs border border-gray-200 rounded-md">
+                className="px-2 py-1 text-xs border border-white/[0.08] rounded-md">
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="worksheet">Worksheet</option>
               </select>
             ) : (
-              <span className="px-2 py-0.5 rounded-full text-xs font-mono uppercase bg-gray-100 text-gray-600">
+              <span className="px-2 py-0.5 rounded-full text-xs font-mono uppercase bg-white/[0.06] text-white/50">
                 {r.content_type}
               </span>
             )}
@@ -568,15 +568,15 @@ export default function SubjectResourceManager({
               {editingId === r.id ? (
                 <>
                   <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-500 hover:text-green-700 p-1 rounded hover:bg-green-50 transition" title="Save"><Check className="w-4 h-4" /></button>
-                  <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-700 p-1 rounded hover:bg-gray-50 transition" title="Cancel"><X className="w-4 h-4" /></button>
+                  <button onClick={cancelEdit} className="text-white/30 hover:text-white/60 p-1 rounded hover:bg-white/[0.06] transition" title="Cancel"><X className="w-4 h-4" /></button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => startEdit(r)} className="text-gray-400 hover:text-amber-500 p-1 rounded hover:bg-amber-50 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => openTimestampEditor(r)} className="text-gray-400 hover:text-purple-500 p-1 rounded hover:bg-purple-50 transition" title="Mapping"><Clock className="w-4 h-4" /></button>
-                  <button onClick={() => openSubtopic(r)} className="text-gray-400 hover:text-blue-500 p-1 rounded hover:bg-blue-50 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
-                  <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-amber-500 p-1 rounded hover:bg-amber-50 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
-                  <button onClick={() => handleDelete(r.id, r.title)} className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => startEdit(r)} className="text-white/30 hover:text-amber-500 p-1 rounded hover:bg-amber-50 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => openTimestampEditor(r)} className="text-white/30 hover:text-purple-500 p-1 rounded hover:bg-purple-50 transition" title="Mapping"><Clock className="w-4 h-4" /></button>
+                  <button onClick={() => openSubtopic(r)} className="text-white/30 hover:text-blue-500 p-1 rounded hover:bg-blue-50 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
+                  <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-white/30 hover:text-amber-500 p-1 rounded hover:bg-amber-50 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
+                  <button onClick={() => handleDelete(r.id, r.title)} className="text-white/30 hover:text-red-500 p-1 rounded hover:bg-red-50 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
                 </>
               )}
             </div>
@@ -589,7 +589,7 @@ export default function SubjectResourceManager({
             <td colSpan={9} className="px-4 py-3">
               <div className="flex flex-wrap gap-2 items-end">
                 <div className="flex flex-col gap-1 min-w-[160px]">
-                  <label className="text-xs font-semibold text-gray-500">Sub-topic Title</label>
+                  <label className="text-xs font-semibold text-white/40">Sub-topic Title</label>
                   <input value={subtopicState.title} onChange={e => setSubtopicState(s => ({ ...s, title: e.target.value }))}
                     className="px-2 py-1 text-sm border border-blue-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" placeholder="Part 2" />
                 </div>
@@ -610,7 +610,7 @@ export default function SubjectResourceManager({
                     <Check className="w-3.5 h-3.5" /> Add
                   </button>
                   <button onClick={cancelSubtopic}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/50 bg-white/[0.04] hover:bg-white/[0.06] rounded-lg border border-white/[0.08] transition">
                     <X className="w-3.5 h-3.5" /> Cancel
                   </button>
                 </div>
@@ -638,12 +638,12 @@ export default function SubjectResourceManager({
                 </div>
 
                 {mappingDraft.map((q: any, qi: number) => (
-                  <div key={qi} className="flex flex-col gap-2 p-2 bg-white rounded-lg border border-purple-100">
+                  <div key={qi} className="flex flex-col gap-2 p-2 bg-white/[0.04] rounded-lg border border-purple-100">
                     <div className="flex items-center gap-2 flex-wrap">
                       <input value={q.label}
                         onChange={e => { const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], label: e.target.value }; setMappingDraft(copy); }}
                         className="w-16 px-2 py-1 text-xs font-bold border border-purple-200 rounded-md text-center" placeholder="Q1" />
-                      <span className="text-xs text-gray-400">@</span>
+                      <span className="text-xs text-white/30">@</span>
                       <input type="text"
                         value={(() => { const m = Math.floor(q.start_time / 60); const s = q.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
                         onChange={e => { const [mm, ss] = e.target.value.split(':').map(Number); const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], start_time: (mm || 0) * 60 + (ss || 0) }; setMappingDraft(copy); }}
@@ -684,7 +684,7 @@ export default function SubjectResourceManager({
                     <Check className="w-3.5 h-3.5" /> Save Timestamps
                   </button>
                   <button onClick={cancelTimestampEditor}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/50 bg-white/[0.04] hover:bg-white/[0.06] rounded-lg border border-white/[0.08] transition">
                     <X className="w-3.5 h-3.5" /> Cancel
                   </button>
                 </div>
@@ -707,24 +707,24 @@ export default function SubjectResourceManager({
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search…"
-              className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 outline-none w-52"
+              className="pl-10 pr-8 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-2 outline-none w-52"
               style={{ '--tw-ring-color': accentColor } as React.CSSProperties}
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                <X className="w-4 h-4 text-white/30 hover:text-white/50" />
               </button>
             )}
           </div>
 
           {showModuleTypeFilter && (
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            <div className="flex rounded-lg border border-white/[0.08] overflow-hidden">
               {[
                 { value: 'all', label: 'All Types' },
                 { value: 'video_topical', label: 'Video Topical' },
@@ -736,7 +736,7 @@ export default function SubjectResourceManager({
                   className={`px-3 py-2 text-xs font-medium transition-colors ${
                     filterModuleType === opt.value
                       ? 'text-white'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      : 'text-white/50 hover:bg-white/[0.06]'
                   }`}
                   style={filterModuleType === opt.value ? { backgroundColor: accentColor } : undefined}
                 >
@@ -746,7 +746,7 @@ export default function SubjectResourceManager({
             </div>
           )}
 
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-white/30">
             {filtered.length} resource{filtered.length !== 1 ? 's' : ''} · {paperGroups.length} group{paperGroups.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -764,13 +764,13 @@ export default function SubjectResourceManager({
 
       {/* ── Inline New Resource Form ─────────────────────────────────────── */}
       {showNewResource && (
-        <div className="border rounded-xl p-5 space-y-3 bg-gray-50 mb-4" style={{ borderColor: accentColor + '40' }}>
+        <div className="border rounded-xl p-5 space-y-3 bg-white/[0.03] mb-4" style={{ borderColor: accentColor + '40' }}>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <Upload className="w-4 h-4" style={{ color: accentColor }} />
               New Resource
             </h4>
-            <button onClick={() => setShowNewResource(false)} className="text-gray-400 hover:text-gray-600">
+            <button onClick={() => setShowNewResource(false)} className="text-white/30 hover:text-white/50">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -779,13 +779,13 @@ export default function SubjectResourceManager({
               value={newRes.title}
               onChange={e => setNewRes(s => ({ ...s, title: e.target.value }))}
               placeholder="Title (e.g. Binary Search — Part 1)"
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
               style={{ '--tw-ring-color': accentColor } as any}
             />
             <select
               value={newRes.content_type}
               onChange={e => setNewRes(s => ({ ...s, content_type: e.target.value as any }))}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
             >
               <option value="video">Video</option>
               <option value="pdf">PDF</option>
@@ -795,16 +795,16 @@ export default function SubjectResourceManager({
               value={newRes.source_url}
               onChange={e => setNewRes(s => ({ ...s, source_url: e.target.value }))}
               placeholder="YouTube or Google Drive URL"
-              className="px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm font-mono border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
             />
             <input
               value={newRes.worksheet_url}
               onChange={e => setNewRes(s => ({ ...s, worksheet_url: e.target.value }))}
               placeholder="Worksheet / PDF URL (optional)"
-              className="px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm font-mono border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
             />
             {categoriesLoading ? (
-              <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/30 border border-white/[0.08] rounded-lg bg-white/[0.03]">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Loading…
               </div>
@@ -817,7 +817,7 @@ export default function SubjectResourceManager({
               <select
                 value={newRes.category_id}
                 onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+                className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
               >
                 <option value="">Category (optional)</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -827,7 +827,7 @@ export default function SubjectResourceManager({
               <select
                 value={newRes.module_type}
                 onChange={e => setNewRes(s => ({ ...s, module_type: e.target.value as any }))}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 outline-none"
+                className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
               >
                 <option value="">Module type (optional)</option>
                 <option value="video_topical">Video Topical</option>
@@ -846,7 +846,7 @@ export default function SubjectResourceManager({
             </button>
             <button
               onClick={() => setShowNewResource(false)}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+              className="px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-white/50 text-sm font-medium rounded-lg hover:bg-white/[0.06] transition"
             >
               Cancel
             </button>
@@ -855,7 +855,7 @@ export default function SubjectResourceManager({
       )}
 
       {/* Hierarchical table */}
-      <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm border border-gray-200">
+      <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm border border-white/[0.08]">
         <table className="w-full text-sm text-left">
           <thead className="text-[10px] uppercase tracking-wider sticky top-0 z-10 bg-gray-800 text-white"
                  style={{ borderBottom: '2px solid var(--border-color, #e5e7eb)' }}>
@@ -871,23 +871,23 @@ export default function SubjectResourceManager({
               <th className="w-32 px-3 py-3 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody className="bg-white/[0.04] divide-y divide-white/[0.06]">
             {paperGroups.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-gray-400 text-sm">No resources found.</td>
+                <td colSpan={9} className="py-12 text-center text-white/30 text-sm">No resources found.</td>
               </tr>
             ) : (
               paperGroups.map(paper => (
                 <>
                   {/* Paper group header */}
-                  <tr key={`header-${paper.categoryId}`} className="bg-gray-50 border-t border-b border-gray-200">
+                  <tr key={`header-${paper.categoryId}`} className="bg-white/[0.03] border-t border-b border-white/[0.08]">
                     <td colSpan={9} className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <FolderOpen className="w-4 h-4" style={{ color: accentColor }} />
-                        <span className="text-xs font-bold uppercase tracking-widest text-gray-600">
+                        <span className="text-xs font-bold uppercase tracking-widest text-white/50">
                           {paper.categoryName}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-white/30">
                           · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
                         </span>
                       </div>

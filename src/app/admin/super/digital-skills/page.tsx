@@ -40,8 +40,8 @@ export default async function DigitalSkillsAdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Digital Skills Manager</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-2xl font-bold text-white tracking-tight">Digital Skills Manager</h2>
+        <p className="text-sm text-white/40 mt-1">
           Create and manage skill tracks, playlists, and lessons.
         </p>
       </div>

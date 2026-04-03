@@ -45,7 +45,7 @@ export default function BulkUploadPreview() {
   return (
     <div className="space-y-4">
       <textarea
-        className="w-full h-32 p-3 font-mono text-sm border border-navy-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-gold-500"
+        className="w-full h-32 p-3 font-mono text-sm border border-white/[0.08] rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500/50"
         placeholder="Paste JSON array here..."
         value={jsonInput}
         onChange={(e) => setJsonInput(e.target.value)}
@@ -54,7 +54,7 @@ export default function BulkUploadPreview() {
       <div className="flex gap-2">
         <button
           onClick={handleParse}
-          className="px-4 py-2 text-sm font-medium text-navy-700 bg-navy-50 rounded-lg hover:bg-navy-100"
+          className="px-4 py-2 text-sm font-medium text-white/60 bg-white/[0.03] rounded-lg hover:bg-white/[0.06]"
         >
           Preview JSON
         </button>
@@ -73,9 +73,9 @@ export default function BulkUploadPreview() {
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       {parsedData.length > 0 && (
-        <div className="mt-4 overflow-x-auto border border-navy-50 rounded-lg max-h-64">
+        <div className="mt-4 overflow-x-auto border border-white/[0.06] rounded-lg max-h-64">
           <table className="w-full text-sm text-left align-middle">
-            <thead className="text-xs uppercase bg-navy-50 text-navy-500 sticky top-0">
+            <thead className="text-xs uppercase bg-white/[0.03] text-white/40 sticky top-0">
               <tr>
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Subject</th>
@@ -83,10 +83,10 @@ export default function BulkUploadPreview() {
                 <th className="px-4 py-3">Category ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-navy-50 bg-white">
+            <tbody className="divide-y divide-white/[0.06] bg-white/[0.04]">
               {parsedData.map((row, i) => (
                 <tr key={i}>
-                  <td className="px-4 py-3 font-medium text-navy-900 truncate max-w-[200px]">{row.title}</td>
+                  <td className="px-4 py-3 font-medium text-white truncate max-w-[200px]">{row.title}</td>
                   <td className="px-4 py-3">{row.subject}</td>
                   <td className="px-4 py-3">{row.topic || '-'}</td>
                   <td className="px-4 py-3 font-mono text-xs">{row.category_id}</td>
@@ -95,7 +95,7 @@ export default function BulkUploadPreview() {
             </tbody>
           </table>
           {JSON.parse(jsonInput).length > 50 && (
-            <p className="p-2 text-center text-xs text-navy-400 bg-gray-50">Showing 50 of {JSON.parse(jsonInput).length} rows...</p>
+            <p className="p-2 text-center text-xs text-white/30 bg-white/[0.03]">Showing 50 of {JSON.parse(jsonInput).length} rows...</p>
           )}
         </div>
       )}
