@@ -430,6 +430,47 @@ export async function countResourcesByLevel(levelSlug: string): Promise<number> 
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Subject Resource Counts
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Counts total published resources for a given subject_papers slug
+ * (e.g. 'mathematics-4024', 'computer-science-9618').
+ * Joins: resources → categories → subjects ← subject_papers.
+ */
+export async function countResourcesBySubjectSlug(paperSlug: string): Promise<number> {
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient();
+      const parentId = await resolveSubjectId(supabase, paperSlug);
+      if (!parentId) return 0;
+
+      const { count, error } = await supabase
+        .from('resources')
+        .select('*, category:categories!inner(subject_id)', { count: 'exact', head: true })
+        .eq('is_published', true)
+        .eq('category.subject_id', parentId);
+
+      if (error) throw new Error(`countResourcesBySubjectSlug(${paperSlug}): ${error.message}`);
+      return count ?? 0;
+    },
+    [`resource-count-subject-${paperSlug}`],
+    { revalidate: CACHE_1H, tags: ['resources'] },
+  )();
+}
+
+/**
+ * Batch-counts resources for multiple subject_papers slugs.
+ * Returns a map of slug → count.
+ */
+export async function countResourcesForSubjects(slugs: string[]): Promise<Record<string, number>> {
+  const entries = await Promise.all(
+    slugs.map(async (slug) => [slug, await countResourcesBySubjectSlug(slug)] as const),
+  );
+  return Object.fromEntries(entries);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Search
 // ─────────────────────────────────────────────────────────────────────────────
 
