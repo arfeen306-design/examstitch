@@ -7,7 +7,10 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import WhatsAppFloat from '@/components/ui/WhatsAppFloat';
 import RouteProgress from '@/components/ui/RouteProgress';
+import dynamic from 'next/dynamic';
 import './globals.css';
+
+const PlexusBackground = dynamic(() => import('@/components/ui/PlexusBackground'), { ssr: false });
 
 const inter = Inter({
   subsets: ['latin'],
@@ -76,6 +79,7 @@ export default async function RootLayout({
           ) : (
             // Public pages: full layout with Navbar, Footer, WhatsApp button
             <>
+              <PlexusBackground />
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />
