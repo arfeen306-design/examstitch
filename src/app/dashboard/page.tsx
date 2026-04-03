@@ -24,11 +24,17 @@ export default async function DashboardPage() {
     redirect('/');
   }
 
-  // Fetch progress and total resources for the student's level
-  const [progress, totalResources] = await Promise.all([
-    getUserProgress(student.id),
-    countResourcesByLevel(student.level || 'olevel')
-  ]);
+  // Fetch progress and total resources — gracefully degrade if tables/schema don't match
+  let progress: Awaited<ReturnType<typeof getUserProgress>> = [];
+  let totalResources = 0;
+  try {
+    [progress, totalResources] = await Promise.all([
+      getUserProgress(student.id),
+      countResourcesByLevel(student.level || 'olevel').catch(() => 0)
+    ]);
+  } catch {
+    // user_progress or resource counting may fail — show empty dashboard
+  }
 
   // Fetch unlocked skills
   let unlockedSkills: { id: string; name: string; slug: string; icon: string; gradient: string; description: string | null }[] = [];
