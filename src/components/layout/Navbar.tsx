@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, GraduationCap, LogOut, User, Search } from 'lucide-react';
+import { Menu, X, ChevronDown, GraduationCap, LogOut, User, Search, LayoutDashboard } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
@@ -191,6 +191,13 @@ export default function Navbar() {
             {!authLoading && (
               user ? (
                 <>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white/60 hover:text-teal-400 transition-colors rounded-lg hover:bg-white/5"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    Dashboard
+                  </Link>
                   <span className="flex items-center gap-1.5 px-2.5 py-2 text-xs text-white/60 rounded-lg">
                     <User className="w-3.5 h-3.5" />
                     {user.email?.split('@')[0]}
@@ -302,6 +309,14 @@ export default function Navbar() {
                 <div className="pt-4 px-4 border-t border-white/10 mt-4 space-y-2">
                   {user ? (
                     <>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 w-full py-2.5 text-sm font-semibold text-teal-400 border border-teal-500/30 rounded-lg hover:bg-teal-500/10 transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4 ml-auto" />
+                        <span className="mr-auto">Dashboard</span>
+                      </Link>
                       <p className="text-xs text-white/50 px-1 pb-1">{user.email}</p>
                       <button
                         onClick={() => { handleSignOut(); setMobileOpen(false); }}
