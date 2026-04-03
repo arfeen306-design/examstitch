@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Link as LinkIcon, Shield } from 'lucide-react';
+import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Shield } from 'lucide-react';
 import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
-import { ALL_SUBJECTS } from '@/config/subjects';
+import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS, ALL_SUBJECTS } from '@/config/subjects';
 
 interface Subject {
   id: string;
@@ -44,29 +44,33 @@ export default function SuperAdminClient({
   admins: Admin[];
   mediaWidgets: MediaWidgetItem[];
 }) {
-  const [tab, setTab] = useState<'subjects' | 'admins' | 'media'>('subjects');
+  const [tab, setTab] = useState<'subjects' | 'admins' | 'media'>('admins');
 
   const tabs = [
-    { id: 'subjects' as const, label: 'Subject Factory' },
-    { id: 'admins' as const, label: 'Admin Manager' },
-    { id: 'media' as const, label: 'Media Manager' },
+    { id: 'subjects' as const, label: 'Subject Factory', icon: '🏭' },
+    { id: 'admins' as const, label: 'Admin Manager', icon: '👥' },
+    { id: 'media' as const, label: 'Media Manager', icon: '🎬' },
   ];
 
   return (
-    <div className="bg-white/[0.04] rounded-2xl shadow-sm border border-white/[0.06] overflow-hidden">
-      {/* Tabs */}
-      <div className="border-b border-white/[0.06] flex">
+    <div className="bg-white/[0.04] rounded-2xl shadow-sm border border-white/[0.06] overflow-visible">
+      {/* Tabs — sticky at top */}
+      <div className="border-b border-white/[0.06] flex sticky top-0 z-10 bg-[#0d1526] rounded-t-2xl">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 px-6 py-3.5 text-sm font-medium transition-colors ${
+            className={`flex-1 px-4 py-3.5 text-sm font-medium transition-all relative ${
               tab === t.id
-                ? 'text-white border-b-2 border-navy-900 bg-white/[0.04]'
-                : 'text-white/40 hover:text-white/60 hover:bg-white/[0.06]'
+                ? 'text-white bg-white/[0.06]'
+                : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
             }`}
           >
+            <span className="mr-1.5">{t.icon}</span>
             {t.label}
+            {tab === t.id && (
+              <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-500" />
+            )}
           </button>
         ))}
       </div>
@@ -131,14 +135,13 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-navy-900 text-white text-xs font-medium rounded-lg hover:bg-white/[0.08] transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 transition"
         >
           <Plus className="w-3.5 h-3.5" />
           New Subject
         </button>
       </div>
 
-      {/* Existing subjects list */}
       <div className="space-y-2">
         {subjects.map(s => (
           <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
@@ -157,9 +160,8 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
         ))}
       </div>
 
-      {/* New subject form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="p-4 border-2 border-dashed border-white/[0.08] rounded-xl space-y-3 bg-white/[0.02]">
+        <form onSubmit={handleSubmit} className="p-4 border-2 border-dashed border-violet-500/20 rounded-xl space-y-3 bg-violet-500/[0.03]">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1">Subject Name *</label>
@@ -167,7 +169,7 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
                 required
                 value={form.name}
                 onChange={e => handleAutoSlug(e.target.value)}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-navy-500 focus:border-white/[0.06]0"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
                 placeholder="e.g. Physics"
               />
             </div>
@@ -177,7 +179,7 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
                 required
                 value={form.slug}
                 onChange={e => setForm({ ...form, slug: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono focus:ring-navy-500 focus:border-white/[0.06]0"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
                 placeholder="physics"
               />
             </div>
@@ -193,8 +195,8 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
                   onClick={() => toggleLevel(level)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
                     form.levels.includes(level)
-                      ? 'bg-navy-900 text-white border-navy-900'
-                      : 'bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-gray-300'
+                      ? 'bg-violet-600 text-white border-violet-600'
+                      : 'bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-violet-400/40'
                   }`}
                 >
                   {level}
@@ -210,13 +212,176 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
             <button
               type="submit"
               disabled={isPending || form.levels.length === 0}
-              className="px-4 py-1.5 text-xs font-medium text-white bg-navy-900 rounded-lg hover:bg-white/[0.08] disabled:opacity-50 transition"
+              className="px-4 py-1.5 text-xs font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 disabled:opacity-50 transition"
             >
               {isPending ? 'Creating…' : 'Create Subject'}
             </button>
           </div>
         </form>
       )}
+    </div>
+  );
+}
+
+// ── Categorized Subject Picker (O-Level / A-Level tabs) ─────────────────────
+
+function CategorizedSubjectPicker({
+  selected,
+  onToggle,
+}: {
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
+  const [level, setLevel] = useState<'olevel' | 'alevel'>('olevel');
+  const subjects = level === 'olevel' ? O_LEVEL_SUBJECTS : A_LEVEL_SUBJECTS;
+
+  return (
+    <div>
+      <label className="block text-xs font-medium text-white/60 mb-2">Assign Subjects *</label>
+
+      {/* O-Level / A-Level toggle */}
+      <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] w-fit">
+        <button
+          type="button"
+          onClick={() => setLevel('olevel')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            level === 'olevel'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+              : 'text-white/40 hover:text-white/60'
+          }`}
+        >
+          O-Level / IGCSE
+        </button>
+        <button
+          type="button"
+          onClick={() => setLevel('alevel')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            level === 'alevel'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+              : 'text-white/40 hover:text-white/60'
+          }`}
+        >
+          A-Level
+        </button>
+      </div>
+
+      {/* Subjects grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {subjects.map(s => {
+          const isSelected = selected.includes(s.id);
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => onToggle(s.id)}
+              className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border transition-all text-left ${
+                isSelected
+                  ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500/40 ring-1 ring-indigo-500/20'
+                  : 'bg-white/[0.03] text-white/50 border-white/[0.06] hover:border-indigo-400/30 hover:bg-white/[0.05]'
+              }`}
+            >
+              <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                isSelected ? 'bg-indigo-500 text-white' : 'bg-white/[0.06] text-white/30'
+              }`}>
+                {isSelected ? '✓' : s.name.charAt(0)}
+              </span>
+              <span className="flex-1 truncate">{s.name}</span>
+              <span className="text-[10px] text-white/30 font-mono shrink-0">{s.code}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected summary */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-white/[0.06]">
+          <span className="text-[10px] text-white/30 font-medium self-center mr-1">{selected.length} selected:</span>
+          {selected.map(sid => {
+            const subj = [...O_LEVEL_SUBJECTS, ...A_LEVEL_SUBJECTS].find(s => s.id === sid);
+            return (
+              <span
+                key={sid}
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25"
+              >
+                {subj?.name || sid} ({subj?.code || '?'})
+                <button type="button" onClick={() => onToggle(sid)} className="hover:text-red-400 transition">
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-[10px] text-white/25 mt-2">Admin can only manage resources for assigned subjects. O-Level and A-Level subjects have separate IDs.</p>
+    </div>
+  );
+}
+
+// ── Categorized Assign Dropdown ─────────────────────────────────────────────
+
+function CategorizedAssignDropdown({
+  excludeIds,
+  onSelect,
+  isPending,
+  onAssign,
+}: {
+  excludeIds: string[];
+  onSelect: (id: string) => void;
+  isPending: boolean;
+  onAssign: () => void;
+}) {
+  const [level, setLevel] = useState<'olevel' | 'alevel'>('olevel');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const subjects = level === 'olevel' ? O_LEVEL_SUBJECTS : A_LEVEL_SUBJECTS;
+  const available = subjects.filter(s => !excludeIds.includes(s.id));
+
+  return (
+    <div className="space-y-2">
+      {/* Level tabs */}
+      <div className="flex gap-1 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] w-fit">
+        <button
+          type="button"
+          onClick={() => { setLevel('olevel'); setSelectedSubject(''); }}
+          className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
+            level === 'olevel' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white/60'
+          }`}
+        >
+          O-Level
+        </button>
+        <button
+          type="button"
+          onClick={() => { setLevel('alevel'); setSelectedSubject(''); }}
+          className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
+            level === 'alevel' ? 'bg-purple-600 text-white' : 'text-white/40 hover:text-white/60'
+          }`}
+        >
+          A-Level
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <select
+          value={selectedSubject}
+          onChange={e => { setSelectedSubject(e.target.value); onSelect(e.target.value); }}
+          className="flex-1 px-2 py-1.5 text-xs border border-white/[0.08] rounded-lg bg-white/[0.04] text-white focus:ring-indigo-500"
+        >
+          <option value="" disabled>
+            {available.length === 0 ? `All ${level === 'olevel' ? 'O-Level' : 'A-Level'} assigned` : 'Choose subject…'}
+          </option>
+          {available.map(s => (
+            <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={onAssign}
+          disabled={isPending || !selectedSubject}
+          className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
+        >
+          {isPending ? '…' : 'Add'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -237,12 +402,13 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
     is_super_admin: false,
   });
 
-  // Merge DB subjects + config subjects into a unified lookup map.
-  // Config subjects (ALL_SUBJECTS) are the authoritative list for role assignment.
-  // DB subjects are kept for backwards-compat with existing UUID-based assignments.
+  // Unified lookup: DB subjects (may have UUIDs) + config subjects (canonical IDs)
   const subjectMap = new Map<string, string>();
-  for (const s of subjects) subjectMap.set(s.id, s.name);           // DB (may have UUIDs)
-  for (const s of ALL_SUBJECTS) subjectMap.set(s.id, s.name);       // Config (canonical IDs)
+  for (const s of subjects) subjectMap.set(s.id, s.name);
+  for (const s of ALL_SUBJECTS) subjectMap.set(s.id, s.name);
+  // Also add full entries for display
+  const allSubjectsFull = [...O_LEVEL_SUBJECTS, ...A_LEVEL_SUBJECTS];
+  for (const s of allSubjectsFull) subjectMap.set(s.id, `${s.name} (${s.code})`);
 
   function handleAssign(userId: string) {
     if (!selectedSubject) return;
@@ -327,7 +493,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-navy-900 text-white text-xs font-medium rounded-lg hover:bg-white/[0.08] transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition"
         >
           <UserPlus className="w-3.5 h-3.5" />
           Create Admin
@@ -336,7 +502,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
 
       {/* Create Admin Form */}
       {showCreateForm && (
-        <form onSubmit={handleCreateAdmin} className="p-5 border-2 border-dashed border-white/[0.08] rounded-xl space-y-4 bg-white/[0.02]">
+        <form onSubmit={handleCreateAdmin} className="p-5 border-2 border-dashed border-indigo-500/20 rounded-xl space-y-4 bg-indigo-500/[0.03]">
           <p className="text-sm font-semibold text-white">New Admin Account</p>
 
           <div className="grid grid-cols-2 gap-3">
@@ -346,7 +512,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                 required
                 value={newAdmin.full_name}
                 onChange={e => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-indigo-500 focus:border-indigo-500/40"
                 placeholder="e.g. Sarah Khan"
               />
             </div>
@@ -357,7 +523,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                 type="email"
                 value={newAdmin.email}
                 onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-indigo-500 focus:border-indigo-500/40"
                 placeholder="teacher@school.edu"
               />
             </div>
@@ -370,37 +536,17 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
               type="text"
               value={newAdmin.password}
               onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
-              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-indigo-500 focus:border-indigo-500/40"
               placeholder="Min 6 characters — share with the teacher securely"
               minLength={6}
             />
           </div>
 
-          {/* Subject Assignment — uses master config (all 13 subjects) */}
-          <div>
-            <label className="block text-xs font-medium text-white/60 mb-2">Assign Subjects *</label>
-            <div className="flex flex-wrap gap-2">
-              {ALL_SUBJECTS.map(s => {
-                const selected = newAdmin.managed_subjects.includes(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => toggleNewAdminSubject(s.id)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
-                      selected
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-indigo-300'
-                    }`}
-                  >
-                    {s.name} ({s.code})
-                    {selected && <span className="ml-1">✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-white/30 mt-1">Admin can only upload/manage resources for assigned subjects.</p>
-          </div>
+          {/* Categorized Subject Picker with O-Level / A-Level tabs */}
+          <CategorizedSubjectPicker
+            selected={newAdmin.managed_subjects}
+            onToggle={toggleNewAdminSubject}
+          />
 
           {/* Super Admin Toggle */}
           <label className="flex items-center gap-2 text-xs text-white/60">
@@ -408,7 +554,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
               type="checkbox"
               checked={newAdmin.is_super_admin}
               onChange={e => setNewAdmin({ ...newAdmin, is_super_admin: e.target.checked })}
-              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="rounded border-white/20 bg-white/[0.06] text-indigo-600 focus:ring-indigo-500"
             />
             <span>Grant Super Admin access <span className="text-white/30">(full platform control)</span></span>
           </label>
@@ -428,8 +574,8 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
         </form>
       )}
 
-      {/* Admin List */}
-      <div className="space-y-3">
+      {/* Admin List — scrollable container */}
+      <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1 scrollbar-thin">
         {admins.map(admin => (
           <div key={admin.id} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.03]">
             {/* Admin Header */}
@@ -491,21 +637,21 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
             {/* Assigned Subjects */}
             <div className="flex flex-wrap gap-1.5 mt-2">
               {admin.is_super_admin && (
-                <span className="text-xs text-amber-600 font-medium">⚡ Full access to all subjects</span>
+                <span className="text-xs text-amber-400 font-medium">Full access to all subjects</span>
               )}
               {!admin.is_super_admin && admin.managed_subjects.length === 0 && (
-                <span className="text-xs text-red-400 italic">⚠ No subjects assigned — cannot access any content</span>
+                <span className="text-xs text-red-400 italic">No subjects assigned — cannot access any content</span>
               )}
               {!admin.is_super_admin && admin.managed_subjects.map(sid => (
                 <span
                   key={sid}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25"
                 >
-                  {subjectMap.get(sid) || sid.slice(0, 8)}
+                  {subjectMap.get(sid) || sid.slice(0, 12)}
                   <button
                     onClick={() => handleRemove(admin.id, sid)}
                     disabled={isPending}
-                    className="hover:text-red-600 transition"
+                    className="hover:text-red-400 transition"
                     title="Remove subject"
                   >
                     <X className="w-3 h-3" />
@@ -514,28 +660,15 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
               ))}
             </div>
 
-            {/* Assign Subject Dropdown — all 13 subjects from config */}
+            {/* Categorized Assign Dropdown with O-Level / A-Level tabs */}
             {assignTarget === admin.id && (
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.08]">
-                <select
-                  value={selectedSubject}
-                  onChange={e => setSelectedSubject(e.target.value)}
-                  className="flex-1 px-2 py-1.5 text-xs border border-white/[0.08] rounded-lg bg-white/[0.04] text-white focus:ring-indigo-500"
-                >
-                  <option value="" disabled>Choose subject…</option>
-                  {ALL_SUBJECTS
-                    .filter(s => !admin.managed_subjects.includes(s.id))
-                    .map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-                    ))}
-                </select>
-                <button
-                  onClick={() => handleAssign(admin.id)}
-                  disabled={isPending || !selectedSubject}
-                  className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
-                >
-                  {isPending ? '…' : 'Add'}
-                </button>
+              <div className="mt-3 pt-3 border-t border-white/[0.08]">
+                <CategorizedAssignDropdown
+                  excludeIds={admin.managed_subjects}
+                  onSelect={setSelectedSubject}
+                  isPending={isPending}
+                  onAssign={() => handleAssign(admin.id)}
+                />
               </div>
             )}
           </div>
@@ -630,23 +763,22 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-navy-900 text-white text-xs font-medium rounded-lg hover:bg-white/[0.08] transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 transition"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Media
         </button>
       </div>
 
-      {/* Add form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="p-4 border-2 border-dashed border-white/[0.08] rounded-xl space-y-3 bg-white/[0.02]">
+        <form onSubmit={handleSubmit} className="p-4 border-2 border-dashed border-violet-500/20 rounded-xl space-y-3 bg-violet-500/[0.03]">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1">Page Target *</label>
               <select
                 value={form.page_slug}
                 onChange={e => setForm({ ...form, page_slug: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-navy-500 focus:border-white/[0.06]0"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white focus:ring-violet-500 focus:border-violet-500/40"
               >
                 {PAGE_OPTIONS.map(p => (
                   <option key={p.value} value={p.value}>{p.label}</option>
@@ -658,7 +790,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
               <select
                 value={form.media_type}
                 onChange={e => setForm({ ...form, media_type: e.target.value as 'youtube' | 'pdf' })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-navy-500 focus:border-white/[0.06]0"
+                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white focus:ring-violet-500 focus:border-violet-500/40"
               >
                 <option value="youtube">YouTube Video</option>
                 <option value="pdf">PDF Document</option>
@@ -672,7 +804,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
               required
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
-              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-navy-500 focus:border-white/[0.06]0"
+              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
               placeholder={form.media_type === 'youtube' ? 'e.g. O-Level Paper 1 Walkthrough' : 'e.g. 2024 Specimen Paper'}
             />
           </div>
@@ -685,7 +817,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
               required
               value={form.url}
               onChange={e => setForm({ ...form, url: e.target.value })}
-              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono focus:ring-navy-500 focus:border-white/[0.06]0"
+              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
               placeholder={form.media_type === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://...supabase.co/storage/v1/...'}
             />
           </div>
@@ -697,7 +829,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                   type="checkbox"
                   checked={form.allow_download}
                   onChange={e => setForm({ ...form, allow_download: e.target.checked })}
-                  className="rounded border-gray-300 text-navy-600 focus:ring-navy-500"
+                  className="rounded border-white/20 bg-white/[0.06] text-violet-600 focus:ring-violet-500"
                 />
                 Allow Download
               </label>
@@ -706,7 +838,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                   type="checkbox"
                   checked={form.allow_print}
                   onChange={e => setForm({ ...form, allow_print: e.target.checked })}
-                  className="rounded border-gray-300 text-navy-600 focus:ring-navy-500"
+                  className="rounded border-white/20 bg-white/[0.06] text-violet-600 focus:ring-violet-500"
                 />
                 Allow Print
               </label>
@@ -720,7 +852,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
             <button
               type="submit"
               disabled={isPending}
-              className="px-4 py-1.5 text-xs font-medium text-white bg-navy-900 rounded-lg hover:bg-white/[0.08] disabled:opacity-50 transition"
+              className="px-4 py-1.5 text-xs font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 disabled:opacity-50 transition"
             >
               {isPending ? 'Adding…' : 'Add Widget'}
             </button>
@@ -728,7 +860,6 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
         </form>
       )}
 
-      {/* Grouped widgets by page */}
       {grouped.map(group => (
         <div key={group.value}>
           <h5 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">{group.label}</h5>
@@ -760,7 +891,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                       title={w.is_active ? 'Hide' : 'Show'}
                     >
                       {w.is_active ? (
-                        <Eye className="w-3.5 h-3.5 text-green-600" />
+                        <Eye className="w-3.5 h-3.5 text-green-500" />
                       ) : (
                         <EyeOff className="w-3.5 h-3.5 text-white/30" />
                       )}

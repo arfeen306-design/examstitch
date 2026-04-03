@@ -49,7 +49,7 @@ export default function SubjectSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-56 rounded-xl shadow-2xl z-50 overflow-hidden
+        <div className="absolute right-0 mt-2 w-56 rounded-xl shadow-2xl z-[9999] overflow-hidden
                         bg-[#131B2E] border border-white/[0.08]">
           {sections.map((section, si) => (
             <div key={section}>

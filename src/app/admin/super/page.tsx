@@ -123,28 +123,54 @@ export default async function SuperAdminPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Grid — compact row */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="relative overflow-hidden rounded-2xl p-5
+            <div key={stat.label} className="relative overflow-hidden rounded-xl p-4
                                              bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]
                                              hover:border-white/[0.12] transition-all">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-300 uppercase tracking-wider">{stat.label}</p>
-                  <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
-                  <p className="text-xs text-slate-300 mt-1">{stat.sub}</p>
+                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-2xl font-bold text-white mt-0.5">{stat.value}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{stat.sub}</p>
                 </div>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
-                  <Icon className="w-5 h-5 text-white" />
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* ═══ Management Panels (primary content — always visible first) ═══ */}
+      <SuperAdminClient
+        subjects={subjectList}
+        admins={adminList.map(a => ({
+          id: a.id,
+          email: a.email,
+          full_name: a.full_name,
+          is_super_admin: a.is_super_admin,
+          managed_subjects: (a.managed_subjects as string[]) ?? [],
+        }))}
+        mediaWidgets={mediaList.map(m => ({
+          id: m.id,
+          page_slug: m.page_slug,
+          section_order: m.section_order,
+          media_type: m.media_type as 'youtube' | 'pdf',
+          title: m.title,
+          url: m.url,
+          permissions: m.permissions as { allow_print: boolean; allow_download: boolean },
+          is_active: m.is_active,
+          view_count: (m as Record<string, unknown>).view_count as number ?? 0,
+          created_at: m.created_at,
+        }))}
+      />
+
+      {/* ═══ Status & Analytics (secondary — below management) ═══ */}
 
       {/* ── Global Status Card ── */}
       <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
@@ -268,29 +294,6 @@ export default async function SuperAdminPage() {
         </div>
       )}
 
-      {/* Client-side interactive panels */}
-      <SuperAdminClient
-        subjects={subjectList}
-        admins={adminList.map(a => ({
-          id: a.id,
-          email: a.email,
-          full_name: a.full_name,
-          is_super_admin: a.is_super_admin,
-          managed_subjects: (a.managed_subjects as string[]) ?? [],
-        }))}
-        mediaWidgets={mediaList.map(m => ({
-          id: m.id,
-          page_slug: m.page_slug,
-          section_order: m.section_order,
-          media_type: m.media_type as 'youtube' | 'pdf',
-          title: m.title,
-          url: m.url,
-          permissions: m.permissions as { allow_print: boolean; allow_download: boolean },
-          is_active: m.is_active,
-          view_count: (m as Record<string, unknown>).view_count as number ?? 0,
-          created_at: m.created_at,
-        }))}
-      />
     </div>
   );
 }
