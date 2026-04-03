@@ -55,7 +55,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://img.youtube.com https://drive.google.com https://lh3.googleusercontent.com https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com",
-              "frame-src 'self' https://www.youtube.com https://youtube.com https://drive.google.com https://*.supabase.co",
+              "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.supabase.co",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.youtube.com https://www.google-analytics.com https://www.googletagmanager.com",
               "media-src 'self' https://*.supabase.co",
               "object-src 'self'",
