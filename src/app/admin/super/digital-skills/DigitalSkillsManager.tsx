@@ -630,7 +630,7 @@ export default function DigitalSkillsManager({
         {/* Skills List */}
         <div className="space-y-3">
           {skills.length === 0 && (
-            <div className="text-center py-16 text-white/30 text-sm bg-white/[0.04] rounded-2xl border border-white/[0.06]">
+            <div className="text-center py-16 text-white/40 text-sm bg-white/[0.04] rounded-2xl border border-white/[0.06]">
               No skills created yet. Click &ldquo;New Skill&rdquo; to get started.
             </div>
           )}
@@ -661,7 +661,7 @@ export default function DigitalSkillsManager({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="font-bold text-white">{skill.name}</h4>
-                      <span className="text-[10px] font-mono text-white/30 bg-white/[0.06] px-1.5 py-0.5 rounded">{skill.slug}</span>
+                      <span className="text-[10px] font-mono text-white/40 bg-white/[0.06] px-1.5 py-0.5 rounded">{skill.slug}</span>
                       {!skill.is_active && (
                         <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">HIDDEN</span>
                       )}
@@ -782,7 +782,7 @@ export default function DigitalSkillsManager({
                     )}
 
                     {skillPlaylists.length === 0 && newPlaylistSkillId !== skill.id && (
-                      <p className="text-xs text-white/30 py-4 text-center">No playlists yet.</p>
+                      <p className="text-xs text-white/40 py-4 text-center">No playlists yet.</p>
                     )}
 
                     {skillPlaylists.map((playlist, pi) => {
@@ -803,9 +803,9 @@ export default function DigitalSkillsManager({
                             <Layers className="w-4 h-4 text-blue-500 shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-white">{playlist.title}</p>
-                              {playlist.description && <p className="text-xs text-white/30 truncate">{playlist.description}</p>}
+                              {playlist.description && <p className="text-xs text-white/40 truncate">{playlist.description}</p>}
                             </div>
-                            <span className="text-xs text-white/30 font-mono">{playlistLessons.length} lessons</span>
+                            <span className="text-xs text-white/40 font-mono">{playlistLessons.length} lessons</span>
 
                             {/* Playlist actions */}
                             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -846,7 +846,7 @@ export default function DigitalSkillsManager({
                           {isPlaylistExpanded && (
                             <div className="border-t border-white/[0.06] bg-white/[0.03] px-4 py-3 space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider">Lessons</p>
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Lessons</p>
                                 <button
                                   onClick={() => openCreateLessonModal(playlist.id)}
                                   className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 transition"
@@ -856,7 +856,7 @@ export default function DigitalSkillsManager({
                               </div>
 
                               {playlistLessons.length === 0 && (
-                                <p className="text-xs text-white/30 py-3 text-center">No lessons yet.</p>
+                                <p className="text-xs text-white/40 py-3 text-center">No lessons yet.</p>
                               )}
 
                               {playlistLessons.map((lesson, li) => (
@@ -865,7 +865,7 @@ export default function DigitalSkillsManager({
                                   className="flex items-center gap-3 px-3 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-lg group hover:border-white/[0.08] transition"
                                 >
                                   {/* Order number */}
-                                  <span className="text-xs font-bold text-white/30 w-5 text-right tabular-nums">{li + 1}</span>
+                                  <span className="text-xs font-bold text-white/40 w-5 text-right tabular-nums">{li + 1}</span>
 
                                   {lesson.video_url ? (
                                     <Video className="w-3.5 h-3.5 text-red-400 shrink-0" />
@@ -876,7 +876,7 @@ export default function DigitalSkillsManager({
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm text-white truncate">{lesson.title}</p>
                                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                      {lesson.duration && <span className="text-[10px] text-white/30">{lesson.duration}</span>}
+                                      {lesson.duration && <span className="text-[10px] text-white/40">{lesson.duration}</span>}
                                       {lesson.is_free && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">FREE</span>}
                                       {resourceBadges(lesson).map(b => (
                                         <span key={b.label} className={`text-[10px] font-semibold px-1 py-0.5 rounded ${b.color}`}>{b.label}</span>
@@ -1061,7 +1061,7 @@ export default function DigitalSkillsManager({
                   className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <span className="font-medium">Free Preview</span>
-                <span className="text-xs text-white/30">— available without enrollment</span>
+                <span className="text-xs text-white/40">— available without enrollment</span>
               </label>
             </div>
 

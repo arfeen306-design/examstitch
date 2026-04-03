@@ -92,7 +92,7 @@ export default function CSResourceTable({
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-white/30">
+        <div className="text-center py-12 text-white/40">
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-50" />
           <p className="text-sm font-medium">No CS resources found.</p>
           <p className="text-xs mt-1">Upload your first resource to get started.</p>
@@ -119,7 +119,7 @@ export default function CSResourceTable({
                     </td>
                     <td className="py-3 pr-4">
                       <div className="font-medium text-white truncate max-w-xs">{r.title}</div>
-                      {r.topic && <div className="text-xs text-white/30">{r.topic}</div>}
+                      {r.topic && <div className="text-xs text-white/40">{r.topic}</div>}
                     </td>
                     <td className="py-3 pr-4">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">

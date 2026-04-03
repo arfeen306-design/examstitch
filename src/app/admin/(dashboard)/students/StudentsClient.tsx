@@ -139,7 +139,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
           { label: 'Disabled', value: inactive, color: 'text-red-600', bg: 'bg-red-50' },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-5`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/30 mb-1">{s.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">{s.label}</p>
             <p className={`text-3xl font-extrabold tabular-nums ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -271,12 +271,12 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
                       {s.is_active ? 'Active' : 'Disabled'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-white/30">
+                  <td className="px-4 py-3 text-xs text-white/40">
                     {s.last_login
                       ? new Date(s.last_login).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
                       : 'Never'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-white/30">
+                  <td className="px-4 py-3 text-xs text-white/40">
                     {new Date(s.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3">
@@ -314,7 +314,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-white/30">
+                  <td colSpan={7} className="px-4 py-10 text-center text-white/40">
                     No student accounts yet. Click &quot;Add Student&quot; to create one.
                   </td>
                 </tr>

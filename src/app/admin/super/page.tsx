@@ -101,9 +101,9 @@ export default async function SuperAdminPage() {
                                              hover:border-white/[0.12] transition-all">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-white/30 uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-xs font-medium text-slate-300 uppercase tracking-wider">{stat.label}</p>
                   <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
-                  <p className="text-xs text-white/30 mt-1">{stat.sub}</p>
+                  <p className="text-xs text-slate-300 mt-1">{stat.sub}</p>
                 </div>
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
                   <Icon className="w-5 h-5 text-white" />
@@ -142,7 +142,7 @@ export default async function SuperAdminPage() {
         {/* Empty subjects list */}
         {emptySubjects.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-3">Subjects Needing Content</p>
+            <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Subjects Needing Content</p>
             <div className="space-y-2">
               {emptySubjects.map(s => (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3 rounded-xl
@@ -162,7 +162,7 @@ export default async function SuperAdminPage() {
         {/* Subjects with content */}
         {perSubject.filter(s => s.resourceCount > 0).length > 0 && (
           <div className={emptySubjects.length > 0 ? 'mt-5' : ''}>
-            <p className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-3">Active Subjects</p>
+            <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Active Subjects</p>
             <div className="space-y-2">
               {perSubject.filter(s => s.resourceCount > 0).map(s => (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3 rounded-xl

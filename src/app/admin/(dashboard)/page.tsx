@@ -113,9 +113,9 @@ export default async function AdminOverview() {
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium text-white/30 uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-xs font-medium text-slate-300 uppercase tracking-wider">{stat.label}</p>
                   <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
-                  <p className="text-xs text-white/30 mt-1">{stat.sub}</p>
+                  <p className="text-xs text-slate-300 mt-1">{stat.sub}</p>
                 </div>
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
                   <Icon className="w-5 h-5 text-white" />

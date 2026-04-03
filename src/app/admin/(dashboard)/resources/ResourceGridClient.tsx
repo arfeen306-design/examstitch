@@ -405,7 +405,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                       </span>
                     )}
                     {totalParts > 1 && !isSub && (
-                      <span className="text-[10px] text-white/30">{totalParts} parts</span>
+                      <span className="text-[10px] text-white/40">{totalParts} parts</span>
                     )}
                   </div>
                 </div>
@@ -589,7 +589,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                         className="w-16 px-2 py-1 text-xs font-bold border border-purple-200 rounded-md text-center"
                         placeholder="Q1"
                       />
-                      <span className="text-xs text-white/30">@</span>
+                      <span className="text-xs text-white/40">@</span>
                       <input
                         type="text"
                         value={(() => { const m = Math.floor(q.start_time / 60); const s = q.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
@@ -719,7 +719,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               </button>
             ))}
           </div>
-          <span className="text-sm text-white/30">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
+          <span className="text-sm text-white/40">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
         </div>
         <button onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 bg-[#FF6B35] hover:bg-[#e55a2b] text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
@@ -750,7 +750,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                  className="divide-y divide-[var(--border-subtle)]" >
             {paperGroups.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-white/30 text-sm">No resources found.</td>
+                <td colSpan={9} className="py-12 text-center text-white/40 text-sm">No resources found.</td>
               </tr>
             ) : (
               paperGroups.map(paper => (

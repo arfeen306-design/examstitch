@@ -443,7 +443,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-white/30">{admin.email}</p>
+                  <p className="text-xs text-white/40">{admin.email}</p>
                 </div>
               </div>
 
@@ -536,7 +536,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
         ))}
 
         {admins.length === 0 && (
-          <p className="text-sm text-white/30 py-8 text-center">No admin accounts found. Create one above.</p>
+          <p className="text-sm text-white/40 py-8 text-center">No admin accounts found. Create one above.</p>
         )}
       </div>
     </div>
@@ -727,7 +727,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
         <div key={group.value}>
           <h5 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">{group.label}</h5>
           {group.widgets.length === 0 ? (
-            <p className="text-xs text-white/30 italic py-2">No media widgets</p>
+            <p className="text-xs text-white/40 italic py-2">No media widgets</p>
           ) : (
             <div className="space-y-2">
               {group.widgets.map(w => (
@@ -740,7 +740,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-white truncate">{w.title}</p>
-                      <p className="text-[11px] text-white/30 font-mono truncate">{w.url}</p>
+                      <p className="text-[11px] text-white/40 font-mono truncate">{w.url}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">

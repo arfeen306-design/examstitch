@@ -58,14 +58,14 @@ export default async function AdminSubscribersPage() {
                   <td className="px-4 py-3 text-center">
                     <span className={`w-2 h-2 rounded-full inline-block ${sub.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
                   </td>
-                  <td className="px-4 py-3 text-xs text-white/30 text-right">
+                  <td className="px-4 py-3 text-xs text-white/40 text-right">
                     {new Date(sub.created_at).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
               {!subscribers?.length && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-white/30">
+                  <td colSpan={5} className="px-4 py-8 text-center text-white/40">
                     No subscribers have joined the waitlist yet.
                   </td>
                 </tr>

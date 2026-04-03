@@ -201,7 +201,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
           { label: 'Booked',  value: booked,   color: 'text-green-600',  bg: 'bg-green-50'  },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-5`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/30 mb-1">{s.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">{s.label}</p>
             <p className={`text-3xl font-extrabold tabular-nums ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -280,7 +280,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
           )}
 
           {hasFilter && (
-            <span className="text-xs text-white/30 ml-auto">
+            <span className="text-xs text-white/40 ml-auto">
               Showing <strong className="text-white/60">{filtered.length}</strong> of {total}
             </span>
           )}
@@ -352,7 +352,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-white/30 text-right whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-white/40 text-right whitespace-nowrap">
                       {new Date(b.created_at).toLocaleString('en-GB', {
                         day: '2-digit', month: 'short', year: 'numeric',
                         hour: '2-digit', minute: '2-digit',
@@ -375,7 +375,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-white/30">
+                  <td colSpan={9} className="px-4 py-12 text-center text-white/40">
                     {hasFilter ? 'No bookings match the selected filters.' : 'No demo bookings yet.'}
                   </td>
                 </tr>

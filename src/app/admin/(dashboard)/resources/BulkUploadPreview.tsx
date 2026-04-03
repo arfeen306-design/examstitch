@@ -95,7 +95,7 @@ export default function BulkUploadPreview() {
             </tbody>
           </table>
           {JSON.parse(jsonInput).length > 50 && (
-            <p className="p-2 text-center text-xs text-white/30 bg-white/[0.03]">Showing 50 of {JSON.parse(jsonInput).length} rows...</p>
+            <p className="p-2 text-center text-xs text-white/40 bg-white/[0.03]">Showing 50 of {JSON.parse(jsonInput).length} rows...</p>
           )}
         </div>
       )}

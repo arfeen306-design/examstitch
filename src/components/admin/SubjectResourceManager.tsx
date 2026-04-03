@@ -474,7 +474,7 @@ export default function SubjectResourceManager({
                       </span>
                     )}
                     {totalParts > 1 && !isSub && (
-                      <span className="text-[10px] text-white/30">{totalParts} parts</span>
+                      <span className="text-[10px] text-white/40">{totalParts} parts</span>
                     )}
                   </div>
                 </div>
@@ -643,7 +643,7 @@ export default function SubjectResourceManager({
                       <input value={q.label}
                         onChange={e => { const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], label: e.target.value }; setMappingDraft(copy); }}
                         className="w-16 px-2 py-1 text-xs font-bold border border-purple-200 rounded-md text-center" placeholder="Q1" />
-                      <span className="text-xs text-white/30">@</span>
+                      <span className="text-xs text-white/40">@</span>
                       <input type="text"
                         value={(() => { const m = Math.floor(q.start_time / 60); const s = q.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
                         onChange={e => { const [mm, ss] = e.target.value.split(':').map(Number); const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], start_time: (mm || 0) * 60 + (ss || 0) }; setMappingDraft(copy); }}
@@ -746,7 +746,7 @@ export default function SubjectResourceManager({
             </div>
           )}
 
-          <span className="text-sm text-white/30">
+          <span className="text-sm text-white/40">
             {filtered.length} resource{filtered.length !== 1 ? 's' : ''} · {paperGroups.length} group{paperGroups.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -874,7 +874,7 @@ export default function SubjectResourceManager({
           <tbody className="bg-white/[0.04] divide-y divide-white/[0.06]">
             {paperGroups.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-white/30 text-sm">No resources found.</td>
+                <td colSpan={9} className="py-12 text-center text-white/40 text-sm">No resources found.</td>
               </tr>
             ) : (
               paperGroups.map(paper => (
@@ -887,7 +887,7 @@ export default function SubjectResourceManager({
                         <span className="text-xs font-bold uppercase tracking-widest text-white/50">
                           {paper.categoryName}
                         </span>
-                        <span className="text-xs text-white/30">
+                        <span className="text-xs text-white/40">
                           · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
                         </span>
                       </div>

@@ -96,7 +96,7 @@ export default function BlogEditorClient({ initialPosts }: Props) {
       {/* Post List */}
       <div className="space-y-3">
         {posts.length === 0 && (
-          <div className="text-center py-16 text-white/30">
+          <div className="text-center py-16 text-white/40">
             <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No posts yet. Create your first announcement.</p>
           </div>
@@ -116,7 +116,7 @@ export default function BlogEditorClient({ initialPosts }: Props) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold text-white truncate">{post.title}</h3>
-                <span className="text-xs text-white/30">{timeAgo(post.created_at)}</span>
+                <span className="text-xs text-white/40">{timeAgo(post.created_at)}</span>
               </div>
               {post.content && (
                 <p className="text-sm text-white/40 line-clamp-2">{post.content}</p>

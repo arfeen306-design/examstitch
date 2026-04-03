@@ -10,7 +10,7 @@ export default function OLevelError({
   reset: () => void;
 }) {
   return (
-    <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0B1120] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
           <AlertTriangle className="w-8 h-8 text-amber-400" />

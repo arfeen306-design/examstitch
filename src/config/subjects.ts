@@ -8,17 +8,18 @@ export type ColorScheme = {
   gradient: string;
   glow: string;
   badge: string;
+  accent: string;   // accent text class for "Explore" link & highlights
 };
 
 const colors: Record<string, ColorScheme> = {
-  blue:    { gradient: 'from-blue-500 to-indigo-600',    glow: 'rgba(99,102,241,0.35)',  badge: 'bg-blue-500/20 text-blue-300 border-blue-400/30' },
-  emerald: { gradient: 'from-emerald-500 to-teal-600',   glow: 'rgba(16,185,129,0.35)',  badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' },
-  purple:  { gradient: 'from-purple-500 to-violet-600',  glow: 'rgba(139,92,246,0.35)',  badge: 'bg-purple-500/20 text-purple-300 border-purple-400/30' },
-  amber:   { gradient: 'from-amber-500 to-orange-600',   glow: 'rgba(245,158,11,0.35)',  badge: 'bg-amber-500/20 text-amber-300 border-amber-400/30' },
-  rose:    { gradient: 'from-rose-500 to-pink-600',      glow: 'rgba(244,63,94,0.35)',   badge: 'bg-rose-500/20 text-rose-300 border-rose-400/30' },
-  cyan:    { gradient: 'from-cyan-500 to-sky-600',       glow: 'rgba(6,182,212,0.35)',   badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30' },
-  gold:    { gradient: 'from-yellow-500 to-amber-600',   glow: 'rgba(234,179,8,0.35)',   badge: 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30' },
-  lime:    { gradient: 'from-lime-500 to-green-600',     glow: 'rgba(132,204,22,0.35)',  badge: 'bg-lime-500/20 text-lime-300 border-lime-400/30' },
+  blue:    { gradient: 'from-blue-500 to-indigo-600',    glow: 'rgba(99,102,241,0.25)',  badge: 'bg-blue-500/20 text-white border-blue-500/50',    accent: 'text-blue-400' },
+  emerald: { gradient: 'from-emerald-500 to-teal-600',   glow: 'rgba(16,185,129,0.25)',  badge: 'bg-emerald-500/20 text-white border-emerald-500/50', accent: 'text-emerald-400' },
+  purple:  { gradient: 'from-purple-500 to-violet-600',  glow: 'rgba(139,92,246,0.25)',  badge: 'bg-purple-500/20 text-white border-purple-500/50', accent: 'text-purple-400' },
+  amber:   { gradient: 'from-amber-500 to-orange-600',   glow: 'rgba(245,158,11,0.25)',  badge: 'bg-amber-500/20 text-white border-amber-500/50',  accent: 'text-amber-400' },
+  rose:    { gradient: 'from-rose-500 to-pink-600',      glow: 'rgba(244,63,94,0.25)',   badge: 'bg-rose-500/20 text-white border-rose-500/50',    accent: 'text-rose-400' },
+  cyan:    { gradient: 'from-cyan-500 to-sky-600',       glow: 'rgba(6,182,212,0.25)',   badge: 'bg-cyan-500/20 text-white border-cyan-500/50',    accent: 'text-cyan-400' },
+  gold:    { gradient: 'from-yellow-500 to-amber-600',   glow: 'rgba(234,179,8,0.25)',   badge: 'bg-yellow-500/20 text-white border-yellow-500/50', accent: 'text-yellow-400' },
+  lime:    { gradient: 'from-lime-500 to-green-600',     glow: 'rgba(132,204,22,0.25)',  badge: 'bg-lime-500/20 text-white border-lime-500/50',    accent: 'text-lime-400' },
 };
 
 // ─── Subject Type ───────────────────────────────────────────────────────────

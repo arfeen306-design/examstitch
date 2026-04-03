@@ -55,18 +55,18 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
     >
       {/* Glow backdrop — hidden on mobile for performance */}
       <div
-        className="absolute -inset-1 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl hidden sm:block"
+        className="absolute -inset-1 rounded-3xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 blur-xl hidden sm:block"
         style={{ background: subject.colorScheme.glow }}
       />
 
-      <div className="relative bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 h-full
-                      hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300 overflow-hidden flex flex-col glass-gpu">
+      <div className="relative bg-slate-900/40 backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 h-full
+                      hover:border-white/[0.2] hover:bg-slate-900/50 transition-all duration-300 overflow-hidden flex flex-col glass-gpu">
         {/* Gradient accent line */}
         <div className={`absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r ${subject.colorScheme.gradient} rounded-full opacity-60`} />
 
         {/* Code badge + icon row */}
         <div className="flex items-start justify-between mb-4">
-          <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${subject.colorScheme.badge}`}>
+          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${subject.colorScheme.badge}`}>
             {subject.code}
           </span>
 
@@ -81,20 +81,20 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
         </div>
 
         <h3 className="text-lg font-bold text-white mb-1 tracking-tight">{subject.name}</h3>
-        <p className="text-sm text-white/50 mb-4 leading-relaxed flex-1">{subject.description}</p>
+        <p className="text-sm text-slate-300 mb-4 leading-relaxed flex-1">{subject.description}</p>
 
         <div className="flex items-center justify-between mt-auto">
           {subject.active ? (
             <>
-              <span className="text-xs text-white/40 font-medium tabular-nums">
+              <span className="text-xs text-slate-400 font-medium tabular-nums">
                 {resourceCount !== undefined ? `${resourceCount} resources` : '...'}
               </span>
-              <span className="flex items-center gap-1 text-xs font-semibold text-white/60 group-hover:text-white transition-colors">
+              <span className={`flex items-center gap-1 text-xs font-medium ${subject.colorScheme.accent} group-hover:brightness-125 transition-all`}>
                 Explore <ArrowRight className="w-3.5 h-3.5" />
               </span>
             </>
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-white/30 font-medium">
+            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
               <Clock className="w-3 h-3" /> Coming Soon
             </span>
           )}

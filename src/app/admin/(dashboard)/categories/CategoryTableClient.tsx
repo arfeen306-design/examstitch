@@ -90,7 +90,7 @@ export default function CategoryTableClient({ categories }: { categories: any[] 
               ))}
               {!categories?.length && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-white/30">
+                  <td colSpan={5} className="px-4 py-8 text-center text-white/40">
                     No categories generated. Have you run the seed data script?
                   </td>
                 </tr>
