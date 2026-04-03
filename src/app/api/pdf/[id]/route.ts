@@ -158,6 +158,9 @@ export async function GET(
       'Content-Type':        'application/pdf',
       'Content-Disposition': disposition,
       'Content-Length':      String(finalBuffer.byteLength),
+      // Allow same-origin framing (our FramedPDFViewer embeds this route)
+      'X-Frame-Options':     'SAMEORIGIN',
+      'Content-Security-Policy': "frame-ancestors 'self'",
       // Prevent CDN from caching authenticated/watermarked PDFs
       'Cache-Control':       resource.is_locked
         ? 'private, no-store'
