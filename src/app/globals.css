@@ -114,38 +114,38 @@
     --cta-orange:    #FF6B35;
   }
 
-  /* ── Forest ─────────────────────────────────────────────────────────────── */
+  /* ── Forest (Dark) ───────────────────────────────────────────────────────── */
   [data-theme="forest"] {
-    --bg-primary:    #F0FDF4;
-    --bg-surface:    #E8FAE6;
-    --bg-card:       #FFFFFF;
-    --bg-elevated:   #FFFFFF;
+    --bg-primary:    #061a0e;
+    --bg-surface:    #0a2416;
+    --bg-card:       #0d2e1c;
+    --bg-elevated:   #113822;
 
-    --hero-from:     #14532D;
-    --hero-via:      #052E16;
-    --hero-to:       #14532D;
-    --navbar-bg:     rgba(20, 83, 45, 0.92);
+    --hero-from:     #052e16;
+    --hero-via:      #031a0d;
+    --hero-to:       #052e16;
+    --navbar-bg:     rgba(6, 26, 14, 0.94);
 
-    --text-primary:  #14532D;
-    --text-secondary:#166534;
-    --text-muted:    #15803D;
-    --text-on-dark:  #ffffff;
+    --text-primary:  #ecfdf5;
+    --text-secondary:#a7f3d0;
+    --text-muted:    #6ee7b7;
+    --text-on-dark:  #ecfdf5;
     --text-on-accent:#052E16;
 
-    --accent:        #22C55E;
-    --accent-hover:  #4ADE80;
-    --accent-subtle: #DCFCE7;
-    --accent-text:   #15803D;
+    --accent:        #34d399;
+    --accent-hover:  #6ee7b7;
+    --accent-subtle: rgba(52, 211, 153, 0.12);
+    --accent-text:   #6ee7b7;
 
-    --border-color:  #BBF7D0;
-    --border-subtle: #DCFCE7;
+    --border-color:  rgba(52, 211, 153, 0.18);
+    --border-subtle: rgba(52, 211, 153, 0.08);
 
-    --badge-bg:      #14532D;
-    --badge-text:    #ffffff;
+    --badge-bg:      #34d399;
+    --badge-text:    #052E16;
 
-    --shadow-color:  rgba(20, 83, 45, 0.08);
+    --shadow-color:  rgba(0, 0, 0, 0.35);
 
-    --wave-fill:     #F0FDF4;
+    --wave-fill:     #061a0e;
     --cta-orange:    #FF6B35;
   }
 
@@ -321,15 +321,223 @@
 
 /* Forest Green */
 [data-admin-theme="forest"] .min-h-screen.bg-\[\#0B1120\] {
-  background-color: #052e16 !important;
+  background-color: #061a0e !important;
 }
 [data-admin-theme="forest"] aside {
-  background: linear-gradient(180deg, #052e16 0%, #022c22 40%, #064e3b 100%) !important;
-  border-right-color: rgba(34,197,94,0.1) !important;
+  background: linear-gradient(180deg, #071f12 0%, #061a0e 40%, #0a2416 100%) !important;
+  border-right-color: rgba(52,211,153,0.12) !important;
 }
 [data-admin-theme="forest"] header {
-  background: linear-gradient(90deg, rgba(5,46,22,0.8) 0%, rgba(5,46,22,0.6) 100%) !important;
-  border-bottom-color: rgba(34,197,94,0.08) !important;
+  background: linear-gradient(90deg, rgba(6,26,14,0.85) 0%, rgba(6,26,14,0.65) 100%) !important;
+  border-bottom-color: rgba(52,211,153,0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOREST THEME — Public site overrides for hardcoded colors.
+   Transforms the entire site into a dark forest green aesthetic.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Page backgrounds — override hardcoded navy */
+html[data-theme="forest"] .bg-\[\#0B1120\] {
+  background-color: #061a0e !important;
+}
+html[data-theme="forest"] .bg-\[\#0A0F1C\] {
+  background-color: #051710 !important;
+}
+html[data-theme="forest"] .bg-\[\#08080f\] {
+  background-color: #04120a !important;
+}
+html[data-theme="forest"] .bg-\[\#0f0f2a\]\/80 {
+  background-color: rgba(6, 26, 14, 0.8) !important;
+}
+html[data-theme="forest"] .bg-\[\#0d0d20\] {
+  background-color: #071a0e !important;
+}
+
+/* Navbar glass — forest tint */
+html[data-theme="forest"] .glass-navbar {
+  border-bottom: 1px solid rgba(52, 211, 153, 0.12) !important;
+}
+
+/* Gold → Emerald accent swaps in navbar/footer */
+html[data-theme="forest"] .text-gold-500 {
+  color: #34d399 !important;
+}
+html[data-theme="forest"] .text-gold-400 {
+  color: #6ee7b7 !important;
+}
+html[data-theme="forest"] .text-gold-300 {
+  color: #a7f3d0 !important;
+}
+html[data-theme="forest"] .hover\:text-gold-500:hover {
+  color: #6ee7b7 !important;
+}
+html[data-theme="forest"] .hover\:text-gold-400:hover {
+  color: #a7f3d0 !important;
+}
+html[data-theme="forest"] .hover\:text-gold-300:hover {
+  color: #a7f3d0 !important;
+}
+
+/* Logo gradient → forest emerald */
+html[data-theme="forest"] .gradient-gold {
+  background: linear-gradient(135deg, #059669 0%, #34d399 50%, #059669 100%) !important;
+}
+
+/* Subject cards — dark forest glass */
+html[data-theme="forest"] .bg-slate-900\/40 {
+  background-color: rgba(6, 38, 20, 0.55) !important;
+}
+html[data-theme="forest"] .hover\:bg-slate-900\/50:hover {
+  background-color: rgba(6, 38, 20, 0.7) !important;
+}
+
+/* Card glass panels — white/alpha → green/alpha */
+html[data-theme="forest"] .bg-white\/\[0\.06\] {
+  background-color: rgba(52, 211, 153, 0.06) !important;
+}
+html[data-theme="forest"] .bg-white\/\[0\.04\] {
+  background-color: rgba(52, 211, 153, 0.04) !important;
+}
+html[data-theme="forest"] .hover\:bg-white\/\[0\.08\]:hover {
+  background-color: rgba(52, 211, 153, 0.08) !important;
+}
+html[data-theme="forest"] .hover\:bg-white\/\[0\.1\]:hover {
+  background-color: rgba(52, 211, 153, 0.1) !important;
+}
+html[data-theme="forest"] .bg-white\/\[0\.08\] {
+  background-color: rgba(52, 211, 153, 0.08) !important;
+}
+
+/* Borders — green tinted */
+html[data-theme="forest"] .border-white\/\[0\.1\] {
+  border-color: rgba(52, 211, 153, 0.12) !important;
+}
+html[data-theme="forest"] .border-white\/\[0\.2\],
+html[data-theme="forest"] .hover\:border-white\/\[0\.2\]:hover {
+  border-color: rgba(52, 211, 153, 0.22) !important;
+}
+html[data-theme="forest"] .border-white\/10 {
+  border-color: rgba(52, 211, 153, 0.1) !important;
+}
+html[data-theme="forest"] .border-white\/5 {
+  border-color: rgba(52, 211, 153, 0.06) !important;
+}
+html[data-theme="forest"] .hover\:bg-white\/5:hover {
+  background-color: rgba(52, 211, 153, 0.06) !important;
+}
+html[data-theme="forest"] .hover\:bg-white\/\[0\.06\]:hover {
+  background-color: rgba(52, 211, 153, 0.06) !important;
+}
+
+/* Text on dark areas — ensure readability */
+html[data-theme="forest"] .text-white\/60 {
+  color: rgba(167, 243, 208, 0.7) !important;
+}
+html[data-theme="forest"] .text-white\/50 {
+  color: rgba(167, 243, 208, 0.6) !important;
+}
+html[data-theme="forest"] .text-white\/40 {
+  color: rgba(167, 243, 208, 0.5) !important;
+}
+html[data-theme="forest"] .text-white\/30 {
+  color: rgba(167, 243, 208, 0.35) !important;
+}
+html[data-theme="forest"] .text-white\/80 {
+  color: rgba(236, 253, 245, 0.85) !important;
+}
+html[data-theme="forest"] .text-white\/75 {
+  color: rgba(236, 253, 245, 0.8) !important;
+}
+html[data-theme="forest"] .text-white\/70 {
+  color: rgba(236, 253, 245, 0.75) !important;
+}
+
+/* Slate text → forest-tinted equivalents */
+html[data-theme="forest"] .text-slate-300 {
+  color: #a7f3d0 !important;
+}
+html[data-theme="forest"] .text-slate-400 {
+  color: rgba(167, 243, 208, 0.65) !important;
+}
+html[data-theme="forest"] .text-slate-500 {
+  color: rgba(110, 231, 183, 0.5) !important;
+}
+
+/* Gradient hero accent line on grade cards */
+html[data-theme="forest"] .from-indigo-600 {
+  --tw-gradient-from: #059669 !important;
+}
+html[data-theme="forest"] .to-blue-700 {
+  --tw-gradient-to: #047857 !important;
+}
+
+/* Search bar styling */
+html[data-theme="forest"] .placeholder-white\/40::placeholder {
+  color: rgba(167, 243, 208, 0.45) !important;
+}
+
+/* Navy utility classes → forest */
+html[data-theme="forest"] .text-navy-900,
+html[data-theme="forest"] .text-navy-800 {
+  color: #052e16 !important;
+}
+html[data-theme="forest"] .bg-navy-50 {
+  background-color: rgba(52, 211, 153, 0.08) !important;
+}
+
+/* Gold utility classes → emerald for forest */
+html[data-theme="forest"] .from-gold-500 {
+  --tw-gradient-from: #059669 !important;
+}
+html[data-theme="forest"] .to-gold-700 {
+  --tw-gradient-to: #047857 !important;
+}
+html[data-theme="forest"] .from-gold-400 {
+  --tw-gradient-from: #34d399 !important;
+}
+html[data-theme="forest"] .via-orange-400 {
+  --tw-gradient-via: #10b981 !important;
+}
+html[data-theme="forest"] .bg-gold-500 {
+  background-color: #059669 !important;
+}
+html[data-theme="forest"] .hover\:bg-gold-400:hover {
+  background-color: #10b981 !important;
+}
+
+/* Pulse animation — emerald instead of gold */
+html[data-theme="forest"] .animate-pulse {
+  --tw-pulse-color: rgba(52, 211, 153, 0.4);
+}
+
+/* Selection highlight */
+html[data-theme="forest"] ::selection {
+  background: rgba(52, 211, 153, 0.25);
+  color: #ecfdf5;
+}
+
+/* Loading skeleton pages */
+html[data-theme="forest"] .bg-gray-50 {
+  background-color: #061a0e !important;
+}
+html[data-theme="forest"] .bg-gray-100 {
+  background-color: rgba(52, 211, 153, 0.08) !important;
+}
+
+/* Scrollbar styling for forest */
+html[data-theme="forest"] ::-webkit-scrollbar {
+  width: 8px;
+}
+html[data-theme="forest"] ::-webkit-scrollbar-track {
+  background: #061a0e;
+}
+html[data-theme="forest"] ::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.2);
+  border-radius: 4px;
+}
+html[data-theme="forest"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 211, 153, 0.35);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

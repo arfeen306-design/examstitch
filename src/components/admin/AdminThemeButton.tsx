@@ -22,7 +22,7 @@ const THEMES = [
   {
     id: 'forest',
     label: 'Forest Green',
-    preview: 'bg-gradient-to-br from-[#052e16] to-[#14532d]',
+    preview: 'bg-gradient-to-br from-[#061a0e] to-[#0d2e1c]',
   },
 ] as const;
 
