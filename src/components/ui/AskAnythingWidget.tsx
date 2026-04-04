@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, GripVertical, ExternalLink, Loader2 } from 'lucide-react';
+import { X, GripVertical, ExternalLink, Loader2, BotMessageSquare } from 'lucide-react';
 
 // ── AI Provider Config ──────────────────────────────────────────────────────
 const PROVIDERS = [
@@ -46,18 +46,18 @@ const Fab = memo(function Fab({ onClick }: { onClick: () => void }) {
     <motion.button
       onClick={onClick}
       className="group relative w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center
-                 bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600
-                 hover:from-violet-500 hover:via-indigo-500 hover:to-blue-500
-                 transition-shadow duration-300 hover:shadow-[0_8px_40px_rgba(99,102,241,0.45)]"
+                 bg-gradient-to-br from-[#4D6BFE] via-[#3B5BDB] to-[#2B4ACB]
+                 hover:from-[#5A78FF] hover:via-[#4868E8] hover:to-[#3857D8]
+                 transition-shadow duration-300 hover:shadow-[0_8px_40px_rgba(77,107,254,0.45)]"
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
       aria-label="Ask Anything — Open AI Assistant"
     >
       {/* Outer glow ring */}
-      <span className="absolute inset-0 rounded-2xl ring-2 ring-indigo-400/20 group-hover:ring-indigo-400/40 transition-all" />
+      <span className="absolute inset-0 rounded-2xl ring-2 ring-[#4D6BFE]/25 group-hover:ring-[#4D6BFE]/45 transition-all" />
       {/* Pulse ring */}
-      <span className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-indigo-400" style={{ animationDuration: '2.5s' }} />
-      <Sparkles className="w-6 h-6 text-white drop-shadow-lg relative z-10" />
+      <span className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-[#4D6BFE]" style={{ animationDuration: '2.5s' }} />
+      <BotMessageSquare className="w-6 h-6 text-white drop-shadow-lg relative z-10" />
     </motion.button>
   );
 });
@@ -271,7 +271,7 @@ export default function AskAnythingWidget() {
   return (
     <>
       {/* ── FAB ── */}
-      <div className="fixed bottom-6 right-6 z-[9998]">
+      <div className="fixed bottom-24 right-6 z-[9998]">
         <AnimatePresence>
           {!open && (
             <motion.div
@@ -320,7 +320,7 @@ export default function AskAnythingWidget() {
                 <GripVertical className="w-3.5 h-3.5 text-white/20" />
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${activeProvider.accent} flex items-center justify-center shadow-lg`}>
-                    <Sparkles className="w-3 h-3 text-white" />
+                    <BotMessageSquare className="w-3 h-3 text-white" />
                   </div>
                   <span className="text-[13px] font-semibold text-white/80 tracking-tight">
                     Ask Anything
