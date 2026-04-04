@@ -2018,7 +2018,7 @@ canvas{display:block}
   <span>Mouse: (<span class="val" id="mx">0</span>, <span class="val" id="my">0</span>)</span>
   <span>Shapes: <span class="val" id="sc">0</span></span>
   <span id="sel-info"></span>
-  <span style="margin-left:auto;opacity:0.5">Scroll to zoom &middot; Right-drag to pan</span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="opacity:0.5">Scroll to zoom &middot; Right-drag to pan</span><button onclick="resetView()" style="padding:3px 10px;font-size:9px;font-weight:700;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;border-radius:5px;cursor:pointer">Reset View</button></span>
 </div>
 <div id="draw-hint">Click on grid to draw shapes<br>or drag from the shape bank</div>
 <script>
@@ -2378,6 +2378,13 @@ window.addEventListener('keydown',e=>{
   if(e.ctrlKey&&e.key==='z'){/* todo: full undo */}
 });
 
+// Reset view to show -20 to 20 on both axes
+function resetView(){
+  cam.x=0;cam.y=0;
+  cam.z=Math.min(W,H)/40;
+  draw();
+}
+
 // Resize
 function resize(){
   const r=wrap.getBoundingClientRect();W=r.width;H=r.height;
@@ -2387,7 +2394,7 @@ function resize(){
 window.addEventListener('resize',resize);
 
 // Init
-initColors();initBank();resize();
+initColors();initBank();resize();resetView();
 <\/script></body></html>`;
 
 // ── Categories ───────────────────────────────────────────────────────────────
