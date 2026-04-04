@@ -31,92 +31,236 @@ const GEOMETRY_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
-canvas{display:block}
-#controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:10}
-button{padding:8px 18px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;backdrop-filter:blur(8px);transition:all .2s}
-button:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4)}
-button.active{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.6)}
-#info{position:fixed;top:16px;right:16px;color:rgba(255,255,255,0.6);font-size:12px;text-align:right;line-height:1.6}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;user-select:none}
+canvas{display:block;cursor:grab}
+canvas.drawing{cursor:crosshair}
+canvas:active{cursor:grabbing}
+#top-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;z-index:20;background:linear-gradient(180deg,rgba(10,10,26,0.85),transparent);pointer-events:none}
+#top-bar>*{pointer-events:auto}
+#shape-name{color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px}
+#measurements{color:rgba(255,255,255,0.5);font-size:11px;line-height:1.6}
+#controls{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:20;flex-wrap:wrap;justify-content:center;max-width:95vw}
+.cat-group{display:flex;gap:4px;padding:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px}
+.cat-label{position:absolute;top:-14px;left:8px;font-size:8px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.cat-wrap{position:relative;padding-top:10px}
+button{padding:6px 12px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border-radius:7px;cursor:pointer;font-size:11px;font-weight:500;transition:all .2s;white-space:nowrap}
+button:hover{background:rgba(255,255,255,0.12);color:#fff}
+button.active{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd}
+button.draw-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,0.5);color:#6ee7b7}
+#draw-hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.15);font-size:14px;pointer-events:none;transition:opacity .3s;z-index:5}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="controls">
-  <button onclick="setShape('cube')" id="btn-cube" class="active">Cube</button>
-  <button onclick="setShape('sphere')" id="btn-sphere">Sphere</button>
-  <button onclick="setShape('pyramid')" id="btn-pyramid">Pyramid</button>
-  <button onclick="setShape('torus')" id="btn-torus">Torus</button>
-  <button onclick="toggleWireframe()" id="btn-wire">Wireframe</button>
+<div id="top-bar">
+  <div>
+    <div id="shape-name">Cube</div>
+    <div id="measurements"></div>
+  </div>
+  <div id="draw-status" style="font-size:11px;color:rgba(255,255,255,0.4)">Drag to rotate · Scroll to zoom</div>
 </div>
-<div id="info">Drag to rotate &middot; Scroll to zoom</div>
+<div id="draw-hint"></div>
+<div id="controls">
+  <div class="cat-wrap"><span class="cat-label">Basic</span><div class="cat-group">
+    <button onclick="set('cube')" id="b-cube" class="active">Cube</button>
+    <button onclick="set('cuboid')" id="b-cuboid">Cuboid</button>
+    <button onclick="set('sphere')" id="b-sphere">Sphere</button>
+    <button onclick="set('cone')" id="b-cone">Cone</button>
+    <button onclick="set('cylinder')" id="b-cylinder">Cylinder</button>
+    <button onclick="set('pyramid')" id="b-pyramid">Pyramid</button>
+    <button onclick="set('torus')" id="b-torus">Torus</button>
+    <button onclick="set('hemisphere')" id="b-hemisphere">Hemisphere</button>
+  </div></div>
+  <div class="cat-wrap"><span class="cat-label">Compound</span><div class="cat-group">
+    <button onclick="set('pyr_cube')" id="b-pyr_cube">Pyramid+Cube</button>
+    <button onclick="set('cone_cyl')" id="b-cone_cyl">Cone+Cylinder</button>
+    <button onclick="set('cyl_hemi')" id="b-cyl_hemi">Cylinder+Hemi</button>
+  </div></div>
+  <div class="cat-wrap"><span class="cat-label">Nets</span><div class="cat-group">
+    <button onclick="set('net_cube')" id="b-net_cube">Cube Net</button>
+    <button onclick="set('net_cyl')" id="b-net_cyl">Cylinder Net</button>
+    <button onclick="set('net_cone')" id="b-net_cone">Cone Net</button>
+    <button onclick="set('net_pyr')" id="b-net_pyr">Pyramid Net</button>
+  </div></div>
+  <div class="cat-wrap"><span class="cat-label">Tools</span><div class="cat-group">
+    <button onclick="toggleWire()" id="b-wire">Wireframe</button>
+    <button onclick="toggleDraw()" id="b-draw">Draw Lines</button>
+    <button onclick="clearLines()" id="b-clear">Clear Lines</button>
+  </div></div>
+</div>
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
-let W,H,shape='cube',wireframe=false,rotX=0.4,rotY=0.6,zoom=200,dragging=false,lastX,lastY;
+let W,H,shape='cube',wire=false,drawMode=false,rotX=0.4,rotY=0.6,zoom=220,drag=false,lx,ly;
+let userLines=[],selectedDot=-1,hoverDot=-1;
+const PI=Math.PI,cos=Math.cos,sin=Math.sin;
+
 function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
 resize();addEventListener('resize',resize);
 
-function project(x,y,z){
-  const cosX=Math.cos(rotX),sinX=Math.sin(rotX),cosY=Math.cos(rotY),sinY=Math.sin(rotY);
-  const y1=y*cosX-z*sinX,z1=y*sinX+z*cosX;
-  const x1=x*cosY+z1*sinY,z2=-x*sinY+z1*cosY;
-  const scale=zoom/(z2+400);
-  return{x:x1*scale+W/2,y:y1*scale+H/2,z:z2,s:scale};
+function proj(x,y,z){
+  const cx=cos(rotX),sx=sin(rotX),cy=cos(rotY),sy=sin(rotY);
+  const y1=y*cx-z*sx,z1=y*sx+z*cx,x1=x*cy+z1*sy,z2=-x*sy+z1*cy;
+  const s=zoom/(z2+5);
+  return{x:x1*s+W/2,y:y1*s+H/2,z:z2,s};
 }
 
-function cubeVerts(){const s=1;return[[-s,-s,-s],[-s,-s,s],[-s,s,-s],[-s,s,s],[s,-s,-s],[s,-s,s],[s,s,-s],[s,s,s]];}
-function cubeEdges(){return[[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];}
-function cubeFaces(){return[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]];}
+/* ── Shape generators return {v:vertices, e:edges, f:faces} ── */
+function mkCube(sx,sy,sz){
+  sx=sx||1;sy=sy||1;sz=sz||1;
+  const v=[[-sx,-sy,-sz],[-sx,-sy,sz],[-sx,sy,-sz],[-sx,sy,sz],[sx,-sy,-sz],[sx,-sy,sz],[sx,sy,-sz],[sx,sy,sz]];
+  const e=[[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  const f=[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]];
+  return{v,e,f};
+}
+function mkSphere(r,n,m){r=r||1;n=n||20;m=m||14;const v=[];for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*i/m,p=2*PI*j/n;v.push([r*sin(t)*cos(p),r*cos(t),r*sin(t)*sin(p)]);}const e=[];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}return{v,e,f:[]};}
+function mkCone(r,h,n){r=r||1;h=h||2;n=n||24;const v=[[0,h/2,0]];for(let i=0;i<n;i++){const a=2*PI*i/n;v.push([r*cos(a),-h/2,r*sin(a)]);}const e=[];for(let i=1;i<=n;i++){e.push([0,i]);e.push([i,i%n+1]);}const f=[];for(let i=1;i<=n;i++)f.push([0,i,i%n+1]);return{v,e,f};}
+function mkCylinder(r,h,n){r=r||0.8;h=h||2;n=n||24;const v=[];for(let i=0;i<n;i++){const a=2*PI*i/n;v.push([r*cos(a),h/2,r*sin(a)]);v.push([r*cos(a),-h/2,r*sin(a)]);}const e=[];for(let i=0;i<n;i++){const t=i*2,tn=((i+1)%n)*2;e.push([t,t+1]);e.push([t,tn]);e.push([t+1,tn+1]);}return{v,e,f:[]};}
+function mkPyramid(){return{v:[[0,1.2,0],[-1,-0.8,-1],[1,-0.8,-1],[1,-0.8,1],[-1,-0.8,1]],e:[[0,1],[0,2],[0,3],[0,4],[1,2],[2,3],[3,4],[4,1]],f:[[0,1,2],[0,2,3],[0,3,4],[0,4,1],[1,2,3,4]]};}
+function mkTorus(R,r,n,m){R=R||1;r=r||0.35;n=n||28;m=m||14;const v=[];for(let i=0;i<n;i++)for(let j=0;j<m;j++){const t=2*PI*i/n,p=2*PI*j/m;v.push([(R+r*cos(p))*cos(t),(R+r*cos(p))*sin(t),r*sin(p)]);}const e=[];for(let i=0;i<n;i++)for(let j=0;j<m;j++){const idx=i*m+j;e.push([idx,i*m+(j+1)%m]);e.push([idx,((i+1)%n)*m+j]);}return{v,e,f:[]};}
+function mkHemisphere(r,n,m){r=r||1;n=n||20;m=m||10;const v=[];for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*0.5*i/m,p=2*PI*j/n;v.push([r*sin(t)*cos(p),r*cos(t),r*sin(t)*sin(p)]);}const e=[];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}for(let j=0;j<n;j++){const bi=m*w+j;e.push([bi,m*w+j+1]);}return{v,e,f:[]};}
 
-function sphereVerts(){const v=[];const n=16,m=12;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=Math.PI*i/m,p=2*Math.PI*j/n;v.push([Math.sin(t)*Math.cos(p),Math.cos(t),Math.sin(t)*Math.sin(p)]);}return v;}
-function sphereEdges(){const e=[],n=17,m=13;for(let i=0;i<m;i++)for(let j=0;j<n-1;j++){const idx=i*n+j;if(j<n-1)e.push([idx,idx+1]);if(i<m-1)e.push([idx,idx+n]);}return e;}
+/* Compound shapes */
+function mkPyrCube(){const c=mkCube(1,0.8,1);const py=[[0,1.8,0],[-1,0.8,-1],[1,0.8,-1],[1,0.8,1],[-1,0.8,1]];const off=c.v.length;const v=[...c.v,...py];const e=[...c.e,[off,off+1],[off,off+2],[off,off+3],[off,off+4],[off+1,off+2],[off+2,off+3],[off+3,off+4],[off+4,off+1]];return{v,e,f:[]};}
+function mkConeCyl(){const cy=mkCylinder(0.8,1.4,24);const off=cy.v.length;const cv=[[0,1.4,0]];for(let i=0;i<24;i++){const a=2*PI*i/24;cv.push([0.8*cos(a),0.7,0.8*sin(a)]);}const v=[...cy.v,...cv];const e=[...cy.e];for(let i=1;i<=24;i++){e.push([off,off+i]);e.push([off+i,off+(i%24)+1]);}return{v,e,f:[]};}
+function mkCylHemi(){const cy=mkCylinder(0.8,1.4,24);const off=cy.v.length;const hv=[];const n=20,m=8;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*0.5*i/m,p=2*PI*j/n;hv.push([0.8*sin(t)*cos(p),0.7+0.8*cos(t),0.8*sin(t)*sin(p)]);}const v=[...cy.v,...hv];const e=[...cy.e];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=off+i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}return{v,e,f:[]};}
 
-function pyramidVerts(){return[[0,1,0],[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]];}
-function pyramidEdges(){return[[0,1],[0,2],[0,3],[0,4],[1,2],[2,3],[3,4],[4,1]];}
-function pyramidFaces(){return[[0,1,2],[0,2,3],[0,3,4],[0,4,1],[1,2,3,4]];}
+/* Nets (2D laid flat, z=0) */
+function mkNetCube(){const s=1;const v=[];const e=[];const faces=[[0,0],[1,0],[2,0],[3,0],[1,-1],[1,1]];faces.forEach(([fx,fy])=>{const bx=fx*2*s,by=fy*2*s;const bi=v.length;v.push([bx-s,by-s,0],[bx+s,by-s,0],[bx+s,by+s,0],[bx-s,by+s,0]);e.push([bi,bi+1],[bi+1,bi+2],[bi+2,bi+3],[bi+3,bi]);});return{v,e,f:[]};}
+function mkNetCyl(){const v=[];const e=[];const w=3,h=2;const bi=v.length;v.push([-w,-h,0],[w,-h,0],[w,h,0],[-w,h,0]);e.push([0,1],[1,2],[2,3],[3,0]);const n=24;for(let ci=0;ci<2;ci++){const cx=0,cy=ci===0?-h-1.2:h+1.2;const off=v.length;for(let i=0;i<=n;i++){const a=2*PI*i/n;v.push([cx+0.9*cos(a),cy+0.9*sin(a),0]);}for(let i=0;i<n;i++)e.push([off+i,off+i+1]);}return{v,e,f:[]};}
+function mkNetCone(){const v=[];const e=[];const n=36;const R=2.5,off=v.length;v.push([0,0.5,0]);for(let i=0;i<=n;i++){const a=-PI*0.6+PI*1.2*i/n;v.push([R*cos(a),0.5+R*sin(a),0]);}for(let i=0;i<n;i++){e.push([0,off+1+i]);e.push([off+1+i,off+2+i]);}const boff=v.length;const cx=0,cy=-1.5;for(let i=0;i<=24;i++){const a=2*PI*i/24;v.push([cx+0.8*cos(a),cy+0.8*sin(a),0]);}for(let i=0;i<24;i++)e.push([boff+i,boff+i+1]);return{v,e,f:[]};}
+function mkNetPyr(){const v=[];const e=[];const s=1;v.push([-s,-s,0],[s,-s,0],[s,s,0],[-s,s,0]);e.push([0,1],[1,2],[2,3],[3,0]);const tris=[[0,1,0,-2],[1,2,2,0],[2,3,0,2],[3,0,-2,0]];tris.forEach(([a,b,dx,dy])=>{const mx=(v[a][0]+v[b][0])/2+dx*0.8,my=(v[a][1]+v[b][1])/2+dy*0.8;const ti=v.length;v.push([mx,my,0]);e.push([a,ti],[b,ti]);});return{v,e,f:[]};}
 
-function torusVerts(){const v=[];const R=1,r=0.4,n=24,m=12;for(let i=0;i<n;i++)for(let j=0;j<m;j++){const t=2*Math.PI*i/n,p=2*Math.PI*j/m;v.push([(R+r*Math.cos(p))*Math.cos(t),(R+r*Math.cos(p))*Math.sin(t),r*Math.sin(p)]);}return v;}
-function torusEdges(){const e=[],n=24,m=12;for(let i=0;i<n;i++)for(let j=0;j<m;j++){const idx=i*m+j;e.push([idx,i*m+(j+1)%m]);e.push([idx,((i+1)%n)*m+j]);}return e;}
+const SHAPES={cube:()=>mkCube(),cuboid:()=>mkCube(1.5,0.8,0.6),sphere:()=>mkSphere(),cone:()=>mkCone(),cylinder:()=>mkCylinder(),pyramid:()=>mkPyramid(),torus:()=>mkTorus(),hemisphere:()=>mkHemisphere(),pyr_cube:mkPyrCube,cone_cyl:mkConeCyl,cyl_hemi:mkCylHemi,net_cube:mkNetCube,net_cyl:mkNetCyl,net_cone:mkNetCone,net_pyr:mkNetPyr};
 
-function getGeometry(){
-  if(shape==='cube')return{v:cubeVerts(),e:cubeEdges(),f:cubeFaces()};
-  if(shape==='sphere')return{v:sphereVerts(),e:sphereEdges(),f:[]};
-  if(shape==='pyramid')return{v:pyramidVerts(),e:pyramidEdges(),f:pyramidFaces()};
-  if(shape==='torus')return{v:torusVerts(),e:torusEdges(),f:[]};
+const NAMES={cube:'Cube',cuboid:'Cuboid',sphere:'Sphere',cone:'Cone',cylinder:'Cylinder',pyramid:'Pyramid',torus:'Torus',hemisphere:'Hemisphere',pyr_cube:'Pyramid + Cube',cone_cyl:'Cone + Cylinder',cyl_hemi:'Cylinder + Hemisphere',net_cube:'Cube Net',net_cyl:'Cylinder Net',net_cone:'Cone Net',net_pyr:'Pyramid Net'};
+
+const MEASURES={cube:'Side = 2 | V = 8 | SA = 24',cuboid:'3 x 1.6 x 1.2 | V = 5.76 | SA = 15.84',sphere:'r = 1 | V = 4.19 | SA = 12.57',cone:'r = 1, h = 2 | V = 2.09 | SA = 10.17',cylinder:'r = 0.8, h = 2 | V = 4.02 | SA = 14.07',pyramid:'Base 2x2, h = 2 | V = 2.67 | SA = 12.94',torus:'R = 1, r = 0.35 | V = 2.41 | SA = 13.79',hemisphere:'r = 1 | V = 2.09 | SA = 9.42',pyr_cube:'Compound shape',cone_cyl:'Compound shape',cyl_hemi:'Compound shape',net_cube:'Unfolded cube',net_cyl:'Unfolded cylinder',net_cone:'Unfolded cone',net_pyr:'Unfolded pyramid'};
+
+let geo=SHAPES.cube();
+function set(s){shape=s;geo=SHAPES[s]();userLines=[];selectedDot=-1;
+document.querySelectorAll('#controls button').forEach(b=>b.classList.remove('active'));
+const el=document.getElementById('b-'+s);if(el)el.classList.add('active');
+if(wire)document.getElementById('b-wire').classList.add('active');
+if(drawMode)document.getElementById('b-draw').classList.add('draw-active');
+document.getElementById('shape-name').textContent=NAMES[s]||s;
+document.getElementById('measurements').textContent=MEASURES[s]||'';}
+
+function toggleWire(){wire=!wire;document.getElementById('b-wire').classList.toggle('active',wire);}
+function toggleDraw(){drawMode=!drawMode;
+document.getElementById('b-draw').classList.toggle('draw-active',drawMode);
+c.classList.toggle('drawing',drawMode);
+document.getElementById('draw-status').textContent=drawMode?'Click dots to connect them':'Drag to rotate \\u00b7 Scroll to zoom';
+document.getElementById('draw-hint').textContent=drawMode?'Click any vertex dot to start drawing a line':'';
+document.getElementById('draw-hint').style.opacity=drawMode?'1':'0';
+selectedDot=-1;}
+function clearLines(){userLines=[];selectedDot=-1;}
+
+/* ── Projected vertices cache ── */
+let projVerts=[];
+
+function findClosestDot(mx,my,threshold){
+  let best=-1,bestD=threshold*threshold;
+  for(let i=0;i<projVerts.length;i++){
+    const dx=projVerts[i].x-mx,dy=projVerts[i].y-my,d2=dx*dx+dy*dy;
+    if(d2<bestD){bestD=d2;best=i;}
+  }
+  return best;
 }
 
 function draw(){
   ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
-  const g=getGeometry();const pv=g.v.map(v=>project(v[0],v[1],v[2]));
+  const g=geo;
+  projVerts=g.v.map(v=>proj(v[0],v[1],v[2]));
+  const pv=projVerts;
 
-  if(!wireframe&&g.f.length>0){
-    const faces=g.f.map((f,i)=>{const cz=f.reduce((s,idx)=>s+pv[idx].z,0)/f.length;return{f,z:cz,i};}).sort((a,b)=>a.z-b.z);
-    faces.forEach(({f})=>{
+  /* Faces (filled, painter's algo) */
+  if(!wire&&g.f&&g.f.length>0){
+    const sorted=g.f.map(f=>{const cz=f.reduce((s,i)=>s+pv[i].z,0)/f.length;return{f,z:cz};}).sort((a,b)=>a.z-b.z);
+    sorted.forEach(({f})=>{
       ctx.beginPath();ctx.moveTo(pv[f[0]].x,pv[f[0]].y);
       for(let i=1;i<f.length;i++)ctx.lineTo(pv[f[i]].x,pv[f[i]].y);
-      ctx.closePath();ctx.fillStyle='rgba(59,130,246,0.15)';ctx.fill();
-      ctx.strokeStyle='rgba(59,130,246,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.closePath();
+      ctx.fillStyle='rgba(59,130,246,0.12)';ctx.fill();
+      ctx.strokeStyle='rgba(59,130,246,0.4)';ctx.lineWidth=1;ctx.stroke();
     });
   }
 
-  ctx.strokeStyle='rgba(59,130,246,0.6)';ctx.lineWidth=wireframe?1:0.8;
-  g.e.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(pv[a].x,pv[a].y);ctx.lineTo(pv[b].x,pv[b].y);ctx.stroke();});
+  /* Edges */
+  ctx.strokeStyle=wire?'rgba(59,130,246,0.5)':'rgba(59,130,246,0.35)';
+  ctx.lineWidth=wire?0.8:0.6;
+  g.e.forEach(([a,b])=>{if(a<pv.length&&b<pv.length){ctx.beginPath();ctx.moveTo(pv[a].x,pv[a].y);ctx.lineTo(pv[b].x,pv[b].y);ctx.stroke();}});
 
-  pv.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fillStyle='rgba(147,197,253,0.8)';ctx.fill();});
+  /* User-drawn lines */
+  if(userLines.length>0){
+    ctx.strokeStyle='rgba(16,185,129,0.8)';ctx.lineWidth=2;
+    userLines.forEach(([a,b])=>{
+      if(a<pv.length&&b<pv.length){ctx.beginPath();ctx.moveTo(pv[a].x,pv[a].y);ctx.lineTo(pv[b].x,pv[b].y);ctx.stroke();}
+    });
+  }
 
-  if(!dragging){rotY+=0.003;rotX+=0.001;}
+  /* In-progress line from selected dot to cursor */
+  if(drawMode&&selectedDot>=0&&selectedDot<pv.length){
+    ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(16,185,129,0.5)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(pv[selectedDot].x,pv[selectedDot].y);ctx.lineTo(mousePos.x,mousePos.y);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  /* Dots */
+  for(let i=0;i<pv.length;i++){
+    const isSelected=drawMode&&i===selectedDot;
+    const isHover=drawMode&&i===hoverDot;
+    const r=isSelected?5:isHover?4:2;
+    const col=isSelected?'rgba(16,185,129,1)':isHover?'rgba(16,185,129,0.7)':'rgba(147,197,253,0.7)';
+    ctx.beginPath();ctx.arc(pv[i].x,pv[i].y,r,0,PI*2);ctx.fillStyle=col;ctx.fill();
+    if(isSelected||isHover){ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.arc(pv[i].x,pv[i].y,r+3,0,PI*2);ctx.stroke();}
+  }
+
+  if(!drag&&!drawMode){rotY+=0.003;rotX+=0.001;}
   requestAnimationFrame(draw);
 }
 
-function setShape(s){shape=s;document.querySelectorAll('#controls button').forEach(b=>{b.classList.toggle('active',b.id==='btn-'+s)});}
-function toggleWireframe(){wireframe=!wireframe;document.getElementById('btn-wire').classList.toggle('active',wireframe);}
+const mousePos={x:-999,y:-999};
 
-c.addEventListener('mousedown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY});
-addEventListener('mouseup',()=>dragging=false);
-addEventListener('mousemove',e=>{if(!dragging)return;rotY+=(e.clientX-lastX)*0.008;rotX+=(e.clientY-lastY)*0.008;lastX=e.clientX;lastY=e.clientY;});
-c.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(80,Math.min(600,zoom-e.deltaY*0.5))},{passive:false});
-c.addEventListener('touchstart',e=>{if(e.touches.length===1){dragging=true;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;}},{passive:true});
-addEventListener('touchend',()=>dragging=false);
-addEventListener('touchmove',e=>{if(!dragging||e.touches.length!==1)return;const t=e.touches[0];rotY+=(t.clientX-lastX)*0.008;rotX+=(t.clientY-lastY)*0.008;lastX=t.clientX;lastY=t.clientY;},{passive:true});
+c.addEventListener('mousedown',e=>{
+  if(drawMode){
+    const dot=findClosestDot(e.clientX,e.clientY,20);
+    if(dot>=0){
+      if(selectedDot>=0&&selectedDot!==dot){
+        userLines.push([selectedDot,dot]);
+        selectedDot=-1;
+        document.getElementById('draw-hint').style.opacity='0';
+      }else{
+        selectedDot=dot;
+        document.getElementById('draw-hint').textContent='Now click another dot to connect';
+      }
+    }else{selectedDot=-1;document.getElementById('draw-hint').textContent='Click any vertex dot to start drawing a line';}
+    return;
+  }
+  drag=true;lx=e.clientX;ly=e.clientY;
+});
+addEventListener('mouseup',()=>{drag=false;});
+addEventListener('mousemove',e=>{
+  mousePos.x=e.clientX;mousePos.y=e.clientY;
+  if(drawMode){hoverDot=findClosestDot(e.clientX,e.clientY,20);return;}
+  if(!drag)return;
+  rotY+=(e.clientX-lx)*0.008;rotX+=(e.clientY-ly)*0.008;lx=e.clientX;ly=e.clientY;
+});
+c.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(60,Math.min(800,zoom-e.deltaY*0.5));},{passive:false});
 
+/* Touch */
+c.addEventListener('touchstart',e=>{
+  if(drawMode&&e.touches.length===1){
+    const t=e.touches[0];const dot=findClosestDot(t.clientX,t.clientY,30);
+    if(dot>=0){if(selectedDot>=0&&selectedDot!==dot){userLines.push([selectedDot,dot]);selectedDot=-1;}else{selectedDot=dot;}}
+    return;
+  }
+  if(e.touches.length===1){drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
+},{passive:true});
+addEventListener('touchend',()=>{drag=false;});
+addEventListener('touchmove',e=>{
+  if(!drag||e.touches.length!==1)return;
+  const t=e.touches[0];rotY+=(t.clientX-lx)*0.008;rotX+=(t.clientY-ly)*0.008;lx=t.clientX;ly=t.clientY;
+},{passive:true});
+
+document.getElementById('measurements').textContent=MEASURES.cube;
 draw();
 <\/script></body></html>`;
 
@@ -596,13 +740,13 @@ export const STEM_CATEGORIES: StemCategory[] = [
       {
         id: 'geometry-explorer',
         title: '3D Geometry Explorer',
-        description: 'Manipulate 3D shapes — rotate, slice, and measure angles, surface areas, and volumes in real time.',
+        description: 'Explore 15+ shapes: cube, cuboid, sphere, cone, cylinder, pyramid, torus, hemisphere, compound shapes, and their nets — all interactive 3D.',
         icon: 'Box',
         gradient: 'from-blue-500 to-cyan-400',
         glowColor: 'rgba(59,130,246,0.35)',
         difficulty: 'Beginner',
-        tags: ['Shapes', 'Volume', 'Surface Area'],
-        instructions: 'Drag to rotate the shape. Scroll to zoom in/out. Use the buttons at the bottom to switch between Cube, Sphere, Pyramid, and Torus. Toggle Wireframe mode to see the edge structure.',
+        tags: ['Shapes', 'Volume', 'Nets', 'Compound', 'Surface Area'],
+        instructions: 'Drag to rotate any shape. Scroll to zoom in/out. Basic shapes: Cube, Cuboid, Sphere, Cone, Cylinder, Pyramid, Torus, Hemisphere. Compound shapes: Pyramid+Cube, Cone+Cylinder, Cylinder+Hemisphere. Nets: unfolded views of Cube, Cylinder, Cone, Pyramid. Toggle Wireframe for edge view. Use "Draw Lines" mode to click any two vertex dots and connect them — great for visualising diagonals, cross-sections, or custom edges. "Clear Lines" removes all drawn lines.',
         html_code: GEOMETRY_HTML,
       },
       {
