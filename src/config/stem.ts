@@ -2406,6 +2406,502 @@ addEventListener('message',e=>{if(!e.data||!e.data.type)return;if(e.data.type===
 draw();
 <\/script></body></html>`;
 
+// ── Friction & Inclined Plane ───────────────────────────────────────────────
+const FRICTION_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600;font-size:11px}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#f59e0b}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(245,158,11,0.25);border-color:rgba(245,158,11,0.5);color:#f59e0b}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#f59e0b;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Inclined Plane</div>
+<label>Angle <span id="vAng">30</span>°</label>
+<input type="range" id="sAng" min="0" max="80" value="30" step="1">
+<label>Mass <span id="vMass">5</span> kg</label>
+<input type="range" id="sMass" min="1" max="50" value="5" step="1">
+<label>μ (friction) <span id="vMu">0.30</span></label>
+<input type="range" id="sMu" min="0" max="100" value="30" step="1">
+<label>Gravity <span id="vG">9.8</span> m/s²</label>
+<input type="range" id="sG" min="1" max="25" value="10" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bStart">Start / Reset</button>
+<button id="bPause">Pause</button>
+</div>
+<div class="sec">
+<div class="sec-title">Forces (N)</div>
+<div class="info" id="forces">Click Start to begin</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>On an incline at angle θ:</b><br>
+Weight component ∥ = mg sin θ<br>
+Normal force N = mg cos θ<br>
+Friction f = μN = μmg cos θ<br>
+Net force = mg sin θ − μmg cos θ<br>
+a = g(sin θ − μ cos θ)<br><br>
+Block slides when tan θ > μ
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+const sAng=document.getElementById('sAng'),sMass=document.getElementById('sMass'),sMu=document.getElementById('sMu'),sG=document.getElementById('sG');
+const vAng=document.getElementById('vAng'),vMass=document.getElementById('vMass'),vMu=document.getElementById('vMu'),vG=document.getElementById('vG');
+const forcesEl=document.getElementById('forces');
+let W,H,ang=30,mass=5,mu=0.3,g=9.8,running=false,paused=false,pos=0,vel=0,t=0;
+function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}
+resize();window.onresize=resize;
+function sliders(){
+ang=+sAng.value;vAng.textContent=ang;
+mass=+sMass.value;vMass.textContent=mass;
+mu=(+sMu.value)/100;vMu.textContent=mu.toFixed(2);
+g=(+sG.value)*0.98;vG.textContent=g.toFixed(1);
+if(!running)draw();
+}
+[sAng,sMass,sMu,sG].forEach(s=>s.oninput=sliders);
+document.getElementById('bStart').onclick=()=>{pos=0;vel=0;t=0;running=true;paused=false};
+document.getElementById('bPause').onclick=()=>{paused=!paused};
+function draw(){
+X.clearRect(0,0,W,H);
+const rad=ang*Math.PI/180;
+const planeLen=Math.min(W*0.7,H*0.8);
+const baseX=W*0.15,baseY=H*0.82;
+const topX=baseX+planeLen*Math.cos(rad),topY=baseY-planeLen*Math.sin(rad);
+// ground
+X.fillStyle='rgba(255,255,255,0.03)';X.fillRect(0,baseY,W,H-baseY);
+X.strokeStyle='rgba(255,255,255,0.15)';X.lineWidth=1;X.beginPath();X.moveTo(0,baseY);X.lineTo(W,baseY);X.stroke();
+// plane
+X.save();X.beginPath();X.moveTo(baseX,baseY);X.lineTo(topX,topY);X.lineTo(baseX+(topX-baseX),baseY);X.closePath();
+X.fillStyle='rgba(245,158,11,0.08)';X.fill();X.strokeStyle='rgba(245,158,11,0.4)';X.lineWidth=2;X.stroke();X.restore();
+// angle arc
+X.beginPath();X.arc(baseX+(topX-baseX)*0.5,baseY,40,0,-rad,true);X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=1;X.stroke();
+X.fillStyle='rgba(255,255,255,0.5)';X.font='11px system-ui';X.fillText(ang+'°',baseX+(topX-baseX)*0.5+45,baseY-8);
+// block position along plane
+const maxDist=planeLen-60;
+const blockDist=Math.min(pos*30,maxDist);
+const bx=baseX+20+(planeLen-60-blockDist)*Math.cos(rad);
+const by=baseY-(20+(planeLen-60-blockDist)*Math.sin(rad));
+const bSize=24+mass*0.4;
+// draw block
+X.save();X.translate(bx,by);X.rotate(-rad);
+X.fillStyle='rgba(59,130,246,0.6)';X.strokeStyle='rgba(59,130,246,0.8)';X.lineWidth=2;
+X.fillRect(-bSize/2,-bSize,bSize,bSize);X.strokeRect(-bSize/2,-bSize,bSize,bSize);
+X.fillStyle='#fff';X.font='bold 10px system-ui';X.textAlign='center';X.fillText(mass+'kg',-0,(-bSize/2)+4);
+X.restore();
+// force arrows
+const scale=0.8;
+const Fg=mass*g,Fp=Fg*Math.sin(rad),Fn=Fg*Math.cos(rad),Ff=mu*Fn;
+const netF=Fp-Ff;
+// draw arrows from block center
+X.save();X.translate(bx,by-bSize/2);
+// weight down
+drawArrow(X,0,0,0,Fg*scale*0.5,'rgba(255,80,80,0.8)','W='+Fg.toFixed(1)+'N');
+// component along plane (down the slope)
+X.save();X.rotate(-rad);
+drawArrow(X,0,0,Fp*scale*0.5,0,'rgba(255,180,0,0.8)','F∥='+Fp.toFixed(1));
+if(Ff>0.01)drawArrow(X,0,0,-Ff*scale*0.5,0,'rgba(0,200,100,0.8)','f='+Ff.toFixed(1));
+X.restore();
+// normal
+X.save();X.rotate(-rad);
+drawArrow(X,0,0,0,-Fn*scale*0.5,'rgba(100,150,255,0.8)','N='+Fn.toFixed(1));
+X.restore();
+X.restore();
+// update forces display
+forcesEl.innerHTML='Weight: <span class="val">'+Fg.toFixed(1)+'</span> N<br>'+
+'F∥ (along slope): <span class="val">'+Fp.toFixed(1)+'</span> N<br>'+
+'Normal N: <span class="val">'+Fn.toFixed(1)+'</span> N<br>'+
+'Friction f: <span class="val">'+Ff.toFixed(1)+'</span> N<br>'+
+'Net force: <span class="val">'+netF.toFixed(1)+'</span> N<br>'+
+'Acceleration: <span class="val">'+(netF>0?(netF/mass).toFixed(2):'0.00')+'</span> m/s²<br>'+
+'Velocity: <span class="val">'+vel.toFixed(2)+'</span> m/s<br>'+
+(netF<=0?'<span style="color:#10b981">Block stationary (friction ≥ gravity component)</span>':'<span style="color:#f59e0b">Block sliding!</span>');
+}
+function drawArrow(ctx,x1,y1,x2,y2,color,label){
+const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+if(len<2)return;
+ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+x2,y1+y2);
+ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.stroke();
+const angle=Math.atan2(y2,x2);
+ctx.save();ctx.translate(x1+x2,y1+y2);ctx.rotate(angle);
+ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-8,-4);ctx.lineTo(-8,4);ctx.closePath();
+ctx.fillStyle=color;ctx.fill();ctx.restore();
+if(label){ctx.fillStyle=color;ctx.font='bold 9px system-ui';ctx.fillText(label,x1+x2*0.5+8,y1+y2*0.5-6)}
+}
+const dt=1/60;
+function loop(){
+requestAnimationFrame(loop);
+if(running&&!paused){
+const rad=ang*Math.PI/180;
+const a=g*(Math.sin(rad)-mu*Math.cos(rad));
+if(a>0){vel+=a*dt;pos+=vel*dt;t+=dt}
+if(pos*30>=(Math.min(W*0.7,H*0.8))-60){pos=0;vel=0}
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){pos=0;vel=0;t=0;running=false;paused=false}
+});
+<\/script></body></html>`;
+
+// ── Hooke's Law & Springs ──────────────────────────────────────────────────
+const HOOKE_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#10b981}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#10b981;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Spring Properties</div>
+<label>Spring constant k <span id="vK">20</span> N/m</label>
+<input type="range" id="sK" min="5" max="100" value="20" step="1">
+<label>Mass <span id="vM">2</span> kg</label>
+<input type="range" id="sM" min="1" max="20" value="2" step="1">
+<label>Damping <span id="vD">0.02</span></label>
+<input type="range" id="sD" min="0" max="50" value="2" step="1">
+<label>Initial stretch <span id="vX">100</span> px</label>
+<input type="range" id="sX" min="20" max="200" value="100" step="5">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bDrop">Drop Mass</button>
+<button id="bReset">Reset</button>
+<button id="bGraph">Toggle Graph</button>
+</div>
+<div class="sec">
+<div class="sec-title">Measurements</div>
+<div class="info" id="meas">Drop the mass to begin</div>
+</div>
+<div class="sec">
+<div class="sec-title">Hooke's Law</div>
+<div class="info">
+<b>F = −kx</b><br><br>
+Force is proportional to displacement from equilibrium and acts in the opposite direction.<br><br>
+<b>Period T = 2π√(m/k)</b><br>
+<b>PE = ½kx²</b><br>
+<b>KE = ½mv²</b>
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H,k=20,mass=2,damp=0.02,initStretch=100;
+let springY=0,velY=0,equilY,running=false,showGraph=true,history=[];
+function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight;equilY=H*0.3}
+resize();window.onresize=resize;
+const sK=document.getElementById('sK'),sM=document.getElementById('sM'),sD=document.getElementById('sD'),sX=document.getElementById('sX');
+function sliders(){
+k=+sK.value;document.getElementById('vK').textContent=k;
+mass=+sM.value;document.getElementById('vM').textContent=mass;
+damp=(+sD.value)/100;document.getElementById('vD').textContent=damp.toFixed(2);
+initStretch=+sX.value;document.getElementById('vX').textContent=initStretch;
+}
+[sK,sM,sD,sX].forEach(s=>s.oninput=sliders);
+document.getElementById('bDrop').onclick=()=>{springY=initStretch;velY=0;running=true;history=[]};
+document.getElementById('bReset').onclick=()=>{springY=0;velY=0;running=false;history=[]};
+document.getElementById('bGraph').onclick=()=>{showGraph=!showGraph};
+function drawSpring(x,y1,y2,coils){
+const segH=(y2-y1)/((coils*2)+2),amp=14;
+X.beginPath();X.moveTo(x,y1);X.lineTo(x,y1+segH);
+for(let i=0;i<coils*2;i++){
+const yy=y1+segH+(i+1)*segH;
+X.lineTo(x+(i%2===0?amp:-amp),yy);
+}
+X.lineTo(x,y2-segH);X.lineTo(x,y2);
+X.strokeStyle='rgba(16,185,129,0.7)';X.lineWidth=2.5;X.stroke();
+}
+function draw(){
+X.clearRect(0,0,W,H);
+const anchorX=W*0.4,anchorY=40;
+const massY=equilY+springY;
+const massSize=20+mass*1.5;
+// ceiling
+X.fillStyle='rgba(255,255,255,0.06)';X.fillRect(anchorX-40,0,80,anchorY);
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=2;
+X.beginPath();X.moveTo(anchorX-40,anchorY);X.lineTo(anchorX+40,anchorY);X.stroke();
+// spring
+const coils=8+Math.floor(springY/20);
+drawSpring(anchorX,anchorY,massY,Math.max(4,Math.min(coils,20)));
+// equilibrium line
+X.setLineDash([5,5]);X.strokeStyle='rgba(255,255,255,0.15)';X.lineWidth=1;
+X.beginPath();X.moveTo(anchorX-80,equilY);X.lineTo(anchorX+80,equilY);X.stroke();
+X.setLineDash([]);
+X.fillStyle='rgba(255,255,255,0.3)';X.font='10px system-ui';X.fillText('Equilibrium',anchorX+85,equilY+4);
+// mass block
+X.fillStyle='rgba(59,130,246,0.6)';X.strokeStyle='rgba(59,130,246,0.8)';X.lineWidth=2;
+X.fillRect(anchorX-massSize/2,massY,massSize,massSize);
+X.strokeRect(anchorX-massSize/2,massY,massSize,massSize);
+X.fillStyle='#fff';X.font='bold 10px system-ui';X.textAlign='center';
+X.fillText(mass+'kg',anchorX,massY+massSize/2+4);X.textAlign='left';
+// force arrow
+const force=-k*springY/100;
+if(Math.abs(force)>0.5){
+const arrowLen=force*3;
+X.beginPath();X.moveTo(anchorX+massSize/2+10,massY+massSize/2);
+X.lineTo(anchorX+massSize/2+10,massY+massSize/2-arrowLen);
+X.strokeStyle='rgba(255,100,100,0.8)';X.lineWidth=2.5;X.stroke();
+X.fillStyle='rgba(255,100,100,0.8)';X.font='9px system-ui';
+X.fillText('F='+(-force).toFixed(1)+'N',anchorX+massSize/2+16,massY+massSize/2-arrowLen/2);
+}
+// displacement marker
+if(Math.abs(springY)>2){
+X.strokeStyle='rgba(245,158,11,0.5)';X.lineWidth=1;
+X.beginPath();X.moveTo(anchorX-massSize/2-20,equilY);X.lineTo(anchorX-massSize/2-20,massY);X.stroke();
+X.fillStyle='rgba(245,158,11,0.7)';X.font='9px system-ui';
+X.fillText('x='+(springY/100).toFixed(2)+'m',anchorX-massSize/2-70,(equilY+massY)/2+4);
+}
+// energy
+const PE=0.5*k*(springY/100)*(springY/100);
+const KE=0.5*mass*(velY/100)*(velY/100);
+const TE=PE+KE;
+document.getElementById('meas').innerHTML=
+'Displacement: <span class="val">'+(springY/100).toFixed(3)+'</span> m<br>'+
+'Velocity: <span class="val">'+(velY/100).toFixed(3)+'</span> m/s<br>'+
+'Force: <span class="val">'+(k*springY/100).toFixed(2)+'</span> N<br>'+
+'PE: <span class="val">'+PE.toFixed(3)+'</span> J<br>'+
+'KE: <span class="val">'+KE.toFixed(3)+'</span> J<br>'+
+'Total: <span class="val">'+TE.toFixed(3)+'</span> J<br>'+
+'Period T: <span class="val">'+(2*Math.PI*Math.sqrt(mass/k)).toFixed(3)+'</span> s';
+// graph
+if(showGraph&&history.length>1){
+const gx=20,gy=H-160,gw=W*0.4-40,gh=130;
+X.fillStyle='rgba(0,0,0,0.4)';X.fillRect(gx,gy,gw,gh);
+X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;X.strokeRect(gx,gy,gw,gh);
+// axis
+X.strokeStyle='rgba(255,255,255,0.2)';X.beginPath();X.moveTo(gx,gy+gh/2);X.lineTo(gx+gw,gy+gh/2);X.stroke();
+X.fillStyle='rgba(255,255,255,0.3)';X.font='9px system-ui';X.fillText('Displacement vs Time',gx+4,gy+12);
+const maxPts=300,pts=history.slice(-maxPts);
+const maxV=Math.max(...pts.map(p=>Math.abs(p)),50);
+X.beginPath();
+pts.forEach((v,i)=>{
+const px=gx+(i/maxPts)*gw,py=gy+gh/2-(v/maxV)*(gh/2)*0.9;
+i===0?X.moveTo(px,py):X.lineTo(px,py);
+});
+X.strokeStyle='rgba(16,185,129,0.8)';X.lineWidth=1.5;X.stroke();
+}
+}
+function loop(){
+requestAnimationFrame(loop);
+if(running){
+const a=(-k*springY/100-damp*velY/100)*100/mass;
+velY+=a/60;springY+=velY/60;
+history.push(springY);
+if(history.length>600)history.shift();
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){springY=0;velY=0;running=false;history=[]}
+});
+<\/script></body></html>`;
+
+// ── Wave Motion ────────────────────────────────────────────────────────────
+const WAVE_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#8b5cf6}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(139,92,246,0.25);border-color:rgba(139,92,246,0.5);color:#8b5cf6}
+.btns{display:flex;gap:4px;margin-bottom:8px}
+.btns button{flex:1}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#8b5cf6;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Wave Type</div>
+<div class="btns"><button id="bTrans" class="active">Transverse</button><button id="bLong">Longitudinal</button></div>
+</div>
+<div class="sec">
+<div class="sec-title">Properties</div>
+<label>Amplitude <span id="vA">60</span> px</label>
+<input type="range" id="sA" min="10" max="120" value="60" step="1">
+<label>Wavelength <span id="vL">200</span> px</label>
+<input type="range" id="sL" min="60" max="500" value="200" step="5">
+<label>Frequency <span id="vF">1.0</span> Hz</label>
+<input type="range" id="sF" min="1" max="50" value="10" step="1">
+<label>Particles <span id="vN">40</span></label>
+<input type="range" id="sN" min="10" max="80" value="40" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Display</div>
+<button id="bPause">Pause</button>
+<button id="bParticles">Toggle Particles</button>
+<button id="bLabels">Toggle Labels</button>
+</div>
+<div class="sec">
+<div class="sec-title">Measurements</div>
+<div class="info" id="meas">v = fλ</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Wave equation:</b> v = fλ<br><br>
+<b>Transverse:</b> oscillation ⊥ to wave direction (e.g., light, water waves)<br><br>
+<b>Longitudinal:</b> oscillation ∥ to wave direction (e.g., sound)<br><br>
+T = 1/f (period)<br>
+v = λ/T
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;
+function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}
+resize();window.onresize=resize;
+let waveType='transverse',amp=60,wl=200,freq=1.0,nParts=40,paused=false,showParts=true,showLabels=true,time=0;
+const sA=document.getElementById('sA'),sL=document.getElementById('sL'),sF=document.getElementById('sF'),sN=document.getElementById('sN');
+function sl(){
+amp=+sA.value;document.getElementById('vA').textContent=amp;
+wl=+sL.value;document.getElementById('vL').textContent=wl;
+freq=(+sF.value)/10;document.getElementById('vF').textContent=freq.toFixed(1);
+nParts=+sN.value;document.getElementById('vN').textContent=nParts;
+}
+[sA,sL,sF,sN].forEach(s=>s.oninput=sl);
+document.getElementById('bTrans').onclick=()=>{waveType='transverse';document.getElementById('bTrans').classList.add('active');document.getElementById('bLong').classList.remove('active')};
+document.getElementById('bLong').onclick=()=>{waveType='longitudinal';document.getElementById('bLong').classList.add('active');document.getElementById('bTrans').classList.remove('active')};
+document.getElementById('bPause').onclick=()=>{paused=!paused;document.getElementById('bPause').textContent=paused?'Play':'Pause'};
+document.getElementById('bParticles').onclick=()=>{showParts=!showParts};
+document.getElementById('bLabels').onclick=()=>{showLabels=!showLabels};
+function draw(){
+X.clearRect(0,0,W,H);
+const cy=H/2,startX=40;
+const v=freq*wl;
+// grid
+X.strokeStyle='rgba(255,255,255,0.04)';X.lineWidth=1;
+for(let y=0;y<H;y+=50){X.beginPath();X.moveTo(0,y);X.lineTo(W,y);X.stroke()}
+for(let x=0;x<W;x+=50){X.beginPath();X.moveTo(x,0);X.lineTo(x,H);X.stroke()}
+// equilibrium line
+X.setLineDash([4,4]);X.strokeStyle='rgba(255,255,255,0.15)';
+X.beginPath();X.moveTo(startX,cy);X.lineTo(W-20,cy);X.stroke();X.setLineDash([]);
+if(waveType==='transverse'){
+// wave curve
+X.beginPath();
+for(let px=startX;px<W-20;px++){
+const y=cy+amp*Math.sin(2*Math.PI*(px/wl-freq*time));
+px===startX?X.moveTo(px,y):X.lineTo(px,y);
+}
+X.strokeStyle='rgba(139,92,246,0.8)';X.lineWidth=2.5;X.stroke();
+// particles
+if(showParts){
+const spacing=(W-60)/nParts;
+for(let i=0;i<nParts;i++){
+const px=startX+i*spacing;
+const py=cy+amp*Math.sin(2*Math.PI*(px/wl-freq*time));
+X.beginPath();X.arc(px,py,4,0,Math.PI*2);
+X.fillStyle='rgba(139,92,246,0.9)';X.fill();
+// motion line
+X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;
+X.beginPath();X.moveTo(px,cy-amp-8);X.lineTo(px,cy+amp+8);X.stroke();
+}
+}
+// labels
+if(showLabels){
+X.fillStyle='rgba(255,255,255,0.5)';X.font='10px system-ui';
+// wavelength
+const lx=startX+wl*0.1;
+const ly1=cy+amp*Math.sin(2*Math.PI*(lx/wl-freq*time));
+X.strokeStyle='rgba(245,158,11,0.6)';X.lineWidth=1.5;
+X.beginPath();X.moveTo(lx,ly1-amp*0.3-30);X.lineTo(lx+wl,ly1-amp*0.3-30);X.stroke();
+X.beginPath();X.moveTo(lx,ly1-amp*0.3-35);X.lineTo(lx,ly1-amp*0.3-25);X.stroke();
+X.beginPath();X.moveTo(lx+wl,ly1-amp*0.3-35);X.lineTo(lx+wl,ly1-amp*0.3-25);X.stroke();
+X.fillStyle='rgba(245,158,11,0.8)';X.textAlign='center';X.fillText('λ = '+wl+'px',lx+wl/2,ly1-amp*0.3-38);X.textAlign='left';
+// amplitude
+const ax=startX+30;
+X.strokeStyle='rgba(16,185,129,0.6)';
+X.beginPath();X.moveTo(ax-15,cy);X.lineTo(ax-15,cy-amp);X.stroke();
+X.beginPath();X.moveTo(ax-20,cy);X.lineTo(ax-10,cy);X.stroke();
+X.beginPath();X.moveTo(ax-20,cy-amp);X.lineTo(ax-10,cy-amp);X.stroke();
+X.fillStyle='rgba(16,185,129,0.8)';X.fillText('A='+amp,ax-12,cy-amp/2+4);
+}
+}else{
+// longitudinal wave
+const spacing=(W-60)/nParts;
+for(let i=0;i<nParts;i++){
+const restX=startX+i*spacing;
+const displacement=amp*0.5*Math.sin(2*Math.PI*(restX/wl-freq*time));
+const px=restX+displacement;
+const density=1+0.6*Math.cos(2*Math.PI*(restX/wl-freq*time));
+const r=3+density*3;
+X.beginPath();X.arc(px,cy,r,0,Math.PI*2);
+X.fillStyle='rgba(139,92,246,'+(0.3+density*0.3)+')';X.fill();
+// motion arrow
+if(showParts&&Math.abs(displacement)>2){
+X.beginPath();X.moveTo(px,cy+15);X.lineTo(px+displacement*0.3,cy+15);
+X.strokeStyle='rgba(245,158,11,0.5)';X.lineWidth=1;X.stroke();
+}
+}
+if(showLabels){
+X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';
+X.fillText('← Rarefaction',W*0.2,cy+50);X.fillText('Compression →',W*0.5,cy+50);
+}
+}
+// direction arrow
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';
+X.fillText('Wave direction →',W/2-50,H-30);
+// measurements
+const T=freq>0?1/freq:Infinity;
+document.getElementById('meas').innerHTML=
+'Speed v: <span class="val">'+(v).toFixed(1)+'</span> px/s<br>'+
+'Period T: <span class="val">'+T.toFixed(3)+'</span> s<br>'+
+'Frequency f: <span class="val">'+freq.toFixed(1)+'</span> Hz<br>'+
+'Wavelength λ: <span class="val">'+wl+'</span> px<br>'+
+'Amplitude A: <span class="val">'+amp+'</span> px';
+}
+function loop(){requestAnimationFrame(loop);if(!paused)time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;paused=false}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -3114,6 +3610,42 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Planets', 'Orbits', 'Astronomy', 'Space'],
         instructions: "Watch the solar system animate. Click any planet name in the right panel or click directly on a planet to see its information — mass, distance from Sun, surface temperature, number of moons, and orbital period. Use the speed slider to slow down or speed up the simulation.",
         html_code: SOLAR_HTML,
+      },
+      {
+        id: 'friction-inclined-plane',
+        title: 'Friction & Inclined Plane',
+        description: 'Place a block on an adjustable inclined plane — explore friction, normal force, and the conditions for sliding.',
+        icon: 'TrendingUp',
+        gradient: 'from-amber-500 to-yellow-500',
+        glowColor: 'rgba(245,158,11,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Friction', 'Forces', 'Incline', 'Normal Force'],
+        instructions: "Adjust the plane angle, block mass, friction coefficient (μ), and gravity. Click Start to release the block. Force arrows show weight, normal force, friction, and the component along the slope. The block slides when mg sin θ > μmg cos θ.",
+        html_code: FRICTION_HTML,
+      },
+      {
+        id: 'hookes-law',
+        title: "Hooke's Law & Springs",
+        description: "Stretch a spring, hang masses, and watch oscillations — see F = −kx, energy conservation, and simple harmonic motion.",
+        icon: 'Activity',
+        gradient: 'from-emerald-500 to-green-500',
+        glowColor: 'rgba(16,185,129,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Springs', 'SHM', 'Energy', 'Elasticity'],
+        instructions: "Set the spring constant k, mass, damping, and initial stretch. Click 'Drop Mass' to release. Watch the spring oscillate and observe displacement, velocity, force, PE, KE, and total energy in real time. Toggle the displacement-time graph for visual analysis.",
+        html_code: HOOKE_HTML,
+      },
+      {
+        id: 'wave-motion',
+        title: 'Wave Motion',
+        description: 'Visualise transverse and longitudinal waves — adjust amplitude, wavelength, and frequency with particle motion.',
+        icon: 'Activity',
+        gradient: 'from-violet-500 to-purple-500',
+        glowColor: 'rgba(139,92,246,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Waves', 'Transverse', 'Longitudinal', 'v=fλ'],
+        instructions: "Switch between Transverse and Longitudinal wave types. Adjust amplitude, wavelength, frequency, and particle count. Toggle particles to see individual oscillations. Toggle labels to see wavelength and amplitude measurements. v = fλ is calculated in real time.",
+        html_code: WAVE_HTML,
       },
     ],
   },
