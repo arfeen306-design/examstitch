@@ -15,12 +15,12 @@ const PROVIDERS = [
     ring: 'ring-teal-400/30',
   },
   {
-    id: 'forefront',
-    label: 'Forefront',
-    url: 'https://chat.forefront.ai/',
-    icon: '🧠',
-    accent: 'from-blue-500 to-cyan-400',
-    ring: 'ring-cyan-400/30',
+    id: 'whatsapp',
+    label: 'WhatsApp',
+    url: 'https://web.whatsapp.com/',
+    icon: '💬',
+    accent: 'from-green-500 to-emerald-400',
+    ring: 'ring-emerald-400/30',
   },
   {
     id: 'coze',
