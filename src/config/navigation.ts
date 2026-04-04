@@ -128,20 +128,20 @@ export const mainNavItems = [
     href: '/',
   },
   {
-    label: 'Pre O-Level',
-    href: '/pre-olevel',
-  },
-  {
-    label: 'O-Level / IGCSE',
-    href: '/olevel',
+    label: 'STEM',
+    href: '/stem',
   },
   {
     label: 'A-Level',
     href: '/alevel',
   },
   {
-    label: 'STEM',
-    href: '/stem',
+    label: 'O-Level / IGCSE',
+    href: '/olevel',
+  },
+  {
+    label: 'Pre O-Level',
+    href: '/pre-olevel',
   },
   {
     label: 'Digital Skills',
