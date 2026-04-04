@@ -545,162 +545,351 @@ body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;user-se
 canvas{display:block;cursor:grab}
 canvas.doodling{cursor:crosshair}
 canvas:active{cursor:grabbing}
-#top-bar{position:fixed;top:0;left:0;right:0;padding:8px 14px;z-index:20;background:linear-gradient(180deg,rgba(10,10,26,0.92),transparent);display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+#top-bar{position:fixed;top:0;left:0;right:0;padding:8px 14px;z-index:20;background:linear-gradient(180deg,rgba(10,10,26,0.93),transparent);display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
 #top-bar>*{pointer-events:auto}
 #fn-label{font-size:15px;font-weight:700;letter-spacing:.3px}
 #fn-eq{font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;font-family:'Courier New',monospace}
-#coord-badge{position:fixed;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.15);font-size:12px;font-family:'Courier New',monospace;pointer-events:none;z-index:30;display:none;backdrop-filter:blur(6px);white-space:nowrap}
-#vol-panel{position:fixed;top:60px;right:14px;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;font-size:11px;line-height:1.8;z-index:20;display:none;backdrop-filter:blur(8px);min-width:180px}
-#vol-panel .lbl{color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;letter-spacing:1px}
-#vol-panel .val{color:#a78bfa;font-weight:700;font-family:'Courier New',monospace}
+#coord-badge{position:fixed;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);font-size:12px;font-family:'Courier New',monospace;pointer-events:none;z-index:30;display:none;backdrop-filter:blur(6px);white-space:nowrap}
+#right-panel{position:fixed;top:50px;right:10px;z-index:20;display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 140px);overflow-y:auto;scrollbar-width:none}
+#right-panel::-webkit-scrollbar{display:none}
+.panel{background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:10px;line-height:1.7;backdrop-filter:blur(8px);min-width:175px;max-width:200px}
+.panel .lbl{color:rgba(255,255,255,0.4);font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:2px}
+.panel .val{color:#a78bfa;font-weight:700;font-family:'Courier New',monospace;font-size:11px}
+.panel input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;margin:2px 0}
+.panel input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid rgba(255,255,255,0.3)}
+.panel input[type=number]{width:46px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px}
+.panel select{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px}
 #hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.08);font-size:14px;pointer-events:none;z-index:5}
-#controls{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:20;flex-wrap:wrap;justify-content:center;max-width:98vw;padding:0 8px}
-.cg{display:flex;gap:3px;padding:4px 5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:9px}
+#controls{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:20;flex-wrap:wrap;justify-content:center;max-width:98vw;padding:0 6px}
+.cg{display:flex;gap:2px;padding:3px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;flex-wrap:wrap;justify-content:center}
 .cw{position:relative;padding-top:10px}
 .cl{position:absolute;top:-13px;left:6px;font-size:7px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:1px;font-weight:700}
-button{padding:5px 10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.65);border-radius:7px;cursor:pointer;font-size:10px;font-weight:600;transition:all .2s;white-space:nowrap}
-button:hover{background:rgba(255,255,255,0.12);color:#fff;transform:translateY(-1px)}
-button.on{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd;box-shadow:0 0 10px rgba(59,130,246,0.15)}
-button.tool{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.4);color:#6ee7b7;box-shadow:0 0 10px rgba(16,185,129,0.15)}
+button{padding:4px 8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.65);border-radius:6px;cursor:pointer;font-size:9px;font-weight:600;transition:all .2s;white-space:nowrap}
+button:hover{background:rgba(255,255,255,0.12);color:#fff}
+button.on{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd;box-shadow:0 0 8px rgba(59,130,246,0.15)}
+button.tool{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.4);color:#6ee7b7;box-shadow:0 0 8px rgba(16,185,129,0.15)}
+button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color:#fca5a5}
+.tang-dot{position:fixed;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid rgba(255,255,255,0.5);transform:translate(-50%,-50%);pointer-events:none;z-index:25;display:none;box-shadow:0 0 8px rgba(239,68,68,0.5)}
+#vol3d{position:fixed;top:50px;left:10px;z-index:20;display:none}
+#vol3d canvas{border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.5)}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="top-bar">
-  <div><div id="fn-label">sin(x)</div><div id="fn-eq">y = sin(x)</div></div>
-  <div style="font-size:10px;color:rgba(255,255,255,0.35);text-align:right;line-height:1.6">Drag to pan · Scroll to zoom<br>Click graph for coordinates</div>
+  <div><div id="fn-label">Quadratic</div><div id="fn-eq">y = x\\u00b2</div></div>
+  <div style="font-size:9px;color:rgba(255,255,255,0.3);text-align:right;line-height:1.5">Drag to pan \\u00b7 Scroll to zoom<br>Click graph for tangent line</div>
 </div>
 <div id="coord-badge"></div>
-<div id="vol-panel">
-  <div class="lbl">Volume of Revolution (x-axis)</div>
-  <div>V = &pi; &int; y&sup2; dx from <span id="vol-a">-2</span> to <span id="vol-b">2</span></div>
-  <div class="val" id="vol-val">V = 0</div>
-  <div style="margin-top:6px" class="lbl">Bounds</div>
-  <div style="display:flex;gap:6px;margin-top:4px">
-    <label style="font-size:10px">a: <input id="inp-a" type="number" value="-2" step="0.5" style="width:50px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px"></label>
-    <label style="font-size:10px">b: <input id="inp-b" type="number" value="2" step="0.5" style="width:50px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px"></label>
+<div class="tang-dot" id="tang-dot"></div>
+<div id="vol3d"><canvas id="c3d" width="220" height="220"></canvas></div>
+<div id="right-panel">
+  <div class="panel" id="p-transform">
+    <div class="lbl">Transform: y = a \\u00b7 f(b(x - c)) + d</div>
+    <div style="display:grid;grid-template-columns:20px 1fr 30px;align-items:center;gap:2px;margin-top:4px">
+      <span>a</span><input type="range" id="sl-a" min="-5" max="5" step="0.1" value="1"><span id="v-a">1</span>
+      <span>b</span><input type="range" id="sl-b" min="-5" max="5" step="0.1" value="1"><span id="v-b">1</span>
+      <span>c</span><input type="range" id="sl-c" min="-10" max="10" step="0.1" value="0"><span id="v-c">0</span>
+      <span>d</span><input type="range" id="sl-d" min="-10" max="10" step="0.1" value="0"><span id="v-d">0</span>
+    </div>
+  </div>
+  <div class="panel" id="p-unit" style="display:none">
+    <div class="lbl">Angle Unit</div>
+    <div style="display:flex;gap:4px;margin-top:4px">
+      <button onclick="setUnit('rad')" id="b-rad" class="on" style="flex:1">Radians</button>
+      <button onclick="setUnit('deg')" id="b-deg" style="flex:1">Degrees</button>
+    </div>
+    <div id="domain-info" style="color:rgba(255,255,255,0.35);margin-top:4px;font-size:9px"></div>
+  </div>
+  <div class="panel" id="p-vol" style="display:none">
+    <div class="lbl">Volume of Revolution</div>
+    <div style="font-size:9px">V = \\u03c0 \\u222b y\\u00b2 dx</div>
+    <div class="val" id="vol-val" style="margin:4px 0">V = 0</div>
+    <div class="lbl" style="margin-top:4px">Bounds</div>
+    <div style="display:flex;gap:6px;margin-top:2px">
+      <label>a: <input id="inp-a" type="number" value="-2" step="0.5"></label>
+      <label>b: <input id="inp-b" type="number" value="2" step="0.5"></label>
+    </div>
+  </div>
+  <div class="panel" id="p-tang" style="display:none">
+    <div class="lbl">Tangent Line</div>
+    <div id="tang-info" style="font-family:'Courier New',monospace;font-size:10px;color:rgba(255,255,255,0.6)">Click on graph</div>
   </div>
 </div>
 <div id="hint"></div>
 <div id="controls">
   <div class="cw"><span class="cl">O-Level</span><div class="cg">
     <button onclick="pick('linear')" id="b-linear">y=mx+c</button>
-    <button onclick="pick('quadratic')" id="b-quadratic" class="on">x&sup2;</button>
-    <button onclick="pick('cubic')" id="b-cubic">x&sup3;</button>
+    <button onclick="pick('quadratic')" id="b-quadratic" class="on">x\\u00b2</button>
+    <button onclick="pick('cubic')" id="b-cubic">x\\u00b3</button>
     <button onclick="pick('reciprocal')" id="b-reciprocal">1/x</button>
-    <button onclick="pick('sqrt')" id="b-sqrt">&radic;x</button>
+    <button onclick="pick('sqrt')" id="b-sqrt">\\u221ax</button>
     <button onclick="pick('abs')" id="b-abs">|x|</button>
   </div></div>
-  <div class="cw"><span class="cl">A-Level</span><div class="cg">
+  <div class="cw"><span class="cl">Trig</span><div class="cg">
     <button onclick="pick('sin')" id="b-sin">sin</button>
     <button onclick="pick('cos')" id="b-cos">cos</button>
     <button onclick="pick('tan')" id="b-tan">tan</button>
-    <button onclick="pick('exp')" id="b-exp">e<sup>x</sup></button>
-    <button onclick="pick('ln')" id="b-ln">ln</button>
-    <button onclick="pick('x4')" id="b-x4">x&#8308;</button>
-    <button onclick="pick('sinc')" id="b-sinc">sin/x</button>
-    <button onclick="pick('gauss')" id="b-gauss">e<sup>-x&sup2;</sup></button>
+    <button onclick="pick('csc')" id="b-csc">csc</button>
+    <button onclick="pick('sec')" id="b-sec">sec</button>
+    <button onclick="pick('cot')" id="b-cot">cot</button>
+    <button onclick="pick('asin')" id="b-asin">sin\\u207b\\u00b9</button>
+    <button onclick="pick('acos')" id="b-acos">cos\\u207b\\u00b9</button>
+    <button onclick="pick('atan')" id="b-atan">tan\\u207b\\u00b9</button>
   </div></div>
-  <div class="cw"><span class="cl">Extras</span><div class="cg">
+  <div class="cw"><span class="cl">A-Level</span><div class="cg">
+    <button onclick="pick('exp')" id="b-exp">e\\u02e3</button>
+    <button onclick="pick('ln')" id="b-ln">ln</button>
+    <button onclick="pick('x4')" id="b-x4">x\\u2074</button>
+    <button onclick="pick('sinc')" id="b-sinc">sin/x</button>
+    <button onclick="pick('gauss')" id="b-gauss">e\\u207b\\u02e3\\u00b2</button>
+  </div></div>
+  <div class="cw"><span class="cl">Curves</span><div class="cg">
     <button onclick="pick('circle')" id="b-circle">Circle</button>
-    <button onclick="pick('parabola')" id="b-parabola">x=y&sup2;</button>
+    <button onclick="pick('parabola')" id="b-parabola">x=y\\u00b2</button>
     <button onclick="pick('hyperbola')" id="b-hyperbola">Hyperbola</button>
     <button onclick="pick('ellipse')" id="b-ellipse">Ellipse</button>
   </div></div>
   <div class="cw"><span class="cl">Tools</span><div class="cg">
     <button onclick="togDeriv()" id="b-deriv">f'(x)</button>
-    <button onclick="togInteg()" id="b-integ">Integral</button>
+    <button onclick="togInteg()" id="b-integ">\\u222b</button>
     <button onclick="togVol()" id="b-vol">Volume</button>
+    <button onclick="togTangent()" id="b-tang">Tangent</button>
     <button onclick="togDoodle()" id="b-doodle">Doodle</button>
     <button onclick="togPoints()" id="b-pts">Points</button>
+    <button onclick="resetView()" class="rst">Reset</button>
     <button onclick="clearAll()">Clear</button>
   </div></div>
 </div>
 <script>
 const cv=document.getElementById('c'),cx=cv.getContext('2d');
+const c3d=document.getElementById('c3d'),cx3=c3d.getContext('2d');
 let W,H,oX,oY,sc=60,dragging=false,lx,ly,didDrag=false;
-let curFn='quadratic',showDeriv=false,showInteg=false,showVol=false;
+let curFn='quadratic',showDeriv=false,showInteg=false,showVol=false,showTangent=false;
 let doodleMode=false,pointMode=false;
 let doodleStrokes=[],curStroke=null;
 let userPts=[],selectedPt=-1;
+let tangentX=null;
+let unit='rad';
+let tA=1,tB=1,tC=0,tD=0;
 const PI=Math.PI;
+const DEG=PI/180;
 
-function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;if(!oX){oX=W/2;oY=H/2;}}
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;if(oX===undefined){oX=W/2;oY=H/2;}}
 resize();addEventListener('resize',()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;});
 
+/* ── Angle conversion ── */
+function toRad(x){return unit==='deg'?x*DEG:x;}
+function fromRad(x){return unit==='deg'?x/DEG:x;}
+
 /* ── Graph definitions ── */
+const TRIG_SET=new Set(['sin','cos','tan','csc','sec','cot','asin','acos','atan']);
 const G={
-  linear:{fn:x=>2*x+1,deriv:x=>2,label:'Linear',eq:'y = 2x + 1',color:'#3b82f6',param:false},
-  quadratic:{fn:x=>x*x,deriv:x=>2*x,label:'Quadratic',eq:'y = x\\u00b2',color:'#10b981',param:false},
-  cubic:{fn:x=>x*x*x,deriv:x=>3*x*x,label:'Cubic',eq:'y = x\\u00b3',color:'#8b5cf6',param:false},
-  reciprocal:{fn:x=>Math.abs(x)<0.05?NaN:1/x,deriv:x=>-1/(x*x),label:'Reciprocal',eq:'y = 1/x',color:'#f59e0b',param:false},
-  sqrt:{fn:x=>x>=0?Math.sqrt(x):NaN,deriv:x=>x>0?0.5/Math.sqrt(x):NaN,label:'Square Root',eq:'y = \\u221ax',color:'#ec4899',param:false},
-  abs:{fn:x=>Math.abs(x),deriv:x=>x>0?1:x<0?-1:0,label:'Modulus',eq:'y = |x|',color:'#06b6d4',param:false},
-  sin:{fn:x=>Math.sin(x),deriv:x=>Math.cos(x),label:'Sine',eq:'y = sin(x)',color:'#10b981',param:false},
-  cos:{fn:x=>Math.cos(x),deriv:x=>-Math.sin(x),label:'Cosine',eq:'y = cos(x)',color:'#6366f1',param:false},
-  tan:{fn:x=>{const v=Math.tan(x);return Math.abs(v)>50?NaN:v;},deriv:x=>{const c=Math.cos(x);return c===0?NaN:1/(c*c);},label:'Tangent',eq:'y = tan(x)',color:'#f97316',param:false},
-  exp:{fn:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},deriv:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},label:'Exponential',eq:'y = e\\u02e3',color:'#ef4444',param:false},
-  ln:{fn:x=>x>0?Math.log(x):NaN,deriv:x=>x>0?1/x:NaN,label:'Natural Log',eq:'y = ln(x)',color:'#14b8a6',param:false},
-  x4:{fn:x=>x*x*x*x,deriv:x=>4*x*x*x,label:'Quartic',eq:'y = x\\u2074',color:'#a855f7',param:false},
-  sinc:{fn:x=>Math.abs(x)<0.001?1:Math.sin(x)/x,deriv:x=>Math.abs(x)<0.001?0:(Math.cos(x)*x-Math.sin(x))/(x*x),label:'Sinc',eq:'y = sin(x)/x',color:'#22d3ee',param:false},
-  gauss:{fn:x=>Math.exp(-x*x),deriv:x=>-2*x*Math.exp(-x*x),label:'Gaussian',eq:'y = e^(-x\\u00b2)',color:'#f472b6',param:false},
+  linear:{fn:x=>x,deriv:x=>1,label:'Linear',eq:'y = x',color:'#3b82f6'},
+  quadratic:{fn:x=>x*x,deriv:x=>2*x,label:'Quadratic',eq:'y = x\\u00b2',color:'#10b981'},
+  cubic:{fn:x=>x*x*x,deriv:x=>3*x*x,label:'Cubic',eq:'y = x\\u00b3',color:'#8b5cf6'},
+  reciprocal:{fn:x=>Math.abs(x)<0.02?NaN:1/x,deriv:x=>-1/(x*x),label:'Reciprocal',eq:'y = 1/x',color:'#f59e0b'},
+  sqrt:{fn:x=>x>=0?Math.sqrt(x):NaN,deriv:x=>x>0.001?0.5/Math.sqrt(x):NaN,label:'Square Root',eq:'y = \\u221ax',color:'#ec4899'},
+  abs:{fn:x=>Math.abs(x),deriv:x=>x>0?1:x<0?-1:0,label:'Modulus',eq:'y = |x|',color:'#06b6d4'},
+  sin:{fn:x=>Math.sin(toRad(x)),deriv:x=>(unit==='deg'?DEG:1)*Math.cos(toRad(x)),label:'Sine',eq:'y = sin(x)',color:'#10b981',trig:true,domain:'All reals',range:'[-1, 1]'},
+  cos:{fn:x=>Math.cos(toRad(x)),deriv:x=>-(unit==='deg'?DEG:1)*Math.sin(toRad(x)),label:'Cosine',eq:'y = cos(x)',color:'#6366f1',trig:true,domain:'All reals',range:'[-1, 1]'},
+  tan:{fn:x=>{const v=Math.tan(toRad(x));return Math.abs(v)>80?NaN:v;},deriv:x=>{const c=Math.cos(toRad(x));return Math.abs(c)<0.01?NaN:(unit==='deg'?DEG:1)/(c*c);},label:'Tangent',eq:'y = tan(x)',color:'#f97316',trig:true,domain:unit==='deg'?'x \\u2260 90n':'x \\u2260 \\u03c0/2 + n\\u03c0',range:'(-\\u221e, \\u221e)'},
+  csc:{fn:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:1/s;},deriv:x=>{const s=Math.sin(toRad(x)),c=Math.cos(toRad(x));return Math.abs(s)<0.02?NaN:-(unit==='deg'?DEG:1)*c/(s*s);},label:'Cosecant',eq:'y = csc(x)',color:'#f472b6',trig:true,domain:unit==='deg'?'x \\u2260 180n':'x \\u2260 n\\u03c0',range:'(-\\u221e,-1] \\u222a [1,\\u221e)'},
+  sec:{fn:x=>{const c=Math.cos(toRad(x));return Math.abs(c)<0.02?NaN:1/c;},deriv:x=>{const s=Math.sin(toRad(x)),c=Math.cos(toRad(x));return Math.abs(c)<0.02?NaN:(unit==='deg'?DEG:1)*s/(c*c);},label:'Secant',eq:'y = sec(x)',color:'#a78bfa',trig:true,domain:unit==='deg'?'x \\u2260 90+180n':'x \\u2260 \\u03c0/2 + n\\u03c0',range:'(-\\u221e,-1] \\u222a [1,\\u221e)'},
+  cot:{fn:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:Math.cos(toRad(x))/s;},deriv:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:-(unit==='deg'?DEG:1)/(s*s);},label:'Cotangent',eq:'y = cot(x)',color:'#22d3ee',trig:true,domain:unit==='deg'?'x \\u2260 180n':'x \\u2260 n\\u03c0',range:'(-\\u221e, \\u221e)'},
+  asin:{fn:x=>Math.abs(x)>1?NaN:fromRad(Math.asin(x)),deriv:x=>Math.abs(x)>=1?NaN:fromRad(1/Math.sqrt(1-x*x)),label:'Arcsin',eq:'y = sin\\u207b\\u00b9(x)',color:'#34d399',trig:true,domain:'[-1, 1]',range:unit==='deg'?'[-90\\u00b0, 90\\u00b0]':'[-\\u03c0/2, \\u03c0/2]'},
+  acos:{fn:x=>Math.abs(x)>1?NaN:fromRad(Math.acos(x)),deriv:x=>Math.abs(x)>=1?NaN:fromRad(-1/Math.sqrt(1-x*x)),label:'Arccos',eq:'y = cos\\u207b\\u00b9(x)',color:'#fb923c',trig:true,domain:'[-1, 1]',range:unit==='deg'?'[0\\u00b0, 180\\u00b0]':'[0, \\u03c0]'},
+  atan:{fn:x=>fromRad(Math.atan(x)),deriv:x=>fromRad(1/(1+x*x)),label:'Arctan',eq:'y = tan\\u207b\\u00b9(x)',color:'#c084fc',trig:true,domain:'All reals',range:unit==='deg'?'(-90\\u00b0, 90\\u00b0)':'(-\\u03c0/2, \\u03c0/2)'},
+  exp:{fn:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},deriv:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},label:'Exponential',eq:'y = e\\u02e3',color:'#ef4444'},
+  ln:{fn:x=>x>0?Math.log(x):NaN,deriv:x=>x>0?1/x:NaN,label:'Natural Log',eq:'y = ln(x)',color:'#14b8a6'},
+  x4:{fn:x=>x*x*x*x,deriv:x=>4*x*x*x,label:'Quartic',eq:'y = x\\u2074',color:'#a855f7'},
+  sinc:{fn:x=>Math.abs(x)<0.001?1:Math.sin(x)/x,deriv:x=>Math.abs(x)<0.001?0:(Math.cos(x)*x-Math.sin(x))/(x*x),label:'Sinc',eq:'y = sin(x)/x',color:'#22d3ee'},
+  gauss:{fn:x=>Math.exp(-x*x),deriv:x=>-2*x*Math.exp(-x*x),label:'Gaussian',eq:'y = e^(-x\\u00b2)',color:'#f472b6'},
   circle:{param:true,label:'Unit Circle',eq:'x\\u00b2 + y\\u00b2 = 4',color:'#fbbf24'},
   parabola:{param:true,label:'Sideways Parabola',eq:'x = y\\u00b2',color:'#34d399'},
   hyperbola:{param:true,label:'Hyperbola',eq:'x\\u00b2/4 - y\\u00b2 = 1',color:'#fb923c'},
   ellipse:{param:true,label:'Ellipse',eq:'x\\u00b2/9 + y\\u00b2/4 = 1',color:'#c084fc'},
 };
 
-function pick(k){curFn=k;
-  document.querySelectorAll('#controls button').forEach(b=>b.classList.remove('on'));
+/* ── Transformed function wrapper ── */
+function getTransFn(){
+  const g=G[curFn];if(!g||g.param)return null;
+  return x=>{const y=g.fn(tB*(x-tC));return isFinite(y)?tA*y+tD:NaN;};
+}
+function getTransDeriv(){
+  const g=G[curFn];if(!g||g.param)return null;
+  return x=>{const dy=g.deriv(tB*(x-tC));return isFinite(dy)?tA*tB*dy:NaN;};
+}
+function getTransEq(){
+  const g=G[curFn];if(!g)return'';
+  let base=g.eq.replace('y = ','');
+  let s='y = ';
+  if(tA!==1)s+=tA+'\\u00b7';
+  s+=base.replace(/x/g,tB!==1||tC!==0?'('+tB+'(x'+(tC>=0?'-'+tC:'+'+(-tC))+'))':'x');
+  if(tD>0)s+=' + '+tD;else if(tD<0)s+=' - '+(-tD);
+  if(tA===1&&tB===1&&tC===0&&tD===0)return g.eq;
+  return s;
+}
+
+/* ── Slider setup ── */
+function setupSliders(){
+  ['a','b','c','d'].forEach(k=>{
+    const sl=document.getElementById('sl-'+k);
+    const vl=document.getElementById('v-'+k);
+    sl.addEventListener('input',()=>{
+      const v=parseFloat(sl.value);
+      if(k==='a')tA=v;if(k==='b')tB=v;if(k==='c')tC=v;if(k==='d')tD=v;
+      vl.textContent=v.toFixed(1);calcVol();
+    });
+  });
+}
+setupSliders();
+
+function resetSliders(){
+  tA=1;tB=1;tC=0;tD=0;
+  document.getElementById('sl-a').value=1;document.getElementById('v-a').textContent='1.0';
+  document.getElementById('sl-b').value=1;document.getElementById('v-b').textContent='1.0';
+  document.getElementById('sl-c').value=0;document.getElementById('v-c').textContent='0.0';
+  document.getElementById('sl-d').value=0;document.getElementById('v-d').textContent='0.0';
+}
+
+/* ── Unit toggle ── */
+function setUnit(u){unit=u;
+  document.getElementById('b-rad').classList.toggle('on',u==='rad');
+  document.getElementById('b-deg').classList.toggle('on',u==='deg');
+  updateDomainInfo();
+}
+function updateDomainInfo(){
+  const g=G[curFn];if(!g||!g.trig){document.getElementById('domain-info').textContent='';return;}
+  document.getElementById('domain-info').innerHTML='Domain: '+(g.domain||'')+'<br>Range: '+(g.range||'');
+}
+
+function pick(k){curFn=k;tangentX=null;
+  document.querySelectorAll('#controls button').forEach(b=>{if(!b.classList.contains('rst'))b.classList.remove('on');});
   const el=document.getElementById('b-'+k);if(el)el.classList.add('on');
+  reapplyToolClasses();
+  const g=G[k];
+  document.getElementById('fn-label').textContent=g.label;
+  document.getElementById('fn-eq').textContent=g.param?g.eq:getTransEq();
+  document.getElementById('p-unit').style.display=g.trig?'block':'none';
+  document.getElementById('p-transform').style.display=g.param?'none':'block';
+  if(g.param){showDeriv=false;}
+  updateDomainInfo();calcVol();
+}
+
+function reapplyToolClasses(){
   if(showDeriv)document.getElementById('b-deriv').classList.add('tool');
   if(showInteg)document.getElementById('b-integ').classList.add('tool');
   if(showVol)document.getElementById('b-vol').classList.add('tool');
+  if(showTangent)document.getElementById('b-tang').classList.add('tool');
   if(doodleMode)document.getElementById('b-doodle').classList.add('tool');
   if(pointMode)document.getElementById('b-pts').classList.add('tool');
-  const g=G[k];
-  document.getElementById('fn-label').textContent=g.label;
-  document.getElementById('fn-eq').textContent=g.eq;
-  if(g.param){showDeriv=false;document.getElementById('b-deriv').classList.remove('tool');}
-  calcVol();
 }
 
-function togDeriv(){if(G[curFn].param)return;showDeriv=!showDeriv;document.getElementById('b-deriv').classList.toggle('tool',showDeriv);}
+function togDeriv(){const g=G[curFn];if(!g||g.param)return;showDeriv=!showDeriv;document.getElementById('b-deriv').classList.toggle('tool',showDeriv);}
 function togInteg(){showInteg=!showInteg;document.getElementById('b-integ').classList.toggle('tool',showInteg);}
-function togVol(){showVol=!showVol;document.getElementById('b-vol').classList.toggle('tool',showVol);document.getElementById('vol-panel').style.display=showVol?'block':'none';if(showVol)calcVol();}
+function togVol(){showVol=!showVol;document.getElementById('b-vol').classList.toggle('tool',showVol);document.getElementById('p-vol').style.display=showVol?'block':'none';document.getElementById('vol3d').style.display=showVol?'block':'none';if(showVol)calcVol();}
+function togTangent(){showTangent=!showTangent;document.getElementById('b-tang').classList.toggle('tool',showTangent);document.getElementById('p-tang').style.display=showTangent?'block':'none';if(!showTangent){tangentX=null;document.getElementById('tang-dot').style.display='none';}}
 function togDoodle(){doodleMode=!doodleMode;if(doodleMode)pointMode=false;
   document.getElementById('b-doodle').classList.toggle('tool',doodleMode);
   document.getElementById('b-pts').classList.remove('tool');
   cv.classList.toggle('doodling',doodleMode);
-  document.getElementById('hint').textContent=doodleMode?'Draw freely with mouse or pen':'';
+  document.getElementById('hint').textContent=doodleMode?'Draw freely with mouse/pen':'';
 }
 function togPoints(){pointMode=!pointMode;if(pointMode)doodleMode=false;
   document.getElementById('b-pts').classList.toggle('tool',pointMode);
   document.getElementById('b-doodle').classList.remove('tool');
   cv.classList.remove('doodling');
-  document.getElementById('hint').textContent=pointMode?'Click anywhere to place points':'';
+  document.getElementById('hint').textContent=pointMode?'Click to place points':'';
 }
-function clearAll(){doodleStrokes=[];curStroke=null;userPts=[];selectedPt=-1;}
+function clearAll(){doodleStrokes=[];curStroke=null;userPts=[];selectedPt=-1;tangentX=null;document.getElementById('tang-dot').style.display='none';}
 
-/* Volume of revolution */
+function resetView(){
+  oX=W/2;oY=H/2;sc=60;
+  resetSliders();tangentX=null;
+  document.getElementById('tang-dot').style.display='none';
+  const g=G[curFn];
+  document.getElementById('fn-eq').textContent=g.param?g.eq:g.eq;
+  calcVol();
+}
+
+/* ── Volume of revolution ── */
 function calcVol(){
   if(!showVol)return;
-  const g=G[curFn];if(!g||g.param)return;
+  const fn=getTransFn();if(!fn)return;
   const a=parseFloat(document.getElementById('inp-a').value)||-2;
   const b=parseFloat(document.getElementById('inp-b').value)||2;
   const n=500;const dx=(b-a)/n;let sum=0;
-  for(let i=0;i<n;i++){const x=a+(i+0.5)*dx;const y=g.fn(x);if(isFinite(y))sum+=y*y*dx;}
+  for(let i=0;i<n;i++){const x=a+(i+0.5)*dx;const y=fn(x);if(isFinite(y))sum+=y*y*dx;}
   const vol=PI*Math.abs(sum);
-  document.getElementById('vol-a').textContent=a.toFixed(1);
-  document.getElementById('vol-b').textContent=b.toFixed(1);
   document.getElementById('vol-val').textContent='V = '+vol.toFixed(4)+' units\\u00b3';
+  draw3DVol(fn,a,b);
 }
 document.getElementById('inp-a').addEventListener('input',calcVol);
 document.getElementById('inp-b').addEventListener('input',calcVol);
+
+/* ── 3D volume mini-canvas ── */
+let rot3d=0;
+function draw3DVol(fn,a,b){
+  const w=220,h=220;cx3.fillStyle='rgba(0,0,0,0.85)';cx3.fillRect(0,0,w,h);
+  const cx0=w/2,cy0=h/2,s3=25,tilt=0.35;
+  const cosT=Math.cos(tilt),sinT=Math.sin(tilt);
+  rot3d+=0.02;const cosR=Math.cos(rot3d),sinR=Math.sin(rot3d);
+  function p3(x,y,z){
+    const x1=x*cosR-z*sinR,z1=x*sinR+z*cosR;
+    const y1=y*cosT-z1*sinT;
+    return[cx0+x1*s3,cy0-y1*s3];
+  }
+  /* Draw axis */
+  cx3.strokeStyle='rgba(255,255,255,0.15)';cx3.lineWidth=1;
+  const[ax1,ay1]=p3(-4,0,0),[ax2,ay2]=p3(4,0,0);cx3.beginPath();cx3.moveTo(ax1,ay1);cx3.lineTo(ax2,ay2);cx3.stroke();
+  const[yy1,yy2p]=p3(0,-3,0),[yy3,yy4]=p3(0,3,0);cx3.beginPath();cx3.moveTo(yy1,yy2p);cx3.lineTo(yy3,yy4);cx3.stroke();
+
+  /* Draw revolution surface as rings */
+  const rings=30,segs=24;
+  for(let i=0;i<=rings;i++){
+    const x=a+(b-a)*i/rings;const r=fn(x);if(!isFinite(r))continue;
+    const absR=Math.abs(r);
+    cx3.beginPath();cx3.strokeStyle='rgba(167,139,250,'+(0.15+0.2*Math.abs(Math.sin(PI*i/rings)))+')';cx3.lineWidth=1.2;
+    for(let j=0;j<=segs;j++){
+      const ang=2*PI*j/segs;
+      const py=absR*Math.cos(ang),pz=absR*Math.sin(ang);
+      const[sx,sy]=p3(x,py,pz);
+      j===0?cx3.moveTo(sx,sy):cx3.lineTo(sx,sy);
+    }
+    cx3.stroke();
+  }
+  /* Longitudinal lines */
+  for(let j=0;j<segs;j+=3){
+    const ang=2*PI*j/segs;
+    cx3.beginPath();cx3.strokeStyle='rgba(167,139,250,0.08)';cx3.lineWidth=0.8;
+    let first=true;
+    for(let i=0;i<=rings;i++){
+      const x=a+(b-a)*i/rings;const r=fn(x);if(!isFinite(r)){first=true;continue;}
+      const absR=Math.abs(r);
+      const py=absR*Math.cos(ang),pz=absR*Math.sin(ang);
+      const[sx,sy]=p3(x,py,pz);
+      first?(cx3.moveTo(sx,sy),first=false):cx3.lineTo(sx,sy);
+    }
+    cx3.stroke();
+  }
+  /* Profile line */
+  cx3.beginPath();cx3.strokeStyle='#a78bfa';cx3.lineWidth=2;
+  let first=true;
+  for(let i=0;i<=rings;i++){
+    const x=a+(b-a)*i/rings;const r=fn(x);if(!isFinite(r)){first=true;continue;}
+    const[sx,sy]=p3(x,r,0);
+    first?(cx3.moveTo(sx,sy),first=false):cx3.lineTo(sx,sy);
+  }
+  cx3.stroke();
+  if(showVol)requestAnimationFrame(()=>draw3DVol(fn,a,b));
+}
 
 /* ── Coordinate conversion ── */
 function toScreen(x,y){return[oX+x*sc,oY-y*sc];}
 function toMath(px,py){return[(px-oX)/sc,(oY-py)/sc];}
 
 /* ── Drawing ── */
+function getGridStep(){if(sc>100)return 0.5;if(sc>40)return 1;if(sc>15)return 2;if(sc>6)return 5;return 10;}
+
 function drawGrid(){
   const step=getGridStep();
   cx.strokeStyle='rgba(255,255,255,0.04)';cx.lineWidth=1;
@@ -709,86 +898,157 @@ function drawGrid(){
   for(let x=xMin;x<=xMax;x+=step){const px=oX+x*sc;cx.beginPath();cx.moveTo(px,0);cx.lineTo(px,H);cx.stroke();}
   for(let y=yMin;y<=yMax;y+=step){const py=oY-y*sc;cx.beginPath();cx.moveTo(0,py);cx.lineTo(W,py);cx.stroke();}
 }
-function getGridStep(){if(sc>100)return 0.5;if(sc>40)return 1;if(sc>15)return 2;if(sc>6)return 5;return 10;}
 
 function drawAxes(){
   cx.strokeStyle='rgba(255,255,255,0.25)';cx.lineWidth=2;
   cx.beginPath();cx.moveTo(0,oY);cx.lineTo(W,oY);cx.stroke();
   cx.beginPath();cx.moveTo(oX,0);cx.lineTo(oX,H);cx.stroke();
+  /* Arrow heads */
+  cx.fillStyle='rgba(255,255,255,0.25)';
+  cx.beginPath();cx.moveTo(W-2,oY);cx.lineTo(W-10,oY-5);cx.lineTo(W-10,oY+5);cx.fill();
+  cx.beginPath();cx.moveTo(oX,2);cx.lineTo(oX-5,10);cx.lineTo(oX+5,10);cx.fill();
   /* Tick labels */
   cx.fillStyle='rgba(255,255,255,0.3)';cx.font='10px system-ui';cx.textAlign='center';
   const step=getGridStep();
   const xMin=Math.floor((0-oX)/sc/step)*step,xMax=Math.ceil((W-oX)/sc/step)*step;
   for(let x=xMin;x<=xMax;x+=step){if(Math.abs(x)<0.001)continue;const px=oX+x*sc;
     cx.beginPath();cx.moveTo(px,oY-4);cx.lineTo(px,oY+4);cx.strokeStyle='rgba(255,255,255,0.2)';cx.lineWidth=1;cx.stroke();
-    cx.fillText(Number(x.toFixed(2)),px,oY+16);}
+    const lbl=TRIG_SET.has(curFn)&&unit==='rad'&&Math.abs(x-Math.round(x/PI*2)*PI/2)<0.01?piLabel(x):Number(x.toFixed(2));
+    cx.fillText(lbl,px,oY+16);}
   cx.textAlign='right';
   const yMin=Math.floor((oY-H)/sc/step)*step,yMax=Math.ceil(oY/sc/step)*step;
   for(let y=yMin;y<=yMax;y+=step){if(Math.abs(y)<0.001)continue;const py=oY-y*sc;
     cx.beginPath();cx.moveTo(oX-4,py);cx.lineTo(oX+4,py);cx.strokeStyle='rgba(255,255,255,0.2)';cx.lineWidth=1;cx.stroke();
     cx.fillText(Number(y.toFixed(2)),oX-8,py+4);}
-  cx.fillStyle='rgba(255,255,255,0.15)';cx.textAlign='left';cx.fillText('0',oX+4,oY+14);
+  cx.fillStyle='rgba(255,255,255,0.2)';cx.textAlign='center';
+  cx.fillText('x',W-8,oY+16);cx.fillText('y',oX+12,14);
+  cx.fillStyle='rgba(255,255,255,0.15)';cx.textAlign='left';cx.fillText('O',oX+4,oY+14);
 }
+function piLabel(x){const n=Math.round(x/PI*2);if(n===0)return'0';if(n===2)return'\\u03c0';if(n===-2)return'-\\u03c0';if(n===1)return'\\u03c0/2';if(n===-1)return'-\\u03c0/2';return(n/2)+'\\u03c0';}
 
 function plotFunction(fn,color,width,glow){
   cx.beginPath();cx.strokeStyle=color;cx.lineWidth=width;
-  if(glow){cx.shadowColor=color;cx.shadowBlur=8;}
-  let first=true,prevOk=false;
+  if(glow){cx.shadowColor=color;cx.shadowBlur=10;}
+  let prevOk=false;
   for(let px=0;px<=W;px+=1){
     const x=(px-oX)/sc;const y=fn(x);
     if(!isFinite(y)||Math.abs(y)>1e4){prevOk=false;continue;}
     const py=oY-y*sc;
-    if(!prevOk){cx.moveTo(px,py);first=false;prevOk=true;}
+    if(!prevOk){cx.moveTo(px,py);prevOk=true;}
     else cx.lineTo(px,py);
   }
   cx.stroke();cx.shadowBlur=0;
 }
 
 function plotParametric(type,color){
-  cx.strokeStyle=color;cx.lineWidth=3;cx.shadowColor=color;cx.shadowBlur=8;
-  if(type==='circle'){
-    cx.beginPath();for(let t=0;t<=2*PI+0.05;t+=0.05){const x=2*Math.cos(t),y=2*Math.sin(t);const[px,py]=toScreen(x,y);t===0?cx.moveTo(px,py):cx.lineTo(px,py);}cx.closePath();cx.stroke();
-  }else if(type==='parabola'){
-    cx.beginPath();let f=true;for(let t=-4;t<=4;t+=0.05){const x=t*t,y=t;const[px,py]=toScreen(x,y);f?(cx.moveTo(px,py),f=false):cx.lineTo(px,py);}cx.stroke();
-  }else if(type==='hyperbola'){
-    for(let branch=0;branch<2;branch++){cx.beginPath();let f=true;for(let t=-3;t<=3;t+=0.05){const x=(branch?-1:1)*2*Math.cosh(t),y=Math.sinh(t);const[px,py]=toScreen(x,y);f?(cx.moveTo(px,py),f=false):cx.lineTo(px,py);}cx.stroke();}
-  }else if(type==='ellipse'){
-    cx.beginPath();for(let t=0;t<=2*PI+0.05;t+=0.05){const x=3*Math.cos(t),y=2*Math.sin(t);const[px,py]=toScreen(x,y);t===0?cx.moveTo(px,py):cx.lineTo(px,py);}cx.closePath();cx.stroke();
-  }
+  cx.strokeStyle=color;cx.lineWidth=3;cx.shadowColor=color;cx.shadowBlur=10;
+  if(type==='circle'){cx.beginPath();for(let t=0;t<=2*PI+.05;t+=.05){const[px,py]=toScreen(2*Math.cos(t),2*Math.sin(t));t===0?cx.moveTo(px,py):cx.lineTo(px,py);}cx.closePath();cx.stroke();}
+  else if(type==='parabola'){cx.beginPath();let f=true;for(let t=-4;t<=4;t+=.05){const[px,py]=toScreen(t*t,t);f?(cx.moveTo(px,py),f=false):cx.lineTo(px,py);}cx.stroke();}
+  else if(type==='hyperbola'){for(let br=0;br<2;br++){cx.beginPath();let f=true;for(let t=-3;t<=3;t+=.05){const[px,py]=toScreen((br?-1:1)*2*Math.cosh(t),Math.sinh(t));f?(cx.moveTo(px,py),f=false):cx.lineTo(px,py);}cx.stroke();}}
+  else if(type==='ellipse'){cx.beginPath();for(let t=0;t<=2*PI+.05;t+=.05){const[px,py]=toScreen(3*Math.cos(t),2*Math.sin(t));t===0?cx.moveTo(px,py):cx.lineTo(px,py);}cx.closePath();cx.stroke();}
   cx.shadowBlur=0;
 }
 
+/* Domain restriction lines for trig */
+function drawDomainLines(){
+  const g=G[curFn];if(!g||!g.trig)return;
+  if(curFn==='asin'||curFn==='acos'){
+    cx.setLineDash([4,4]);cx.strokeStyle='rgba(255,255,255,0.1)';cx.lineWidth=1;
+    [-1,1].forEach(xv=>{const px=oX+xv*sc;cx.beginPath();cx.moveTo(px,0);cx.lineTo(px,H);cx.stroke();});
+    cx.setLineDash([]);
+  }
+  if(curFn==='tan'||curFn==='sec'){
+    cx.setLineDash([3,5]);cx.strokeStyle='rgba(255,100,100,0.12)';cx.lineWidth=1;
+    const step=unit==='deg'?180:PI;const half=unit==='deg'?90:PI/2;
+    const xMin=(0-oX)/sc,xMax=(W-oX)/sc;
+    for(let n=Math.floor((xMin-half)/step);n<=Math.ceil((xMax-half)/step);n++){
+      const xv=half+n*step;const px=oX+xv*sc;
+      if(px>0&&px<W){cx.beginPath();cx.moveTo(px,0);cx.lineTo(px,H);cx.stroke();}
+    }
+    cx.setLineDash([]);
+  }
+  if(curFn==='csc'||curFn==='cot'){
+    cx.setLineDash([3,5]);cx.strokeStyle='rgba(255,100,100,0.12)';cx.lineWidth=1;
+    const step=unit==='deg'?180:PI;
+    const xMin=(0-oX)/sc,xMax=(W-oX)/sc;
+    for(let n=Math.floor(xMin/step);n<=Math.ceil(xMax/step);n++){
+      const xv=n*step;const px=oX+xv*sc;
+      if(px>0&&px<W){cx.beginPath();cx.moveTo(px,0);cx.lineTo(px,H);cx.stroke();}
+    }
+    cx.setLineDash([]);
+  }
+}
+
 function drawIntegral(){
-  const g=G[curFn];if(!g||g.param)return;
+  const fn=getTransFn();if(!fn)return;
   const a=parseFloat(document.getElementById('inp-a').value)||-2;
   const b=parseFloat(document.getElementById('inp-b').value)||2;
-  cx.beginPath();const[sx0,sy0]=toScreen(a,0);cx.moveTo(sx0,sy0);
-  for(let px=Math.min(oX+a*sc,oX+b*sc);px<=Math.max(oX+a*sc,oX+b*sc);px++){
-    const x=(px-oX)/sc;const y=g.fn(x);if(!isFinite(y))continue;cx.lineTo(px,oY-y*sc);
+  const pxA=oX+a*sc,pxB=oX+b*sc;
+  cx.beginPath();cx.moveTo(pxA,oY);
+  for(let px=Math.min(pxA,pxB);px<=Math.max(pxA,pxB);px++){
+    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y))continue;cx.lineTo(px,oY-y*sc);
   }
-  const[ex,ey]=toScreen(b,0);cx.lineTo(ex,ey);cx.closePath();
+  cx.lineTo(pxB,oY);cx.closePath();
   cx.fillStyle='rgba(16,185,129,0.12)';cx.fill();
   cx.strokeStyle='rgba(16,185,129,0.3)';cx.lineWidth=1;cx.stroke();
-  /* Bound lines */
   cx.setLineDash([4,4]);cx.strokeStyle='rgba(16,185,129,0.4)';cx.lineWidth=1.5;
-  cx.beginPath();cx.moveTo(oX+a*sc,oY-200);cx.lineTo(oX+a*sc,oY+200);cx.stroke();
-  cx.beginPath();cx.moveTo(oX+b*sc,oY-200);cx.lineTo(oX+b*sc,oY+200);cx.stroke();
+  cx.beginPath();cx.moveTo(pxA,0);cx.lineTo(pxA,H);cx.stroke();
+  cx.beginPath();cx.moveTo(pxB,0);cx.lineTo(pxB,H);cx.stroke();
   cx.setLineDash([]);
 }
 
 function drawVolRotation(){
-  const g=G[curFn];if(!g||g.param)return;
+  const fn=getTransFn();if(!fn)return;
   const a=parseFloat(document.getElementById('inp-a').value)||-2;
   const b=parseFloat(document.getElementById('inp-b').value)||2;
-  /* Draw semi-transparent rotation surface suggestion */
-  cx.globalAlpha=0.06;
-  for(let px=Math.min(oX+a*sc,oX+b*sc);px<=Math.max(oX+a*sc,oX+b*sc);px+=4){
-    const x=(px-oX)/sc;const y=g.fn(x);if(!isFinite(y))continue;
+  const pxA=oX+a*sc,pxB=oX+b*sc;
+  cx.globalAlpha=0.07;
+  for(let px=Math.min(pxA,pxB);px<=Math.max(pxA,pxB);px+=3){
+    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y))continue;
     const r=Math.abs(y)*sc;
     cx.beginPath();cx.ellipse(px,oY,3,r,0,0,PI*2);
-    cx.strokeStyle='#a78bfa';cx.lineWidth=1;cx.stroke();
+    cx.strokeStyle='#a78bfa';cx.lineWidth=1.2;cx.stroke();
   }
   cx.globalAlpha=1;
+  /* Also draw the reflected curve */
+  cx.beginPath();cx.strokeStyle='rgba(167,139,250,0.25)';cx.lineWidth=1.5;cx.setLineDash([4,4]);
+  let first=true;
+  for(let px=Math.min(pxA,pxB);px<=Math.max(pxA,pxB);px++){
+    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y)){first=true;continue;}
+    const py=oY+y*sc;
+    first?(cx.moveTo(px,py),first=false):cx.lineTo(px,py);
+  }
+  cx.stroke();cx.setLineDash([]);
+}
+
+/* ── Tangent line drawing ── */
+function drawTangent(){
+  if(tangentX===null)return;
+  const fn=getTransFn();const dfn=getTransDeriv();
+  if(!fn||!dfn)return;
+  const y=fn(tangentX);const m=dfn(tangentX);
+  if(!isFinite(y)||!isFinite(m))return;
+  const[sx,sy]=toScreen(tangentX,y);
+  /* Draw tangent line across screen */
+  const ext=W;
+  const x1=tangentX-ext/sc,x2=tangentX+ext/sc;
+  const y1=y+m*(x1-tangentX),y2=y+m*(x2-tangentX);
+  const[px1,py1]=toScreen(x1,y1);const[px2,py2]=toScreen(x2,y2);
+  cx.beginPath();cx.strokeStyle='rgba(239,68,68,0.7)';cx.lineWidth=2.5;
+  cx.shadowColor='#ef4444';cx.shadowBlur=6;
+  cx.moveTo(px1,py1);cx.lineTo(px2,py2);cx.stroke();cx.shadowBlur=0;
+  /* Tangent point dot */
+  cx.beginPath();cx.arc(sx,sy,7,0,PI*2);cx.fillStyle='#ef4444';cx.fill();
+  cx.strokeStyle='rgba(255,255,255,0.5)';cx.lineWidth=2;cx.beginPath();cx.arc(sx,sy,11,0,PI*2);cx.stroke();
+  /* Update dot position */
+  const td=document.getElementById('tang-dot');td.style.display='block';td.style.left=sx+'px';td.style.top=sy+'px';
+  /* Info */
+  const deg=Math.atan(m)*180/PI;
+  document.getElementById('tang-info').innerHTML=
+    'Point: ('+tangentX.toFixed(3)+', '+y.toFixed(3)+')<br>'+
+    'Slope: '+m.toFixed(4)+'<br>'+
+    'Angle: '+deg.toFixed(1)+'\\u00b0<br>'+
+    '<span style="color:rgba(255,255,255,0.35)">y = '+m.toFixed(3)+'(x - '+tangentX.toFixed(3)+') + '+y.toFixed(3)+'</span>';
 }
 
 function drawDoodle(){
@@ -804,14 +1064,12 @@ function drawDoodle(){
 
 function drawUserPts(){
   userPts.forEach((p,i)=>{
-    const[px,py]=toScreen(p[0],p[1]);
-    const sel=i===selectedPt;
+    const[px,py]=toScreen(p[0],p[1]);const sel=i===selectedPt;
     cx.beginPath();cx.arc(px,py,sel?8:6,0,PI*2);
     cx.fillStyle=sel?'rgba(251,191,36,1)':'rgba(251,191,36,0.85)';cx.fill();
     cx.strokeStyle='rgba(0,0,0,0.3)';cx.lineWidth=2;cx.stroke();
     if(sel){cx.strokeStyle='rgba(251,191,36,0.3)';cx.lineWidth=2;cx.beginPath();cx.arc(px,py,14,0,PI*2);cx.stroke();}
   });
-  /* Connect consecutive points */
   if(userPts.length>1){
     cx.strokeStyle='rgba(251,191,36,0.4)';cx.lineWidth=2;cx.setLineDash([6,4]);
     cx.beginPath();const[fx,fy]=toScreen(userPts[0][0],userPts[0][1]);cx.moveTo(fx,fy);
@@ -820,56 +1078,51 @@ function drawUserPts(){
   }
 }
 
-/* Hover coordinate on graph */
+/* Hover coordinate */
 const coordBadge=document.getElementById('coord-badge');
 let mouseX=-999,mouseY=-999;
 
 function drawCursor(){
-  const g=G[curFn];if(!g||doodleMode||pointMode)return;
-  const[mx,my]=toMath(mouseX,mouseY);
-  let y;
-  if(g.param){
-    /* For parametric, find closest point */
-    return;
-  }else{y=g.fn(mx);}
-  if(!isFinite(y))return;
+  const g=G[curFn];if(!g||g.param||doodleMode||pointMode)return;
+  const fn=getTransFn();if(!fn)return;
+  const[mx]=toMath(mouseX,mouseY);
+  const y=fn(mx);if(!isFinite(y))return;
   const[sx,sy]=toScreen(mx,y);
-  const dist=Math.abs(mouseY-sy);
-  if(dist<30){
+  if(Math.abs(mouseY-sy)<35){
     cx.beginPath();cx.arc(sx,sy,6,0,PI*2);cx.fillStyle=g.color;cx.fill();
-    cx.strokeStyle='rgba(255,255,255,0.5)';cx.lineWidth=2;cx.beginPath();cx.arc(sx,sy,10,0,PI*2);cx.stroke();
-    /* Crosshair */
-    cx.setLineDash([3,3]);cx.strokeStyle='rgba(255,255,255,0.1)';cx.lineWidth=1;
+    cx.strokeStyle='rgba(255,255,255,0.4)';cx.lineWidth=2;cx.beginPath();cx.arc(sx,sy,10,0,PI*2);cx.stroke();
+    cx.setLineDash([3,3]);cx.strokeStyle='rgba(255,255,255,0.08)';cx.lineWidth=1;
     cx.beginPath();cx.moveTo(sx,0);cx.lineTo(sx,H);cx.stroke();
     cx.beginPath();cx.moveTo(0,sy);cx.lineTo(W,sy);cx.stroke();
     cx.setLineDash([]);
-    coordBadge.style.display='block';
-    coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
+    coordBadge.style.display='block';coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
     coordBadge.innerHTML='<span style="color:'+g.color+'">\\u25cf</span> ('+mx.toFixed(3)+', '+y.toFixed(3)+')';
   }else{coordBadge.style.display='none';}
 }
 
 function render(){
   cx.fillStyle='#0a0a1a';cx.fillRect(0,0,W,H);
-  drawGrid();drawAxes();
+  drawGrid();drawAxes();drawDomainLines();
   if(showInteg)drawIntegral();
   if(showVol)drawVolRotation();
   const g=G[curFn];
   if(g.param){plotParametric(curFn,g.color);}
   else{
-    plotFunction(g.fn,g.color,3,true);
-    if(showDeriv)plotFunction(g.deriv,'#f59e0b',2,false);
+    const fn=getTransFn();if(fn)plotFunction(fn,g.color,3.5,true);
+    if(showDeriv){const dfn=getTransDeriv();if(dfn)plotFunction(dfn,'#f59e0b',2,false);}
   }
+  if(showTangent)drawTangent();
   drawDoodle();drawUserPts();drawCursor();
+  /* Update eq */
+  if(!g.param)document.getElementById('fn-eq').textContent=getTransEq();
   requestAnimationFrame(render);
 }
 
 /* ── Input handling ── */
 cv.addEventListener('mousedown',e=>{
-  didDrag=false;
+  if(e.target!==cv)return;didDrag=false;
   if(doodleMode){curStroke={pts:[[e.clientX,e.clientY]]};return;}
   if(pointMode){
-    /* Check if clicking existing point */
     for(let i=0;i<userPts.length;i++){const[px,py]=toScreen(userPts[i][0],userPts[i][1]);if(Math.hypot(e.clientX-px,e.clientY-py)<15){selectedPt=i;showPtCoord(i);return;}}
     const[mx,my]=toMath(e.clientX,e.clientY);userPts.push([mx,my]);selectedPt=userPts.length-1;showPtCoord(selectedPt);return;
   }
@@ -878,11 +1131,17 @@ cv.addEventListener('mousedown',e=>{
 addEventListener('mouseup',e=>{
   if(doodleMode&&curStroke){if(curStroke.pts.length>1)doodleStrokes.push(curStroke);curStroke=null;return;}
   dragging=false;
-  /* Click on graph to show coordinates */
-  if(!didDrag&&!doodleMode&&!pointMode){
-    const g=G[curFn];if(g&&!g.param){
-      const[mx]=toMath(e.clientX,e.clientY);const y=g.fn(mx);
-      if(isFinite(y)){const[,sy]=toScreen(mx,y);if(Math.abs(e.clientY-sy)<30){showClickCoord(mx,y,g.color);}}
+  if(!didDrag&&!doodleMode&&!pointMode&&e.target===cv){
+    const g=G[curFn];
+    if(g&&!g.param){
+      const fn=getTransFn();if(!fn)return;
+      const[mx]=toMath(e.clientX,e.clientY);const y=fn(mx);
+      if(isFinite(y)){const[,sy]=toScreen(mx,y);
+        if(Math.abs(e.clientY-sy)<35){
+          if(showTangent){tangentX=mx;}
+          showClickCoord(mx,y,g.color);
+        }
+      }
     }
   }
 });
@@ -895,12 +1154,9 @@ addEventListener('mousemove',e=>{
   oX+=dx;oY+=dy;lx=e.clientX;ly=e.clientY;
 });
 cv.addEventListener('wheel',e=>{e.preventDefault();
-  const mx=e.clientX,my=e.clientY;
-  const[bx,by]=toMath(mx,my);
-  const f=e.deltaY>0?0.92:1.08;
-  sc=Math.max(5,Math.min(500,sc*f));
-  oX=mx-bx*sc;oY=my+by*sc;
-  calcVol();
+  const mx=e.clientX,my=e.clientY;const[bx,by]=toMath(mx,my);
+  const f=e.deltaY>0?0.92:1.08;sc=Math.max(5,Math.min(500,sc*f));
+  oX=mx-bx*sc;oY=my+by*sc;calcVol();
 },{passive:false});
 
 /* Touch */
@@ -918,23 +1174,19 @@ addEventListener('touchmove',e=>{
   if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;
   oX+=dx;oY+=dy;lx=t.clientX;ly=t.clientY;
 },{passive:true});
-/* Pinch zoom */
 let pinchDist=0;
 cv.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinchDist=Math.sqrt(dx*dx+dy*dy);}},{passive:true});
 addEventListener('touchmove',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const d=Math.sqrt(dx*dx+dy*dy);sc=Math.max(5,Math.min(500,sc*(d/pinchDist)));pinchDist=d;}},{passive:true});
 
 function showClickCoord(x,y,color){
-  coordBadge.style.display='block';
-  const[sx,sy]=toScreen(x,y);
+  coordBadge.style.display='block';const[sx,sy]=toScreen(x,y);
   coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
   coordBadge.innerHTML='<span style="color:'+color+'">\\u25cf</span> ('+x.toFixed(3)+', '+y.toFixed(3)+')';
-  setTimeout(()=>coordBadge.style.display='none',3000);
+  setTimeout(()=>coordBadge.style.display='none',4000);
 }
 function showPtCoord(i){
-  if(i<0||i>=userPts.length)return;
-  const p=userPts[i];const[sx,sy]=toScreen(p[0],p[1]);
-  coordBadge.style.display='block';
-  coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
+  if(i<0||i>=userPts.length)return;const p=userPts[i];const[sx,sy]=toScreen(p[0],p[1]);
+  coordBadge.style.display='block';coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
   coordBadge.innerHTML='<span style="color:#fbbf24">\\u25cf</span> P'+(i+1)+' ('+p[0].toFixed(3)+', '+p[1].toFixed(3)+')';
 }
 
@@ -1426,13 +1678,13 @@ export const STEM_CATEGORIES: StemCategory[] = [
       {
         id: 'calculus-visualiser',
         title: 'Interactive Graph Explorer',
-        description: 'Plot all O-Level and A-Level graphs with derivatives, integrals, volume of rotation, doodle drawing, and coordinate inspection on an infinite canvas.',
+        description: 'All O/A-Level graphs with 9 trig functions, domain restrictions, radian/degree toggle, transformation sliders, tangent lines, 3D volume of revolution, doodle, and infinite canvas.',
         icon: 'TrendingUp',
         gradient: 'from-emerald-500 to-teal-500',
         glowColor: 'rgba(16,185,129,0.35)',
         difficulty: 'Intermediate',
-        tags: ['Graphs', 'Differentiation', 'Integration', 'Volume of Rotation'],
-        instructions: 'Choose any graph from O-Level (linear, quadratic, cubic, reciprocal, square root, modulus) or A-Level (sin, cos, tan, exponential, ln, quartic, sinc, Gaussian) categories, plus parametric curves (circle, parabola, hyperbola, ellipse). Drag to pan the infinite canvas. Scroll to zoom. Hover near the curve to see coordinates; click to pin them. Toggle f\\u2032(x) for derivatives, Integral for shaded area, or Volume for revolution visualization with adjustable bounds. Use Doodle to freehand draw, or Points to place and connect coordinate points.',
+        tags: ['Graphs', 'Trigonometry', 'Calculus', 'Volume of Rotation'],
+        instructions: 'Choose from O-Level (linear, quadratic, cubic, 1/x, \\u221ax, |x|), all 9 trig functions (sin, cos, tan, csc, sec, cot, arcsin, arccos, arctan) with domain restriction lines and radian/degree toggle, A-Level (e\\u02e3, ln, x\\u2074, sinc, Gaussian), or parametric curves. Use transformation sliders (a, b, c, d) to see y = a\\u00b7f(b(x-c))+d live. Click on the curve with Tangent mode to draw the tangent line and see slope/angle. Volume mode shows a rotating 3D wireframe preview and computes V = \\u03c0\\u222by\\u00b2dx. Doodle to freehand draw; Points to place and connect coordinates. Reset button centres the view and resets all transforms.',
         html_code: CALCULUS_HTML,
       },
     ],
