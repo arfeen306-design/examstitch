@@ -3439,6 +3439,437 @@ if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){charges=[]}
 });
 <\/script></body></html>`;
 
+// ── Sound Waves ────────────────────────────────────────────────────────────
+const SOUND_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#f97316}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(249,115,22,0.25);border-color:rgba(249,115,22,0.5);color:#f97316}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#f97316;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Sound Source</div>
+<label>Frequency <span id="vF">440</span> Hz</label>
+<input type="range" id="sF" min="20" max="2000" value="440" step="10">
+<label>Amplitude <span id="vA">70</span>%</label>
+<input type="range" id="sA" min="10" max="100" value="70" step="1">
+<label>Medium speed <span id="vS">343</span> m/s</label>
+<input type="range" id="sS" min="100" max="1500" value="343" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Medium</div>
+<button id="mAir" class="active">Air (343 m/s)</button>
+<button id="mWater">Water (1480 m/s)</button>
+<button id="mSteel">Steel (5120 m/s)</button>
+</div>
+<div class="sec">
+<div class="sec-title">Visualisation</div>
+<button id="bWave">Waveform</button>
+<button id="bPressure">Pressure View</button>
+<button id="bPlay">🔊 Play Tone</button>
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Adjust frequency to explore</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Sound</b> is a longitudinal pressure wave.<br><br>
+v = fλ<br>
+λ = v/f<br><br>
+<b>Human hearing:</b> 20 Hz – 20,000 Hz<br>
+<b>Speed in air:</b> ~343 m/s (20°C)<br>
+<b>Speed in water:</b> ~1480 m/s<br>
+<b>Speed in steel:</b> ~5120 m/s
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let freq=440,amp=0.7,speed=343,time=0,showPressure=false,audioCtx=null,osc=null,playing=false;
+const sF=document.getElementById('sF'),sA=document.getElementById('sA'),sS=document.getElementById('sS');
+sF.oninput=()=>{freq=+sF.value;document.getElementById('vF').textContent=freq;if(osc)osc.frequency.value=freq;update()};
+sA.oninput=()=>{amp=(+sA.value)/100;document.getElementById('vA').textContent=+sA.value;update()};
+sS.oninput=()=>{speed=+sS.value;document.getElementById('vS').textContent=speed;update()};
+document.getElementById('mAir').onclick=()=>{speed=343;sS.value=343;document.getElementById('vS').textContent=343;update()};
+document.getElementById('mWater').onclick=()=>{speed=1480;sS.value=1480;document.getElementById('vS').textContent=1480;update()};
+document.getElementById('mSteel').onclick=()=>{speed=5120;sS.value=1500;document.getElementById('vS').textContent=5120;update()};
+document.getElementById('bWave').onclick=()=>{showPressure=false};
+document.getElementById('bPressure').onclick=()=>{showPressure=true};
+document.getElementById('bPlay').onclick=()=>{
+if(!playing){
+audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+osc=audioCtx.createOscillator();const gain=audioCtx.createGain();
+osc.frequency.value=freq;gain.gain.value=0.15;
+osc.connect(gain);gain.connect(audioCtx.destination);osc.start();
+playing=true;document.getElementById('bPlay').textContent='🔇 Stop';
+}else{osc.stop();audioCtx.close();playing=false;document.getElementById('bPlay').textContent='🔊 Play Tone'}
+};
+function update(){
+const wl=speed/freq;
+document.getElementById('readings').innerHTML=
+'Frequency: <span class="val">'+freq+'</span> Hz<br>'+
+'Wavelength: <span class="val">'+wl.toFixed(3)+'</span> m<br>'+
+'Period: <span class="val">'+(1/freq*1000).toFixed(2)+'</span> ms<br>'+
+'Speed: <span class="val">'+speed+'</span> m/s<br>'+
+(freq<20?'<span style="color:#ef4444">Infrasound</span>':freq>20000?'<span style="color:#ef4444">Ultrasound</span>':'<span style="color:#10b981">Audible range</span>');
+}
+update();
+function draw(){
+X.clearRect(0,0,W,H);
+const cy=H/2,wl=speed/freq,pixelWL=Math.max(20,Math.min(W*0.8,(speed/freq)*2));
+if(!showPressure){
+// waveform
+X.beginPath();
+for(let px=0;px<W;px++){
+const y=cy+amp*(H*0.3)*Math.sin(2*Math.PI*(px/pixelWL-freq*time*0.001));
+px===0?X.moveTo(px,y):X.lineTo(px,y);
+}
+X.strokeStyle='rgba(249,115,22,0.8)';X.lineWidth=2.5;X.stroke();
+// equilibrium
+X.setLineDash([4,4]);X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;
+X.beginPath();X.moveTo(0,cy);X.lineTo(W,cy);X.stroke();X.setLineDash([]);
+// speaker icon
+X.fillStyle='rgba(249,115,22,0.4)';X.beginPath();
+X.moveTo(20,cy-30);X.lineTo(40,cy-20);X.lineTo(40,cy+20);X.lineTo(20,cy+30);X.closePath();X.fill();
+X.fillRect(10,cy-20,12,40);
+// sound rings
+for(let r=1;r<=4;r++){
+X.beginPath();X.arc(45,cy,r*25,Math.PI*-0.4,Math.PI*0.4);
+X.strokeStyle='rgba(249,115,22,'+(0.4-r*0.08)+')';X.lineWidth=2;X.stroke();
+}
+}else{
+// pressure bars
+const nBars=80;
+for(let i=0;i<nBars;i++){
+const px=(i/nBars)*W;
+const pressure=Math.sin(2*Math.PI*(px/pixelWL-freq*time*0.001));
+const barH=Math.abs(pressure)*amp*H*0.3;
+const alpha=0.2+Math.abs(pressure)*0.5;
+X.fillStyle=pressure>0?'rgba(249,115,22,'+alpha+')':'rgba(59,130,246,'+alpha+')';
+X.fillRect(px,cy-barH,W/nBars-1,barH*2);
+}
+X.fillStyle='rgba(255,255,255,0.3)';X.font='10px system-ui';X.textAlign='center';
+X.fillText('Compression (+)',W/2,40);X.fillText('Rarefaction (−)',W/2,H-30);X.textAlign='left';
+}
+// frequency label
+const noteNames=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const noteNum=12*Math.log2(freq/440)+69;
+const note=noteNames[Math.round(noteNum)%12];
+X.fillStyle='rgba(255,255,255,0.4)';X.font='12px system-ui';
+X.fillText(freq+' Hz ≈ '+note,W-120,30);
+}
+function loop(){requestAnimationFrame(loop);time+=16.67;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;if(playing){osc.stop();audioCtx.close();playing=false;document.getElementById('bPlay').textContent='🔊 Play Tone'}}
+});
+<\/script></body></html>`;
+
+// ── Doppler Effect ─────────────────────────────────────────────────────────
+const DOPPLER_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#ec4899}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#ec4899;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Source</div>
+<label>Source freq <span id="vF">500</span> Hz</label>
+<input type="range" id="sF" min="100" max="2000" value="500" step="10">
+<label>Source speed <span id="vVs">60</span> m/s</label>
+<input type="range" id="sVs" min="0" max="330" value="60" step="5">
+</div>
+<div class="sec">
+<div class="sec-title">Observer</div>
+<label>Observer speed <span id="vVo">0</span> m/s</label>
+<input type="range" id="sVo" min="0" max="200" value="0" step="5">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bReset">Reset Position</button>
+<button id="bPause">Pause</button>
+</div>
+<div class="sec">
+<div class="sec-title">Observed Frequencies</div>
+<div class="info" id="readings">Press play to observe</div>
+</div>
+<div class="sec">
+<div class="sec-title">Doppler Equation</div>
+<div class="info">
+<b>f' = f × (v ± v_o) / (v ∓ v_s)</b><br><br>
+v = speed of sound (343 m/s)<br>
+v_s = source speed<br>
+v_o = observer speed<br>
+f = source frequency<br><br>
+<b>Approaching:</b> pitch ↑ (compressed)<br>
+<b>Receding:</b> pitch ↓ (stretched)<br><br>
+If v_s > v → <b>sonic boom</b> (Mach cone)
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+const v=343;
+let srcFreq=500,srcSpeed=60,obsSpeed=0,paused=false;
+let srcX=-200,time=0,wavefronts=[];
+const sF=document.getElementById('sF'),sVs=document.getElementById('sVs'),sVo=document.getElementById('sVo');
+sF.oninput=()=>{srcFreq=+sF.value;document.getElementById('vF').textContent=srcFreq};
+sVs.oninput=()=>{srcSpeed=+sVs.value;document.getElementById('vVs').textContent=srcSpeed};
+sVo.oninput=()=>{obsSpeed=+sVo.value;document.getElementById('vVo').textContent=obsSpeed};
+document.getElementById('bReset').onclick=()=>{srcX=-200;time=0;wavefronts=[]};
+document.getElementById('bPause').onclick=()=>{paused=!paused;document.getElementById('bPause').textContent=paused?'Play':'Pause'};
+function draw(){
+X.clearRect(0,0,W,H);
+const cy=H/2;
+const scale=W/(800);
+const sxPx=W/2+(srcX*scale);
+const obsX=W*0.75;
+// wavefronts
+wavefronts.forEach(wf=>{
+const r=wf.r*scale;
+const cx2=W/2+wf.ox*scale;
+if(r>0&&r<W){
+X.beginPath();X.arc(cx2,cy,r,0,Math.PI*2);
+const alpha=Math.max(0,0.4-r/(W*0.8));
+X.strokeStyle='rgba(236,72,153,'+alpha+')';X.lineWidth=1.5;X.stroke();
+}
+});
+// source (car/ambulance icon)
+X.fillStyle='rgba(236,72,153,0.6)';X.strokeStyle='rgba(236,72,153,0.8)';X.lineWidth=2;
+X.beginPath();X.arc(sxPx,cy,12,0,Math.PI*2);X.fill();X.stroke();
+X.fillStyle='#fff';X.font='bold 9px system-ui';X.textAlign='center';X.fillText('SRC',sxPx,cy+3);
+// direction arrow
+if(srcSpeed>0){
+X.beginPath();X.moveTo(sxPx+18,cy);X.lineTo(sxPx+35,cy);X.strokeStyle='rgba(236,72,153,0.5)';X.lineWidth=2;X.stroke();
+X.beginPath();X.moveTo(sxPx+35,cy);X.lineTo(sxPx+29,cy-4);X.lineTo(sxPx+29,cy+4);X.closePath();X.fillStyle='rgba(236,72,153,0.5)';X.fill();
+}
+// observer
+X.fillStyle='rgba(59,130,246,0.6)';X.strokeStyle='rgba(59,130,246,0.8)';X.lineWidth=2;
+X.beginPath();X.arc(obsX,cy,12,0,Math.PI*2);X.fill();X.stroke();
+X.fillStyle='#fff';X.fillText('OBS',obsX,cy+3);X.textAlign='left';
+// compression/stretch labels
+X.fillStyle='rgba(239,68,68,0.5)';X.font='11px system-ui';X.textAlign='center';
+if(srcSpeed>0){
+X.fillText('Compressed (higher pitch)',sxPx+80,cy-40);
+X.fillStyle='rgba(59,130,246,0.5)';
+X.fillText('Stretched (lower pitch)',sxPx-80,cy-40);
+}
+X.textAlign='left';
+// calculate observed frequencies
+const fApproach=srcFreq*(v+obsSpeed)/(v-Math.min(srcSpeed,v-1));
+const fRecede=srcFreq*(v-obsSpeed)/(v+srcSpeed);
+const mach=srcSpeed/v;
+document.getElementById('readings').innerHTML=
+'Source: <span class="val">'+srcFreq+'</span> Hz<br>'+
+'Approaching: <span class="val">'+fApproach.toFixed(1)+'</span> Hz<br>'+
+'Receding: <span class="val">'+fRecede.toFixed(1)+'</span> Hz<br>'+
+'Mach number: <span class="val">'+mach.toFixed(2)+'</span><br>'+
+(mach>=1?'<span style="color:#ef4444">⚠ Supersonic! Sonic boom</span>':'<span style="color:#10b981">Subsonic</span>');
+// mach cone if supersonic
+if(mach>=1){
+const halfAngle=Math.asin(1/mach);
+X.save();X.translate(sxPx,cy);
+X.beginPath();X.moveTo(0,0);X.lineTo(-200,Math.tan(halfAngle)*200);X.moveTo(0,0);X.lineTo(-200,-Math.tan(halfAngle)*200);
+X.strokeStyle='rgba(239,68,68,0.4)';X.lineWidth=2;X.stroke();
+X.restore();
+}
+}
+const dt=1/60;
+function loop(){
+requestAnimationFrame(loop);
+if(!paused){
+time+=dt;
+srcX+=srcSpeed*dt;
+// emit wavefronts
+if(Math.floor(time*srcFreq)>Math.floor((time-dt)*srcFreq)){
+wavefronts.push({ox:srcX,r:0});
+}
+wavefronts.forEach(wf=>{wf.r+=v*dt});
+wavefronts=wavefronts.filter(wf=>wf.r*W/800<W*1.5);
+if(srcX>600){srcX=-200;wavefronts=[]}
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){srcX=-200;time=0;wavefronts=[];paused=false;document.getElementById('bPause').textContent='Pause'}
+});
+<\/script></body></html>`;
+
+// ── EM Spectrum ────────────────────────────────────────────────────────────
+const EM_SPECTRUM_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(168,85,247,0.25);border-color:rgba(168,85,247,0.5);color:#a855f7}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#a855f7;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Select Region</div>
+<button id="b0">Radio Waves</button>
+<button id="b1">Microwaves</button>
+<button id="b2">Infrared</button>
+<button id="b3" class="active">Visible Light</button>
+<button id="b4">Ultraviolet</button>
+<button id="b5">X-Rays</button>
+<button id="b6">Gamma Rays</button>
+</div>
+<div class="sec">
+<div class="sec-title">Selected Region</div>
+<div class="info" id="info">Visible Light</div>
+</div>
+<div class="sec">
+<div class="sec-title">Key Facts</div>
+<div class="info">
+<b>All EM waves travel at c</b> = 3×10⁸ m/s in vacuum.<br><br>
+c = fλ<br>
+E = hf (photon energy)<br>
+h = 6.63×10⁻³⁴ J⋅s<br><br>
+↑ frequency = ↑ energy = ↓ wavelength<br><br>
+Radio → Micro → IR → <b>Visible</b> → UV → X-ray → Gamma
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+const regions=[
+{name:'Radio Waves',wl:'> 1 m',freq:'< 3×10⁸ Hz',color:'#ef4444',uses:'Broadcasting, communication, MRI',source:'Antennas, stars',danger:'Safe — non-ionising'},
+{name:'Microwaves',wl:'1 mm – 1 m',freq:'3×10⁸ – 3×10¹¹ Hz',color:'#f97316',uses:'Microwave ovens, radar, Wi-Fi, satellite',source:'Magnetrons, cosmic background',danger:'Can heat tissue'},
+{name:'Infrared',wl:'700 nm – 1 mm',freq:'3×10¹¹ – 4.3×10¹⁴ Hz',color:'#f59e0b',uses:'Thermal imaging, remote controls, heating',source:'Warm objects, fires',danger:'Burns if intense'},
+{name:'Visible Light',wl:'400 – 700 nm',freq:'4.3×10¹⁴ – 7.5×10¹⁴ Hz',color:'#10b981',uses:'Vision, photography, fibre optics',source:'Sun, LEDs, lasers',danger:'Eye damage if intense'},
+{name:'Ultraviolet',wl:'10 – 400 nm',freq:'7.5×10¹⁴ – 3×10¹⁶ Hz',color:'#8b5cf6',uses:'Sterilisation, fluorescence, tanning',source:'Sun, UV lamps',danger:'Sunburn, skin cancer'},
+{name:'X-Rays',wl:'0.01 – 10 nm',freq:'3×10¹⁶ – 3×10¹⁹ Hz',color:'#3b82f6',uses:'Medical imaging, airport security',source:'X-ray tubes, neutron stars',danger:'Cell damage, cancer risk'},
+{name:'Gamma Rays',wl:'< 0.01 nm',freq:'> 3×10¹⁹ Hz',color:'#ec4899',uses:'Cancer treatment, sterilisation',source:'Nuclear decay, supernovae',danger:'Highly ionising, very dangerous'},
+];
+let selected=3,time=0;
+regions.forEach((r,i)=>{
+document.getElementById('b'+i).onclick=()=>{
+selected=i;
+document.querySelectorAll('#right-panel .sec:first-child button').forEach(b=>b.classList.remove('active'));
+document.getElementById('b'+i).classList.add('active');
+updateInfo();
+}});
+function updateInfo(){
+const r=regions[selected];
+document.getElementById('info').innerHTML=
+'<b style="color:'+r.color+'">'+r.name+'</b><br><br>'+
+'Wavelength: <span class="val">'+r.wl+'</span><br>'+
+'Frequency: <span class="val">'+r.freq+'</span><br><br>'+
+'<b>Uses:</b> '+r.uses+'<br><br>'+
+'<b>Source:</b> '+r.source+'<br><br>'+
+'<b>Danger:</b> '+r.danger;
+}
+updateInfo();
+function draw(){
+X.clearRect(0,0,W,H);
+const barH=80,barY=H/2-barH/2,margin=40;
+const barW=W-margin*2;
+// spectrum bar
+const grad=X.createLinearGradient(margin,0,margin+barW,0);
+grad.addColorStop(0,'#ef4444');grad.addColorStop(0.15,'#f97316');grad.addColorStop(0.28,'#f59e0b');
+grad.addColorStop(0.38,'#ef4444');grad.addColorStop(0.42,'#f97316');grad.addColorStop(0.46,'#facc15');
+grad.addColorStop(0.50,'#22c55e');grad.addColorStop(0.54,'#3b82f6');grad.addColorStop(0.58,'#6366f1');grad.addColorStop(0.62,'#8b5cf6');
+grad.addColorStop(0.75,'#3b82f6');grad.addColorStop(0.88,'#ec4899');grad.addColorStop(1,'#ec4899');
+X.fillStyle=grad;
+X.beginPath();X.roundRect(margin,barY,barW,barH,8);X.fill();
+// region labels
+const segW=barW/7;
+regions.forEach((r,i)=>{
+const rx=margin+i*segW;
+const rw=segW;
+// highlight selected
+if(i===selected){
+X.strokeStyle=r.color;X.lineWidth=3;
+X.beginPath();X.roundRect(rx+2,barY-4,rw-4,barH+8,6);X.stroke();
+X.fillStyle=r.color+'20';X.beginPath();X.roundRect(rx+2,barY-4,rw-4,barH+8,6);X.fill();
+}
+// label
+X.fillStyle='rgba(255,255,255,0.8)';X.font='bold 9px system-ui';X.textAlign='center';
+const words=r.name.split(' ');
+words.forEach((w,wi)=>{X.fillText(w,rx+rw/2,barY+barH+18+wi*12)});
+});
+// wavelength arrow
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';X.textAlign='left';
+X.fillText('← Long wavelength',margin,barY-20);
+X.textAlign='right';X.fillText('Short wavelength →',margin+barW,barY-20);
+X.textAlign='center';X.fillText('Low frequency →',margin+barW*0.25,barY-40);
+X.fillText('← High frequency',margin+barW*0.75,barY-40);
+// animated wave for selected region
+const r=regions[selected];
+const waveY=barY+barH+70+(regions[0].name.split(' ').length>1?12:0)+20;
+const waveAmp=30;
+const waveFreq=1+selected*3;// visual frequency increases with region
+X.beginPath();
+for(let px=margin;px<margin+barW;px++){
+const y=waveY+waveAmp*Math.sin(2*Math.PI*(px/(barW/(waveFreq)))-time*3);
+px===margin?X.moveTo(px,y):X.lineTo(px,y);
+}
+X.strokeStyle=r.color;X.lineWidth=2;X.stroke();
+X.fillStyle=r.color;X.font='10px system-ui';X.textAlign='center';
+X.fillText(r.name+' wave pattern',margin+barW/2,waveY+waveAmp+25);
+// energy arrow at top
+const arrowY=40;
+X.strokeStyle='rgba(255,255,255,0.15)';X.lineWidth=1;
+X.beginPath();X.moveTo(margin,arrowY);X.lineTo(margin+barW,arrowY);X.stroke();
+X.fillStyle='rgba(255,255,255,0.25)';X.font='10px system-ui';
+X.textAlign='left';X.fillText('Low energy',margin,arrowY-8);
+X.textAlign='right';X.fillText('High energy',margin+barW,arrowY-8);
+X.textAlign='left';
+}
+function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;selected=3;updateInfo()}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -4219,6 +4650,42 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Coulomb\'s Law', 'E-field', 'Potential', 'Charges'],
         instructions: "Select + or − charge, then click the canvas to place. Drag charges to move them. Use presets for dipole, same-charge, or quadrupole configurations. Toggle field lines, vector field arrows, and potential heatmap. Field lines flow from + to − charges.",
         html_code: EFIELD_HTML,
+      },
+      {
+        id: 'sound-waves',
+        title: 'Sound Waves',
+        description: 'Explore sound as a longitudinal pressure wave — adjust frequency, amplitude, and medium speed with optional audio playback.',
+        icon: 'Activity',
+        gradient: 'from-orange-500 to-amber-500',
+        glowColor: 'rgba(249,115,22,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Sound', 'Frequency', 'Wavelength', 'Longitudinal'],
+        instructions: "Adjust frequency (20–2000 Hz), amplitude, and medium speed. Switch between Air, Water, and Steel to see how speed changes. Toggle between waveform and pressure bar views. Click Play Tone to hear the actual frequency through your speakers.",
+        html_code: SOUND_HTML,
+      },
+      {
+        id: 'doppler-effect',
+        title: 'Doppler Effect',
+        description: 'Watch wavefronts compress and stretch as a source moves — see pitch shift, Mach number, and sonic booms.',
+        icon: 'Activity',
+        gradient: 'from-pink-500 to-rose-500',
+        glowColor: 'rgba(236,72,153,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Doppler', 'Sound', 'Frequency Shift', 'Mach'],
+        instructions: "Set the source frequency, source speed, and observer speed. Watch the wavefronts compress ahead of the source (higher pitch) and stretch behind (lower pitch). Push source speed above 343 m/s to see a Mach cone (sonic boom).",
+        html_code: DOPPLER_HTML,
+      },
+      {
+        id: 'em-spectrum',
+        title: 'EM Spectrum Explorer',
+        description: 'Explore the full electromagnetic spectrum from radio waves to gamma rays — wavelengths, frequencies, uses, and dangers.',
+        icon: 'Sparkles',
+        gradient: 'from-purple-500 to-fuchsia-500',
+        glowColor: 'rgba(168,85,247,0.35)',
+        difficulty: 'Beginner',
+        tags: ['EM Waves', 'Light', 'Radiation', 'Spectrum'],
+        instructions: "Click any region of the spectrum in the right panel to highlight it. See wavelength range, frequency range, common uses, sources, and danger level. The animated wave at the bottom shows how the wave pattern changes across the spectrum.",
+        html_code: EM_SPECTRUM_HTML,
       },
     ],
   },
