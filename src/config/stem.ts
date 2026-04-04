@@ -1580,6 +1580,15 @@ button.active{background:rgba(245,158,11,0.3);border-color:rgba(245,158,11,0.6)}
 const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();addEventListener('resize',resize);
 
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
 const atoms=[
   {name:'Hydrogen',sym:'H',z:1,shells:[1]},
   {name:'Helium',sym:'He',z:2,shells:[2]},
@@ -1600,6 +1609,8 @@ function setAtom(i){
 function draw(){
   time+=0.015;
   ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+
   const cx=W/2,cy=H/2;const a=atoms[current];
 
   // Nucleus glow
@@ -1630,7 +1641,9 @@ function draw(){
     }
   });
 
-  requestAnimationFrame(draw);
+  
+ctx.restore();
+requestAnimationFrame(draw);
 }
 draw();
 <\/script></body></html>`;
@@ -1662,6 +1675,15 @@ button:hover{background:rgba(255,255,255,0.15)}
 const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();addEventListener('resize',resize);
 
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
 let angle=Math.PI/4,vel=0,trail=[];
 
 function getParams(){
@@ -1688,6 +1710,8 @@ function draw(){
   trail.push({x:bx,y:by});if(trail.length>200)trail.shift();
 
   ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+
 
   // Trail
   if(trail.length>1){
@@ -1717,7 +1741,9 @@ function draw(){
   const TE=KE+PE;
   document.getElementById('stats').innerHTML='KE: <span style="color:#60a5fa">'+KE.toFixed(1)+'</span><br>PE: <span style="color:#f59e0b">'+PE.toFixed(1)+'</span><br>Total: <span style="color:#f43f5e">'+TE.toFixed(1)+'</span><br>Angle: '+(angle*180/Math.PI).toFixed(1)+'°';
 
-  requestAnimationFrame(draw);
+  
+ctx.restore();
+requestAnimationFrame(draw);
 }
 draw();
 <\/script></body></html>`;
@@ -1909,6 +1935,15 @@ button.act:hover{border-color:#00d4ff;background:rgba(0,212,255,0.1);color:#e6ed
 </main>
 <script>
 const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+cv.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+cv.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+cv.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+cv.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let lt='convex',fl=100,od=300,oh=50,isDrag=false,dragT=null,isDemo=false,demoId=null,cX=0,cY=0,sc=1;
 const C={axis:'#2a3642',grid:'#1a2028',lens:'#00d4ff',obj:'#ff6b35',imgR:'#00d4ff',rayI:'#ffd700',rayR:'#00ff88',rayV:'#5a6270',focal:'#ff6b35'};
 
@@ -1964,7 +1999,9 @@ const pc=document.getElementById('propsC');pc.innerHTML='';
 const tags=[[isR?'Real':'Virtual',isR?'#00d4ff':'#5a6270',isR?'#080c10':'#e6edf3'],[isU?'Upright':'Inverted','#ff6b35','#fff'],[Math.abs(M)<0.99?'Reduced':Math.abs(M)>1.01?'Magnified':'Same Size','#00ff88','#080c10']];
 tags.forEach(([t,bg,fg])=>{const s=document.createElement('span');s.className='tag';s.style.background=bg;s.style.color=fg;s.textContent=t;pc.appendChild(s);});}
 
-function render(){cx.fillStyle='#080c10';cx.fillRect(0,0,cv.width,cv.height);drawGrid();drawAxis();drawLens();drawFocal();const d=calcImg();if(lt==='convex')drawConvexRays(d);else drawConcaveRays(d);drawObj();drawImg(d);updateUI(d);}
+function render(){cx.fillStyle='#080c10';cx.fillRect(0,0,cv.width,cv.height);
+cx.save();cx.translate(_panX,_panY);cx.scale(_zoom,_zoom);
+drawGrid();drawAxis();drawLens();drawFocal();const d=calcImg();if(lt==='convex')drawConvexRays(d);else drawConcaveRays(d);drawObj();drawImg(d);cx.restore();updateUI(d);}
 
 function resize(){const p=cv.parentElement;cv.width=p.clientWidth;cv.height=p.clientHeight;cX=cv.width*0.45;cY=cv.height/2;sc=1;render();}
 
@@ -2048,6 +2085,15 @@ let rocketX=0,rocketV=0,gasParticles=[];
 function resize(){W=C.width=innerWidth;H=C.height=innerHeight}
 resize();addEventListener('resize',resize);
 
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
 function setLaw(n){law=n;document.querySelectorAll('#ui .pn:first-child button').forEach(b=>b.classList.remove('on'));document.getElementById('l'+n).classList.add('on');resetSim();}
 
 document.getElementById('sl-f').oninput=e=>{force=+e.target.value;document.getElementById('v-f').textContent=force+' N'};
@@ -2059,6 +2105,8 @@ function playpause(){running=!running;document.getElementById('b-pp').innerHTML=
 
 function draw(){
   ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+
   const cw=W-210,ch=H;
   // Ground
   const gy=ch*0.7;
@@ -2070,7 +2118,9 @@ function draw(){
   else drawLaw3(cw,gy);
 
   if(running) t+=dt;
-  requestAnimationFrame(draw);
+  
+ctx.restore();
+requestAnimationFrame(draw);
 }
 
 function drawLaw1(cw,gy){
@@ -2214,6 +2264,15 @@ let traces=[];
 function resize(){W=C.width=innerWidth;H=C.height=innerHeight}
 resize();addEventListener('resize',resize);
 
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
 const slA=document.getElementById('sl-a'),slV=document.getElementById('sl-v'),slG=document.getElementById('sl-g'),slH=document.getElementById('sl-h');
 slA.oninput=e=>{angle=+e.target.value;document.getElementById('v-a').innerHTML=angle+'&deg;'};
 slV.oninput=e=>{v0=+e.target.value;document.getElementById('v-v').textContent=v0+' m/s'};
@@ -2232,6 +2291,8 @@ function toScreen(x,y){const cw=W-210;const ox=80,oy=H-60;return[ox+x*sc,oy-y*sc
 
 function draw(){
   ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+
   const cw=W-210;
   // Ground
   const gy=H-60;
@@ -2293,7 +2354,9 @@ function draw(){
   // Info
   document.getElementById('info').innerHTML='<b style="color:#93c5fd">Projectile Motion</b><br>Range: <span class="val">'+range.toFixed(1)+' m</span><br>Max Height: <span class="val">'+maxH.toFixed(1)+' m</span><br>Flight Time: <span class="val">'+tTotal.toFixed(2)+' s</span><br>Current: (<span class="val">'+px.toFixed(1)+'</span>, <span class="val">'+py.toFixed(1)+'</span>)';
 
-  requestAnimationFrame(draw);
+  
+ctx.restore();
+requestAnimationFrame(draw);
 }
 addEventListener('message',e=>{if(!e.data||!e.data.type)return;if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){resetSim();}});
 draw();
@@ -2335,6 +2398,15 @@ let W,H,speed=1,selPlanet=null,t=0;
 function resize(){W=C.width=innerWidth;H=C.height=innerHeight}
 resize();addEventListener('resize',resize);
 
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
 const PLANETS=[
   {name:'Mercury',r:8, orbit:50, period:0.24,color:'#94a3b8',mass:'3.3\\u00d710\\xb2\\xb3 kg',dist:'57.9M km',temp:'167\\xb0C',moons:0},
   {name:'Venus',  r:12,orbit:75, period:0.62,color:'#f59e0b',mass:'4.87\\u00d710\\xb2\\u2074 kg',dist:'108.2M km',temp:'464\\xb0C',moons:0},
@@ -2361,6 +2433,8 @@ const stars=Array.from({length:200},()=>({x:Math.random()*2000,y:Math.random()*2
 
 function draw(){
   ctx.fillStyle='#020210';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+
   const cw=W-200,cx=cw/2,cy=H/2;
 
   // Stars
@@ -2400,7 +2474,9 @@ function draw(){
   }
 
   t+=1/60;
-  requestAnimationFrame(draw);
+  
+ctx.restore();
+requestAnimationFrame(draw);
 }
 addEventListener('message',e=>{if(!e.data||!e.data.type)return;if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){t=0;speed=1;selPlanet=null;document.getElementById('sl-spd').value=1;document.getElementById('v-spd').textContent='1.0x';document.querySelectorAll('.planet-btn').forEach(b=>b.classList.remove('on'));}});
 draw();
@@ -2469,6 +2545,15 @@ const forcesEl=document.getElementById('forces');
 let W,H,ang=30,mass=5,mu=0.3,g=9.8,running=false,paused=false,pos=0,vel=0,t=0;
 function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}
 resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 function sliders(){
 ang=+sAng.value;vAng.textContent=ang;
 mass=+sMass.value;vMass.textContent=mass;
@@ -2481,6 +2566,8 @@ document.getElementById('bStart').onclick=()=>{pos=0;vel=0;t=0;running=true;paus
 document.getElementById('bPause').onclick=()=>{paused=!paused};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const rad=ang*Math.PI/180;
 const planeLen=Math.min(W*0.7,H*0.8);
 const baseX=W*0.15,baseY=H*0.82;
@@ -2547,6 +2634,8 @@ if(label){ctx.fillStyle=color;ctx.font='bold 9px system-ui';ctx.fillText(label,x
 }
 const dt=1/60;
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(running&&!paused){
 const rad=ang*Math.PI/180;
@@ -2622,6 +2711,15 @@ let W,H,k=20,mass=2,damp=0.02,initStretch=100;
 let springY=0,velY=0,equilY,running=false,showGraph=true,history=[];
 function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight;equilY=H*0.3}
 resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 const sK=document.getElementById('sK'),sM=document.getElementById('sM'),sD=document.getElementById('sD'),sX=document.getElementById('sX');
 function sliders(){
 k=+sK.value;document.getElementById('vK').textContent=k;
@@ -2645,6 +2743,8 @@ X.strokeStyle='rgba(16,185,129,0.7)';X.lineWidth=2.5;X.stroke();
 }
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const anchorX=W*0.4,anchorY=40;
 const massY=equilY+springY;
 const massSize=20+mass*1.5;
@@ -2714,6 +2814,8 @@ X.strokeStyle='rgba(16,185,129,0.8)';X.lineWidth=1.5;X.stroke();
 }
 }
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(running){
 const a=(-k*springY/100-damp*velY/100)*100/mass;
@@ -2795,6 +2897,15 @@ const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;
 function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}
 resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let waveType='transverse',amp=60,wl=200,freq=1.0,nParts=40,paused=false,showParts=true,showLabels=true,time=0;
 const sA=document.getElementById('sA'),sL=document.getElementById('sL'),sF=document.getElementById('sF'),sN=document.getElementById('sN');
 function sl(){
@@ -2811,6 +2922,8 @@ document.getElementById('bParticles').onclick=()=>{showParts=!showParts};
 document.getElementById('bLabels').onclick=()=>{showLabels=!showLabels};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cy=H/2,startX=40;
 const v=freq*wl;
 // grid
@@ -2894,7 +3007,9 @@ document.getElementById('meas').innerHTML=
 'Wavelength λ: <span class="val">'+wl+'</span> px<br>'+
 'Amplitude A: <span class="val">'+amp+'</span> px';
 }
-function loop(){requestAnimationFrame(loop);if(!paused)time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);if(!paused)time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -2962,6 +3077,15 @@ Same voltage across all<br><br>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let voltage=9,components=[],wires=[],selectedComp='battery',dragging=null,dragOff={x:0,y:0};
 let switchOn=true,electrons=[];
 const sV=document.getElementById('sV');
@@ -3070,6 +3194,8 @@ X.textAlign='left';X.restore();
 }
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 // grid
 X.strokeStyle='rgba(255,255,255,0.03)';X.lineWidth=1;
 for(let y=0;y<H;y+=30){X.beginPath();X.moveTo(0,y);X.lineTo(W,y);X.stroke()}
@@ -3099,7 +3225,9 @@ X.fillText('Or use a preset circuit from the right panel',W/2,H/2+14);
 X.textAlign='left';
 }
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();calc();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -3164,6 +3292,15 @@ Thumb=Force, Index=Field, Middle=Current
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let voltage=12,fieldStrength=0.8,nTurns=4,running=false,angle=0,direction=1,showLabels=true;
 const sV=document.getElementById('sV'),sB=document.getElementById('sB'),sN=document.getElementById('sN');
 sV.oninput=()=>{voltage=+sV.value;document.getElementById('vV').textContent=voltage};
@@ -3174,6 +3311,8 @@ document.getElementById('bReverse').onclick=()=>{direction*=-1};
 document.getElementById('bLabels').onclick=()=>{showLabels=!showLabels};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.42,cy=H*0.45,R=Math.min(W,H)*0.22;
 // Magnetic field lines
 X.strokeStyle='rgba(59,130,246,0.15)';X.lineWidth=1;
@@ -3242,6 +3381,8 @@ document.getElementById('readings').innerHTML=
 'Status: '+(running?'<span style="color:#10b981">Running</span>':'<span style="color:#ef4444">Stopped</span>');
 }
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(running){
 const speed=voltage*fieldStrength*direction*0.002;
@@ -3316,6 +3457,15 @@ k = 8.99 × 10⁹ N⋅m²/C²
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let charges=[],placeType=1,dragging=null,dragOff={x:0,y:0};
 let showLines=true,showVectors=false,showPotential=false;
 document.getElementById('bPos').onclick=()=>{placeType=1;document.getElementById('bPos').classList.add('active');document.getElementById('bNeg').classList.remove('active')};
@@ -3360,6 +3510,8 @@ return V;
 }
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 // potential heatmap
 if(showPotential&&charges.length>0){
 const step=8;
@@ -3431,7 +3583,9 @@ X.fillText('Click to place charges, or use a preset',W/2,H/2);X.textAlign='left'
 }
 document.getElementById('info').innerHTML=charges.length+' charge'+(charges.length!==1?'s':'')+' placed<br>Drag to reposition';
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -3502,6 +3656,15 @@ v = fλ<br>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let freq=440,amp=0.7,speed=343,time=0,showPressure=false,audioCtx=null,osc=null,playing=false;
 const sF=document.getElementById('sF'),sA=document.getElementById('sA'),sS=document.getElementById('sS');
 sF.oninput=()=>{freq=+sF.value;document.getElementById('vF').textContent=freq;if(osc)osc.frequency.value=freq;update()};
@@ -3533,6 +3696,8 @@ document.getElementById('readings').innerHTML=
 update();
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cy=H/2,wl=speed/freq,pixelWL=Math.max(20,Math.min(W*0.8,(speed/freq)*2));
 if(!showPressure){
 // waveform
@@ -3575,7 +3740,9 @@ const note=noteNames[Math.round(noteNum)%12];
 X.fillStyle='rgba(255,255,255,0.4)';X.font='12px system-ui';
 X.fillText(freq+' Hz ≈ '+note,W-120,30);
 }
-function loop(){requestAnimationFrame(loop);time+=16.67;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);time+=16.67;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -3642,6 +3809,15 @@ If v_s > v → <b>sonic boom</b> (Mach cone)
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 const v=343;
 let srcFreq=500,srcSpeed=60,obsSpeed=0,paused=false;
 let srcX=-200,time=0,wavefronts=[];
@@ -3653,6 +3829,8 @@ document.getElementById('bReset').onclick=()=>{srcX=-200;time=0;wavefronts=[]};
 document.getElementById('bPause').onclick=()=>{paused=!paused;document.getElementById('bPause').textContent=paused?'Play':'Pause'};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cy=H/2;
 const scale=W/(800);
 const sxPx=W/2+(srcX*scale);
@@ -3709,6 +3887,8 @@ X.restore();
 }
 const dt=1/60;
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(!paused){
 time+=dt;
@@ -3778,6 +3958,15 @@ Radio → Micro → IR → <b>Visible</b> → UV → X-ray → Gamma
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 const regions=[
 {name:'Radio Waves',wl:'> 1 m',freq:'< 3×10⁸ Hz',color:'#ef4444',uses:'Broadcasting, communication, MRI',source:'Antennas, stars',danger:'Safe — non-ionising'},
 {name:'Microwaves',wl:'1 mm – 1 m',freq:'3×10⁸ – 3×10¹¹ Hz',color:'#f97316',uses:'Microwave ovens, radar, Wi-Fi, satellite',source:'Magnetrons, cosmic background',danger:'Can heat tissue'},
@@ -3808,6 +3997,8 @@ document.getElementById('info').innerHTML=
 updateInfo();
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const barH=80,barY=H/2-barH/2,margin=40;
 const barW=W-margin*2;
 // spectrum bar
@@ -3862,7 +4053,9 @@ X.textAlign='left';X.fillText('Low energy',margin,arrowY-8);
 X.textAlign='right';X.fillText('High energy',margin+barW,arrowY-8);
 X.textAlign='left';
 }
-function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -3924,6 +4117,15 @@ button.active{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.5)
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let law='boyle',temp=300,volume=50,nParts=40;
 let particles=[];
 function initParticles(){
@@ -3942,6 +4144,8 @@ document.getElementById('bCharles').onclick=()=>{law='charles';document.querySel
 document.getElementById('bPressure').onclick=()=>{law='pressure';document.querySelectorAll('.btns button').forEach(b=>b.classList.remove('active'));document.getElementById('bPressure').classList.add('active')};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.42,cy=H*0.5;
 const maxW=Math.min(W*0.6,H*0.7);
 const boxW=maxW*(volume/100);
@@ -4019,7 +4223,9 @@ document.getElementById('readings').innerHTML=
 'Particles: <span class="val">'+nParts+'</span><br>'+
 'Avg KE ∝ T: <span class="val">'+(temp*0.0138).toFixed(2)+'</span> ×10⁻²¹ J';
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -4079,6 +4285,15 @@ input[type=range]{width:100%;margin:2px 0 8px;accent-color:#ef4444}
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let mode='conduction',hotT=400,coldT=20,time=0,particles=[];
 const sH=document.getElementById('sH'),sC=document.getElementById('sC');
 sH.oninput=()=>{hotT=+sH.value;document.getElementById('vH').textContent=hotT};
@@ -4101,6 +4316,8 @@ return 'rgba('+(50+n*205)+','+(50+80*(1-n))+','+(200-n*180)+',0.8)';
 }
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H*0.5;
 if(mode==='conduction'){
 const barW=W*0.6,barH=60,bx=cx-barW/2,by=cy-barH/2;
@@ -4191,7 +4408,9 @@ document.getElementById('info').innerHTML='<b>Radiation</b><br>Source: <span cla
 }
 X.textAlign='left';
 }
-function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -4258,6 +4477,15 @@ N = N₀ × (½)^(t/T½)<br><br>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let initN=200,halfLife=3,decayType='alpha',running=false,time=0,atoms=[],decayed=0,history=[];
 const sN=document.getElementById('sN'),sHL=document.getElementById('sHL');
 sN.oninput=()=>{initN=+sN.value;document.getElementById('vN').textContent=initN};
@@ -4285,6 +4513,8 @@ running=true;document.getElementById('bStart').textContent='Running...'}
 document.getElementById('bReset').onclick=()=>{running=false;initAtoms();document.getElementById('bStart').textContent='Start Decay'};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 let alive=0;
 atoms.forEach(a=>{
 if(a.alive&&time>=a.decayTime){a.alive=false;decayed++}
@@ -4357,6 +4587,8 @@ document.getElementById('readings').innerHTML=
 const dt=1/60;
 let histTimer=0;
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(running){
 time+=dt;histTimer+=dt;
@@ -4440,6 +4672,15 @@ p = mv, KE = ½mv²
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let mA=3,mB=5,vA=5,vB=-3,elastic=true,running=false,collided=false;
 let posA,posB,curVA,curVB,finalVA,finalVB;
 const sMA=document.getElementById('sMA'),sMB=document.getElementById('sMB'),sVA=document.getElementById('sVA'),sVB=document.getElementById('sVB');
@@ -4459,6 +4700,8 @@ document.getElementById('bLaunch').onclick=()=>{reset();curVA=vA;curVB=vB;runnin
 document.getElementById('bReset').onclick=reset;
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cy=H*0.45,ground=cy+60;
 // ground
 X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;X.beginPath();X.moveTo(0,ground);X.lineTo(W,ground);X.stroke();
@@ -4522,6 +4765,8 @@ document.getElementById('readings').innerHTML=
 'Total KE: <span class="val">'+keAfter.toFixed(1)+'</span> J';
 }
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(running){
 const rA=15+mA*1.5,rB=15+mB*1.5;
@@ -4599,6 +4844,15 @@ If released, object moves in a straight line (tangent) — Newton's 1st Law.
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let radius=120,speed=3,mass=2,angle=0,released=false,relAngle=0,relX=0,relY=0,relVx=0,relVy=0;
 let showVectors=true,showTrail=true,trail=[];
 const sR=document.getElementById('sR'),sS=document.getElementById('sS'),sM=document.getElementById('sM');
@@ -4616,6 +4870,8 @@ document.getElementById('bVectors').onclick=()=>{showVectors=!showVectors};
 document.getElementById('bTrail').onclick=()=>{showTrail=!showTrail};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H/2;
 // orbit circle
 X.beginPath();X.arc(cx,cy,radius,0,Math.PI*2);
@@ -4684,6 +4940,8 @@ ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-8,-4);ctx.lineTo(-8,4);ctx.closePath
 ctx.fillStyle=color;ctx.fill();ctx.restore();
 }
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(!released){
 angle+=speed*0.02;
@@ -4754,6 +5012,15 @@ Smaller driver → more torque, less speed
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let machine='lever',effort=50,load=100,ratio=2,time=0;
 const sE=document.getElementById('sE'),sL=document.getElementById('sL'),sR=document.getElementById('sR');
 sE.oninput=()=>{effort=+sE.value;document.getElementById('vE').textContent=effort};
@@ -4765,6 +5032,8 @@ document.getElementById('bPulley').onclick=()=>setM('pulley','bPulley');
 document.getElementById('bGear').onclick=()=>setM('gear','bGear');
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.42,cy=H*0.45;
 if(machine==='lever'){
 const fulX=cx,fulY=cy+50;
@@ -4855,7 +5124,9 @@ X.textAlign='left';
 document.getElementById('readings').innerHTML='Gear ratio: <span class="val">1:'+ratio+'</span><br>Driver teeth: <span class="val">'+teeth1+'</span><br>Driven teeth: <span class="val">'+teeth2+'</span><br>Driven turns '+(ratio)+'× slower<br>Torque ×'+ratio;
 }
 }
-function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -5200,6 +5471,15 @@ button.active{background:rgba(245,158,11,0.25);border-color:rgba(245,158,11,0.5)
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let electrolyte='water',voltage=6,running=false,time=0,bubbles=[],ions=[];
 const sV=document.getElementById('sV');
 sV.oninput=()=>{voltage=+sV.value;document.getElementById('vV').textContent=voltage};
@@ -5222,6 +5502,8 @@ color:isPos?'rgba(239,68,68,0.7)':'rgba(59,130,246,0.7)'});
 initIons();
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,tankW=W*0.55,tankH=H*0.5,tx=cx-tankW/2,ty=H*0.25;
 // tank
 X.fillStyle='rgba(59,130,246,0.06)';X.fillRect(tx,ty,tankW,tankH);
@@ -5278,7 +5560,9 @@ document.getElementById('products').innerHTML=
 'At anode: <span class="val">'+products.anode+'</span><br><br>'+
 'Equation:<br>'+products.eq;
 }
-function loop(){requestAnimationFrame(loop);if(running)time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);if(running)time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -5344,6 +5628,15 @@ Acid + Base → Salt + Water
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let pH=7;
 const sPH=document.getElementById('sPH');
 sPH.oninput=()=>{pH=+sPH.value;document.getElementById('vPH').textContent=pH.toFixed(1);update()};
@@ -5370,6 +5663,8 @@ document.getElementById('info').innerHTML=
 update();
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const barX=40,barY=40,barW=W*0.7-80,barH=50;
 // pH scale bar
 for(let i=0;i<=14;i++){
@@ -5416,7 +5711,9 @@ X.fillStyle='rgba(239,68,68,0.6)';X.font='9px system-ui';X.textAlign='left';X.fi
 X.fillStyle='rgba(59,130,246,0.6)';X.fillText('● OH⁻ ions',bx+bw+15,by+bh/2+10);
 X.textAlign='left';
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -5476,6 +5773,15 @@ Condensation ← Liquid ← Freezing
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let temp=25,mp=0,bp=100,substance='water',particles=[];
 const sT=document.getElementById('sT');
 sT.oninput=()=>{temp=+sT.value;document.getElementById('vT').textContent=temp;update()};
@@ -5510,6 +5816,8 @@ document.getElementById('info').innerHTML=
 update();
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const state=getState();
 const cx=W*0.35,cy=H*0.5;
 // container
@@ -5577,7 +5885,9 @@ X.strokeStyle='rgba(239,68,68,0.6)';X.lineWidth=2;X.stroke();
 const tempPx=gx+((temp-minT)/range)*gw;
 X.beginPath();X.arc(tempPx,gy+gh/2,4,0,Math.PI*2);X.fillStyle='#fff';X.fill();
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -5622,6 +5932,15 @@ button.active{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.5)
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let cellType='animal',selected=null,time=0;
 const organelles={
 animal:[
@@ -5686,6 +6005,8 @@ document.getElementById('info').innerHTML='<b style="color:'+selected.color+'">'
 };
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H/2;
 const orgs=organelles[cellType];
 // draw from largest to smallest
@@ -5735,7 +6056,9 @@ X.fillText(o.name,ox,oy+o.r+12);
 });
 X.textAlign='left';
 }
-function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -5796,6 +6119,15 @@ C—G (Cytosine–Guanine)<br><br>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let mode='helix',paused=false,time=0;
 const bases=[{l:'A',c:'#ef4444',p:'T',pc:'#3b82f6'},{l:'T',c:'#3b82f6',p:'A',pc:'#ef4444'},{l:'C',c:'#10b981',p:'G',pc:'#f59e0b'},{l:'G',c:'#f59e0b',p:'C',pc:'#10b981'}];
 const seq=[];for(let i=0;i<20;i++)seq.push(bases[Math.floor(Math.random()*4)]);
@@ -5807,6 +6139,8 @@ document.getElementById('bReset').onclick=()=>{time=0};
 function setBtn(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,startY=30;
 if(mode==='helix'){
 // 3D rotating double helix
@@ -5912,7 +6246,9 @@ X.textAlign='left';
 document.getElementById('info').innerHTML='<b>Base Pairing</b><br>A pairs with T (2 H-bonds)<br>C pairs with G (3 H-bonds)<br>Complementary base pairing ensures accurate replication.';
 }
 }
-function loop(){requestAnimationFrame(loop);if(!paused)time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);if(!paused)time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -5970,6 +6306,15 @@ button:hover{background:rgba(255,255,255,0.14);color:#fff}
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let bpm=72,showLabels=true,showFlow=true,time=0,selected=null;
 const sBPM=document.getElementById('sBPM');
 sBPM.oninput=()=>{bpm=+sBPM.value;document.getElementById('vBPM').textContent=bpm};
@@ -5999,6 +6344,8 @@ document.getElementById('info').innerHTML='<b style="color:'+selected.color+'">'
 };
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H*0.45,sc=Math.min(W,H)*0.8;
 const beat=Math.sin(time*bpm/60*Math.PI*2)*0.03;
 // heart outline
@@ -6055,7 +6402,9 @@ X.fillText('→ Body',cx,cy+0.38*sc);
 }
 X.textAlign='left';
 }
-function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -6120,6 +6469,15 @@ They are <b>reverse</b> reactions!
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let mode='photo',light=70,co2=50,temp=25,time=0;
 let molecules=[];
 const sL=document.getElementById('sL'),sCO2=document.getElementById('sCO2'),sTemp=document.getElementById('sTemp');
@@ -6141,6 +6499,8 @@ molecules.push({type:'h2o',x:Math.random()*W*0.6,y:H*0.7+Math.random()*H*0.3,vx:
 initMolecules();
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.35;
 // sun/light
 if(mode!=='resp'){
@@ -6209,7 +6569,9 @@ document.getElementById('rate').innerHTML=
 (mode==='both'?'Net O₂: <span class="val">'+(photoRate-respRate).toFixed(1)+'</span>%<br>':'')+
 'Limiting factor: <span class="val">'+(light<co2?(light<temp*3?'Light':'Temperature'):(co2<temp*3?'CO₂':'Temperature'))+'</span>';
 }
-function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);time+=1/60;draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -6273,6 +6635,15 @@ Light bends <b>toward</b> normal when entering denser medium.
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let incAngle=30,n1=1.00,n2=1.50;
 const sA=document.getElementById('sA'),sN1=document.getElementById('sN1'),sN2=document.getElementById('sN2');
 sA.oninput=()=>{incAngle=+sA.value;document.getElementById('vA').textContent=incAngle};
@@ -6283,6 +6654,8 @@ document.getElementById('bAirWater').onclick=()=>{n1=1;n2=1.33;sN1.value=100;sN2
 document.getElementById('bGlassAir').onclick=()=>{n1=1.5;n2=1;sN1.value=150;sN2.value=100;document.getElementById('vN1').textContent='1.50';document.getElementById('vN2').textContent='1.00'};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H/2;
 // media
 X.fillStyle='rgba(6,182,212,0.03)';X.fillRect(0,0,W,cy);
@@ -6346,7 +6719,9 @@ document.getElementById('readings').innerHTML=
 }
 X.textAlign='left';
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -6404,6 +6779,15 @@ Like poles repel, unlike attract
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let config='bar',showCompass=true,showField=true;
 let magnets=[{x:0,y:0,angle:0}];
 let dragging=null,dragOff={x:0,y:0};
@@ -6438,6 +6822,8 @@ return{x:bx,y:by};
 }
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H/2;
 X.save();X.translate(cx,cy);
 // field lines
@@ -6503,7 +6889,9 @@ X.restore();
 });
 X.restore();
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -6562,6 +6950,15 @@ button.active{background:rgba(34,197,94,0.25);border-color:rgba(34,197,94,0.5);c
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let gate='AND',inputA=0,inputB=0;
 const gates={AND:(a,b)=>a&b,OR:(a,b)=>a|b,NOT:(a)=>a?0:1,NAND:(a,b)=>(a&b)?0:1,NOR:(a,b)=>(a|b)?0:1,XOR:(a,b)=>a^b};
 ['AND','OR','NOT','NAND','NOR','XOR'].forEach(g=>{
@@ -6595,6 +6992,8 @@ if(gate!=='NOT'&&Math.hypot(mx-(cx-160),my-(cy+40))<20){inputB=inputB?0:1;update
 };
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H/2;
 const isNot=gate==='NOT';
 const output=isNot?gates[gate](inputA):gates[gate](inputA,inputB);
@@ -6652,7 +7051,9 @@ X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';X.fillText('Output Q
 X.textAlign='left';
 document.getElementById('info').innerHTML='Gate: <span class="val">'+gate+'</span><br>Input A: <span class="val">'+inputA+'</span>'+(isNot?'':'<br>Input B: <span class="val">'+inputB+'</span>')+'<br>Output: <span class="val" style="font-size:14px">'+output+'</span>';
 }
-function loop(){requestAnimationFrame(loop);draw()}
+function loop(){
+X.restore();
+requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
@@ -6721,6 +7122,15 @@ Too fast → escape!<br><br>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
 let M=500,initV=3,initD=150,running=false;
 let sat={x:0,y:0,vx:0,vy:0},trail=[],showTrail=true,showVectors=true;
 const sM=document.getElementById('sM'),sV=document.getElementById('sV'),sD=document.getElementById('sD');
@@ -6733,6 +7143,8 @@ document.getElementById('bTrail').onclick=()=>{showTrail=!showTrail};
 document.getElementById('bVectors').onclick=()=>{showVectors=!showVectors};
 function draw(){
 X.clearRect(0,0,W,H);
+X.save();X.translate(_panX,_panY);X.scale(_zoom,_zoom);
+
 const cx=W*0.4,cy=H/2;
 // stars
 for(let i=0;i<30;i++){
@@ -6782,6 +7194,8 @@ document.getElementById('readings').innerHTML=
 (v>escapeV?'<span style="color:#f59e0b">Escaping!</span>':v>orbitalV*1.1?'<span style="color:#8b5cf6">Elliptical orbit</span>':'<span style="color:#10b981">~Circular orbit</span>');
 }
 function loop(){
+
+X.restore();
 requestAnimationFrame(loop);
 if(running){
 const r=Math.hypot(sat.x,sat.y);
