@@ -6074,6 +6074,592 @@ if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;mode='photo';
 });
 <\/script></body></html>`;
 
+// ── Reflection & Refraction ─────────────────────────────────────────────────
+const REFRACTION_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#06b6d4}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(6,182,212,0.25);border-color:rgba(6,182,212,0.5);color:#06b6d4}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#06b6d4;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Incident Ray</div>
+<label>Angle <span id="vA">30</span>°</label>
+<input type="range" id="sA" min="0" max="85" value="30" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Media</div>
+<label>n₁ (top) <span id="vN1">1.00</span></label>
+<input type="range" id="sN1" min="100" max="250" value="100" step="1">
+<label>n₂ (bottom) <span id="vN2">1.50</span></label>
+<input type="range" id="sN2" min="100" max="250" value="150" step="1">
+<button id="bAirGlass">Air → Glass</button>
+<button id="bAirWater">Air → Water</button>
+<button id="bGlassAir">Glass → Air (TIR)</button>
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Adjust angle and media</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Snell's Law:</b> n₁ sin θ₁ = n₂ sin θ₂<br><br>
+<b>Reflection:</b> angle of incidence = angle of reflection<br><br>
+<b>Total Internal Reflection:</b><br>
+When n₁ > n₂ and θ > critical angle<br>
+sin θc = n₂/n₁<br><br>
+Light bends <b>toward</b> normal when entering denser medium.
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let incAngle=30,n1=1.00,n2=1.50;
+const sA=document.getElementById('sA'),sN1=document.getElementById('sN1'),sN2=document.getElementById('sN2');
+sA.oninput=()=>{incAngle=+sA.value;document.getElementById('vA').textContent=incAngle};
+sN1.oninput=()=>{n1=(+sN1.value)/100;document.getElementById('vN1').textContent=n1.toFixed(2)};
+sN2.oninput=()=>{n2=(+sN2.value)/100;document.getElementById('vN2').textContent=n2.toFixed(2)};
+document.getElementById('bAirGlass').onclick=()=>{n1=1;n2=1.5;sN1.value=100;sN2.value=150;document.getElementById('vN1').textContent='1.00';document.getElementById('vN2').textContent='1.50'};
+document.getElementById('bAirWater').onclick=()=>{n1=1;n2=1.33;sN1.value=100;sN2.value=133;document.getElementById('vN1').textContent='1.00';document.getElementById('vN2').textContent='1.33'};
+document.getElementById('bGlassAir').onclick=()=>{n1=1.5;n2=1;sN1.value=150;sN2.value=100;document.getElementById('vN1').textContent='1.50';document.getElementById('vN2').textContent='1.00'};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H/2;
+// media
+X.fillStyle='rgba(6,182,212,0.03)';X.fillRect(0,0,W,cy);
+X.fillStyle='rgba(6,182,212,0.08)';X.fillRect(0,cy,W,cy);
+// boundary
+X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=2;X.beginPath();X.moveTo(0,cy);X.lineTo(W,cy);X.stroke();
+// normal (dashed)
+X.setLineDash([5,5]);X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=1;
+X.beginPath();X.moveTo(cx,cy-H*0.4);X.lineTo(cx,cy+H*0.4);X.stroke();X.setLineDash([]);
+// labels
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';X.textAlign='center';
+X.fillText('n₁ = '+n1.toFixed(2),W*0.15,cy-20);
+X.fillText('n₂ = '+n2.toFixed(2),W*0.15,cy+30);
+X.fillText('Normal',cx+30,cy-H*0.35);
+const rad=incAngle*Math.PI/180;
+const rayLen=200;
+// incident ray
+const ix=cx-Math.sin(rad)*rayLen,iy=cy-Math.cos(rad)*rayLen;
+X.beginPath();X.moveTo(ix,iy);X.lineTo(cx,cy);
+X.strokeStyle='rgba(253,224,71,0.8)';X.lineWidth=2.5;X.stroke();
+// arrowhead
+X.fillStyle='rgba(253,224,71,0.8)';
+const ia=Math.atan2(cy-iy,cx-ix);
+X.save();X.translate(cx-Math.cos(ia)*20,cy-Math.sin(ia)*20);X.rotate(ia);
+X.beginPath();X.moveTo(0,0);X.lineTo(-8,-4);X.lineTo(-8,4);X.closePath();X.fill();X.restore();
+// reflected ray
+const rx=cx+Math.sin(rad)*rayLen,ry=cy-Math.cos(rad)*rayLen;
+X.beginPath();X.moveTo(cx,cy);X.lineTo(rx,ry);
+X.strokeStyle='rgba(139,92,246,0.6)';X.lineWidth=2;X.stroke();
+// refracted ray (Snell's law)
+const sinR=n1*Math.sin(rad)/n2;
+const tir=Math.abs(sinR)>1;
+const critAngle=n1>n2?Math.asin(n2/n1)*180/Math.PI:90;
+if(!tir){
+const refRad=Math.asin(sinR);
+const refAngle=refRad*180/Math.PI;
+const tx=cx+Math.sin(refRad)*rayLen,ty=cy+Math.cos(refRad)*rayLen;
+X.beginPath();X.moveTo(cx,cy);X.lineTo(tx,ty);
+X.strokeStyle='rgba(6,182,212,0.8)';X.lineWidth=2.5;X.stroke();
+// angle arcs
+X.beginPath();X.arc(cx,cy,40,Math.PI*1.5-rad,Math.PI*1.5);X.strokeStyle='rgba(253,224,71,0.4)';X.lineWidth=1.5;X.stroke();
+X.beginPath();X.arc(cx,cy,35,Math.PI*0.5,Math.PI*0.5+refRad);X.strokeStyle='rgba(6,182,212,0.4)';X.stroke();
+X.fillStyle='rgba(253,224,71,0.6)';X.font='10px system-ui';X.fillText('θ₁='+incAngle+'°',cx-60,cy-45);
+X.fillStyle='rgba(6,182,212,0.6)';X.fillText('θ₂='+refAngle.toFixed(1)+'°',cx+15,cy+55);
+document.getElementById('readings').innerHTML=
+'Incident angle θ₁: <span class="val">'+incAngle+'</span>°<br>'+
+'Refracted angle θ₂: <span class="val">'+refAngle.toFixed(1)+'</span>°<br>'+
+'n₁: <span class="val">'+n1.toFixed(2)+'</span> | n₂: <span class="val">'+n2.toFixed(2)+'</span><br>'+
+(n1>n2?'Critical angle: <span class="val">'+critAngle.toFixed(1)+'</span>°<br>':'')+
+'n₁sinθ₁ = <span class="val">'+(n1*Math.sin(rad)).toFixed(3)+'</span><br>'+
+'n₂sinθ₂ = <span class="val">'+(n2*Math.sin(refRad)).toFixed(3)+'</span>';
+}else{
+X.fillStyle='rgba(239,68,68,0.8)';X.font='bold 12px system-ui';
+X.fillText('Total Internal Reflection!',cx,cy+60);
+X.fillStyle='rgba(255,255,255,0.3)';X.font='10px system-ui';
+X.fillText('θ > θc ('+critAngle.toFixed(1)+'°)',cx,cy+80);
+document.getElementById('readings').innerHTML=
+'<span style="color:#ef4444;font-weight:700">TOTAL INTERNAL REFLECTION</span><br><br>'+
+'Incident angle: <span class="val">'+incAngle+'</span>° > Critical angle: <span class="val">'+critAngle.toFixed(1)+'</span>°<br>'+
+'All light reflected — none refracted';
+}
+X.textAlign='left';
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){incAngle=30;n1=1;n2=1.5;sA.value=30;sN1.value=100;sN2.value=150}
+});
+<\/script></body></html>`;
+
+// ── Magnetic Fields ────────────────────────────────────────────────────────
+const MAGNETIC_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block;cursor:grab}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.5);color:#ef4444}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#ef4444;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Configuration</div>
+<button id="bBar" class="active">Bar Magnet</button>
+<button id="bTwo">Two Magnets</button>
+<button id="bSolenoid">Solenoid</button>
+</div>
+<div class="sec">
+<div class="sec-title">Display</div>
+<button id="bCompass">Toggle Compass Needles</button>
+<button id="bField">Toggle Field Lines</button>
+</div>
+<div class="sec">
+<div class="sec-title">Info</div>
+<div class="info" id="info">Drag magnets to reposition them</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Magnetic field lines:</b><br>
+• Run from N to S outside magnet<br>
+• Never cross<br>
+• Closer lines = stronger field<br><br>
+<b>Bar magnet:</b> dipole field<br>
+<b>Solenoid:</b> uniform field inside (like a bar magnet)<br><br>
+Like poles repel, unlike attract
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let config='bar',showCompass=true,showField=true;
+let magnets=[{x:0,y:0,angle:0}];
+let dragging=null,dragOff={x:0,y:0};
+document.getElementById('bBar').onclick=()=>{config='bar';magnets=[{x:0,y:0,angle:0}];setBtn('bBar')};
+document.getElementById('bTwo').onclick=()=>{config='two';magnets=[{x:-100,y:0,angle:0},{x:100,y:0,angle:Math.PI}];setBtn('bTwo')};
+document.getElementById('bSolenoid').onclick=()=>{config='solenoid';magnets=[{x:0,y:0,angle:0}];setBtn('bSolenoid')};
+document.getElementById('bCompass').onclick=()=>{showCompass=!showCompass};
+document.getElementById('bField').onclick=()=>{showField=!showField};
+function setBtn(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+C.onmousedown=e=>{
+const mx=e.offsetX-W*0.4,my=e.offsetY-H/2;
+for(const m of magnets){
+if(Math.hypot(mx-m.x,my-m.y)<50){dragging=m;dragOff={x:mx-m.x,y:my-m.y};return}
+}
+};
+C.onmousemove=e=>{if(dragging){dragging.x=e.offsetX-W*0.4-dragOff.x;dragging.y=e.offsetY-H/2-dragOff.y}};
+C.onmouseup=()=>{dragging=null};
+function fieldAt(px,py){
+let bx=0,by=0;
+magnets.forEach(m=>{
+const poles=[{x:m.x+Math.cos(m.angle)*30,y:m.y+Math.sin(m.angle)*30,s:1},
+{x:m.x-Math.cos(m.angle)*30,y:m.y-Math.sin(m.angle)*30,s:-1}];
+poles.forEach(p=>{
+const dx=px-p.x,dy=py-p.y;
+const r2=dx*dx+dy*dy+100;
+const r=Math.sqrt(r2);
+const B=p.s*3000/r2;
+bx+=B*dx/r;by+=B*dy/r;
+});
+});
+return{x:bx,y:by};
+}
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H/2;
+X.save();X.translate(cx,cy);
+// field lines
+if(showField){
+magnets.forEach(m=>{
+const nLines=12;
+for(let i=0;i<nLines;i++){
+const a=(i/nLines)*Math.PI*2;
+let lx=m.x+Math.cos(m.angle)*35+Math.cos(a)*5;
+let ly=m.y+Math.sin(m.angle)*35+Math.sin(a)*5;
+X.beginPath();X.moveTo(lx,ly);
+for(let s=0;s<200;s++){
+const f=fieldAt(lx,ly);
+const mag=Math.sqrt(f.x*f.x+f.y*f.y);
+if(mag<0.01)break;
+lx+=f.x/mag*4;ly+=f.y/mag*4;
+if(Math.abs(lx)>W*0.5||Math.abs(ly)>H*0.5)break;
+X.lineTo(lx,ly);
+}
+X.strokeStyle='rgba(239,68,68,0.2)';X.lineWidth=1;X.stroke();
+}
+});
+}
+// compass needles
+if(showCompass){
+const step=45;
+for(let y=-H*0.4;y<H*0.4;y+=step){
+for(let x=-W*0.35;x<W*0.35;x+=step){
+const f=fieldAt(x,y);
+const angle=Math.atan2(f.y,f.x);
+const mag=Math.min(1,Math.sqrt(f.x*f.x+f.y*f.y)*0.3);
+X.save();X.translate(x,y);X.rotate(angle);
+X.beginPath();X.moveTo(-8,0);X.lineTo(8,0);X.strokeStyle='rgba(255,255,255,'+mag*0.5+')';X.lineWidth=1.5;X.stroke();
+X.beginPath();X.moveTo(8,0);X.lineTo(4,-2);X.lineTo(4,2);X.closePath();X.fillStyle='rgba(239,68,68,'+mag*0.7+')';X.fill();
+X.restore();
+}}
+}
+// magnets
+magnets.forEach(m=>{
+if(config==='solenoid'){
+// draw solenoid (coil)
+X.save();X.translate(m.x,m.y);
+for(let i=0;i<10;i++){
+const sx=-50+i*10;
+X.beginPath();X.ellipse(sx,0,5,25,0,0,Math.PI*2);
+X.strokeStyle='rgba(245,158,11,0.4)';X.lineWidth=1.5;X.stroke();
+}
+X.fillStyle='#ef4444';X.font='bold 12px system-ui';X.textAlign='center';X.fillText('N',55,5);
+X.fillStyle='#3b82f6';X.fillText('S',-55,5);X.textAlign='left';
+X.restore();
+}else{
+X.save();X.translate(m.x,m.y);X.rotate(m.angle);
+// N pole
+X.fillStyle='rgba(239,68,68,0.5)';X.fillRect(0,-15,30,30);
+X.strokeStyle='rgba(239,68,68,0.7)';X.lineWidth=2;X.strokeRect(0,-15,30,30);
+X.fillStyle='#ef4444';X.font='bold 12px system-ui';X.textAlign='center';X.fillText('N',15,5);
+// S pole
+X.fillStyle='rgba(59,130,246,0.5)';X.fillRect(-30,-15,30,30);
+X.strokeStyle='rgba(59,130,246,0.7)';X.strokeRect(-30,-15,30,30);
+X.fillStyle='#3b82f6';X.fillText('S',-15,5);X.textAlign='left';
+X.restore();
+}
+});
+X.restore();
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){config='bar';magnets=[{x:0,y:0,angle:0}];setBtn('bBar')}
+});
+<\/script></body></html>`;
+
+// ── Logic Gates ──────────────────────────────────────────��─────────────────
+const LOGIC_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block;cursor:pointer}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(34,197,94,0.25);border-color:rgba(34,197,94,0.5);color:#22c55e}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#22c55e;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Gate Type</div>
+<button id="gAND" class="active">AND</button>
+<button id="gOR">OR</button>
+<button id="gNOT">NOT</button>
+<button id="gNAND">NAND</button>
+<button id="gNOR">NOR</button>
+<button id="gXOR">XOR</button>
+</div>
+<div class="sec">
+<div class="sec-title">Click Inputs to Toggle</div>
+<div class="info" id="info">Click input switches on the canvas</div>
+</div>
+<div class="sec">
+<div class="sec-title">Truth Table</div>
+<div class="info" id="truth" style="font-family:monospace;font-size:10px"></div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>AND:</b> output 1 only if ALL inputs are 1<br>
+<b>OR:</b> output 1 if ANY input is 1<br>
+<b>NOT:</b> inverts the input<br>
+<b>NAND:</b> NOT AND<br>
+<b>NOR:</b> NOT OR<br>
+<b>XOR:</b> output 1 if inputs differ
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let gate='AND',inputA=0,inputB=0;
+const gates={AND:(a,b)=>a&b,OR:(a,b)=>a|b,NOT:(a)=>a?0:1,NAND:(a,b)=>(a&b)?0:1,NOR:(a,b)=>(a|b)?0:1,XOR:(a,b)=>a^b};
+['AND','OR','NOT','NAND','NOR','XOR'].forEach(g=>{
+document.getElementById('g'+g).onclick=()=>{gate=g;document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById('g'+g).classList.add('active');updateTruth()}
+});
+function updateTruth(){
+const isNot=gate==='NOT';
+let html='<b>'+gate+' Gate</b><br>─────────────<br>';
+if(isNot){
+html+='A | Q<br>──┼──<br>';
+html+='0 | '+gates[gate](0)+'<br>';
+html+='1 | '+gates[gate](1)+'<br>';
+}else{
+html+='A B | Q<br>────┼──<br>';
+for(let a=0;a<=1;a++)for(let b=0;b<=1;b++){
+const q=gates[gate](a,b);
+const cur=(a===inputA&&b===inputB)?'◀':'';
+html+=a+' '+b+' | '+q+' '+cur+'<br>';
+}
+}
+document.getElementById('truth').innerHTML=html;
+}
+updateTruth();
+C.onclick=e=>{
+const mx=e.offsetX,my=e.offsetY;
+const cx=W*0.4,cy=H/2;
+// input A
+if(Math.hypot(mx-(cx-160),my-(cy-40))<20){inputA=inputA?0:1;updateTruth()}
+// input B
+if(gate!=='NOT'&&Math.hypot(mx-(cx-160),my-(cy+40))<20){inputB=inputB?0:1;updateTruth()}
+};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H/2;
+const isNot=gate==='NOT';
+const output=isNot?gates[gate](inputA):gates[gate](inputA,inputB);
+// input switches
+function drawSwitch(x,y,val,label){
+X.beginPath();X.arc(x,y,18,0,Math.PI*2);
+X.fillStyle=val?'rgba(34,197,94,0.5)':'rgba(100,100,100,0.3)';X.fill();
+X.strokeStyle=val?'#22c55e':'rgba(255,255,255,0.3)';X.lineWidth=2;X.stroke();
+X.fillStyle='#fff';X.font='bold 14px system-ui';X.textAlign='center';X.fillText(val,x,y+5);
+X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';X.fillText(label,x,y-25);
+}
+drawSwitch(cx-160,cy-40,inputA,'Input A');
+if(!isNot)drawSwitch(cx-160,cy+40,inputB,'Input B');
+// wires to gate
+X.strokeStyle=inputA?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.15)';X.lineWidth=2;
+X.beginPath();X.moveTo(cx-142,cy-40);X.lineTo(cx-50,cy-(isNot?0:30));X.stroke();
+if(!isNot){
+X.strokeStyle=inputB?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.15)';
+X.beginPath();X.moveTo(cx-142,cy+40);X.lineTo(cx-50,cy+30);X.stroke();
+}
+// gate shape
+X.fillStyle='rgba(255,255,255,0.06)';X.strokeStyle='rgba(255,255,255,0.4)';X.lineWidth=2;
+if(gate==='AND'||gate==='NAND'){
+X.beginPath();X.moveTo(cx-50,cy-40);X.lineTo(cx-50,cy+40);X.arc(cx-5,cy,40,Math.PI*0.5,Math.PI*-0.5,true);X.closePath();
+}else if(gate==='OR'||gate==='NOR'||gate==='XOR'){
+X.beginPath();X.moveTo(cx-50,cy-40);X.quadraticCurveTo(cx-20,cy,cx-50,cy+40);
+X.quadraticCurveTo(cx+20,cy+40,cx+40,cy);X.quadraticCurveTo(cx+20,cy-40,cx-50,cy-40);X.closePath();
+}else{
+X.beginPath();X.moveTo(cx-40,cy-30);X.lineTo(cx+10,cy);X.lineTo(cx-40,cy+30);X.closePath();
+}
+X.fill();X.stroke();
+// NOT bubble
+if(gate==='NOT'||gate==='NAND'||gate==='NOR'){
+const bx=gate==='NOT'?cx+15:cx+40;
+X.beginPath();X.arc(bx+5,cy,6,0,Math.PI*2);X.fillStyle='rgba(0,0,0,0.5)';X.fill();X.strokeStyle='rgba(255,255,255,0.4)';X.lineWidth=2;X.stroke();
+}
+// XOR extra curve
+if(gate==='XOR'){
+X.beginPath();X.moveTo(cx-58,cy-40);X.quadraticCurveTo(cx-28,cy,cx-58,cy+40);
+X.strokeStyle='rgba(255,255,255,0.4)';X.lineWidth=2;X.stroke();
+}
+// gate label
+X.fillStyle='rgba(255,255,255,0.7)';X.font='bold 11px system-ui';X.textAlign='center';
+X.fillText(gate,cx-5,cy+4);
+// output wire
+const outX=gate==='NOT'?cx+26:(gate==='NAND'||gate==='NOR')?cx+51:cx+40;
+X.strokeStyle=output?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.15)';X.lineWidth=2;
+X.beginPath();X.moveTo(outX,cy);X.lineTo(cx+140,cy);X.stroke();
+// output indicator
+X.beginPath();X.arc(cx+160,cy,18,0,Math.PI*2);
+X.fillStyle=output?'rgba(34,197,94,0.5)':'rgba(100,100,100,0.3)';X.fill();
+X.strokeStyle=output?'#22c55e':'rgba(255,255,255,0.3)';X.lineWidth=2;X.stroke();
+X.fillStyle='#fff';X.font='bold 14px system-ui';X.fillText(output,cx+160,cy+5);
+X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';X.fillText('Output Q',cx+160,cy-25);
+X.textAlign='left';
+document.getElementById('info').innerHTML='Gate: <span class="val">'+gate+'</span><br>Input A: <span class="val">'+inputA+'</span>'+(isNot?'':'<br>Input B: <span class="val">'+inputB+'</span>')+'<br>Output: <span class="val" style="font-size:14px">'+output+'</span>';
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){inputA=0;inputB=0;gate='AND';setBtn=()=>{};document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById('gAND').classList.add('active');updateTruth()}
+});
+<\/script></body></html>`;
+
+// ── Gravity & Orbits ───────────────────────────────────────���───────────────
+const GRAVITY_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#8b5cf6}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#8b5cf6;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Central Body</div>
+<label>Mass <span id="vM">500</span></label>
+<input type="range" id="sM" min="100" max="2000" value="500" step="50">
+</div>
+<div class="sec">
+<div class="sec-title">Satellite</div>
+<label>Initial velocity <span id="vV">3.0</span></label>
+<input type="range" id="sV" min="5" max="60" value="30" step="1">
+<label>Distance <span id="vD">150</span> px</label>
+<input type="range" id="sD" min="80" max="300" value="150" step="5">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bLaunch">Launch</button>
+<button id="bReset">Reset</button>
+<button id="bTrail">Toggle Trail</button>
+<button id="bVectors">Toggle Vectors</button>
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Set parameters and launch</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Newton's Law of Gravitation:</b><br>
+F = GMm/r²<br><br>
+<b>Orbital velocity:</b><br>
+v = √(GM/r)<br><br>
+Too slow → spiral in<br>
+Just right → circular orbit<br>
+Too fast → escape!<br><br>
+<b>Escape velocity:</b> v_e = √(2GM/r)
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let M=500,initV=3,initD=150,running=false;
+let sat={x:0,y:0,vx:0,vy:0},trail=[],showTrail=true,showVectors=true;
+const sM=document.getElementById('sM'),sV=document.getElementById('sV'),sD=document.getElementById('sD');
+sM.oninput=()=>{M=+sM.value;document.getElementById('vM').textContent=M};
+sV.oninput=()=>{initV=(+sV.value)/10;document.getElementById('vV').textContent=initV.toFixed(1)};
+sD.oninput=()=>{initD=+sD.value;document.getElementById('vD').textContent=initD};
+document.getElementById('bLaunch').onclick=()=>{sat={x:initD,y:0,vx:0,vy:initV};running=true;trail=[]};
+document.getElementById('bReset').onclick=()=>{running=false;sat={x:initD,y:0,vx:0,vy:0};trail=[]};
+document.getElementById('bTrail').onclick=()=>{showTrail=!showTrail};
+document.getElementById('bVectors').onclick=()=>{showVectors=!showVectors};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H/2;
+// stars
+for(let i=0;i<30;i++){
+X.beginPath();X.arc((i*137)%W,(i*97)%H,0.5+Math.random(),0,Math.PI*2);
+X.fillStyle='rgba(255,255,255,0.2)';X.fill();
+}
+// central body
+const bodyR=15+M*0.01;
+const grad=X.createRadialGradient(cx,cy,0,cx,cy,bodyR);
+grad.addColorStop(0,'rgba(253,224,71,0.8)');grad.addColorStop(1,'rgba(245,158,11,0.2)');
+X.fillStyle=grad;X.beginPath();X.arc(cx,cy,bodyR,0,Math.PI*2);X.fill();
+X.strokeStyle='rgba(245,158,11,0.5)';X.lineWidth=1;X.stroke();
+// trail
+if(showTrail&&trail.length>1){
+X.beginPath();trail.forEach((p,i)=>{
+const px=cx+p.x,py=cy+p.y;
+i===0?X.moveTo(px,py):X.lineTo(px,py);
+});
+X.strokeStyle='rgba(139,92,246,0.3)';X.lineWidth=1.5;X.stroke();
+}
+// satellite
+const sx=cx+sat.x,sy=cy+sat.y;
+X.beginPath();X.arc(sx,sy,6,0,Math.PI*2);
+X.fillStyle='rgba(139,92,246,0.8)';X.fill();
+// vectors
+if(showVectors&&running){
+// velocity
+X.beginPath();X.moveTo(sx,sy);X.lineTo(sx+sat.vx*10,sy+sat.vy*10);
+X.strokeStyle='rgba(16,185,129,0.7)';X.lineWidth=2;X.stroke();
+// gravity direction
+const r=Math.hypot(sat.x,sat.y);
+if(r>1){
+const gx=-sat.x/r*20,gy=-sat.y/r*20;
+X.beginPath();X.moveTo(sx,sy);X.lineTo(sx+gx,sy+gy);
+X.strokeStyle='rgba(239,68,68,0.7)';X.lineWidth=2;X.stroke();
+}
+}
+const r=Math.hypot(sat.x,sat.y);
+const v=Math.hypot(sat.vx,sat.vy);
+const orbitalV=Math.sqrt(M/Math.max(r,1));
+const escapeV=orbitalV*Math.SQRT2;
+document.getElementById('readings').innerHTML=
+'Distance: <span class="val">'+r.toFixed(1)+'</span> px<br>'+
+'Speed: <span class="val">'+v.toFixed(2)+'</span><br>'+
+'Orbital v: <span class="val">'+orbitalV.toFixed(2)+'</span><br>'+
+'Escape v: <span class="val">'+escapeV.toFixed(2)+'</span><br>'+
+(v>escapeV?'<span style="color:#f59e0b">Escaping!</span>':v>orbitalV*1.1?'<span style="color:#8b5cf6">Elliptical orbit</span>':'<span style="color:#10b981">~Circular orbit</span>');
+}
+function loop(){
+requestAnimationFrame(loop);
+if(running){
+const r=Math.hypot(sat.x,sat.y);
+if(r<bodyR){running=false;return}
+if(r>W){running=false;return}
+const F=M/(r*r+1);
+sat.vx-=F*sat.x/r*0.016;
+sat.vy-=F*sat.y/r*0.016;
+sat.x+=sat.vx;sat.y+=sat.vy;
+trail.push({x:sat.x,y:sat.y});
+if(trail.length>500)trail.shift();
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){running=false;sat={x:initD,y:0,vx:0,vy:0};trail=[]}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -7058,6 +7644,54 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Photosynthesis', 'Respiration', 'ATP', 'Chloroplast'],
         instructions: "Switch between Photosynthesis, Respiration, or Both (cycle view). Adjust light intensity, CO₂ level, and temperature to see how they affect the rate. In cycle view, see how the two processes are reverse reactions that depend on each other.",
         html_code: PHOTO_HTML,
+      },
+      {
+        id: 'reflection-refraction',
+        title: 'Reflection & Refraction',
+        description: "Snell's Law with adjustable angles and refractive indices — see total internal reflection and critical angles.",
+        icon: 'Eye',
+        gradient: 'from-cyan-500 to-teal-500',
+        glowColor: 'rgba(6,182,212,0.35)',
+        difficulty: 'Intermediate',
+        tags: ["Snell's Law", 'Refraction', 'TIR', 'Critical Angle'],
+        instructions: "Adjust the incident angle and refractive indices of both media. Switch presets for Air→Glass, Air→Water, or Glass→Air. Watch the refracted ray bend and the angle calculations update. Push Glass→Air past the critical angle to see total internal reflection.",
+        html_code: REFRACTION_HTML,
+      },
+      {
+        id: 'magnetic-fields',
+        title: 'Magnetic Fields',
+        description: 'Visualise field lines around bar magnets, pairs, and solenoids with compass needles showing field direction.',
+        icon: 'Hexagon',
+        gradient: 'from-red-500 to-rose-500',
+        glowColor: 'rgba(239,68,68,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Magnets', 'Field Lines', 'Solenoid', 'Compass'],
+        instructions: "Choose between a single bar magnet, two magnets, or a solenoid. Drag magnets to reposition. Toggle compass needles to see field direction at each point. Toggle field lines to see the classic N→S field pattern.",
+        html_code: MAGNETIC_HTML,
+      },
+      {
+        id: 'logic-gates',
+        title: 'Logic Gates',
+        description: 'Interactive AND, OR, NOT, NAND, NOR, XOR gates — click inputs to toggle and see truth tables update live.',
+        icon: 'Zap',
+        gradient: 'from-green-500 to-emerald-500',
+        glowColor: 'rgba(34,197,94,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Logic', 'Boolean', 'Gates', 'Digital'],
+        instructions: "Select a gate type from the right panel. Click the input switches (A, B) on the canvas to toggle between 0 and 1. Watch the output change. The truth table highlights the current input combination.",
+        html_code: LOGIC_HTML,
+      },
+      {
+        id: 'gravity-orbits',
+        title: 'Gravity & Orbits',
+        description: 'Launch a satellite around a massive body — explore circular, elliptical, and escape trajectories with Newton\'s gravity.',
+        icon: 'Atom',
+        gradient: 'from-violet-500 to-indigo-500',
+        glowColor: 'rgba(139,92,246,0.35)',
+        difficulty: 'Advanced',
+        tags: ['Gravity', 'Orbits', 'Escape Velocity', 'F=GMm/r²'],
+        instructions: "Set the central body mass, satellite velocity, and initial distance. Click Launch. Too slow = crashes; just right = circular orbit; too fast = escape. Toggle trail and vectors to see the velocity (green) and gravity (red) arrows.",
+        html_code: GRAVITY_HTML,
       },
     ],
   },
