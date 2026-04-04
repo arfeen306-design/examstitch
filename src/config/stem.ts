@@ -33,20 +33,22 @@ const GEOMETRY_HTML = `<!DOCTYPE html>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;user-select:none}
 canvas{display:block;cursor:grab}
+canvas.paused{cursor:pointer}
 canvas.drawing{cursor:crosshair}
-canvas:active{cursor:grabbing}
-#top-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;z-index:20;background:linear-gradient(180deg,rgba(10,10,26,0.85),transparent);pointer-events:none}
+canvas.doodling{cursor:crosshair}
+#top-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;z-index:20;background:linear-gradient(180deg,rgba(10,10,26,0.9),transparent);pointer-events:none}
 #top-bar>*{pointer-events:auto}
-#shape-name{color:#fff;font-size:15px;font-weight:700;letter-spacing:0.5px}
-#measurements{color:rgba(255,255,255,0.5);font-size:11px;line-height:1.6}
+#shape-name{color:#fff;font-size:16px;font-weight:700;letter-spacing:0.5px}
+#measurements{color:rgba(255,255,255,0.55);font-size:11px;line-height:1.6}
 #controls{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:20;flex-wrap:wrap;justify-content:center;max-width:95vw}
-.cat-group{display:flex;gap:4px;padding:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px}
-.cat-label{position:absolute;top:-14px;left:8px;font-size:8px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.cat-group{display:flex;gap:4px;padding:5px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px}
+.cat-label{position:absolute;top:-14px;left:8px;font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;font-weight:700}
 .cat-wrap{position:relative;padding-top:10px}
-button{padding:6px 12px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border-radius:7px;cursor:pointer;font-size:11px;font-weight:500;transition:all .2s;white-space:nowrap}
-button:hover{background:rgba(255,255,255,0.12);color:#fff}
-button.active{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd}
-button.draw-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,0.5);color:#6ee7b7}
+button{padding:7px 13px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;white-space:nowrap}
+button:hover{background:rgba(255,255,255,0.14);color:#fff;transform:translateY(-1px)}
+button.active{background:rgba(59,130,246,0.35);border-color:rgba(59,130,246,0.6);color:#93c5fd;box-shadow:0 0 12px rgba(59,130,246,0.2)}
+button.tool-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,0.5);color:#6ee7b7;box-shadow:0 0 12px rgba(16,185,129,0.2)}
+#pause-badge{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.12);font-size:16px;pointer-events:none;transition:opacity .3s;z-index:5;background:rgba(255,255,255,0.05);padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);opacity:0}
 #draw-hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.15);font-size:14px;pointer-events:none;transition:opacity .3s;z-index:5}
 </style></head><body>
 <canvas id="c"></canvas>
@@ -55,9 +57,10 @@ button.draw-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,
     <div id="shape-name">Cube</div>
     <div id="measurements"></div>
   </div>
-  <div id="draw-status" style="font-size:11px;color:rgba(255,255,255,0.4)">Drag to rotate · Scroll to zoom</div>
+  <div id="draw-status" style="font-size:11px;color:rgba(255,255,255,0.4)">Click to pause · Drag to rotate · Scroll to zoom</div>
 </div>
 <div id="draw-hint"></div>
+<div id="pause-badge">PAUSED — click to resume</div>
 <div id="controls">
   <div class="cat-wrap"><span class="cat-label">Basic</span><div class="cat-group">
     <button onclick="set('cube')" id="b-cube" class="active">Cube</button>
@@ -83,26 +86,49 @@ button.draw-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,
   <div class="cat-wrap"><span class="cat-label">Tools</span><div class="cat-group">
     <button onclick="toggleWire()" id="b-wire">Wireframe</button>
     <button onclick="toggleDraw()" id="b-draw">Draw Lines</button>
-    <button onclick="clearLines()" id="b-clear">Clear Lines</button>
+    <button onclick="toggleDoodle()" id="b-doodle">Doodle</button>
+    <button onclick="clearAll()" id="b-clear">Clear All</button>
   </div></div>
 </div>
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
-let W,H,shape='cube',wire=false,drawMode=false,rotX=0.4,rotY=0.6,zoom=220,drag=false,lx,ly;
+let W,H,shape='cube',wire=false,drawMode=false,doodleMode=false,paused=false;
+let rotX=0.4,rotY=0.6,zoom=220,drag=false,lx,ly,didDrag=false;
 let userLines=[],selectedDot=-1,hoverDot=-1;
+let doodleStrokes=[],currentStroke=null,doodleColor='#10b981',doodleWidth=3;
 const PI=Math.PI,cos=Math.cos,sin=Math.sin;
+const isNet=()=>shape.startsWith('net_');
 
 function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
 resize();addEventListener('resize',resize);
 
 function proj(x,y,z){
+  if(isNet()){
+    const s=zoom;
+    return{x:x*s+W/2,y:-y*s+H/2,z:0,s};
+  }
   const cx=cos(rotX),sx=sin(rotX),cy=cos(rotY),sy=sin(rotY);
   const y1=y*cx-z*sx,z1=y*sx+z*cx,x1=x*cy+z1*sy,z2=-x*sy+z1*cy;
   const s=zoom/(z2+5);
   return{x:x1*s+W/2,y:y1*s+H/2,z:z2,s};
 }
 
-/* ── Shape generators return {v:vertices, e:edges, f:faces} ── */
+/* ── Lighting for faces ── */
+function faceNormal(verts,face){
+  if(face.length<3)return[0,0,1];
+  const a=verts[face[0]],b=verts[face[1]],cc=verts[face[2]];
+  const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[cc[0]-a[0],cc[1]-a[1],cc[2]-a[2]];
+  const n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+  const l=Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2])||1;
+  return[n[0]/l,n[1]/l,n[2]/l];
+}
+function faceBrightness(n){
+  const light=[0.3,0.6,0.7];const ll=Math.sqrt(light[0]*light[0]+light[1]*light[1]+light[2]*light[2]);
+  const d=Math.abs(n[0]*light[0]+n[1]*light[1]+n[2]*light[2])/ll;
+  return 0.25+0.75*d;
+}
+
+/* ── Shape generators ── */
 function mkCube(sx,sy,sz){
   sx=sx||1;sy=sy||1;sz=sz||1;
   const v=[[-sx,-sy,-sz],[-sx,-sy,sz],[-sx,sy,-sz],[-sx,sy,sz],[sx,-sy,-sz],[sx,-sy,sz],[sx,sy,-sz],[sx,sy,sz]];
@@ -110,52 +136,110 @@ function mkCube(sx,sy,sz){
   const f=[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]];
   return{v,e,f};
 }
-function mkSphere(r,n,m){r=r||1;n=n||20;m=m||14;const v=[];for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*i/m,p=2*PI*j/n;v.push([r*sin(t)*cos(p),r*cos(t),r*sin(t)*sin(p)]);}const e=[];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}return{v,e,f:[]};}
-function mkCone(r,h,n){r=r||1;h=h||2;n=n||24;const v=[[0,h/2,0]];for(let i=0;i<n;i++){const a=2*PI*i/n;v.push([r*cos(a),-h/2,r*sin(a)]);}const e=[];for(let i=1;i<=n;i++){e.push([0,i]);e.push([i,i%n+1]);}const f=[];for(let i=1;i<=n;i++)f.push([0,i,i%n+1]);return{v,e,f};}
-function mkCylinder(r,h,n){r=r||0.8;h=h||2;n=n||24;const v=[];for(let i=0;i<n;i++){const a=2*PI*i/n;v.push([r*cos(a),h/2,r*sin(a)]);v.push([r*cos(a),-h/2,r*sin(a)]);}const e=[];for(let i=0;i<n;i++){const t=i*2,tn=((i+1)%n)*2;e.push([t,t+1]);e.push([t,tn]);e.push([t+1,tn+1]);}return{v,e,f:[]};}
+function mkSphere(r,n,m){r=r||1;n=n||24;m=m||16;const v=[];for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*i/m,p=2*PI*j/n;v.push([r*sin(t)*cos(p),r*cos(t),r*sin(t)*sin(p)]);}const e=[];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}return{v,e,f:[]};}
+function mkCone(r,h,n){r=r||1;h=h||2;n=n||24;const v=[[0,h/2,0]];for(let i=0;i<n;i++){const a=2*PI*i/n;v.push([r*cos(a),-h/2,r*sin(a)]);}const e=[];for(let i=1;i<=n;i++){e.push([0,i]);e.push([i,i%n+1]);}const f=[];for(let i=1;i<=n;i++)f.push([0,i,i%n+1]);const base=[];for(let i=n;i>=1;i--)base.push(i);f.push(base);return{v,e,f};}
+function mkCylinder(r,h,n){r=r||0.8;h=h||2;n=n||24;const v=[];for(let i=0;i<n;i++){const a=2*PI*i/n;v.push([r*cos(a),h/2,r*sin(a)]);v.push([r*cos(a),-h/2,r*sin(a)]);}const e=[];for(let i=0;i<n;i++){const t=i*2,tn=((i+1)%n)*2;e.push([t,t+1]);e.push([t,tn]);e.push([t+1,tn+1]);}const f=[];for(let i=0;i<n;i++){const t=i*2,tn=((i+1)%n)*2;f.push([t,tn,tn+1,t+1]);}return{v,e,f};}
 function mkPyramid(){return{v:[[0,1.2,0],[-1,-0.8,-1],[1,-0.8,-1],[1,-0.8,1],[-1,-0.8,1]],e:[[0,1],[0,2],[0,3],[0,4],[1,2],[2,3],[3,4],[4,1]],f:[[0,1,2],[0,2,3],[0,3,4],[0,4,1],[1,2,3,4]]};}
 function mkTorus(R,r,n,m){R=R||1;r=r||0.35;n=n||28;m=m||14;const v=[];for(let i=0;i<n;i++)for(let j=0;j<m;j++){const t=2*PI*i/n,p=2*PI*j/m;v.push([(R+r*cos(p))*cos(t),(R+r*cos(p))*sin(t),r*sin(p)]);}const e=[];for(let i=0;i<n;i++)for(let j=0;j<m;j++){const idx=i*m+j;e.push([idx,i*m+(j+1)%m]);e.push([idx,((i+1)%n)*m+j]);}return{v,e,f:[]};}
 function mkHemisphere(r,n,m){r=r||1;n=n||20;m=m||10;const v=[];for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*0.5*i/m,p=2*PI*j/n;v.push([r*sin(t)*cos(p),r*cos(t),r*sin(t)*sin(p)]);}const e=[];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}for(let j=0;j<n;j++){const bi=m*w+j;e.push([bi,m*w+j+1]);}return{v,e,f:[]};}
 
 /* Compound shapes */
-function mkPyrCube(){const c=mkCube(1,0.8,1);const py=[[0,1.8,0],[-1,0.8,-1],[1,0.8,-1],[1,0.8,1],[-1,0.8,1]];const off=c.v.length;const v=[...c.v,...py];const e=[...c.e,[off,off+1],[off,off+2],[off,off+3],[off,off+4],[off+1,off+2],[off+2,off+3],[off+3,off+4],[off+4,off+1]];return{v,e,f:[]};}
-function mkConeCyl(){const cy=mkCylinder(0.8,1.4,24);const off=cy.v.length;const cv=[[0,1.4,0]];for(let i=0;i<24;i++){const a=2*PI*i/24;cv.push([0.8*cos(a),0.7,0.8*sin(a)]);}const v=[...cy.v,...cv];const e=[...cy.e];for(let i=1;i<=24;i++){e.push([off,off+i]);e.push([off+i,off+(i%24)+1]);}return{v,e,f:[]};}
-function mkCylHemi(){const cy=mkCylinder(0.8,1.4,24);const off=cy.v.length;const hv=[];const n=20,m=8;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*0.5*i/m,p=2*PI*j/n;hv.push([0.8*sin(t)*cos(p),0.7+0.8*cos(t),0.8*sin(t)*sin(p)]);}const v=[...cy.v,...hv];const e=[...cy.e];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=off+i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}return{v,e,f:[]};}
+function mkPyrCube(){const cb=mkCube(1,0.8,1);const py=[[0,1.8,0],[-1,0.8,-1],[1,0.8,-1],[1,0.8,1],[-1,0.8,1]];const off=cb.v.length;const v=[...cb.v,...py];const e=[...cb.e,[off,off+1],[off,off+2],[off,off+3],[off,off+4],[off+1,off+2],[off+2,off+3],[off+3,off+4],[off+4,off+1]];const f=[...cb.f,[off,off+1,off+2],[off,off+2,off+3],[off,off+3,off+4],[off,off+4,off+1]];return{v,e,f};}
+function mkConeCyl(){const cy=mkCylinder(0.8,1.4,24);const off=cy.v.length;const cv=[[0,1.4,0]];for(let i=0;i<24;i++){const a=2*PI*i/24;cv.push([0.8*cos(a),0.7,0.8*sin(a)]);}const v=[...cy.v,...cv];const e=[...cy.e];const f=[...cy.f];for(let i=1;i<=24;i++){e.push([off,off+i]);e.push([off+i,off+(i%24)+1]);f.push([off,off+i,off+(i%24)+1]);}return{v,e,f};}
+function mkCylHemi(){const cy=mkCylinder(0.8,1.4,24);const off=cy.v.length;const hv=[];const n=20,m=8;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const t=PI*0.5*i/m,p=2*PI*j/n;hv.push([0.8*sin(t)*cos(p),0.7+0.8*cos(t),0.8*sin(t)*sin(p)]);}const v=[...cy.v,...hv];const e=[...cy.e];const f=[...cy.f];const w=n+1;for(let i=0;i<=m;i++)for(let j=0;j<=n;j++){const idx=off+i*w+j;if(j<n)e.push([idx,idx+1]);if(i<m)e.push([idx,idx+w]);}return{v,e,f};}
 
-/* Nets (2D laid flat, z=0) */
-function mkNetCube(){const s=1;const v=[];const e=[];const faces=[[0,0],[1,0],[2,0],[3,0],[1,-1],[1,1]];faces.forEach(([fx,fy])=>{const bx=fx*2*s,by=fy*2*s;const bi=v.length;v.push([bx-s,by-s,0],[bx+s,by-s,0],[bx+s,by+s,0],[bx-s,by+s,0]);e.push([bi,bi+1],[bi+1,bi+2],[bi+2,bi+3],[bi+3,bi]);});return{v,e,f:[]};}
-function mkNetCyl(){const v=[];const e=[];const w=3,h=2;const bi=v.length;v.push([-w,-h,0],[w,-h,0],[w,h,0],[-w,h,0]);e.push([0,1],[1,2],[2,3],[3,0]);const n=24;for(let ci=0;ci<2;ci++){const cx=0,cy=ci===0?-h-1.2:h+1.2;const off=v.length;for(let i=0;i<=n;i++){const a=2*PI*i/n;v.push([cx+0.9*cos(a),cy+0.9*sin(a),0]);}for(let i=0;i<n;i++)e.push([off+i,off+i+1]);}return{v,e,f:[]};}
-function mkNetCone(){const v=[];const e=[];const n=36;const R=2.5,off=v.length;v.push([0,0.5,0]);for(let i=0;i<=n;i++){const a=-PI*0.6+PI*1.2*i/n;v.push([R*cos(a),0.5+R*sin(a),0]);}for(let i=0;i<n;i++){e.push([0,off+1+i]);e.push([off+1+i,off+2+i]);}const boff=v.length;const cx=0,cy=-1.5;for(let i=0;i<=24;i++){const a=2*PI*i/24;v.push([cx+0.8*cos(a),cy+0.8*sin(a),0]);}for(let i=0;i<24;i++)e.push([boff+i,boff+i+1]);return{v,e,f:[]};}
-function mkNetPyr(){const v=[];const e=[];const s=1;v.push([-s,-s,0],[s,-s,0],[s,s,0],[-s,s,0]);e.push([0,1],[1,2],[2,3],[3,0]);const tris=[[0,1,0,-2],[1,2,2,0],[2,3,0,2],[3,0,-2,0]];tris.forEach(([a,b,dx,dy])=>{const mx=(v[a][0]+v[b][0])/2+dx*0.8,my=(v[a][1]+v[b][1])/2+dy*0.8;const ti=v.length;v.push([mx,my,0]);e.push([a,ti],[b,ti]);});return{v,e,f:[]};}
+/* Nets (2D flat — filled faces with colour) */
+function mkNetCube(){const s=1;const v=[],e=[],f=[];
+const faces=[[0,0],[1,0],[2,0],[3,0],[1,-1],[1,1]];
+faces.forEach(([fx,fy])=>{const bx=fx*2*s,by=fy*2*s,bi=v.length;
+v.push([bx-s,by-s,0],[bx+s,by-s,0],[bx+s,by+s,0],[bx-s,by+s,0]);
+e.push([bi,bi+1],[bi+1,bi+2],[bi+2,bi+3],[bi+3,bi]);
+f.push([bi,bi+1,bi+2,bi+3]);});return{v,e,f};}
+
+function mkNetCyl(){const v=[],e=[],f=[];
+const w=3,h=2;v.push([-w,-h,0],[w,-h,0],[w,h,0],[-w,h,0]);
+e.push([0,1],[1,2],[2,3],[3,0]);f.push([0,1,2,3]);
+const n=32;for(let ci=0;ci<2;ci++){const cy=ci===0?-h-1.3:h+1.3,off=v.length;
+for(let i=0;i<=n;i++){const a=2*PI*i/n;v.push([0.9*cos(a),cy+0.9*sin(a),0]);}
+for(let i=0;i<n;i++)e.push([off+i,off+i+1]);
+const cf=[];for(let i=0;i<=n;i++)cf.push(off+i);f.push(cf);}return{v,e,f};}
+
+function mkNetCone(){const v=[],e=[],f=[];
+const n=40,R=2.5;v.push([0,0.5,0]);
+for(let i=0;i<=n;i++){const a=-PI*0.6+PI*1.2*i/n;v.push([R*cos(a),0.5+R*sin(a),0]);}
+for(let i=0;i<n;i++){e.push([0,1+i]);e.push([1+i,2+i]);}
+const sf=[];for(let i=0;i<=n;i++)sf.push(i);f.push(sf);
+const boff=v.length,cy=-1.5;
+for(let i=0;i<=32;i++){const a=2*PI*i/32;v.push([0.8*cos(a),cy+0.8*sin(a),0]);}
+for(let i=0;i<32;i++)e.push([boff+i,boff+i+1]);
+const bf=[];for(let i=0;i<=32;i++)bf.push(boff+i);f.push(bf);return{v,e,f};}
+
+function mkNetPyr(){const v=[],e=[],f=[];
+const s=1.1;v.push([-s,-s,0],[s,-s,0],[s,s,0],[-s,s,0]);
+e.push([0,1],[1,2],[2,3],[3,0]);f.push([0,1,2,3]);
+const tris=[[0,1,0,-2.2],[1,2,2.2,0],[2,3,0,2.2],[3,0,-2.2,0]];
+tris.forEach(([a,b,dx,dy])=>{const mx=(v[a][0]+v[b][0])/2+dx*0.75,my=(v[a][1]+v[b][1])/2+dy*0.75;
+const ti=v.length;v.push([mx,my,0]);e.push([a,ti],[b,ti]);f.push([a,b,ti]);});return{v,e,f};}
 
 const SHAPES={cube:()=>mkCube(),cuboid:()=>mkCube(1.5,0.8,0.6),sphere:()=>mkSphere(),cone:()=>mkCone(),cylinder:()=>mkCylinder(),pyramid:()=>mkPyramid(),torus:()=>mkTorus(),hemisphere:()=>mkHemisphere(),pyr_cube:mkPyrCube,cone_cyl:mkConeCyl,cyl_hemi:mkCylHemi,net_cube:mkNetCube,net_cyl:mkNetCyl,net_cone:mkNetCone,net_pyr:mkNetPyr};
 
 const NAMES={cube:'Cube',cuboid:'Cuboid',sphere:'Sphere',cone:'Cone',cylinder:'Cylinder',pyramid:'Pyramid',torus:'Torus',hemisphere:'Hemisphere',pyr_cube:'Pyramid + Cube',cone_cyl:'Cone + Cylinder',cyl_hemi:'Cylinder + Hemisphere',net_cube:'Cube Net',net_cyl:'Cylinder Net',net_cone:'Cone Net',net_pyr:'Pyramid Net'};
 
-const MEASURES={cube:'Side = 2 | V = 8 | SA = 24',cuboid:'3 x 1.6 x 1.2 | V = 5.76 | SA = 15.84',sphere:'r = 1 | V = 4.19 | SA = 12.57',cone:'r = 1, h = 2 | V = 2.09 | SA = 10.17',cylinder:'r = 0.8, h = 2 | V = 4.02 | SA = 14.07',pyramid:'Base 2x2, h = 2 | V = 2.67 | SA = 12.94',torus:'R = 1, r = 0.35 | V = 2.41 | SA = 13.79',hemisphere:'r = 1 | V = 2.09 | SA = 9.42',pyr_cube:'Compound shape',cone_cyl:'Compound shape',cyl_hemi:'Compound shape',net_cube:'Unfolded cube',net_cyl:'Unfolded cylinder',net_cone:'Unfolded cone',net_pyr:'Unfolded pyramid'};
+const MEASURES={cube:'Side = 2 | V = 8 | SA = 24',cuboid:'3 x 1.6 x 1.2 | V = 5.76 | SA = 15.84',sphere:'r = 1 | V = 4.19 | SA = 12.57',cone:'r = 1, h = 2 | V = 2.09 | SA = 10.17',cylinder:'r = 0.8, h = 2 | V = 4.02 | SA = 14.07',pyramid:'Base 2x2, h = 2 | V = 2.67 | SA = 12.94',torus:'R = 1, r = 0.35 | V = 2.41 | SA = 13.79',hemisphere:'r = 1 | V = 2.09 | SA = 9.42',pyr_cube:'Compound shape',cone_cyl:'Compound shape',cyl_hemi:'Compound shape',net_cube:'2D Unfolded cube',net_cyl:'2D Unfolded cylinder',net_cone:'2D Unfolded cone',net_pyr:'2D Unfolded pyramid'};
+
+/* face colours per shape type */
+const FACE_COLS={
+  _3d:{base:'59,130,246',edge:'100,160,255'},
+  net_cube:{base:'99,102,241',edge:'139,142,255'},
+  net_cyl:{base:'14,165,233',edge:'56,189,248'},
+  net_cone:{base:'168,85,247',edge:'192,132,252'},
+  net_pyr:{base:'245,158,11',edge:'251,191,36'}
+};
+function getCol(){return FACE_COLS[shape]||FACE_COLS._3d;}
 
 let geo=SHAPES.cube();
-function set(s){shape=s;geo=SHAPES[s]();userLines=[];selectedDot=-1;
-document.querySelectorAll('#controls button').forEach(b=>b.classList.remove('active'));
+function set(s){shape=s;geo=SHAPES[s]();userLines=[];selectedDot=-1;doodleStrokes=[];currentStroke=null;
+if(isNet()){rotX=0;rotY=0;paused=true;}else if(paused&&!s.startsWith('net_')){paused=false;}
+document.querySelectorAll('#controls button').forEach(b=>{b.classList.remove('active');b.classList.remove('tool-active');});
 const el=document.getElementById('b-'+s);if(el)el.classList.add('active');
-if(wire)document.getElementById('b-wire').classList.add('active');
-if(drawMode)document.getElementById('b-draw').classList.add('draw-active');
+if(wire)document.getElementById('b-wire').classList.add('tool-active');
+if(drawMode)document.getElementById('b-draw').classList.add('tool-active');
+if(doodleMode)document.getElementById('b-doodle').classList.add('tool-active');
 document.getElementById('shape-name').textContent=NAMES[s]||s;
-document.getElementById('measurements').textContent=MEASURES[s]||'';}
+document.getElementById('measurements').textContent=MEASURES[s]||'';
+updateStatus();}
 
-function toggleWire(){wire=!wire;document.getElementById('b-wire').classList.toggle('active',wire);}
-function toggleDraw(){drawMode=!drawMode;
-document.getElementById('b-draw').classList.toggle('draw-active',drawMode);
-c.classList.toggle('drawing',drawMode);
-document.getElementById('draw-status').textContent=drawMode?'Click dots to connect them':'Drag to rotate \\u00b7 Scroll to zoom';
-document.getElementById('draw-hint').textContent=drawMode?'Click any vertex dot to start drawing a line':'';
+function updateStatus(){
+  const parts=[];
+  if(isNet())parts.push('2D Net view');
+  else if(paused)parts.push('Paused — click to resume');
+  else parts.push('Click to pause');
+  if(!drawMode&&!doodleMode)parts.push('Drag to rotate','Scroll to zoom');
+  if(drawMode)parts.push('Click dots to connect');
+  if(doodleMode)parts.push('Draw freely with mouse/pen');
+  document.getElementById('draw-status').textContent=parts.join(' \\u00b7 ');
+  document.getElementById('pause-badge').style.opacity=paused&&!isNet()?'1':'0';
+  c.classList.toggle('paused',paused&&!drawMode&&!doodleMode);
+  c.classList.toggle('drawing',drawMode);
+  c.classList.toggle('doodling',doodleMode);
+}
+
+function toggleWire(){wire=!wire;document.getElementById('b-wire').classList.toggle('tool-active',wire);}
+function toggleDraw(){drawMode=!drawMode;if(drawMode)doodleMode=false;
+document.getElementById('b-draw').classList.toggle('tool-active',drawMode);
+document.getElementById('b-doodle').classList.remove('tool-active');
+document.getElementById('draw-hint').textContent=drawMode?'Click any vertex dot to connect':'';
 document.getElementById('draw-hint').style.opacity=drawMode?'1':'0';
-selectedDot=-1;}
-function clearLines(){userLines=[];selectedDot=-1;}
+selectedDot=-1;updateStatus();}
+function toggleDoodle(){doodleMode=!doodleMode;if(doodleMode)drawMode=false;
+document.getElementById('b-doodle').classList.toggle('tool-active',doodleMode);
+document.getElementById('b-draw').classList.remove('tool-active');
+document.getElementById('draw-hint').textContent=doodleMode?'Draw freely — hold mouse/pen and drag':'';
+document.getElementById('draw-hint').style.opacity=doodleMode?'1':'0';
+selectedDot=-1;updateStatus();}
+function clearAll(){userLines=[];selectedDot=-1;doodleStrokes=[];currentStroke=null;}
 
-/* ── Projected vertices cache ── */
 let projVerts=[];
-
 function findClosestDot(mx,my,threshold){
   let best=-1,bestD=threshold*threshold;
   for(let i=0;i<projVerts.length;i++){
@@ -167,86 +251,159 @@ function findClosestDot(mx,my,threshold){
 
 function draw(){
   ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+
+  /* Subtle grid for nets */
+  if(isNet()){
+    ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=1;
+    const gs=zoom*0.5;
+    for(let x=(W/2)%gs;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=(H/2)%gs;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  }
+
   const g=geo;
   projVerts=g.v.map(v=>proj(v[0],v[1],v[2]));
   const pv=projVerts;
+  const col=getCol();
 
-  /* Faces (filled, painter's algo) */
+  /* Faces (filled, painter's algo with lighting) */
   if(!wire&&g.f&&g.f.length>0){
-    const sorted=g.f.map(f=>{const cz=f.reduce((s,i)=>s+pv[i].z,0)/f.length;return{f,z:cz};}).sort((a,b)=>a.z-b.z);
+    const sorted=g.f.map((f,fi)=>{const cz=f.reduce((s,i)=>s+(pv[i]?pv[i].z:0),0)/f.length;return{f,z:cz,fi};}).sort((a,b)=>a.z-b.z);
     sorted.forEach(({f})=>{
+      if(f.some(i=>!pv[i]))return;
       ctx.beginPath();ctx.moveTo(pv[f[0]].x,pv[f[0]].y);
       for(let i=1;i<f.length;i++)ctx.lineTo(pv[f[i]].x,pv[f[i]].y);
       ctx.closePath();
-      ctx.fillStyle='rgba(59,130,246,0.12)';ctx.fill();
-      ctx.strokeStyle='rgba(59,130,246,0.4)';ctx.lineWidth=1;ctx.stroke();
+      if(isNet()){
+        ctx.fillStyle='rgba('+col.base+',0.25)';ctx.fill();
+        ctx.strokeStyle='rgba('+col.edge+',0.9)';ctx.lineWidth=2.5;ctx.stroke();
+      }else{
+        const n=faceNormal(g.v,f);const b=faceBrightness(n);
+        ctx.fillStyle='rgba('+col.base+','+(.08+.18*b)+')';ctx.fill();
+        ctx.strokeStyle='rgba('+col.edge+','+(0.3+0.5*b)+')';ctx.lineWidth=1.8;ctx.stroke();
+      }
     });
   }
 
   /* Edges */
-  ctx.strokeStyle=wire?'rgba(59,130,246,0.5)':'rgba(59,130,246,0.35)';
-  ctx.lineWidth=wire?0.8:0.6;
-  g.e.forEach(([a,b])=>{if(a<pv.length&&b<pv.length){ctx.beginPath();ctx.moveTo(pv[a].x,pv[a].y);ctx.lineTo(pv[b].x,pv[b].y);ctx.stroke();}});
-
-  /* User-drawn lines */
-  if(userLines.length>0){
-    ctx.strokeStyle='rgba(16,185,129,0.8)';ctx.lineWidth=2;
-    userLines.forEach(([a,b])=>{
-      if(a<pv.length&&b<pv.length){ctx.beginPath();ctx.moveTo(pv[a].x,pv[a].y);ctx.lineTo(pv[b].x,pv[b].y);ctx.stroke();}
-    });
+  if(isNet()){
+    ctx.strokeStyle='rgba('+col.edge+',0.85)';ctx.lineWidth=2.5;
+  }else{
+    ctx.strokeStyle=wire?'rgba('+col.edge+',0.7)':'rgba('+col.edge+',0.45)';
+    ctx.lineWidth=wire?2:1.5;
+  }
+  if(wire||!g.f||g.f.length===0){
+    ctx.shadowColor='rgba('+col.base+',0.3)';ctx.shadowBlur=isNet()?8:4;
+    g.e.forEach(([a,b])=>{if(pv[a]&&pv[b]){ctx.beginPath();ctx.moveTo(pv[a].x,pv[a].y);ctx.lineTo(pv[b].x,pv[b].y);ctx.stroke();}});
+    ctx.shadowBlur=0;
   }
 
-  /* In-progress line from selected dot to cursor */
-  if(drawMode&&selectedDot>=0&&selectedDot<pv.length){
-    ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(16,185,129,0.5)';ctx.lineWidth=1.5;
+  /* User-drawn vertex lines */
+  if(userLines.length>0){
+    ctx.strokeStyle='rgba(16,185,129,0.9)';ctx.lineWidth=3;
+    ctx.shadowColor='rgba(16,185,129,0.4)';ctx.shadowBlur=6;
+    userLines.forEach(([a,b])=>{
+      if(pv[a]&&pv[b]){ctx.beginPath();ctx.moveTo(pv[a].x,pv[a].y);ctx.lineTo(pv[b].x,pv[b].y);ctx.stroke();}
+    });
+    ctx.shadowBlur=0;
+  }
+
+  /* In-progress vertex line */
+  if(drawMode&&selectedDot>=0&&pv[selectedDot]){
+    ctx.setLineDash([6,4]);ctx.strokeStyle='rgba(16,185,129,0.6)';ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(pv[selectedDot].x,pv[selectedDot].y);ctx.lineTo(mousePos.x,mousePos.y);ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  /* Dots */
-  for(let i=0;i<pv.length;i++){
-    const isSelected=drawMode&&i===selectedDot;
-    const isHover=drawMode&&i===hoverDot;
-    const r=isSelected?5:isHover?4:2;
-    const col=isSelected?'rgba(16,185,129,1)':isHover?'rgba(16,185,129,0.7)':'rgba(147,197,253,0.7)';
-    ctx.beginPath();ctx.arc(pv[i].x,pv[i].y,r,0,PI*2);ctx.fillStyle=col;ctx.fill();
-    if(isSelected||isHover){ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.arc(pv[i].x,pv[i].y,r+3,0,PI*2);ctx.stroke();}
+  /* Dots (larger, glowing) */
+  const showDots=drawMode||(g.v.length<=80);
+  if(showDots){
+    for(let i=0;i<pv.length;i++){
+      if(!pv[i])continue;
+      const isSel=drawMode&&i===selectedDot;
+      const isHov=drawMode&&i===hoverDot;
+      const r=isSel?7:isHov?6:isNet()?4:3;
+      const dcol=isSel?'16,185,129':isHov?'16,185,129':'147,197,253';
+      const alpha=isSel?1:isHov?0.85:0.75;
+      ctx.beginPath();ctx.arc(pv[i].x,pv[i].y,r,0,PI*2);
+      ctx.fillStyle='rgba('+dcol+','+alpha+')';ctx.fill();
+      if(isSel||isHov){
+        ctx.strokeStyle='rgba('+dcol+',0.4)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(pv[i].x,pv[i].y,r+4,0,PI*2);ctx.stroke();
+      }
+    }
   }
 
-  if(!drag&&!drawMode){rotY+=0.003;rotX+=0.001;}
+  /* Doodle strokes (screen-space) */
+  if(doodleStrokes.length>0||currentStroke){
+    const allStrokes=[...doodleStrokes];
+    if(currentStroke)allStrokes.push(currentStroke);
+    allStrokes.forEach(st=>{
+      if(st.pts.length<2)return;
+      ctx.strokeStyle=st.color;ctx.lineWidth=st.width;ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.shadowColor=st.color;ctx.shadowBlur=4;
+      ctx.beginPath();ctx.moveTo(st.pts[0][0],st.pts[0][1]);
+      for(let i=1;i<st.pts.length;i++)ctx.lineTo(st.pts[i][0],st.pts[i][1]);
+      ctx.stroke();
+    });
+    ctx.shadowBlur=0;
+  }
+
+  if(!paused&&!drag&&!drawMode&&!isNet()){rotY+=0.004;rotX+=0.0015;}
   requestAnimationFrame(draw);
 }
 
 const mousePos={x:-999,y:-999};
 
 c.addEventListener('mousedown',e=>{
+  if(e.target!==c)return;
+  didDrag=false;
+  /* Doodle mode */
+  if(doodleMode){
+    currentStroke={pts:[[e.clientX,e.clientY]],color:doodleColor,width:doodleWidth};
+    return;
+  }
+  /* Draw-lines mode */
   if(drawMode){
-    const dot=findClosestDot(e.clientX,e.clientY,20);
+    const dot=findClosestDot(e.clientX,e.clientY,25);
     if(dot>=0){
       if(selectedDot>=0&&selectedDot!==dot){
-        userLines.push([selectedDot,dot]);
-        selectedDot=-1;
+        userLines.push([selectedDot,dot]);selectedDot=-1;
         document.getElementById('draw-hint').style.opacity='0';
-      }else{
-        selectedDot=dot;
-        document.getElementById('draw-hint').textContent='Now click another dot to connect';
-      }
-    }else{selectedDot=-1;document.getElementById('draw-hint').textContent='Click any vertex dot to start drawing a line';}
+      }else{selectedDot=dot;document.getElementById('draw-hint').textContent='Now click another dot';}
+    }else{selectedDot=-1;document.getElementById('draw-hint').textContent='Click any vertex dot to connect';}
     return;
   }
   drag=true;lx=e.clientX;ly=e.clientY;
 });
-addEventListener('mouseup',()=>{drag=false;});
+addEventListener('mouseup',e=>{
+  if(doodleMode&&currentStroke){
+    if(currentStroke.pts.length>1)doodleStrokes.push(currentStroke);
+    currentStroke=null;return;
+  }
+  if(!didDrag&&!drawMode&&!doodleMode&&e.target===c){
+    if(!isNet()){paused=!paused;updateStatus();}
+  }
+  drag=false;
+});
 addEventListener('mousemove',e=>{
   mousePos.x=e.clientX;mousePos.y=e.clientY;
-  if(drawMode){hoverDot=findClosestDot(e.clientX,e.clientY,20);return;}
+  if(doodleMode&&currentStroke){currentStroke.pts.push([e.clientX,e.clientY]);return;}
+  if(drawMode){hoverDot=findClosestDot(e.clientX,e.clientY,25);return;}
   if(!drag)return;
-  rotY+=(e.clientX-lx)*0.008;rotX+=(e.clientY-ly)*0.008;lx=e.clientX;ly=e.clientY;
+  const dx=e.clientX-lx,dy=e.clientY-ly;
+  if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;
+  if(!isNet()){rotY+=dx*0.008;rotX+=dy*0.008;}
+  lx=e.clientX;ly=e.clientY;
 });
-c.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(60,Math.min(800,zoom-e.deltaY*0.5));},{passive:false});
+c.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(60,Math.min(800,zoom-e.deltaY*2));},{passive:false});
 
 /* Touch */
+let touchStartTime=0;
 c.addEventListener('touchstart',e=>{
+  touchStartTime=Date.now();didDrag=false;
+  if(doodleMode&&e.touches.length===1){
+    const t=e.touches[0];currentStroke={pts:[[t.clientX,t.clientY]],color:doodleColor,width:doodleWidth};return;
+  }
   if(drawMode&&e.touches.length===1){
     const t=e.touches[0];const dot=findClosestDot(t.clientX,t.clientY,30);
     if(dot>=0){if(selectedDot>=0&&selectedDot!==dot){userLines.push([selectedDot,dot]);selectedDot=-1;}else{selectedDot=dot;}}
@@ -254,13 +411,29 @@ c.addEventListener('touchstart',e=>{
   }
   if(e.touches.length===1){drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
 },{passive:true});
-addEventListener('touchend',()=>{drag=false;});
+addEventListener('touchend',()=>{
+  if(doodleMode&&currentStroke){if(currentStroke.pts.length>1)doodleStrokes.push(currentStroke);currentStroke=null;return;}
+  if(!didDrag&&!drawMode&&!doodleMode&&(Date.now()-touchStartTime)<300){
+    if(!isNet()){paused=!paused;updateStatus();}
+  }
+  drag=false;
+});
 addEventListener('touchmove',e=>{
+  if(doodleMode&&currentStroke&&e.touches.length===1){const t=e.touches[0];currentStroke.pts.push([t.clientX,t.clientY]);return;}
   if(!drag||e.touches.length!==1)return;
-  const t=e.touches[0];rotY+=(t.clientX-lx)*0.008;rotX+=(t.clientY-ly)*0.008;lx=t.clientX;ly=t.clientY;
+  const t=e.touches[0],dx=t.clientX-lx,dy=t.clientY-ly;
+  if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;
+  if(!isNet()){rotY+=dx*0.008;rotX+=dy*0.008;}
+  lx=t.clientX;ly=t.clientY;
 },{passive:true});
 
+/* Pinch zoom (touch) */
+let lastPinchDist=0;
+c.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;lastPinchDist=Math.sqrt(dx*dx+dy*dy);}},{passive:true});
+addEventListener('touchmove',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const d=Math.sqrt(dx*dx+dy*dy);zoom=Math.max(60,Math.min(800,zoom+(d-lastPinchDist)*1.5));lastPinchDist=d;}},{passive:true});
+
 document.getElementById('measurements').textContent=MEASURES.cube;
+updateStatus();
 draw();
 <\/script></body></html>`;
 
