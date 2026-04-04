@@ -501,99 +501,215 @@ const VECTOR_HTML = `<!DOCTYPE html>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
-canvas{display:block}
-#panel{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;justify-content:center;z-index:10}
-.vec-input{display:flex;align-items:center;gap:4px;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;backdrop-filter:blur(8px)}
-.vec-input label{color:rgba(255,255,255,0.5);font-size:11px;min-width:14px}
-.vec-input input{width:42px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:4px;padding:3px 6px;font-size:12px;text-align:center}
-button{padding:7px 16px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;backdrop-filter:blur(8px);transition:all .2s}
-button:hover{background:rgba(255,255,255,0.15)}
-#result{position:fixed;top:16px;left:16px;color:rgba(255,255,255,0.7);font-size:13px;line-height:1.8;background:rgba(0,0,0,0.4);padding:12px 16px;border-radius:10px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.08)}
-.c-a{color:#818cf8}.c-b{color:#34d399}.c-r{color:#fbbf24}
+canvas{display:block;cursor:grab}
+canvas.panning{cursor:grabbing}
+#panel{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;z-index:10;padding:8px 12px;background:rgba(0,0,0,0.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:14px}
+.vec-input{display:flex;align-items:center;gap:3px;padding:5px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px}
+.vec-input label{font-size:13px;font-weight:700;min-width:16px}
+.vec-input input{width:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:5px;padding:4px 6px;font-size:12px;text-align:center;font-family:monospace}
+.ops{display:flex;gap:4px}
+.ops button{padding:6px 14px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.ops button:hover{background:rgba(255,255,255,0.18)}
+.ops button.active{background:rgba(251,191,36,0.25);border-color:rgba(251,191,36,0.5);color:#fbbf24}
+#hud{position:fixed;top:12px;left:12px;background:rgba(0,0,0,0.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;color:#fff;font-size:12px;line-height:1.9;z-index:10;min-width:220px}
+#hud h3{font-size:13px;margin-bottom:6px;color:rgba(255,255,255,0.7);font-weight:600}
+.ca{color:#818cf8}.cb{color:#34d399}.cr{color:#fbbf24}
+#info{position:fixed;top:12px;right:12px;width:190px;background:rgba(0,0,0,0.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:rgba(255,255,255,0.4);font-size:10px;line-height:1.6;z-index:10}
+#info b{color:rgba(255,255,255,0.6)}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="result"></div>
+<div id="hud">
+<h3>Vector Visualiser</h3>
+<div id="stats"></div>
+</div>
+<div id="info">
+<b>Equations:</b><br>
+|V| = \\u221a(x\\u00b2 + y\\u00b2)<br>
+A+B = (a\\u2081+b\\u2081, a\\u2082+b\\u2082)<br>
+A\\u00b7B = a\\u2081b\\u2081 + a\\u2082b\\u2082<br>
+\\u03b8 = arccos(A\\u00b7B / |A||B|)<br><br>
+<b>Controls:</b><br>
+Drag to pan \\u00b7 Scroll to zoom<br>
+Drag vector tips to move them
+</div>
 <div id="panel">
-  <div class="vec-input"><label class="c-a">A</label><input id="ax" type="number" value="2"><input id="ay" type="number" value="3"><input id="az" type="number" value="1"></div>
-  <div class="vec-input"><label class="c-b">B</label><input id="bx" type="number" value="1"><input id="by" type="number" value="-1"><input id="bz" type="number" value="2"></div>
-  <button onclick="op='add';calc()">A + B</button>
-  <button onclick="op='sub';calc()">A - B</button>
-  <button onclick="op='cross';calc()">A &times; B</button>
-  <button onclick="op='dot';calc()">A &middot; B</button>
+  <div class="vec-input"><label class="ca">A</label><input id="ax" type="number" value="5"><input id="ay" type="number" value="8"></div>
+  <div class="vec-input"><label class="cb">B</label><input id="bx" type="number" value="-3"><input id="by" type="number" value="6"></div>
+  <div class="ops">
+    <button class="active" id="opAdd" onclick="setOp('add')">A + B</button>
+    <button id="opSub" onclick="setOp('sub')">A \\u2212 B</button>
+    <button id="opDot" onclick="setOp('dot')">A \\u00b7 B</button>
+    <button id="opProj" onclick="setOp('proj')">proj</button>
+  </div>
 </div>
 <script>
-const c=document.getElementById('c'),ctx=c.getContext('2d');
-let W,H,rotX=-0.4,rotY=0.6,zoom=120,dragging=false,lastMX,lastMY,op='add';
-function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
-resize();addEventListener('resize',resize);
+const c=document.getElementById('c'),X=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();window.onresize=resize;
 
-function val(id){return parseFloat(document.getElementById(id).value)||0;}
-function vec(p,s){return{x:val(p+'x')*s,y:val(p+'y')*s,z:val(p+'z')*s};}
+// Pan & zoom — centered so (0,0) is at screen centre, default shows -20 to 20
+let panX=0,panY=0,zoom=1,isPanning=false,panSX=0,panSY=0;
+function defaultZoom(){return Math.min(W,H)/44}// 44 = 2*22 to show -20..20 with margin
+zoom=defaultZoom();
+window.onresize=()=>{resize();zoom=defaultZoom()};
 
-function project(x,y,z){
-  const cx=Math.cos(rotX),sx=Math.sin(rotX),cy=Math.cos(rotY),sy=Math.sin(rotY);
-  const y1=y*cx-z*sx,z1=y*sx+z*cx,x1=x*cy+z1*sy,z2=-x*sy+z1*cy;
-  const s=zoom/(z2+300);
-  return{x:x1*s+W/2,y:-y1*s+H/2};
-}
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=zoom;zoom=Math.max(5,Math.min(200,zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX-W/2,my=ev.offsetY-H/2;panX=mx-(mx-panX)*zoom/z;panY=my-(my-panY)*zoom/z},{passive:false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
 
-function drawArrow(ox,oy,oz,dx,dy,dz,color,label){
-  const p0=project(ox,oy,oz),p1=project(ox+dx,oy+dy,oz+dz);
-  ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);
-  ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.stroke();
-  const ang=Math.atan2(p1.y-p0.y,p1.x-p0.x);const hl=10;
-  ctx.beginPath();ctx.moveTo(p1.x,p1.y);
-  ctx.lineTo(p1.x-hl*Math.cos(ang-0.4),p1.y-hl*Math.sin(ang-0.4));
-  ctx.moveTo(p1.x,p1.y);
-  ctx.lineTo(p1.x-hl*Math.cos(ang+0.4),p1.y-hl*Math.sin(ang+0.4));
-  ctx.stroke();
-  if(label){ctx.fillStyle=color;ctx.font='bold 13px system-ui';ctx.fillText(label,p1.x+8,p1.y-8);}
-}
-
-function drawGrid(){
-  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
-  for(let i=-5;i<=5;i++){
-    const a=project(i,0,-5),b=project(i,0,5);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-    const c2=project(-5,0,i),d=project(5,0,i);ctx.beginPath();ctx.moveTo(c2.x,c2.y);ctx.lineTo(d.x,d.y);ctx.stroke();
+// Dragging: either pan canvas or drag a vector tip
+let dragVec=null; // 'a' or 'b'
+c.addEventListener('mousedown',ev=>{
+  // Check if near a vector tip first
+  const mx=(ev.offsetX-W/2-panX)/zoom, my=-(ev.offsetY-H/2-panY)/zoom;
+  const a={x:V('ax'),y:V('ay')},b={x:V('bx'),y:V('by')};
+  if(Math.hypot(mx-a.x,my-a.y)<1.2){dragVec='a';return}
+  if(Math.hypot(mx-b.x,my-b.y)<1.2){dragVec='b';return}
+  isPanning=true;panSX=ev.clientX-panX;panSY=ev.clientY-panY;c.classList.add('panning');
+});
+c.addEventListener('mousemove',ev=>{
+  if(dragVec){
+    const mx=(ev.offsetX-W/2-panX)/zoom, my=-(ev.offsetY-H/2-panY)/zoom;
+    const rx=Math.round(mx),ry=Math.round(my);
+    if(dragVec==='a'){document.getElementById('ax').value=rx;document.getElementById('ay').value=ry}
+    else{document.getElementById('bx').value=rx;document.getElementById('by').value=ry}
+    return;
   }
-  drawArrow(0,0,0,5,0,0,'rgba(255,255,255,0.25)','x');
-  drawArrow(0,0,0,0,5,0,'rgba(255,255,255,0.25)','y');
-  drawArrow(0,0,0,0,0,5,'rgba(255,255,255,0.25)','z');
+  if(isPanning){panX=ev.clientX-panSX;panY=ev.clientY-panSY}
+});
+addEventListener('mouseup',()=>{isPanning=false;dragVec=null;c.classList.remove('panning')});
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){panX=0;panY=0;zoom=defaultZoom()}});
+
+let op='add';
+function setOp(o){op=o;document.querySelectorAll('.ops button').forEach(b=>b.className=b.id==='op'+o.charAt(0).toUpperCase()+o.slice(1)?'active':'')}
+function V(id){return parseFloat(document.getElementById(id).value)||0}
+
+// World to screen
+function toS(wx,wy){return{x:W/2+panX+wx*zoom,y:H/2+panY-wy*zoom}}
+
+function drawArrow(x1,y1,x2,y2,color,lw,label){
+  const s1=toS(x1,y1),s2=toS(x2,y2);
+  X.strokeStyle=color;X.lineWidth=lw;X.beginPath();X.moveTo(s1.x,s1.y);X.lineTo(s2.x,s2.y);X.stroke();
+  // Arrowhead
+  const ang=Math.atan2(s2.y-s1.y,s2.x-s1.x),hl=12,hw=0.35;
+  X.fillStyle=color;X.beginPath();X.moveTo(s2.x,s2.y);
+  X.lineTo(s2.x-hl*Math.cos(ang-hw),s2.y-hl*Math.sin(ang-hw));
+  X.lineTo(s2.x-hl*Math.cos(ang+hw),s2.y-hl*Math.sin(ang+hw));X.closePath();X.fill();
+  // Label
+  if(label){X.fillStyle=color;X.font='bold 14px system-ui';X.textAlign='left';X.textBaseline='bottom';
+  X.fillText(label,s2.x+10,s2.y-10)}
 }
 
-function calc(){
-  const a={x:val('ax'),y:val('ay'),z:val('az')},b={x:val('bx'),y:val('by'),z:val('bz')};
-  let r,txt;
-  if(op==='add'){r={x:a.x+b.x,y:a.y+b.y,z:a.z+b.z};txt='A+B = ('+r.x+', '+r.y+', '+r.z+')';}
-  else if(op==='sub'){r={x:a.x-b.x,y:a.y-b.y,z:a.z-b.z};txt='A-B = ('+r.x+', '+r.y+', '+r.z+')';}
-  else if(op==='cross'){r={x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x};txt='A×B = ('+r.x+', '+r.y+', '+r.z+')';}
-  else{const d=a.x*b.x+a.y*b.y+a.z*b.z;r=null;txt='A·B = '+d;}
-  const mag_a=Math.sqrt(a.x*a.x+a.y*a.y+a.z*a.z).toFixed(2);
-  const mag_b=Math.sqrt(b.x*b.x+b.y*b.y+b.z*b.z).toFixed(2);
-  document.getElementById('result').innerHTML='<span class="c-a">|A| = '+mag_a+'</span><br><span class="c-b">|B| = '+mag_b+'</span><br><span class="c-r">'+txt+'</span>';
-  return{a,b,r};
+function drawDashedLine(x1,y1,x2,y2,color){
+  const s1=toS(x1,y1),s2=toS(x2,y2);
+  X.strokeStyle=color;X.lineWidth=1.5;X.setLineDash([6,4]);X.beginPath();X.moveTo(s1.x,s1.y);X.lineTo(s2.x,s2.y);X.stroke();X.setLineDash([]);
 }
 
-function draw(){
-  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
-  drawGrid();
-  const{a,b,r}=calc();
-  drawArrow(0,0,0,a.x,a.y,a.z,'#818cf8','A');
-  drawArrow(0,0,0,b.x,b.y,b.z,'#34d399','B');
-  if(r)drawArrow(0,0,0,r.x,r.y,r.z,'#fbbf24','R');
-  if(!dragging){rotY+=0.002;}
-  requestAnimationFrame(draw);
-}
+function loop(){
+  X.fillStyle='#0a0a1a';X.fillRect(0,0,W,H);
+  const sc=zoom;
 
-c.addEventListener('mousedown',e=>{dragging=true;lastMX=e.clientX;lastMY=e.clientY});
-addEventListener('mouseup',()=>dragging=false);
-addEventListener('mousemove',e=>{if(!dragging)return;rotY+=(e.clientX-lastMX)*0.006;rotX+=(e.clientY-lastMY)*0.006;lastMX=e.clientX;lastMY=e.clientY;});
-c.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(40,Math.min(400,zoom-e.deltaY*0.3))},{passive:false});
-c.addEventListener('touchstart',e=>{if(e.touches.length===1){dragging=true;lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;}},{passive:true});
-addEventListener('touchend',()=>dragging=false);
-addEventListener('touchmove',e=>{if(!dragging||e.touches.length!==1)return;const t=e.touches[0];rotY+=(t.clientX-lastMX)*0.006;rotX+=(t.clientY-lastMY)*0.006;lastMX=t.clientX;lastMY=t.clientY;},{passive:true});
+  // Grid
+  // Determine visible range in world coords
+  const wxMin=(-W/2-panX)/zoom, wxMax=(W/2-panX)/zoom;
+  const wyMin=-(H/2+panY)/zoom, wyMax=(-(-H/2-panY))/zoom;
+  const wyMin2=(-H/2+panY)/zoom;
 
-draw();
+  // Adaptive grid spacing
+  let gridStep=1;
+  if(zoom<12)gridStep=5;
+  if(zoom<6)gridStep=10;
+  if(zoom>60)gridStep=0.5;
+
+  // Minor grid
+  const gMin=Math.floor(Math.min(wxMin,-(H/2+panY)/zoom)/gridStep)*gridStep;
+  const gMax=Math.ceil(Math.max(wxMax,(H/2-panY)/zoom)/gridStep)*gridStep;
+  X.strokeStyle='rgba(255,255,255,0.04)';X.lineWidth=1;
+  for(let i=gMin;i<=gMax;i+=gridStep){
+    if(i===0)continue;
+    // Vertical line at x=i
+    const sx=W/2+panX+i*zoom;
+    if(sx>-10&&sx<W+10){X.beginPath();X.moveTo(sx,0);X.lineTo(sx,H);X.stroke()}
+    // Horizontal line at y=i
+    const sy=H/2+panY-i*zoom;
+    if(sy>-10&&sy<H+10){X.beginPath();X.moveTo(0,sy);X.lineTo(W,sy);X.stroke()}
+  }
+
+  // Axes (bold)
+  const ox=W/2+panX,oy=H/2+panY;
+  X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=2;
+  X.beginPath();X.moveTo(0,oy);X.lineTo(W,oy);X.stroke();
+  X.beginPath();X.moveTo(ox,0);X.lineTo(ox,H);X.stroke();
+
+  // Axis labels
+  X.fillStyle='rgba(255,255,255,0.25)';X.font='10px system-ui';X.textAlign='center';X.textBaseline='top';
+  for(let i=gMin;i<=gMax;i+=gridStep){
+    if(i===0)continue;
+    const sx=W/2+panX+i*zoom;
+    if(sx>30&&sx<W-30){X.fillText(Number.isInteger(i)?String(i):i.toFixed(1),sx,oy+4)}
+    const sy=H/2+panY-i*zoom;
+    X.textAlign='right';X.textBaseline='middle';
+    if(sy>20&&sy<H-20){X.fillText(Number.isInteger(i)?String(i):i.toFixed(1),ox-6,sy)}
+    X.textAlign='center';X.textBaseline='top';
+  }
+  // Origin
+  X.fillStyle='rgba(255,255,255,0.15)';X.font='10px system-ui';X.textAlign='right';X.textBaseline='top';X.fillText('0',ox-5,oy+3);
+  // Axis names
+  X.fillStyle='rgba(255,255,255,0.3)';X.font='bold 12px system-ui';X.textAlign='left';X.textBaseline='middle';
+  X.fillText('x',W-16,oy-12);X.textAlign='center';X.textBaseline='bottom';X.fillText('y',ox+14,14);
+
+  // Vectors
+  const a={x:V('ax'),y:V('ay')},b={x:V('bx'),y:V('by')};
+
+  // Result
+  let r=null,resTxt='',angleTxt='';
+  const magA=Math.hypot(a.x,a.y),magB=Math.hypot(b.x,b.y);
+  if(op==='add'){r={x:a.x+b.x,y:a.y+b.y};resTxt='A+B = ('+r.x+', '+r.y+')';
+    // Parallelogram
+    drawDashedLine(a.x,a.y,r.x,r.y,'rgba(251,191,36,0.2)');drawDashedLine(b.x,b.y,r.x,r.y,'rgba(251,191,36,0.2)')}
+  else if(op==='sub'){r={x:a.x-b.x,y:a.y-b.y};resTxt='A\\u2212B = ('+r.x+', '+r.y+')';
+    drawDashedLine(b.x,b.y,a.x,a.y,'rgba(251,191,36,0.2)')}
+  else if(op==='dot'){const d=a.x*b.x+a.y*b.y;resTxt='A\\u00b7B = '+d.toFixed(2);
+    if(magA>0&&magB>0){const cosA=d/(magA*magB);angleTxt='\\u03b8 = '+((Math.acos(Math.max(-1,Math.min(1,cosA))))*180/Math.PI).toFixed(1)+'\\u00b0'}
+    // Draw angle arc
+    if(magA>0&&magB>0){const angA=Math.atan2(a.y,a.x),angB=Math.atan2(b.y,b.x);
+    const sp=toS(0,0);X.strokeStyle='rgba(251,191,36,0.4)';X.lineWidth=1.5;X.beginPath();
+    X.arc(sp.x,sp.y,30,-angA,-angB,angA>angB);X.stroke()}}
+  else if(op==='proj'){// Projection of A onto B
+    if(magB>0){const scalar=(a.x*b.x+a.y*b.y)/(magB*magB);r={x:scalar*b.x,y:scalar*b.y};
+    resTxt='proj_B(A) = ('+r.x.toFixed(2)+', '+r.y.toFixed(2)+')';
+    drawDashedLine(a.x,a.y,r.x,r.y,'rgba(251,191,36,0.25)')}else{resTxt='B is zero vector'}}
+
+  // Draw vectors
+  drawArrow(0,0,a.x,a.y,'#818cf8',3,'A ('+a.x+', '+a.y+')');
+  drawArrow(0,0,b.x,b.y,'#34d399',3,'B ('+b.x+', '+b.y+')');
+  if(r)drawArrow(0,0,r.x,r.y,'#fbbf24',3,'R');
+
+  // Draggable tips — circles
+  const tipA=toS(a.x,a.y),tipB=toS(b.x,b.y);
+  [tipA,tipB].forEach((t,i)=>{X.fillStyle=i===0?'#818cf8':'#34d399';X.beginPath();X.arc(t.x,t.y,7,0,Math.PI*2);X.fill();
+  X.fillStyle='#fff';X.beginPath();X.arc(t.x,t.y,3,0,Math.PI*2);X.fill()});
+
+  // Component projections (faint dashed)
+  if(Math.abs(a.x)>0.01||Math.abs(a.y)>0.01){X.strokeStyle='rgba(129,140,248,0.15)';X.lineWidth=1;X.setLineDash([3,3]);
+  const sa=toS(a.x,0),sa2=toS(a.x,a.y),so=toS(0,a.y);X.beginPath();X.moveTo(sa.x,sa.y);X.lineTo(sa2.x,sa2.y);X.stroke();X.beginPath();X.moveTo(so.x,so.y);X.lineTo(sa2.x,sa2.y);X.stroke();X.setLineDash([])}
+  if(Math.abs(b.x)>0.01||Math.abs(b.y)>0.01){X.strokeStyle='rgba(52,211,153,0.15)';X.lineWidth=1;X.setLineDash([3,3]);
+  const sb=toS(b.x,0),sb2=toS(b.x,b.y),sbo=toS(0,b.y);X.beginPath();X.moveTo(sb.x,sb.y);X.lineTo(sb2.x,sb2.y);X.stroke();X.beginPath();X.moveTo(sbo.x,sbo.y);X.lineTo(sb2.x,sb2.y);X.stroke();X.setLineDash([])}
+
+  // HUD stats
+  const magR=r?Math.hypot(r.x,r.y).toFixed(2):'—';
+  const angA2=(Math.atan2(a.y,a.x)*180/Math.PI).toFixed(1);
+  const angB2=(Math.atan2(b.y,b.x)*180/Math.PI).toFixed(1);
+  document.getElementById('stats').innerHTML=
+    '<span class="ca">|A| = '+magA.toFixed(2)+' &nbsp; \\u03b8 = '+angA2+'\\u00b0</span><br>'+
+    '<span class="cb">|B| = '+magB.toFixed(2)+' &nbsp; \\u03b8 = '+angB2+'\\u00b0</span><br>'+
+    '<span class="cr">'+resTxt+'</span>'+(angleTxt?'<br><span class="cr">'+angleTxt+'</span>':'');
+
+  requestAnimationFrame(loop)}
+loop();
+
+// Touch support
+c.addEventListener('touchstart',ev=>{if(ev.touches.length===1){isPanning=true;panSX=ev.touches[0].clientX-panX;panSY=ev.touches[0].clientY-panY}},{passive:true});
+addEventListener('touchmove',ev=>{if(isPanning&&ev.touches.length===1){panX=ev.touches[0].clientX-panSX;panY=ev.touches[0].clientY-panSY}},{passive:true});
+addEventListener('touchend',()=>{isPanning=false});
 <\/script></body></html>`;
 
 const CALCULUS_HTML = `<!DOCTYPE html>
