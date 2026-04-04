@@ -7,10 +7,10 @@ import { Sparkles, X, GripVertical, ExternalLink, Loader2 } from 'lucide-react';
 // ── AI Provider Config ──────────────────────────────────────────────────────
 const PROVIDERS = [
   {
-    id: 'chatgpt',
-    label: 'ChatGPT',
-    url: 'https://chatgpt.com/',
-    icon: '◉',
+    id: 'desmos',
+    label: 'Calculator',
+    url: 'https://www.desmos.com/scientific',
+    icon: '🧮',
     accent: 'from-emerald-500 to-teal-400',
     ring: 'ring-teal-400/30',
   },
@@ -191,7 +191,7 @@ const AiFrame = memo(function AiFrame({
 // ── Main Widget ─────────────────────────────────────────────────────────────
 export default function AskAnythingWidget() {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<ProviderId>('chatgpt');
+  const [activeTab, setActiveTab] = useState<ProviderId>('desmos');
 
   // ── Dragging state ──────────────────────────────────────────────────────
   const [pos, setPos] = useState({ x: 0, y: 0 });
