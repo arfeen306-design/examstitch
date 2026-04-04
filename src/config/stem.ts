@@ -583,13 +583,23 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
 <div id="vol3d"><canvas id="c3d" width="280" height="280"></canvas></div>
 <div id="right-panel">
   <div class="panel" id="p-transform">
-    <div class="lbl">Transform: y = a \\u00b7 f(b(x - c)) + d</div>
-    <div style="display:grid;grid-template-columns:20px 1fr 30px;align-items:center;gap:2px;margin-top:4px">
-      <span>a</span><input type="range" id="sl-a" min="-5" max="5" step="0.1" value="1"><span id="v-a">1</span>
-      <span>b</span><input type="range" id="sl-b" min="-5" max="5" step="0.1" value="1"><span id="v-b">1</span>
-      <span>c</span><input type="range" id="sl-c" min="-10" max="10" step="0.1" value="0"><span id="v-c">0</span>
-      <span>d</span><input type="range" id="sl-d" min="-10" max="10" step="0.1" value="0"><span id="v-d">0</span>
+    <div class="lbl" style="color:#f472b6">\\u2b12 Reflection</div>
+    <div style="display:flex;gap:4px;margin:4px 0 6px">
+      <button onclick="togRefX()" id="b-refx" style="flex:1;font-size:9px">x-axis</button>
+      <button onclick="togRefY()" id="b-refy" style="flex:1;font-size:9px">y-axis</button>
+      <button onclick="togRefO()" id="b-refo" style="flex:1;font-size:9px">y=x</button>
     </div>
+    <div class="lbl" style="color:#60a5fa">\\u2b13 Translation</div>
+    <div style="display:grid;grid-template-columns:50px 1fr 30px;align-items:center;gap:2px;margin:4px 0 6px">
+      <span style="font-size:9px">\\u2194 Horiz</span><input type="range" id="sl-tx" min="-10" max="10" step="0.1" value="0"><span id="v-tx" style="font-size:9px">0</span>
+      <span style="font-size:9px">\\u2195 Vert</span><input type="range" id="sl-ty" min="-10" max="10" step="0.1" value="0"><span id="v-ty" style="font-size:9px">0</span>
+    </div>
+    <div class="lbl" style="color:#a78bfa">\\u2922 Stretch</div>
+    <div style="display:grid;grid-template-columns:50px 1fr 30px;align-items:center;gap:2px;margin:4px 0 2px">
+      <span style="font-size:9px">\\u2194 x-str</span><input type="range" id="sl-sx" min="0.1" max="5" step="0.1" value="1"><span id="v-sx" style="font-size:9px">1</span>
+      <span style="font-size:9px">\\u2195 y-str</span><input type="range" id="sl-sy" min="0.1" max="5" step="0.1" value="1"><span id="v-sy" style="font-size:9px">1</span>
+    </div>
+    <div id="trans-summary" style="margin-top:4px;font-size:9px;color:rgba(255,255,255,0.35);font-family:'Courier New',monospace;line-height:1.4"></div>
   </div>
   <div class="panel" id="p-unit" style="display:none">
     <div class="lbl">Angle Unit</div>
@@ -669,7 +679,9 @@ let doodleStrokes=[],curStroke=null;
 let userPts=[],selectedPt=-1;
 let tangentX=null;
 let unit='rad';
-let tA=1,tB=1,tC=0,tD=0;
+/* Transform state */
+let refX=false,refY=false,refO=false;
+let trX=0,trY=0,stX=1,stY=1;
 const PI=Math.PI;
 const DEG=PI/180;
 
@@ -712,43 +724,94 @@ const G={
 /* ── Transformed function wrapper ── */
 function getTransFn(){
   const g=G[curFn];if(!g||g.param)return null;
-  return x=>{const y=g.fn(tB*(x-tC));return isFinite(y)?tA*y+tD:NaN;};
+  return x=>{
+    let xi=x-trX;
+    if(refY)xi=-xi;
+    xi=xi/stX;
+    let y=g.fn(xi);
+    if(!isFinite(y))return NaN;
+    y=y*stY;
+    if(refX)y=-y;
+    y=y+trY;
+    return y;
+  };
 }
 function getTransDeriv(){
   const g=G[curFn];if(!g||g.param)return null;
-  return x=>{const dy=g.deriv(tB*(x-tC));return isFinite(dy)?tA*tB*dy:NaN;};
+  return x=>{
+    let xi=x-trX;
+    if(refY)xi=-xi;
+    xi=xi/stX;
+    let dy=g.deriv(xi);
+    if(!isFinite(dy))return NaN;
+    dy=dy*(stY/stX);
+    if(refX)dy=-dy;
+    if(refY)dy=-dy;
+    return dy;
+  };
 }
+/* For y=x reflection we swap x and y — special parametric plot */
+function getRefOFn(){
+  const g=G[curFn];if(!g||g.param)return null;
+  return g.fn;
+}
+function isTransformed(){return refX||refY||refO||trX!==0||trY!==0||stX!==1||stY!==1;}
 function getTransEq(){
   const g=G[curFn];if(!g)return'';
-  let base=g.eq.replace('y = ','');
-  let s='y = ';
-  if(tA!==1)s+=tA+'\\u00b7';
-  s+=base.replace(/x/g,tB!==1||tC!==0?'('+tB+'(x'+(tC>=0?'-'+tC:'+'+(-tC))+'))':'x');
-  if(tD>0)s+=' + '+tD;else if(tD<0)s+=' - '+(-tD);
-  if(tA===1&&tB===1&&tC===0&&tD===0)return g.eq;
-  return s;
+  if(!isTransformed())return g.eq;
+  const parts=[];
+  if(refX)parts.push('Reflect x-axis');
+  if(refY)parts.push('Reflect y-axis');
+  if(refO)parts.push('Reflect y=x');
+  if(stX!==1)parts.push('x-stretch \\u00d7'+stX.toFixed(1));
+  if(stY!==1)parts.push('y-stretch \\u00d7'+stY.toFixed(1));
+  if(trX!==0)parts.push('translate '+(trX>0?'+':'')+trX.toFixed(1)+' horiz');
+  if(trY!==0)parts.push('translate '+(trY>0?'+':'')+trY.toFixed(1)+' vert');
+  return g.eq+' ['+parts.join(', ')+']';
 }
+function updateTransSummary(){
+  const lines=[];
+  if(refX)lines.push('<span style="color:#f472b6">\\u2714 Reflected in x-axis (y \\u2192 -y)</span>');
+  if(refY)lines.push('<span style="color:#f472b6">\\u2714 Reflected in y-axis (x \\u2192 -x)</span>');
+  if(refO)lines.push('<span style="color:#f472b6">\\u2714 Reflected in y = x</span>');
+  if(trX!==0)lines.push('<span style="color:#60a5fa">Translated '+(trX>0?'right':'left')+' '+Math.abs(trX).toFixed(1)+'</span>');
+  if(trY!==0)lines.push('<span style="color:#60a5fa">Translated '+(trY>0?'up':'down')+' '+Math.abs(trY).toFixed(1)+'</span>');
+  if(stX!==1)lines.push('<span style="color:#a78bfa">x-stretch \\u00d7'+stX.toFixed(1)+'</span>');
+  if(stY!==1)lines.push('<span style="color:#a78bfa">y-stretch \\u00d7'+stY.toFixed(1)+'</span>');
+  document.getElementById('trans-summary').innerHTML=lines.length?lines.join('<br>'):'<span style="opacity:0.3">No transforms</span>';
+}
+
+/* ── Reflection toggles ── */
+function togRefX(){refX=!refX;document.getElementById('b-refx').classList.toggle('tool',refX);updateTransSummary();calcVol();}
+function togRefY(){refY=!refY;document.getElementById('b-refy').classList.toggle('tool',refY);updateTransSummary();calcVol();}
+function togRefO(){refO=!refO;document.getElementById('b-refo').classList.toggle('tool',refO);updateTransSummary();}
 
 /* ── Slider setup ── */
 function setupSliders(){
-  ['a','b','c','d'].forEach(k=>{
+  const sliders={tx:{get:()=>trX,set:v=>{trX=v;}},ty:{get:()=>trY,set:v=>{trY=v;}},sx:{get:()=>stX,set:v=>{stX=v;}},sy:{get:()=>stY,set:v=>{stY=v;}}};
+  Object.keys(sliders).forEach(k=>{
     const sl=document.getElementById('sl-'+k);
     const vl=document.getElementById('v-'+k);
     sl.addEventListener('input',()=>{
       const v=parseFloat(sl.value);
-      if(k==='a')tA=v;if(k==='b')tB=v;if(k==='c')tC=v;if(k==='d')tD=v;
-      vl.textContent=v.toFixed(1);calcVol();
+      sliders[k].set(v);
+      vl.textContent=v.toFixed(1);
+      updateTransSummary();calcVol();
     });
   });
 }
 setupSliders();
 
 function resetSliders(){
-  tA=1;tB=1;tC=0;tD=0;
-  document.getElementById('sl-a').value=1;document.getElementById('v-a').textContent='1.0';
-  document.getElementById('sl-b').value=1;document.getElementById('v-b').textContent='1.0';
-  document.getElementById('sl-c').value=0;document.getElementById('v-c').textContent='0.0';
-  document.getElementById('sl-d').value=0;document.getElementById('v-d').textContent='0.0';
+  refX=false;refY=false;refO=false;trX=0;trY=0;stX=1;stY=1;
+  document.getElementById('sl-tx').value=0;document.getElementById('v-tx').textContent='0.0';
+  document.getElementById('sl-ty').value=0;document.getElementById('v-ty').textContent='0.0';
+  document.getElementById('sl-sx').value=1;document.getElementById('v-sx').textContent='1.0';
+  document.getElementById('sl-sy').value=1;document.getElementById('v-sy').textContent='1.0';
+  document.getElementById('b-refx').classList.remove('tool');
+  document.getElementById('b-refy').classList.remove('tool');
+  document.getElementById('b-refo').classList.remove('tool');
+  updateTransSummary();
 }
 
 /* ── Unit toggle ── */
@@ -772,7 +835,7 @@ function pick(k){curFn=k;tangentX=null;
   document.getElementById('p-unit').style.display=g.trig?'block':'none';
   document.getElementById('p-transform').style.display=g.param?'none':'block';
   if(g.param){showDeriv=false;}
-  updateDomainInfo();calcVol();
+  updateDomainInfo();updateTransSummary();calcVol();
 }
 
 function reapplyToolClasses(){
@@ -1186,20 +1249,81 @@ function drawCursor(){
   }else{coordBadge.style.display='none';}
 }
 
+function drawRefOCurve(g){
+  /* y=x reflection: plot as parametric (y, f(y)) */
+  cx.beginPath();cx.strokeStyle=g.color;cx.lineWidth=3.5;
+  cx.shadowColor=g.color;cx.shadowBlur=10;
+  let prevOk=false;
+  for(let py=0;py<=H;py+=1){
+    const y=(oY-py)/sc;
+    let xi=y-trX;if(refY)xi=-xi;xi=xi/stX;
+    let fv=g.fn(xi);if(!isFinite(fv)||Math.abs(fv)>1e4){prevOk=false;continue;}
+    fv=fv*stY;if(refX)fv=-fv;fv=fv+trY;
+    /* For y=x line, swap: screen x = fv mapped, screen y = y mapped */
+    const sx=oX+fv*sc,sy=oY-y*sc;
+    /* But we want reflection: plot (f(t), t) instead of (t, f(t)) */
+    /* So screen_x = oX + f(y)*sc -> we need to compute differently */
+    prevOk=false;
+  }
+  /* Simpler approach: evaluate original fn at many t values, plot (y, x) */
+  cx.beginPath();cx.strokeStyle=g.color;cx.lineWidth=3.5;
+  cx.shadowColor=g.color;cx.shadowBlur=10;
+  prevOk=false;
+  const baseFn=getTransFn();if(!baseFn)return;
+  for(let px=0;px<=W;px+=1){
+    const t=(px-oX)/sc;
+    const fv=baseFn(t);
+    if(!isFinite(fv)||Math.abs(fv)>1e4){prevOk=false;continue;}
+    /* Reflect in y=x: swap coordinates => plot (fv, t) */
+    const sx=oX+fv*sc,sy=oY-t*sc;
+    if(!prevOk){cx.moveTo(sx,sy);prevOk=true;}
+    else cx.lineTo(sx,sy);
+  }
+  cx.stroke();cx.shadowBlur=0;
+}
+
+function drawYEqualsX(){
+  cx.setLineDash([6,6]);cx.strokeStyle='rgba(255,255,255,0.12)';cx.lineWidth=1;
+  const ext=Math.max(W,H);
+  cx.beginPath();cx.moveTo(oX-ext,oY+ext);cx.lineTo(oX+ext,oY-ext);cx.stroke();
+  cx.setLineDash([]);
+  /* Label */
+  cx.fillStyle='rgba(255,255,255,0.15)';cx.font='10px system-ui';
+  const lx=oX+60*sc/sc*3,ly=oY-60*sc/sc*3;
+  cx.fillText('y = x',Math.min(W-30,oX+80),Math.max(20,oY-80));
+}
+
 function render(){
   cx.fillStyle='#0a0a1a';cx.fillRect(0,0,W,H);
   drawGrid();drawAxes();drawDomainLines();
+
+  /* y=x reference line when that reflection is on */
+  if(refO)drawYEqualsX();
+
   if(showInteg)drawIntegral();
   if(showVol)drawVolRotation();
   const g=G[curFn];
+
   if(g.param){plotParametric(curFn,g.color);}
   else{
-    const fn=getTransFn();if(fn)plotFunction(fn,g.color,3.5,true);
+    /* Ghost original curve when transforms are active */
+    if(isTransformed()&&!refO){
+      plotFunction(g.fn,g.color.replace(')',',0.15)').replace('rgb','rgba').replace('#',''),1.5,false);
+      /* Use hex-to-faded approach */
+      cx.globalAlpha=0.18;plotFunction(g.fn,g.color,1.5,false);cx.globalAlpha=1;
+    }
+
+    if(refO){
+      /* For y=x reflection, draw original as ghost, then reflected curve */
+      cx.globalAlpha=0.18;plotFunction(g.fn,g.color,1.5,false);cx.globalAlpha=1;
+      drawRefOCurve(g);
+    }else{
+      const fn=getTransFn();if(fn)plotFunction(fn,g.color,3.5,true);
+    }
     if(showDeriv){const dfn=getTransDeriv();if(dfn)plotFunction(dfn,'#f59e0b',2,false);}
   }
   if(showTangent)drawTangent();
   drawDoodle();drawUserPts();drawCursor();
-  /* Update eq */
   if(!g.param)document.getElementById('fn-eq').textContent=getTransEq();
   requestAnimationFrame(render);
 }
