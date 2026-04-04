@@ -724,6 +724,170 @@ addEventListener('touchmove',e=>{if(!dragging||e.touches.length!==1)return;const
 draw();
 <\/script></body></html>`;
 
+const OPTICS_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#080c10;color:#e6edf3;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;display:flex;flex-direction:column;height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #2a3441;background:#0d1117;flex-shrink:0}
+header h1{font-size:15px;font-weight:600;letter-spacing:-0.3px}
+.hdr-left{display:flex;align-items:center;gap:8px}
+.hdr-right{display:flex;gap:6px}
+main{display:flex;flex:1;overflow:hidden}
+aside{width:280px;min-width:240px;background:linear-gradient(180deg,#0d1117,rgba(13,17,23,0.95));border-right:1px solid #2a3441;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;flex-shrink:0}
+.card{background:#151b23;border-radius:10px;padding:12px;border:1px solid #2a3441;box-shadow:0 0 15px rgba(0,212,255,0.06)}
+.card h2{font-size:9px;font-weight:600;color:#7d8590;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
+.lens-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lens-btn{padding:8px;border-radius:7px;font-size:12px;font-weight:500;border:1px solid #2a3441;background:#151b23;color:#7d8590;cursor:pointer;transition:all .2s}
+.lens-btn:hover{border-color:#00d4ff;background:rgba(0,212,255,0.08)}
+.lens-btn.active{background:#00d4ff;color:#080c10;border-color:#00d4ff}
+.slider-row{margin-bottom:10px}
+.slider-row .top{display:flex;justify-content:space-between;margin-bottom:4px}
+.slider-row label{font-size:12px;color:#e6edf3}
+.slider-row .val{font-size:12px;color:#00d4ff;font-family:monospace;text-shadow:0 0 8px rgba(0,212,255,0.3)}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:#080c10;border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:#00d4ff;border-radius:50%;cursor:pointer;box-shadow:0 0 8px #00d4ff}
+.data-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a3441}
+.data-row .lbl{font-size:11px;color:#7d8590}
+.data-row .val{font-size:15px;color:#00d4ff;font-weight:600;font-family:monospace;text-shadow:0 0 8px rgba(0,212,255,0.15)}
+.props{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tag{padding:3px 10px;border-radius:99px;font-size:10px;font-weight:600}
+.canvas-wrap{flex:1;position:relative;background:#080c10}
+canvas{display:block;cursor:grab;width:100%;height:100%}
+canvas:active{cursor:grabbing}
+.coord{position:absolute;bottom:8px;right:8px;font-size:10px;color:#7d8590;font-family:monospace;background:#0d1117;padding:4px 8px;border-radius:6px;border:1px solid #2a3441}
+button.act{padding:6px 14px;border-radius:7px;font-size:11px;font-weight:500;border:1px solid #2a3441;background:#151b23;color:#7d8590;cursor:pointer;transition:all .2s}
+button.act:hover{border-color:#00d4ff;background:rgba(0,212,255,0.1);color:#e6edf3}
+.demo-btn{width:100%;padding:9px;border-radius:9px;font-size:12px;font-weight:600;border:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#080c10;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.demo-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,212,255,0.35)}
+.hint{font-size:10px;color:#7d8590;padding:8px;background:#080c10;border-radius:7px;line-height:1.5}
+</style></head><body>
+<header>
+  <div class="hdr-left">
+    <svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="#00d4ff" stroke-width="2"><ellipse cx="16" cy="16" rx="4" ry="12"/><line x1="4" y1="16" x2="10" y2="16"/><line x1="22" y1="16" x2="28" y2="16"/></svg>
+    <h1>Geometric Optics Lab</h1>
+  </div>
+  <div class="hdr-right">
+    <button class="act" onclick="resetAll()">Reset</button>
+  </div>
+</header>
+<main>
+  <aside>
+    <div class="card">
+      <h2>Lens Type</h2>
+      <div class="lens-btns">
+        <button id="cvxBtn" class="lens-btn active" onclick="setLens('convex')">Convex</button>
+        <button id="ccvBtn" class="lens-btn" onclick="setLens('concave')">Concave</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Parameters</h2>
+      <div class="slider-row"><div class="top"><label>Focal Length (f)</label><span class="val" id="fV">100 px</span></div><input type="range" id="fS" min="40" max="200" value="100"></div>
+      <div class="slider-row"><div class="top"><label>Object Distance (u)</label><span class="val" id="uV">300 px</span></div><input type="range" id="uS" min="30" max="500" value="300"></div>
+      <div class="slider-row"><div class="top"><label>Object Height (h)</label><span class="val" id="hV">50 px</span></div><input type="range" id="hS" min="20" max="100" value="50"></div>
+    </div>
+    <div class="card">
+      <h2>Imaging Data</h2>
+      <div class="data-row"><span class="lbl">Image Distance (v)</span><span class="val" id="vD">150 px</span></div>
+      <div class="data-row"><span class="lbl">Magnification (M)</span><span class="val" id="mD">0.50x</span></div>
+      <div class="data-row"><span class="lbl">Image Height</span><span class="val" id="ihD">25 px</span></div>
+      <div style="padding-top:6px"><span style="font-size:11px;color:#7d8590">Image Properties</span><div class="props" id="propsC"></div></div>
+    </div>
+    <button class="demo-btn" id="demoBtn" onclick="toggleDemo()">&#9654; One-Click Demo</button>
+    <div class="hint">Drag the candle to move the object. Drag focal markers to adjust f. Watch rays update live.</div>
+  </aside>
+  <div class="canvas-wrap"><canvas id="cv"></canvas><div class="coord" id="coordD">x: 0, y: 0</div></div>
+</main>
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+let lt='convex',fl=100,od=300,oh=50,isDrag=false,dragT=null,isDemo=false,demoId=null,cX=0,cY=0,sc=1;
+const C={axis:'#2a3642',grid:'#1a2028',lens:'#00d4ff',obj:'#ff6b35',imgR:'#00d4ff',rayI:'#ffd700',rayR:'#00ff88',rayV:'#5a6270',focal:'#ff6b35'};
+
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v))}
+function tCX(x){return cX+x*sc}
+function tCY(y){return cY-y*sc}
+function tPX(cx2){return(cx2-cX)/sc}
+function tPY(cy2){return(cY-cy2)/sc}
+
+function calcImg(){
+  const f=lt==='convex'?fl:-fl,u=od,den=u-f;
+  if(Math.abs(den)<0.001)return{v:Infinity,M:Infinity,isReal:false,ih:0};
+  const v=(f*u)/den,M=-v/u,ih=Math.abs(M)*oh;
+  let isR,isU,isM;
+  if(lt==='convex'){isR=v>0;isU=v<0;isM=Math.abs(M)>1;}else{isR=false;isU=true;isM=false;}
+  return{v,M,ih,isR,isU,isM};
+}
+
+function drawGrid(){cx.strokeStyle=C.grid;cx.lineWidth=0.5;const gs=50*sc;for(let x=cX%gs;x<cv.width;x+=gs){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,cv.height);cx.stroke();}for(let y=cY%gs;y<cv.height;y+=gs){cx.beginPath();cx.moveTo(0,y);cx.lineTo(cv.width,y);cx.stroke();}}
+
+function drawAxis(){cx.strokeStyle=C.axis;cx.lineWidth=2;cx.beginPath();cx.moveTo(0,cY);cx.lineTo(cv.width,cY);cx.stroke();cx.fillStyle='#5a6270';cx.font='10px monospace';cx.textAlign='center';for(let i=-600;i<=600;i+=50){const x=tCX(i);if(x>0&&x<cv.width){cx.beginPath();cx.moveTo(x,cY-4);cx.lineTo(x,cY+4);cx.stroke();if(i!==0&&i%100===0)cx.fillText(i,x,cY+16);}}}
+
+function drawLens(){const x=tCX(0),hh=180;cx.strokeStyle=C.lens;cx.lineWidth=3;if(lt==='convex'){cx.beginPath();cx.moveTo(x,cY-hh);cx.quadraticCurveTo(x+20,cY,x,cY+hh);cx.stroke();cx.beginPath();cx.moveTo(x,cY-hh);cx.quadraticCurveTo(x-20,cY,x,cY+hh);cx.stroke();}else{cx.beginPath();cx.moveTo(x-8,cY-hh);cx.quadraticCurveTo(x+12,cY,x-8,cY+hh);cx.stroke();cx.beginPath();cx.moveTo(x+8,cY-hh);cx.quadraticCurveTo(x-12,cY,x+8,cY+hh);cx.stroke();}cx.fillStyle=C.lens;[-(hh+10),hh+10].forEach(dy=>{const ty=cY+dy,dir=dy<0?1:-1;cx.beginPath();cx.moveTo(x,ty);cx.lineTo(x-5,ty+dir*10);cx.lineTo(x+5,ty+dir*10);cx.closePath();cx.fill();});}
+
+function drawFocal(){const f=lt==='convex'?fl:-fl;const f1=tCX(-Math.abs(f)),f2=tCX(Math.abs(f)),sz=7;cx.strokeStyle=C.focal;cx.lineWidth=2;[f1,f2].forEach(fx=>{cx.beginPath();cx.moveTo(fx-sz,cY-sz);cx.lineTo(fx+sz,cY+sz);cx.moveTo(fx+sz,cY-sz);cx.lineTo(fx-sz,cY+sz);cx.stroke();});cx.fillStyle=C.focal;cx.font='bold 11px system-ui';cx.textAlign='center';cx.fillText('F',f1,cY+22);cx.fillText("F'",f2,cY+22);const f21=tCX(-2*Math.abs(f)),f22=tCX(2*Math.abs(f));cx.fillStyle='#5a6270';if(f21>40)cx.fillText('2F',f21,cY+22);if(f22<cv.width-40)cx.fillText("2F'",f22,cY+22);}
+
+function drawArrow(x,y,h,col,dash,dir){dir=dir||1;const ax=tCX(x),ay=tCY(y),ty=tCY(y+h*dir);cx.strokeStyle=col;cx.fillStyle=col;cx.lineWidth=3;cx.setLineDash(dash?[8,4]:[]);cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(ax,ty);cx.stroke();const hs=9;cx.beginPath();cx.moveTo(ax,ty);cx.lineTo(ax-hs/2,ty+(dir>0?hs:-hs));cx.lineTo(ax+hs/2,ty+(dir>0?hs:-hs));cx.closePath();cx.fill();cx.setLineDash([]);}
+
+function drawObj(){drawArrow(-od,0,oh,C.obj,false,1);const ax=tCX(-od);cx.fillStyle=C.obj;cx.beginPath();cx.ellipse(ax,tCY(0)+3,7,3,0,0,Math.PI*2);cx.fill();}
+
+function drawImg(d){const{v,M,ih,isR,isU}=d;if(!isFinite(v)||Math.abs(v)>1000)return;drawArrow(v,0,ih,isR?C.imgR:C.imgR,!isR,isU?1:-1);}
+
+function drawConvexRays(d){const f=fl,objX=-od,objY=oh,{v,ih,isR,isU}=d,imgY=isU?ih:-ih;cx.lineWidth=2;cx.setLineDash([]);
+cx.strokeStyle=C.rayI;cx.beginPath();cx.moveTo(tCX(objX),tCY(objY));cx.lineTo(tCX(0),tCY(objY));cx.stroke();
+if(isR&&isFinite(v)){cx.strokeStyle=C.rayR;cx.beginPath();cx.moveTo(tCX(0),tCY(objY));cx.lineTo(tCX(v),tCY(imgY));cx.stroke();}else if(!isR&&isFinite(v)){cx.strokeStyle=C.rayR;cx.beginPath();cx.moveTo(tCX(0),tCY(objY));cx.lineTo(tCX(400),tCY(objY-(objY/f)*400));cx.stroke();cx.strokeStyle=C.rayV;cx.setLineDash([6,4]);cx.beginPath();cx.moveTo(tCX(0),tCY(objY));cx.lineTo(tCX(v),tCY(imgY));cx.stroke();cx.setLineDash([]);}
+cx.strokeStyle=C.rayI;cx.beginPath();cx.moveTo(tCX(objX),tCY(objY));cx.lineTo(tCX(0),tCY(0));cx.stroke();
+if(isR&&isFinite(v)){cx.strokeStyle=C.rayR;cx.beginPath();cx.moveTo(tCX(0),tCY(0));cx.lineTo(tCX(v),tCY(imgY));cx.stroke();}else if(!isR&&isFinite(v)){cx.strokeStyle=C.rayR;cx.beginPath();cx.moveTo(tCX(0),tCY(0));cx.lineTo(tCX(400),tCY(-(objY/od)*400));cx.stroke();cx.strokeStyle=C.rayV;cx.setLineDash([6,4]);cx.beginPath();cx.moveTo(tCX(0),tCY(0));cx.lineTo(tCX(v),tCY(imgY));cx.stroke();cx.setLineDash([]);}
+if(od>fl&&isFinite(v)){const sl=objY/(objX+f),yL=sl*f;cx.strokeStyle=C.rayI;cx.beginPath();cx.moveTo(tCX(objX),tCY(objY));cx.lineTo(tCX(0),tCY(yL));cx.stroke();cx.strokeStyle=C.rayR;cx.beginPath();cx.moveTo(tCX(0),tCY(yL));cx.lineTo(tCX(v),tCY(yL));cx.stroke();}}
+
+function drawConcaveRays(d){const f=fl,objX=-od,objY=oh,{v,ih}=d,imgY=ih;if(!isFinite(v))return;cx.lineWidth=2;cx.setLineDash([]);
+cx.strokeStyle=C.rayI;cx.beginPath();cx.moveTo(tCX(objX),tCY(objY));cx.lineTo(tCX(0),tCY(objY));cx.stroke();
+const sl1=objY/f;cx.strokeStyle=C.rayR;cx.beginPath();cx.moveTo(tCX(0),tCY(objY));cx.lineTo(tCX(300),tCY(objY-sl1*300));cx.stroke();
+cx.strokeStyle=C.rayV;cx.setLineDash([6,4]);cx.beginPath();cx.moveTo(tCX(0),tCY(objY));cx.lineTo(tCX(-f),tCY(0));cx.stroke();cx.setLineDash([]);
+cx.strokeStyle=C.rayI;cx.beginPath();cx.moveTo(tCX(objX),tCY(objY));cx.lineTo(tCX(0),tCY(0));cx.stroke();
+cx.strokeStyle=C.rayR;cx.beginPath();cx.moveTo(tCX(0),tCY(0));cx.lineTo(tCX(300),tCY(-(objY/od)*300));cx.stroke();
+cx.strokeStyle=C.rayV;cx.setLineDash([6,4]);cx.beginPath();cx.moveTo(tCX(0),tCY(0));cx.lineTo(tCX(v),tCY(imgY));cx.stroke();cx.setLineDash([]);}
+
+function updateUI(d){const{v,M,ih,isR,isU,isM}=d;
+document.getElementById('vD').textContent=isFinite(v)?Math.abs(v).toFixed(1)+' px':'\\u221e';
+document.getElementById('mD').textContent=isFinite(M)?Math.abs(M).toFixed(2)+'x':'\\u221e';
+document.getElementById('ihD').textContent=isFinite(ih)?ih.toFixed(1)+' px':'\\u221e';
+const pc=document.getElementById('propsC');pc.innerHTML='';
+const tags=[[isR?'Real':'Virtual',isR?'#00d4ff':'#5a6270',isR?'#080c10':'#e6edf3'],[isU?'Upright':'Inverted','#ff6b35','#fff'],[Math.abs(M)<0.99?'Reduced':Math.abs(M)>1.01?'Magnified':'Same Size','#00ff88','#080c10']];
+tags.forEach(([t,bg,fg])=>{const s=document.createElement('span');s.className='tag';s.style.background=bg;s.style.color=fg;s.textContent=t;pc.appendChild(s);});}
+
+function render(){cx.fillStyle='#080c10';cx.fillRect(0,0,cv.width,cv.height);drawGrid();drawAxis();drawLens();drawFocal();const d=calcImg();if(lt==='convex')drawConvexRays(d);else drawConcaveRays(d);drawObj();drawImg(d);updateUI(d);}
+
+function resize(){const p=cv.parentElement;cv.width=p.clientWidth;cv.height=p.clientHeight;cX=cv.width*0.45;cY=cv.height/2;sc=1;render();}
+
+function setLens(t){lt=t;document.getElementById('cvxBtn').classList.toggle('active',t==='convex');document.getElementById('ccvBtn').classList.toggle('active',t==='concave');render();}
+
+function checkTarget(mx,my){const px=tPX(mx),py=tPY(my);if(Math.abs(px-(-od))<30&&Math.abs(py-oh/2)<oh)return'obj';if((Math.abs(px-(-fl))<20||Math.abs(px-fl)<20)&&Math.abs(py)<30)return'focal';return null;}
+
+cv.addEventListener('mousedown',e=>{const r=cv.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;dragT=checkTarget(mx,my);if(dragT){isDrag=true;cv.style.cursor='grabbing';}});
+cv.addEventListener('mousemove',e=>{const r=cv.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const px=tPX(mx),py=tPY(my);document.getElementById('coordD').textContent='x: '+px.toFixed(0)+', y: '+py.toFixed(0);if(isDrag&&dragT){if(dragT==='obj'){od=clamp(-px,30,500);document.getElementById('uS').value=od;document.getElementById('uV').textContent=Math.round(od)+' px';}else{fl=clamp(Math.abs(px),40,200);document.getElementById('fS').value=fl;document.getElementById('fV').textContent=Math.round(fl)+' px';}render();}else{cv.style.cursor=checkTarget(mx,my)?'grab':'default';}});
+cv.addEventListener('mouseup',()=>{isDrag=false;dragT=null;cv.style.cursor='default';});
+cv.addEventListener('mouseleave',()=>{isDrag=false;dragT=null;});
+
+cv.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0],r=cv.getBoundingClientRect();dragT=checkTarget(t.clientX-r.left,t.clientY-r.top);if(dragT)isDrag=true;},{passive:false});
+cv.addEventListener('touchmove',e=>{e.preventDefault();if(!isDrag||!dragT)return;const t=e.touches[0],r=cv.getBoundingClientRect(),px=tPX(t.clientX-r.left);if(dragT==='obj'){od=clamp(-px,30,500);document.getElementById('uS').value=od;document.getElementById('uV').textContent=Math.round(od)+' px';}else{fl=clamp(Math.abs(px),40,200);document.getElementById('fS').value=fl;document.getElementById('fV').textContent=Math.round(fl)+' px';}render();},{passive:false});
+cv.addEventListener('touchend',()=>{isDrag=false;dragT=null;});
+
+document.getElementById('fS').addEventListener('input',e=>{fl=+e.target.value;document.getElementById('fV').textContent=fl+' px';render();});
+document.getElementById('uS').addEventListener('input',e=>{od=+e.target.value;document.getElementById('uV').textContent=od+' px';render();});
+document.getElementById('hS').addEventListener('input',e=>{oh=+e.target.value;document.getElementById('hV').textContent=oh+' px';render();});
+
+function resetAll(){stopDemo();fl=100;od=300;oh=50;lt='convex';document.getElementById('fS').value=100;document.getElementById('fV').textContent='100 px';document.getElementById('uS').value=300;document.getElementById('uV').textContent='300 px';document.getElementById('hS').value=50;document.getElementById('hV').textContent='50 px';document.getElementById('cvxBtn').classList.add('active');document.getElementById('ccvBtn').classList.remove('active');render();}
+
+function stopDemo(){isDemo=false;if(demoId){cancelAnimationFrame(demoId);demoId=null;}document.getElementById('demoBtn').innerHTML='&#9654; One-Click Demo';}
+
+function toggleDemo(){if(isDemo){stopDemo();return;}isDemo=true;lt='convex';setLens('convex');document.getElementById('demoBtn').innerHTML='\\u25a0 Stop Demo';
+const sU=4*fl,eU=0.6*fl,dur=6000,st=performance.now();
+function anim(t){if(!isDemo)return;const p=Math.min((t-st)/dur,1),e=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;od=sU-(sU-eU)*e;document.getElementById('uS').value=od;document.getElementById('uV').textContent=Math.round(od)+' px';render();if(p<1){demoId=requestAnimationFrame(anim);}else{setTimeout(()=>{if(!isDemo)return;const st2=performance.now();function rev(t){if(!isDemo)return;const p=Math.min((t-st2)/dur,1),e=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;od=eU+(sU-eU)*e;document.getElementById('uS').value=od;document.getElementById('uV').textContent=Math.round(od)+' px';render();if(p<1)demoId=requestAnimationFrame(rev);else stopDemo();}demoId=requestAnimationFrame(rev);},400);}}
+demoId=requestAnimationFrame(anim);}
+
+addEventListener('resize',resize);resize();
+<\/script></body></html>`;
+
 // ── Categories ───────────────────────────────────────────────────────────────
 
 export const STEM_CATEGORIES: StemCategory[] = [
@@ -820,6 +984,18 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Ionic', 'Covalent', 'Molecular Geometry'],
         instructions: 'Select a molecule (H₂O, CO₂, CH₄, NaCl, NH₃) to view its 3D structure. Atoms are colour-coded by element. Bonds are shown as white lines. Drag to rotate the molecule. The label shows bond type and molecular geometry.',
         html_code: BONDING_HTML,
+      },
+      {
+        id: 'geometric-optics',
+        title: 'Geometric Optics Lab',
+        description: 'Simulate convex and concave lenses with interactive ray tracing, draggable objects, and real-time image calculations.',
+        icon: 'Eye',
+        gradient: 'from-cyan-500 to-blue-500',
+        glowColor: 'rgba(0,212,255,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Lenses', 'Ray Tracing', 'Optics', 'Refraction'],
+        instructions: 'Choose a lens type (Convex or Concave) using the toggle. Adjust focal length, object distance, and object height with the sliders or drag the candle on the canvas. Observe how rays bend through the lens and where the image forms. The data panel shows image distance, magnification, and image properties (real/virtual, upright/inverted, magnified/diminished). Click "Run Demo" for an animated walkthrough.',
+        html_code: OPTICS_HTML,
       },
     ],
   },
