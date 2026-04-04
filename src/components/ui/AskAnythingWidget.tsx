@@ -23,6 +23,14 @@ const PROVIDERS = [
     ring: 'ring-emerald-400/30',
   },
   {
+    id: 'thetawise',
+    label: 'AI Tutor',
+    url: 'https://thetawise.ai/',
+    icon: '🎓',
+    accent: 'from-violet-500 to-fuchsia-400',
+    ring: 'ring-fuchsia-400/30',
+  },
+  {
     id: 'soundcloud',
     label: 'Music',
     url: 'https://soundcloud.com/discover',
