@@ -5442,6 +5442,638 @@ if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){temp=25;sT.value=25;
 });
 <\/script></body></html>`;
 
+// ── Cell Structure ─────────────────────────────────────────────────────────
+const CELL_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block;cursor:pointer}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.5);color:#10b981}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#10b981;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Cell Type</div>
+<button id="bAnimal" class="active">Animal Cell</button>
+<button id="bPlant">Plant Cell</button>
+<button id="bBact">Bacterial Cell</button>
+</div>
+<div class="sec">
+<div class="sec-title">Selected Organelle</div>
+<div class="info" id="info">Click on an organelle to learn about it</div>
+</div>
+<div class="sec">
+<div class="sec-title">Organelles</div>
+<div class="info" id="list"></div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let cellType='animal',selected=null,time=0;
+const organelles={
+animal:[
+{name:'Nucleus',x:0,y:0,r:45,color:'#8b5cf6',desc:'Contains DNA. Controls cell activities and division.'},
+{name:'Mitochondria',x:-80,y:-40,r:20,color:'#ef4444',desc:'Powerhouse of the cell. Produces ATP via aerobic respiration.'},
+{name:'Mitochondria',x:60,y:50,r:18,color:'#ef4444',desc:'Powerhouse of the cell. Produces ATP via aerobic respiration.'},
+{name:'Ribosome',x:-40,y:60,r:6,color:'#f59e0b',desc:'Makes proteins by translating mRNA instructions.'},
+{name:'Ribosome',x:30,y:-60,r:6,color:'#f59e0b',desc:'Makes proteins by translating mRNA instructions.'},
+{name:'Ribosome',x:-70,y:20,r:6,color:'#f59e0b',desc:'Makes proteins by translating mRNA instructions.'},
+{name:'ER (Rough)',x:50,y:-30,r:28,color:'#3b82f6',desc:'Rough ER has ribosomes. Folds and transports proteins.'},
+{name:'ER (Smooth)',x:-50,y:-70,r:22,color:'#06b6d4',desc:'Smooth ER makes lipids and detoxifies chemicals.'},
+{name:'Golgi Body',x:-90,y:60,r:22,color:'#10b981',desc:'Packages and modifies proteins for secretion.'},
+{name:'Lysosome',x:80,y:-60,r:12,color:'#ec4899',desc:'Contains digestive enzymes. Breaks down waste.'},
+{name:'Cell Membrane',x:0,y:0,r:140,color:'#f97316',desc:'Controls what enters/leaves the cell. Semi-permeable.'},
+],
+plant:[
+{name:'Nucleus',x:20,y:20,r:40,color:'#8b5cf6',desc:'Contains DNA. Controls cell activities.'},
+{name:'Chloroplast',x:-60,y:-40,r:22,color:'#22c55e',desc:'Site of photosynthesis. Contains chlorophyll.'},
+{name:'Chloroplast',x:70,y:40,r:20,color:'#22c55e',desc:'Site of photosynthesis. Contains chlorophyll.'},
+{name:'Vacuole',x:-20,y:10,r:55,color:'#06b6d4',desc:'Large central vacuole. Stores water and maintains turgor pressure.'},
+{name:'Mitochondria',x:60,y:-50,r:18,color:'#ef4444',desc:'Produces ATP via aerobic respiration.'},
+{name:'Cell Wall',x:0,y:0,r:150,color:'#84cc16',desc:'Rigid outer layer made of cellulose. Provides structure and support.'},
+{name:'Cell Membrane',x:0,y:0,r:140,color:'#f97316',desc:'Just inside cell wall. Controls transport.'},
+{name:'Ribosome',x:-80,y:60,r:6,color:'#f59e0b',desc:'Makes proteins from mRNA.'},
+],
+bacterial:[
+{name:'Cell Wall',x:0,y:0,r:130,color:'#84cc16',desc:'Rigid peptidoglycan wall. Protects the cell.'},
+{name:'Cell Membrane',x:0,y:0,r:120,color:'#f97316',desc:'Controls transport in/out.'},
+{name:'DNA (nucleoid)',x:0,y:0,r:35,color:'#8b5cf6',desc:'Circular DNA not in a nucleus. Free-floating in cytoplasm.'},
+{name:'Plasmid',x:-60,y:40,r:10,color:'#ec4899',desc:'Small circular DNA. Carries extra genes (e.g., antibiotic resistance).'},
+{name:'Plasmid',x:50,y:-30,r:8,color:'#ec4899',desc:'Small extra-chromosomal DNA.'},
+{name:'Ribosome',x:-40,y:-50,r:5,color:'#f59e0b',desc:'Smaller (70S) ribosomes. Makes proteins.'},
+{name:'Ribosome',x:30,y:50,r:5,color:'#f59e0b',desc:'Smaller (70S) ribosomes.'},
+{name:'Flagellum',x:130,y:0,r:15,color:'#14b8a6',desc:'Tail-like structure for movement.'},
+],
+};
+function setCell(type,id){cellType=type;selected=null;
+document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));
+document.getElementById(id).classList.add('active');updateList()}
+document.getElementById('bAnimal').onclick=()=>setCell('animal','bAnimal');
+document.getElementById('bPlant').onclick=()=>setCell('plant','bPlant');
+document.getElementById('bBact').onclick=()=>setCell('bacterial','bBact');
+function updateList(){
+const unique=[...new Set(organelles[cellType].map(o=>o.name))];
+document.getElementById('list').innerHTML=unique.map(n=>'• '+n).join('<br>');
+}
+updateList();
+C.onclick=e=>{
+const mx=e.offsetX,my=e.offsetY;
+const cx=W*0.4,cy=H/2;
+selected=null;
+const orgs=organelles[cellType];
+for(let i=orgs.length-1;i>=0;i--){
+const o=orgs[i];
+if(Math.hypot(mx-(cx+o.x),my-(cy+o.y))<o.r+5){
+selected=o;break;
+}
+}
+if(selected){
+document.getElementById('info').innerHTML='<b style="color:'+selected.color+'">'+selected.name+'</b><br><br>'+selected.desc;
+}
+};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H/2;
+const orgs=organelles[cellType];
+// draw from largest to smallest
+const sorted=[...orgs].sort((a,b)=>b.r-a.r);
+sorted.forEach(o=>{
+const ox=cx+o.x,oy=cy+o.y;
+const isSel=selected&&selected.name===o.name;
+if(o.name==='Cell Membrane'||o.name==='Cell Wall'){
+X.beginPath();X.arc(ox,oy,o.r,0,Math.PI*2);
+X.strokeStyle=o.color+(isSel?'':'80');X.lineWidth=isSel?3:2;
+X.setLineDash(o.name==='Cell Membrane'?[6,4]:[]);X.stroke();X.setLineDash([]);
+}else if(o.name==='Vacuole'){
+X.beginPath();X.arc(ox,oy,o.r+Math.sin(time*2)*2,0,Math.PI*2);
+X.fillStyle=o.color+'20';X.fill();X.strokeStyle=o.color+'60';X.lineWidth=1.5;X.stroke();
+}else if(o.name==='Flagellum'){
+X.beginPath();
+for(let i=0;i<40;i++){
+const fx=ox+i*2,fy=oy+Math.sin(i*0.3+time*5)*8;
+i===0?X.moveTo(fx,fy):X.lineTo(fx,fy);
+}
+X.strokeStyle=o.color;X.lineWidth=2;X.stroke();
+}else if(o.name.includes('ER')){
+X.beginPath();
+for(let i=0;i<6;i++){
+const ey=oy-o.r+i*(o.r*2/5);
+X.moveTo(ox-o.r,ey);
+X.bezierCurveTo(ox-o.r/2,ey+8,ox+o.r/2,ey-8,ox+o.r,ey);
+}
+X.strokeStyle=o.color+(isSel?'':'80');X.lineWidth=isSel?2.5:1.5;X.stroke();
+}else if(o.name==='Golgi Body'){
+for(let i=0;i<4;i++){
+X.beginPath();
+const gy=oy-12+i*8;
+X.ellipse(ox,gy,o.r,4,0,0,Math.PI*2);
+X.strokeStyle=o.color+(isSel?'':'70');X.lineWidth=isSel?2:1.5;X.stroke();
+}
+}else{
+X.beginPath();X.arc(ox+Math.sin(time*3+o.x)*1,oy+Math.cos(time*2+o.y)*1,o.r,0,Math.PI*2);
+X.fillStyle=o.color+(isSel?'60':'30');X.fill();
+X.strokeStyle=o.color+(isSel?'':'80');X.lineWidth=isSel?2.5:1.5;X.stroke();
+}
+// label
+if(o.r>10){
+X.fillStyle='rgba(255,255,255,'+(isSel?0.9:0.5)+')';X.font=(isSel?'bold ':'')+Math.min(10,o.r*0.4)+'px system-ui';X.textAlign='center';
+X.fillText(o.name,ox,oy+o.r+12);
+}
+});
+X.textAlign='left';
+}
+function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){selected=null;cellType='animal';updateList()}
+});
+<\/script></body></html>`;
+
+// ── DNA & Replication ──────────────────────────────────────────────────────
+const DNA_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(139,92,246,0.25);border-color:rgba(139,92,246,0.5);color:#8b5cf6}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#8b5cf6;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">View</div>
+<button id="bHelix" class="active">Double Helix</button>
+<button id="bRep">Replication</button>
+<button id="bBases">Base Pairing</button>
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bPause">Pause</button>
+<button id="bReset">Reset</button>
+</div>
+<div class="sec">
+<div class="sec-title">Info</div>
+<div class="info" id="info">Rotate the DNA double helix</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>DNA</b> = Deoxyribonucleic acid<br><br>
+<b>Structure:</b> Double helix of 2 polynucleotide strands<br><br>
+<b>Base pairing:</b><br>
+A—T (Adenine–Thymine)<br>
+C—G (Cytosine–Guanine)<br><br>
+<b>Backbone:</b> Sugar-phosphate<br><br>
+<b>Replication:</b><br>
+1. Helicase unzips DNA<br>
+2. DNA polymerase adds complementary bases<br>
+3. Two identical copies form
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let mode='helix',paused=false,time=0;
+const bases=[{l:'A',c:'#ef4444',p:'T',pc:'#3b82f6'},{l:'T',c:'#3b82f6',p:'A',pc:'#ef4444'},{l:'C',c:'#10b981',p:'G',pc:'#f59e0b'},{l:'G',c:'#f59e0b',p:'C',pc:'#10b981'}];
+const seq=[];for(let i=0;i<20;i++)seq.push(bases[Math.floor(Math.random()*4)]);
+document.getElementById('bHelix').onclick=()=>{mode='helix';setBtn('bHelix')};
+document.getElementById('bRep').onclick=()=>{mode='replication';setBtn('bRep')};
+document.getElementById('bBases').onclick=()=>{mode='bases';setBtn('bBases')};
+document.getElementById('bPause').onclick=()=>{paused=!paused;document.getElementById('bPause').textContent=paused?'Play':'Pause'};
+document.getElementById('bReset').onclick=()=>{time=0};
+function setBtn(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,startY=30;
+if(mode==='helix'){
+// 3D rotating double helix
+for(let i=0;i<seq.length;i++){
+const y=startY+i*(H-60)/seq.length;
+const angle=i*0.6+time;
+const x1=cx+Math.cos(angle)*60;
+const x2=cx+Math.cos(angle+Math.PI)*60;
+const depth1=Math.sin(angle);
+const depth2=Math.sin(angle+Math.PI);
+// backbone
+const alpha1=0.3+depth1*0.3;
+const alpha2=0.3+depth2*0.3;
+// draw back strand first
+if(depth2<depth1){
+X.beginPath();X.arc(x2,y,6,0,Math.PI*2);X.fillStyle=seq[i].pc+'80';X.fill();
+X.fillStyle='#fff';X.font='bold 7px system-ui';X.textAlign='center';X.fillText(seq[i].p,x2,y+3);
+}
+// bond
+X.beginPath();X.moveTo(x1,y);X.lineTo(x2,y);
+X.strokeStyle='rgba(255,255,255,0.15)';X.lineWidth=1;X.stroke();
+// draw front strand
+if(depth1>=depth2){
+X.beginPath();X.arc(x1,y,6,0,Math.PI*2);X.fillStyle=seq[i].c;X.fill();
+X.fillStyle='#fff';X.font='bold 7px system-ui';X.fillText(seq[i].l,x1,y+3);
+X.beginPath();X.arc(x2,y,6,0,Math.PI*2);X.fillStyle=seq[i].pc+'80';X.fill();
+X.fillStyle='#fff';X.fillText(seq[i].p,x2,y+3);
+}else{
+X.beginPath();X.arc(x1,y,6,0,Math.PI*2);X.fillStyle=seq[i].c;X.fill();
+X.fillStyle='#fff';X.fillText(seq[i].l,x1,y+3);
+}
+// backbone lines
+if(i>0){
+const py=startY+(i-1)*(H-60)/seq.length;
+const pa=((i-1)*0.6+time);
+const px1=cx+Math.cos(pa)*60,px2=cx+Math.cos(pa+Math.PI)*60;
+X.beginPath();X.moveTo(px1,py);X.lineTo(x1,y);X.strokeStyle='rgba(139,92,246,'+alpha1+')';X.lineWidth=2;X.stroke();
+X.beginPath();X.moveTo(px2,py);X.lineTo(x2,y);X.strokeStyle='rgba(236,72,153,'+alpha2+')';X.lineWidth=2;X.stroke();
+}
+}
+X.textAlign='left';
+document.getElementById('info').innerHTML='<b>Double Helix</b><br>Two anti-parallel strands twisted around each other.<br>Hydrogen bonds hold base pairs together.';
+}else if(mode==='replication'){
+const splitPos=Math.min(seq.length-1,Math.floor(time*2)%seq.length);
+for(let i=0;i<seq.length;i++){
+const y=startY+i*(H-60)/seq.length;
+const split=i<=splitPos;
+const gap=split?40:0;
+// original strands
+X.beginPath();X.arc(cx-30-gap,y,6,0,Math.PI*2);X.fillStyle=seq[i].c;X.fill();
+X.fillStyle='#fff';X.font='bold 7px system-ui';X.textAlign='center';X.fillText(seq[i].l,cx-30-gap,y+3);
+X.beginPath();X.arc(cx+30+gap,y,6,0,Math.PI*2);X.fillStyle=seq[i].pc;X.fill();
+X.fillStyle='#fff';X.fillText(seq[i].p,cx+30+gap,y+3);
+if(!split){
+X.beginPath();X.moveTo(cx-30,y);X.lineTo(cx+30,y);
+X.strokeStyle='rgba(255,255,255,0.15)';X.lineWidth=1;X.stroke();
+}else{
+// new complementary bases
+X.beginPath();X.arc(cx-30-gap+60,y,5,0,Math.PI*2);X.fillStyle=seq[i].pc+'80';X.fill();
+X.fillStyle='#fff';X.font='bold 6px system-ui';X.fillText(seq[i].p,cx-30-gap+60,y+3);
+X.beginPath();X.arc(cx+30+gap-60,y,5,0,Math.PI*2);X.fillStyle=seq[i].c+'80';X.fill();
+X.fillText(seq[i].l,cx+30+gap-60,y+3);
+// bonds
+X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;
+X.beginPath();X.moveTo(cx-30-gap,y);X.lineTo(cx-30-gap+60,y);X.stroke();
+X.beginPath();X.moveTo(cx+30+gap,y);X.lineTo(cx+30+gap-60,y);X.stroke();
+}
+}
+// helicase label
+if(splitPos<seq.length-1){
+const hy=startY+splitPos*(H-60)/seq.length;
+X.fillStyle='rgba(245,158,11,0.8)';X.font='bold 9px system-ui';
+X.fillText('⬇ Helicase',cx-15,hy+5);
+}
+X.textAlign='left';
+document.getElementById('info').innerHTML='<b>Replication</b><br>Helicase unzips. DNA polymerase builds complementary strands.<br>Result: 2 identical DNA molecules.';
+}else{
+// base pairing flat view
+const bpY=60;
+X.fillStyle='rgba(255,255,255,0.6)';X.font='bold 12px system-ui';X.textAlign='center';
+X.fillText('Base Pairing Rules',cx,40);
+const pairs=[['A','T','Adenine','Thymine','2 hydrogen bonds','#ef4444','#3b82f6'],['C','G','Cytosine','Guanine','3 hydrogen bonds','#10b981','#f59e0b']];
+pairs.forEach((p,i)=>{
+const py=bpY+80+i*180;
+// left base
+X.beginPath();X.arc(cx-80,py,30,0,Math.PI*2);X.fillStyle=p[5]+'40';X.fill();X.strokeStyle=p[5];X.lineWidth=2;X.stroke();
+X.fillStyle=p[5];X.font='bold 20px system-ui';X.fillText(p[0],cx-80,py+7);
+X.fillStyle='rgba(255,255,255,0.5)';X.font='10px system-ui';X.fillText(p[2],cx-80,py+45);
+// right base
+X.beginPath();X.arc(cx+80,py,30,0,Math.PI*2);X.fillStyle=p[6]+'40';X.fill();X.strokeStyle=p[6];X.lineWidth=2;X.stroke();
+X.fillStyle=p[6];X.font='bold 20px system-ui';X.fillText(p[1],cx+80,py+7);
+X.fillStyle='rgba(255,255,255,0.5)';X.font='10px system-ui';X.fillText(p[3],cx+80,py+45);
+// hydrogen bonds
+const nBonds=i===0?2:3;
+for(let b=0;b<nBonds;b++){
+const by2=py-8+b*8;
+X.setLineDash([3,3]);X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=1;
+X.beginPath();X.moveTo(cx-48,by2);X.lineTo(cx+48,by2);X.stroke();X.setLineDash([]);
+}
+X.fillStyle='rgba(255,255,255,0.4)';X.font='9px system-ui';X.fillText(p[4],cx,py-30);
+});
+X.textAlign='left';
+document.getElementById('info').innerHTML='<b>Base Pairing</b><br>A pairs with T (2 H-bonds)<br>C pairs with G (3 H-bonds)<br>Complementary base pairing ensures accurate replication.';
+}
+}
+function loop(){requestAnimationFrame(loop);if(!paused)time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;mode='helix';setBtn('bHelix')}
+});
+<\/script></body></html>`;
+
+// ── Heart & Circulation ────────────────────────────────────────────────────
+const HEART_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block;cursor:pointer}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#ef4444}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#ef4444;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Heart Rate</div>
+<label>BPM <span id="vBPM">72</span></label>
+<input type="range" id="sBPM" min="40" max="180" value="72" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bLabels">Toggle Labels</button>
+<button id="bFlow">Toggle Blood Flow</button>
+</div>
+<div class="sec">
+<div class="sec-title">Selected Chamber</div>
+<div class="info" id="info">Click on a heart chamber</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Double circulatory system:</b><br><br>
+<b>Right side:</b> Deoxygenated blood → lungs (pulmonary circuit)<br><br>
+<b>Left side:</b> Oxygenated blood → body (systemic circuit)<br><br>
+<b>Chambers:</b> 2 atria (receive) + 2 ventricles (pump)<br><br>
+<b>Valves:</b> prevent backflow<br>
+<b>Cardiac output</b> = HR × stroke volume
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let bpm=72,showLabels=true,showFlow=true,time=0,selected=null;
+const sBPM=document.getElementById('sBPM');
+sBPM.oninput=()=>{bpm=+sBPM.value;document.getElementById('vBPM').textContent=bpm};
+document.getElementById('bLabels').onclick=()=>{showLabels=!showLabels};
+document.getElementById('bFlow').onclick=()=>{showFlow=!showFlow};
+const chambers=[
+{name:'Right Atrium',x:-0.15,y:-0.12,w:0.14,h:0.12,color:'#3b82f6',desc:'Receives deoxygenated blood from the body via vena cava.'},
+{name:'Right Ventricle',x:-0.15,y:0.02,w:0.14,h:0.16,color:'#2563eb',desc:'Pumps deoxygenated blood to the lungs via pulmonary artery.'},
+{name:'Left Atrium',x:0.03,y:-0.12,w:0.14,h:0.12,color:'#ef4444',desc:'Receives oxygenated blood from the lungs via pulmonary vein.'},
+{name:'Left Ventricle',x:0.03,y:0.02,w:0.14,h:0.18,color:'#dc2626',desc:'Pumps oxygenated blood to the body via aorta. Thickest wall.'},
+];
+const bloodParticles=[];
+for(let i=0;i<40;i++){
+bloodParticles.push({t:Math.random(),path:Math.floor(Math.random()*2),speed:0.005+Math.random()*0.005});
+}
+C.onclick=e=>{
+const mx=e.offsetX,my=e.offsetY;
+const cx=W*0.4,cy=H*0.45,sc=Math.min(W,H)*0.8;
+selected=null;
+chambers.forEach(ch=>{
+const x=cx+ch.x*sc,y=cy+ch.y*sc,w=ch.w*sc,h=ch.h*sc;
+if(mx>x&&mx<x+w&&my>y&&my<y+h)selected=ch;
+});
+if(selected){
+document.getElementById('info').innerHTML='<b style="color:'+selected.color+'">'+selected.name+'</b><br><br>'+selected.desc;
+}
+};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H*0.45,sc=Math.min(W,H)*0.8;
+const beat=Math.sin(time*bpm/60*Math.PI*2)*0.03;
+// heart outline
+X.save();X.translate(cx,cy);X.scale(1+beat,1+beat);
+// chambers
+chambers.forEach(ch=>{
+const x=ch.x*sc,y=ch.y*sc,w=ch.w*sc,h=ch.h*sc;
+const isSel=selected&&selected.name===ch.name;
+X.fillStyle=ch.color+(isSel?'60':'30');
+X.strokeStyle=ch.color+(isSel?'':'80');X.lineWidth=isSel?3:2;
+X.beginPath();X.roundRect(x,y,w,h,8);X.fill();X.stroke();
+if(showLabels){
+X.fillStyle='rgba(255,255,255,0.7)';X.font='bold 9px system-ui';X.textAlign='center';
+X.fillText(ch.name,x+w/2,y+h/2+3);
+}
+});
+// septum
+X.fillStyle='rgba(255,255,255,0.15)';X.fillRect(-0.01*sc,-0.14*sc,0.02*sc,0.36*sc);
+// valves
+X.fillStyle='rgba(255,255,255,0.3)';X.font='8px system-ui';X.textAlign='center';
+if(showLabels){
+X.fillText('Tricuspid',(-0.08)*sc,0.01*sc);
+X.fillText('Mitral',(0.1)*sc,0.01*sc);
+}
+X.restore();
+// blood flow animation
+if(showFlow){
+const paths=[
+// pulmonary: RV → lungs → LA
+[{x:cx-0.08*sc,y:cy+0.1*sc},{x:cx-0.15*sc,y:cy-0.25*sc},{x:cx,y:cy-0.35*sc},{x:cx+0.15*sc,y:cy-0.25*sc},{x:cx+0.1*sc,y:cy-0.08*sc}],
+// systemic: LV → body → RA
+[{x:cx+0.1*sc,y:cy+0.12*sc},{x:cx+0.25*sc,y:cy+0.2*sc},{x:cx+0.2*sc,y:cy+0.35*sc},{x:cx-0.2*sc,y:cy+0.35*sc},{x:cx-0.25*sc,y:cy+0.2*sc},{x:cx-0.08*sc,y:cy-0.08*sc}],
+];
+bloodParticles.forEach(bp=>{
+bp.t+=bp.speed*(bpm/72);if(bp.t>1)bp.t-=1;
+const path=paths[bp.path];
+const idx=Math.floor(bp.t*(path.length-1));
+const frac=bp.t*(path.length-1)-idx;
+const p1=path[Math.min(idx,path.length-1)],p2=path[Math.min(idx+1,path.length-1)];
+const px=p1.x+(p2.x-p1.x)*frac,py=p1.y+(p2.y-p1.y)*frac;
+X.beginPath();X.arc(px,py,3,0,Math.PI*2);
+X.fillStyle=bp.path===0?'rgba(59,130,246,0.7)':'rgba(239,68,68,0.7)';X.fill();
+});
+}
+// labels for vessels
+if(showLabels){
+X.fillStyle='rgba(255,255,255,0.4)';X.font='9px system-ui';X.textAlign='center';
+X.fillText('Pulmonary Artery ↑',cx-0.1*sc,cy-0.28*sc);
+X.fillText('Pulmonary Vein ↓',cx+0.12*sc,cy-0.28*sc);
+X.fillText('Aorta →',cx+0.22*sc,cy+0.08*sc);
+X.fillText('Vena Cava ←',cx-0.22*sc,cy+0.08*sc);
+X.fillText('→ Lungs',cx,cy-0.38*sc);
+X.fillText('→ Body',cx,cy+0.38*sc);
+}
+X.textAlign='left';
+}
+function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;selected=null;bpm=72;sBPM.value=72;document.getElementById('vBPM').textContent=72}
+});
+<\/script></body></html>`;
+
+// ── Photosynthesis & Respiration ───────────────────────────────────────────
+const PHOTO_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#22c55e}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(34,197,94,0.25);border-color:rgba(34,197,94,0.5);color:#22c55e}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#22c55e;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Process</div>
+<button id="bPhoto" class="active">Photosynthesis</button>
+<button id="bResp">Respiration</button>
+<button id="bBoth">Both (Cycle)</button>
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<label>Light intensity <span id="vL">70</span>%</label>
+<input type="range" id="sL" min="0" max="100" value="70" step="1">
+<label>CO₂ level <span id="vCO2">50</span>%</label>
+<input type="range" id="sCO2" min="0" max="100" value="50" step="1">
+<label>Temperature <span id="vTemp">25</span> °C</label>
+<input type="range" id="sTemp" min="5" max="45" value="25" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Rate</div>
+<div class="info" id="rate">Adjust variables to see rate changes</div>
+</div>
+<div class="sec">
+<div class="sec-title">Equations</div>
+<div class="info">
+<b style="color:#22c55e">Photosynthesis:</b><br>
+6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂<br>
+(light energy + chlorophyll)<br><br>
+<b style="color:#ef4444">Respiration:</b><br>
+C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O<br>
+(releases ATP energy)<br><br>
+They are <b>reverse</b> reactions!
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let mode='photo',light=70,co2=50,temp=25,time=0;
+let molecules=[];
+const sL=document.getElementById('sL'),sCO2=document.getElementById('sCO2'),sTemp=document.getElementById('sTemp');
+sL.oninput=()=>{light=+sL.value;document.getElementById('vL').textContent=light};
+sCO2.oninput=()=>{co2=+sCO2.value;document.getElementById('vCO2').textContent=co2};
+sTemp.oninput=()=>{temp=+sTemp.value;document.getElementById('vTemp').textContent=temp};
+document.getElementById('bPhoto').onclick=()=>{mode='photo';setBtn('bPhoto')};
+document.getElementById('bResp').onclick=()=>{mode='resp';setBtn('bResp')};
+document.getElementById('bBoth').onclick=()=>{mode='both';setBtn('bBoth')};
+function setBtn(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function initMolecules(){
+molecules=[];
+for(let i=0;i<15;i++){
+molecules.push({type:'co2',x:Math.random()*W*0.6,y:Math.random()*H,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5});
+molecules.push({type:'o2',x:Math.random()*W*0.6,y:Math.random()*H,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5});
+molecules.push({type:'h2o',x:Math.random()*W*0.6,y:H*0.7+Math.random()*H*0.3,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3});
+}
+}
+initMolecules();
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.35;
+// sun/light
+if(mode!=='resp'){
+const sunAlpha=light/100;
+X.beginPath();X.arc(60,60,30,0,Math.PI*2);
+const sg=X.createRadialGradient(60,60,0,60,60,30);
+sg.addColorStop(0,'rgba(253,224,71,'+sunAlpha+')');sg.addColorStop(1,'rgba(245,158,11,0)');
+X.fillStyle=sg;X.fill();
+// light rays
+for(let r=0;r<8;r++){
+const a=r*Math.PI/4+time;
+X.beginPath();X.moveTo(60+Math.cos(a)*35,60+Math.sin(a)*35);
+X.lineTo(60+Math.cos(a)*(50+light*0.3),60+Math.sin(a)*(50+light*0.3));
+X.strokeStyle='rgba(253,224,71,'+(sunAlpha*0.3)+')';X.lineWidth=2;X.stroke();
+}
+}
+// leaf / chloroplast
+if(mode==='photo'||mode==='both'){
+X.save();X.translate(cx,H*0.35);
+X.beginPath();X.ellipse(0,0,100,50,0.2,0,Math.PI*2);
+X.fillStyle='rgba(34,197,94,0.2)';X.fill();X.strokeStyle='rgba(34,197,94,0.5)';X.lineWidth=2;X.stroke();
+X.fillStyle='rgba(34,197,94,0.7)';X.font='bold 11px system-ui';X.textAlign='center';
+X.fillText('Chloroplast',0,4);
+// arrows in
+X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';
+X.fillText('CO₂ + H₂O →',-140,4);X.fillText('→ C₆H₁₂O₆ + O₂',120,4);
+X.restore();
+}
+// mitochondria
+if(mode==='resp'||mode==='both'){
+const my=mode==='both'?H*0.65:H*0.4;
+X.save();X.translate(cx,my);
+X.beginPath();X.ellipse(0,0,80,40,0,0,Math.PI*2);
+X.fillStyle='rgba(239,68,68,0.2)';X.fill();X.strokeStyle='rgba(239,68,68,0.5)';X.lineWidth=2;X.stroke();
+// inner membrane folds
+for(let f=0;f<4;f++){
+X.beginPath();X.ellipse(-30+f*20,0,8,25,0,0,Math.PI*2);
+X.strokeStyle='rgba(239,68,68,0.3)';X.lineWidth=1;X.stroke();
+}
+X.fillStyle='rgba(239,68,68,0.7)';X.font='bold 11px system-ui';X.textAlign='center';
+X.fillText('Mitochondria',0,4);
+X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';
+X.fillText('C₆H₁₂O₆ + O₂ →',-140,4);X.fillText('→ CO₂ + H₂O + ATP',120,4);
+X.restore();
+}
+// cycle arrows for both mode
+if(mode==='both'){
+X.strokeStyle='rgba(34,197,94,0.4)';X.lineWidth=2;
+X.beginPath();X.moveTo(cx+110,H*0.35);X.quadraticCurveTo(cx+160,H*0.5,cx+110,H*0.65);X.stroke();
+X.fillStyle='rgba(34,197,94,0.4)';X.beginPath();X.moveTo(cx+110,H*0.65);X.lineTo(cx+105,H*0.65-8);X.lineTo(cx+115,H*0.65-8);X.closePath();X.fill();
+X.strokeStyle='rgba(239,68,68,0.4)';
+X.beginPath();X.moveTo(cx-110,H*0.65);X.quadraticCurveTo(cx-160,H*0.5,cx-110,H*0.35);X.stroke();
+X.fillStyle='rgba(239,68,68,0.4)';X.beginPath();X.moveTo(cx-110,H*0.35);X.lineTo(cx-105,H*0.35+8);X.lineTo(cx-115,H*0.35+8);X.closePath();X.fill();
+X.fillStyle='rgba(34,197,94,0.5)';X.font='9px system-ui';X.textAlign='center';
+X.fillText('O₂ + Glucose',cx+150,H*0.5);
+X.fillStyle='rgba(239,68,68,0.5)';X.fillText('CO₂ + H₂O',cx-150,H*0.5);
+}
+X.textAlign='left';
+// rate calculation
+const tempFactor=temp<10?0.2:temp>40?0.3:1-Math.abs(temp-30)/20;
+const photoRate=light/100*co2/100*tempFactor*100;
+const respRate=tempFactor*60;
+document.getElementById('rate').innerHTML=
+(mode!=='resp'?'Photo rate: <span class="val">'+photoRate.toFixed(1)+'</span>%<br>':'')+
+(mode!=='photo'?'Resp rate: <span class="val">'+respRate.toFixed(1)+'</span>%<br>':'')+
+(mode==='both'?'Net O₂: <span class="val">'+(photoRate-respRate).toFixed(1)+'</span>%<br>':'')+
+'Limiting factor: <span class="val">'+(light<co2?(light<temp*3?'Light':'Temperature'):(co2<temp*3?'CO₂':'Temperature'))+'</span>';
+}
+function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;mode='photo';setBtn('bPhoto');light=70;co2=50;temp=25;sL.value=70;sCO2.value=50;sTemp.value=25}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -6378,6 +7010,54 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Solid', 'Liquid', 'Gas', 'Particles', 'Heating Curve'],
         instructions: "Adjust temperature with the slider or use Heat/Cool buttons. Watch particles: solids vibrate in fixed positions with bonds, liquids flow with moderate energy, gases bounce rapidly with maximum energy. Switch substances to see different melting/boiling points.",
         html_code: STATES_HTML,
+      },
+      {
+        id: 'cell-structure',
+        title: 'Cell Structure',
+        description: 'Explore animal, plant, and bacterial cells — click organelles to learn their functions with animated diagrams.',
+        icon: 'Hexagon',
+        gradient: 'from-emerald-500 to-green-500',
+        glowColor: 'rgba(16,185,129,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Cells', 'Organelles', 'Nucleus', 'Mitochondria'],
+        instructions: "Switch between Animal, Plant, and Bacterial cell types. Click any organelle to see its name and function. Plant cells have chloroplasts, cell walls, and a large vacuole. Bacterial cells have no nucleus (prokaryote) with plasmids and flagella.",
+        html_code: CELL_HTML,
+      },
+      {
+        id: 'dna-replication',
+        title: 'DNA & Replication',
+        description: 'See the DNA double helix rotate in 3D, watch replication unfold step by step, and learn complementary base pairing.',
+        icon: 'Atom',
+        gradient: 'from-violet-500 to-purple-500',
+        glowColor: 'rgba(139,92,246,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['DNA', 'Bases', 'Replication', 'Helicase'],
+        instructions: "View the 3D rotating double helix, watch the step-by-step replication process (helicase unzipping, DNA polymerase building new strands), or study base pairing rules (A-T with 2 H-bonds, C-G with 3 H-bonds).",
+        html_code: DNA_HTML,
+      },
+      {
+        id: 'heart-circulation',
+        title: 'Heart & Circulation',
+        description: 'Animated heart with four chambers, valves, and blood flow — adjust heart rate and trace the double circulatory system.',
+        icon: 'Activity',
+        gradient: 'from-red-500 to-rose-500',
+        glowColor: 'rgba(239,68,68,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Heart', 'Blood', 'Circulation', 'Pulmonary'],
+        instructions: "Adjust heart rate (BPM) to see the heart beat faster or slower. Click on chambers to learn about them. Toggle labels to see vessel names. Toggle blood flow to watch oxygenated (red) and deoxygenated (blue) blood travel through the double circulatory system.",
+        html_code: HEART_HTML,
+      },
+      {
+        id: 'photosynthesis-respiration',
+        title: 'Photosynthesis & Respiration',
+        description: 'Visualise photosynthesis in chloroplasts and respiration in mitochondria — adjust light, CO₂, and temperature to see rate changes.',
+        icon: 'Sparkles',
+        gradient: 'from-green-500 to-emerald-500',
+        glowColor: 'rgba(34,197,94,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Photosynthesis', 'Respiration', 'ATP', 'Chloroplast'],
+        instructions: "Switch between Photosynthesis, Respiration, or Both (cycle view). Adjust light intensity, CO₂ level, and temperature to see how they affect the rate. In cycle view, see how the two processes are reverse reactions that depend on each other.",
+        html_code: PHOTO_HTML,
       },
     ],
   },
