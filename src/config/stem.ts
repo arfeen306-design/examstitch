@@ -7769,6 +7769,638 @@ addEventListener('message',e=>{
 });
 <\/script></body></html>`;
 
+// ── Trigonometry Circle Lab ─────────────────────────────────────────────────
+const TRIG_CIRCLE_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
+canvas{display:block}
+#hud{position:fixed;top:12px;right:12px;background:rgba(0,0,0,0.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:#fff;font-size:11px;min-width:200px;z-index:10}
+#hud h3{font-size:13px;margin-bottom:8px;color:#60a5fa}
+#hud .row{display:flex;justify-content:space-between;margin:3px 0}
+#hud .val{color:#fbbf24;font-family:monospace}
+#ctrls{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10}
+button{padding:6px 14px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:8px;cursor:pointer;font-size:11px;backdrop-filter:blur(8px)}
+button:hover{background:rgba(255,255,255,0.15)}
+button.active{background:rgba(96,165,250,0.3);border-color:rgba(96,165,250,0.6)}
+#history{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.4);font-size:10px;text-align:center;max-width:500px;z-index:10}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud">
+<h3>Trigonometry</h3>
+<div class="row"><span>Angle:</span><span class="val" id="vAng">0°</span></div>
+<div class="row"><span>sin θ:</span><span class="val" id="vSin">0.000</span></div>
+<div class="row"><span>cos θ:</span><span class="val" id="vCos">1.000</span></div>
+<div class="row"><span>tan θ:</span><span class="val" id="vTan">0.000</span></div>
+<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.1)">
+<div class="row"><span>sin²θ + cos²θ =</span><span class="val" id="vId">1.000</span></div>
+<div class="row"><span>Period:</span><span class="val" id="vPer">2π</span></div>
+</div>
+</div>
+<div id="ctrls">
+<button class="active" id="bDeg" onclick="setUnit('deg')">Degrees</button>
+<button id="bRad" onclick="setUnit('rad')">Radians</button>
+<button id="bSin" class="active" onclick="toggleFn('sin')">sin</button>
+<button id="bCos" class="active" onclick="toggleFn('cos')">cos</button>
+<button id="bTan" onclick="toggleFn('tan')">tan</button>
+<button onclick="anim=!anim">▶ Animate</button>
+</div>
+<div id="history">Trigonometry traces to Hipparchus (190-120 BC) who compiled the first trig table. Indian mathematicians Aryabhata & Madhava developed sine series centuries before Europe. The unit circle unifies all trig functions geometrically.</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();window.onresize=resize;
+
+// Pan & zoom (infinite canvas)
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
+let angle=0,unit='deg',showFns={sin:true,cos:true,tan:false},anim=false,dragging=false;
+const R=120;
+
+function setUnit(u){unit=u;document.getElementById('bDeg').className=u==='deg'?'active':'';document.getElementById('bRad').className=u==='rad'?'active':''}
+function toggleFn(f){showFns[f]=!showFns[f];document.getElementById('b'+f.charAt(0).toUpperCase()+f.slice(1)).className=showFns[f]?'active':''}
+
+c.addEventListener('mousedown',ev=>{if(ev.button===0){const cx=W*0.28,cy=H*0.5;const dx=(ev.clientX-_panX)/_zoom-cx,dy=(ev.clientY-_panY)/_zoom-cy;if(Math.sqrt(dx*dx+dy*dy)<R*1.5){dragging=true;angle=Math.atan2(-dy,dx);if(angle<0)angle+=Math.PI*2;_isPanning=false}}});
+c.addEventListener('mousemove',ev=>{if(dragging){const cx=W*0.28,cy=H*0.5;const dx=(ev.clientX-_panX)/_zoom-cx,dy=(ev.clientY-_panY)/_zoom-cy;angle=Math.atan2(-dy,dx);if(angle<0)angle+=Math.PI*2}});
+addEventListener('mouseup',()=>{dragging=false});
+
+function draw(){
+if(anim&&!dragging)angle=(angle+0.008)%(Math.PI*2);
+ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+const cx=W*0.28,cy=H*0.5;
+const s=Math.sin(angle),co=Math.cos(angle),t=s/co;
+
+// Unit circle
+ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();
+// Axes
+ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.moveTo(cx-R-30,cy);ctx.lineTo(cx+R+30,cy);ctx.moveTo(cx,cy-R-30);ctx.lineTo(cx,cy+R+30);ctx.stroke();
+
+// Radius line
+const px=cx+co*R,py=cy-s*R;
+ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.stroke();
+// Point
+ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
+
+// Sin line (vertical)
+if(showFns.sin){ctx.strokeStyle='#f87171';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px,cy);ctx.lineTo(px,py);ctx.stroke();
+ctx.fillStyle='#f87171';ctx.font='bold 11px system-ui';ctx.fillText('sin',px+6,cy+(py-cy)/2)}
+
+// Cos line (horizontal)
+if(showFns.cos){ctx.strokeStyle='#60a5fa';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,cy);ctx.stroke();
+ctx.fillStyle='#60a5fa';ctx.font='bold 11px system-ui';ctx.fillText('cos',cx+(px-cx)/2,-10+cy)}
+
+// Tan line
+if(showFns.tan&&Math.abs(co)>0.01){const tanLen=R*t;ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(cx+R,cy);ctx.lineTo(cx+R,cy-tanLen);ctx.stroke();ctx.setLineDash([])}
+
+// Arc
+ctx.strokeStyle='#fbbf24';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,25,0,-angle,true);ctx.stroke();
+
+// Wave graphs on the right
+const gx=W*0.55,gy=cy,gw=W*0.4,gh=R;
+ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+gw,gy);ctx.stroke();
+ctx.beginPath();ctx.moveTo(gx,gy-gh);ctx.lineTo(gx,gy+gh);ctx.stroke();
+// Grid lines
+for(let i=1;i<=4;i++){const xx=gx+gw*i/4;ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.beginPath();ctx.moveTo(xx,gy-gh);ctx.lineTo(xx,gy+gh);ctx.stroke()}
+// Labels
+ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px system-ui';
+ctx.fillText('0',gx-10,gy+4);ctx.fillText('π',gx+gw/2-4,gy+14);ctx.fillText('2π',gx+gw-8,gy+14);
+
+// Draw waves
+const fns=[{name:'sin',fn:Math.sin,color:'#f87171'},{name:'cos',fn:Math.cos,color:'#60a5fa'},{name:'tan',fn:Math.tan,color:'#a78bfa'}];
+fns.forEach(f=>{if(!showFns[f.name])return;ctx.strokeStyle=f.color;ctx.lineWidth=1.5;ctx.beginPath();
+for(let i=0;i<=200;i++){const t=i/200*Math.PI*2;const v=f.fn(t);const clamp=Math.max(-1.5,Math.min(1.5,v));
+const xx=gx+i/200*gw,yy=gy-clamp*gh/1.5;if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy)}ctx.stroke()});
+
+// Current angle marker on wave
+const ax=gx+angle/(Math.PI*2)*gw;
+ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(ax,gy-gh);ctx.lineTo(ax,gy+gh);ctx.stroke();ctx.setLineDash([]);
+
+// Angle labels
+const deg=angle*180/Math.PI;
+document.getElementById('vAng').textContent=unit==='deg'?deg.toFixed(1)+'°':(angle).toFixed(3)+' rad';
+document.getElementById('vSin').textContent=s.toFixed(3);
+document.getElementById('vCos').textContent=co.toFixed(3);
+document.getElementById('vTan').textContent=Math.abs(co)<0.01?'∞':t.toFixed(3);
+document.getElementById('vId').textContent=(s*s+co*co).toFixed(3);
+
+ctx.restore();
+requestAnimationFrame(draw)}
+draw();
+addEventListener('message',ev=>{if(ev.data&&(ev.data.type==='resetCanvas'||ev.data.type==='resetGraph')){angle=0;anim=false;_panX=0;_panY=0;_zoom=1}});
+<\/script></body></html>`;
+
+// ── Matrix Transformer ──────────────────────────────────────────────────────
+const MATRIX_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
+canvas{display:block}
+#panel{position:fixed;right:12px;top:12px;width:210px;background:rgba(0,0,0,0.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:#fff;font-size:11px;z-index:10}
+#panel h3{font-size:13px;margin-bottom:8px;color:#a78bfa}
+.mat{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0}
+.mat input{width:100%;padding:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;text-align:center;font-size:12px;font-family:monospace}
+#presets{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+button{padding:4px 10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:6px;cursor:pointer;font-size:10px}
+button:hover{background:rgba(255,255,255,0.15)}
+#info{color:rgba(255,255,255,0.4);font-size:10px;margin-top:8px;line-height:1.5}
+#det{color:#fbbf24;margin-top:6px}
+#history{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:10px;text-align:center;max-width:500px;z-index:10}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="panel">
+<h3>2×2 Matrix</h3>
+<div class="mat">
+<input id="m00" type="number" step="0.1" value="1">
+<input id="m01" type="number" step="0.1" value="0">
+<input id="m10" type="number" step="0.1" value="0">
+<input id="m11" type="number" step="0.1" value="1">
+</div>
+<div id="det">det = 1.00</div>
+<div id="presets">
+<button onclick="preset(1,0,0,1)">Identity</button>
+<button onclick="preset(2,0,0,2)">Scale 2×</button>
+<button onclick="preset(-1,0,0,1)">Reflect Y</button>
+<button onclick="preset(1,0,0,-1)">Reflect X</button>
+<button onclick="preset(0,1,1,0)">Reflect y=x</button>
+<button onclick="preset(0,-1,1,0)">Rot 90°</button>
+<button onclick="preset(-1,0,0,-1)">Rot 180°</button>
+<button onclick="preset(1,0.5,0,1)">Shear X</button>
+<button onclick="preset(1,0,0.5,1)">Shear Y</button>
+</div>
+<div id="info">
+<b>Equations:</b><br>
+x' = ax + by<br>
+y' = cx + dy<br>
+<span style="color:#a78bfa">[ a b ] [ x ]   [ x' ]</span><br>
+<span style="color:#a78bfa">[ c d ] [ y ] = [ y' ]</span>
+</div>
+</div>
+<div id="history">Matrix algebra was formalised by Arthur Cayley (1858) and James Sylvester. Matrices encode linear transformations — rotations, reflections, scaling — fundamental to computer graphics, quantum mechanics, and machine learning.</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();window.onresize=resize;
+
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
+const shape=[[1,1],[-1,1],[-1,-1],[1,-1],[0,1.5]];// house shape
+let animT=0,animating=false;
+function getMatrix(){return[parseFloat(document.getElementById('m00').value)||0,parseFloat(document.getElementById('m01').value)||0,parseFloat(document.getElementById('m10').value)||0,parseFloat(document.getElementById('m11').value)||0]}
+function preset(a,b,c,d){document.getElementById('m00').value=a;document.getElementById('m01').value=b;document.getElementById('m10').value=c;document.getElementById('m11').value=d}
+function transform(pt,m){return[m[0]*pt[0]+m[1]*pt[1],m[2]*pt[0]+m[3]*pt[1]]}
+
+function draw(){
+const m=getMatrix();
+const det=m[0]*m[3]-m[1]*m[2];
+document.getElementById('det').textContent='det = '+det.toFixed(2);
+ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+const cx=W/2,cy=H/2,sc=60;
+
+// Grid
+ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+for(let i=-10;i<=10;i++){ctx.beginPath();ctx.moveTo(cx+i*sc,cy-10*sc);ctx.lineTo(cx+i*sc,cy+10*sc);ctx.stroke();
+ctx.beginPath();ctx.moveTo(cx-10*sc,cy+i*sc);ctx.lineTo(cx+10*sc,cy+i*sc);ctx.stroke()}
+
+// Transformed grid
+ctx.strokeStyle='rgba(167,139,250,0.06)';
+for(let i=-10;i<=10;i++){ctx.beginPath();const p1=transform([i,-10],m),p2=transform([i,10],m);ctx.moveTo(cx+p1[0]*sc,cy-p1[1]*sc);ctx.lineTo(cx+p2[0]*sc,cy-p2[1]*sc);ctx.stroke();
+ctx.beginPath();const p3=transform([-10,i],m),p4=transform([10,i],m);ctx.moveTo(cx+p3[0]*sc,cy-p3[1]*sc);ctx.lineTo(cx+p4[0]*sc,cy-p4[1]*sc);ctx.stroke()}
+
+// Axes
+ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-W,cy);ctx.lineTo(cx+W,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
+
+// Basis vectors
+// e1
+const e1=transform([1,0],m),e2=transform([0,1],m);
+ctx.strokeStyle='#f87171';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+e1[0]*sc,cy-e1[1]*sc);ctx.stroke();
+ctx.fillStyle='#f87171';ctx.beginPath();ctx.arc(cx+e1[0]*sc,cy-e1[1]*sc,4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#f87171';ctx.font='bold 11px system-ui';ctx.fillText('e₁('+e1[0].toFixed(1)+','+e1[1].toFixed(1)+')',cx+e1[0]*sc+8,cy-e1[1]*sc);
+// e2
+ctx.strokeStyle='#34d399';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+e2[0]*sc,cy-e2[1]*sc);ctx.stroke();
+ctx.fillStyle='#34d399';ctx.beginPath();ctx.arc(cx+e2[0]*sc,cy-e2[1]*sc,4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#34d399';ctx.font='bold 11px system-ui';ctx.fillText('e₂('+e2[0].toFixed(1)+','+e2[1].toFixed(1)+')',cx+e2[0]*sc+8,cy-e2[1]*sc);
+
+// Original shape
+ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();
+shape.forEach((p,i)=>{const x=cx+p[0]*sc,y=cy-p[1]*sc;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.closePath();ctx.stroke();ctx.setLineDash([]);
+
+// Transformed shape
+const tShape=shape.map(p=>transform(p,m));
+ctx.strokeStyle='#a78bfa';ctx.lineWidth=2.5;ctx.fillStyle='rgba(167,139,250,0.12)';ctx.beginPath();
+tShape.forEach((p,i)=>{const x=cx+p[0]*sc,y=cy-p[1]*sc;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.closePath();ctx.fill();ctx.stroke();
+
+// Vertices
+tShape.forEach(p=>{ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(cx+p[0]*sc,cy-p[1]*sc,3.5,0,Math.PI*2);ctx.fill()});
+
+ctx.restore();
+requestAnimationFrame(draw)}
+draw();
+<\/script></body></html>`;
+
+// ── Probability Playground ──────────────────────────────────────────────────
+const PROBABILITY_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
+canvas{display:block}
+#panel{position:fixed;right:12px;top:12px;width:200px;background:rgba(0,0,0,0.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:#fff;font-size:11px;z-index:10}
+#panel h3{font-size:13px;margin-bottom:8px;color:#fbbf24}
+.row{display:flex;justify-content:space-between;margin:3px 0}
+.val{color:#fbbf24;font-family:monospace}
+button{display:block;width:100%;padding:7px;margin:4px 0;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:8px;cursor:pointer;font-size:11px}
+button:hover{background:rgba(255,255,255,0.15)}
+select{width:100%;padding:5px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;margin:4px 0;font-size:11px}
+#history{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:10px;text-align:center;max-width:520px;z-index:10}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="panel">
+<h3>Probability Lab</h3>
+<select id="mode" onchange="reset()">
+<option value="coin">Coin Flips</option>
+<option value="dice">Dice Rolls</option>
+<option value="2dice">Sum of 2 Dice</option>
+</select>
+<button onclick="runTrials(1)">+1 Trial</button>
+<button onclick="runTrials(10)">+10 Trials</button>
+<button onclick="runTrials(100)">+100 Trials</button>
+<button onclick="runTrials(1000)">+1000 Trials</button>
+<button onclick="reset()" style="border-color:rgba(239,68,68,0.4);color:#f87171">Reset</button>
+<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px">
+<div class="row"><span>Total trials:</span><span class="val" id="vTotal">0</span></div>
+<div class="row"><span>Mean:</span><span class="val" id="vMean">—</span></div>
+<div class="row"><span>Expected:</span><span class="val" id="vExp">—</span></div>
+<div class="row"><span>Std Dev:</span><span class="val" id="vStd">—</span></div>
+</div>
+<div style="margin-top:6px;font-size:9px;color:rgba(255,255,255,0.3)">
+<b>P(X=k) = C(n,k)·p^k·(1-p)^(n-k)</b><br>
+Central Limit Theorem: as n→∞, the distribution approaches a normal curve.
+</div>
+</div>
+<div id="history">Probability theory began with the Pascal-Fermat correspondence (1654) over a gambling problem. Jacob Bernoulli proved the Law of Large Numbers (1713), and the Central Limit Theorem was proved by Laplace (1812).</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();window.onresize=resize;
+
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
+let bins={},total=0,results=[];
+const modes={coin:{labels:['H','T'],expected:0.5,range:[0,1]},dice:{labels:['1','2','3','4','5','6'],expected:3.5,range:[1,6]},'2dice':{labels:['2','3','4','5','6','7','8','9','10','11','12'],expected:7,range:[2,12]}};
+
+function getMode(){return document.getElementById('mode').value}
+function reset(){bins={};total=0;results=[];const m=modes[getMode()];m.labels.forEach(l=>bins[l]=0)}
+reset();
+
+function runTrials(n){const mode=getMode();for(let i=0;i<n;i++){let val;if(mode==='coin')val=Math.random()<0.5?'H':'T';
+else if(mode==='dice')val=String(Math.floor(Math.random()*6)+1);
+else val=String(Math.floor(Math.random()*6)+Math.floor(Math.random()*6)+2);
+bins[val]=(bins[val]||0)+1;results.push(parseFloat(val)||0);total++}}
+
+function draw(){
+ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+const mode=getMode(),m=modes[mode],labels=m.labels;
+const maxBin=Math.max(1,...labels.map(l=>bins[l]||0));
+const gx=80,gy=H-100,gw=W-300,gh=H-200;
+const bw=Math.min(60,gw/labels.length*0.7),gap=(gw-bw*labels.length)/(labels.length+1);
+
+// Axes
+ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+gw,gy);ctx.moveTo(gx,gy);ctx.lineTo(gx,gy-gh);ctx.stroke();
+
+// Y axis labels
+ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='10px system-ui';ctx.textAlign='right';
+for(let i=0;i<=5;i++){const y=gy-gh*i/5;const v=Math.round(maxBin*i/5);
+ctx.fillText(String(v),gx-8,y+3);ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.beginPath();ctx.moveTo(gx,y);ctx.lineTo(gx+gw,y);ctx.stroke()}
+
+// Bars
+labels.forEach((l,i)=>{const count=bins[l]||0;const barH=maxBin>0?count/maxBin*gh:0;
+const x=gx+gap+(bw+gap)*i;
+// Bar gradient
+const grad=ctx.createLinearGradient(x,gy,x,gy-barH);
+grad.addColorStop(0,'rgba(251,191,36,0.6)');grad.addColorStop(1,'rgba(251,191,36,0.2)');
+ctx.fillStyle=grad;ctx.fillRect(x,gy-barH,bw,barH);
+ctx.strokeStyle='rgba(251,191,36,0.5)';ctx.lineWidth=1;ctx.strokeRect(x,gy-barH,bw,barH);
+// Label
+ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='bold 11px system-ui';ctx.textAlign='center';
+ctx.fillText(l,x+bw/2,gy+16);
+// Count
+if(count>0){ctx.fillStyle='#fbbf24';ctx.font='10px monospace';ctx.fillText(String(count),x+bw/2,gy-barH-6)}
+// Relative frequency
+if(total>0){const freq=(count/total*100).toFixed(1);ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px system-ui';ctx.fillText(freq+'%',x+bw/2,gy+28)}
+});
+
+// Normal curve overlay (for large n)
+if(total>20){const mean=results.reduce((a,b)=>a+b,0)/results.length;
+const variance=results.reduce((a,b)=>a+(b-mean)**2,0)/results.length;
+const std=Math.sqrt(variance);
+if(std>0){ctx.strokeStyle='rgba(96,165,250,0.6)';ctx.lineWidth=2;ctx.beginPath();
+for(let i=0;i<=200;i++){const xVal=m.range[0]+(m.range[1]-m.range[0])*i/200;
+const norm=Math.exp(-0.5*((xVal-mean)/std)**2)/(std*Math.sqrt(2*Math.PI));
+const barArea=total*(m.range[1]-m.range[0])/labels.length;
+const yPx=gy-norm*barArea/maxBin*gh;
+const xPx=gx+gap+bw/2+(xVal-m.range[0])/(m.range[1]-m.range[0])*(gw-gap*2-bw);
+if(i===0)ctx.moveTo(xPx,yPx);else ctx.lineTo(xPx,yPx)}ctx.stroke()}}
+
+// Stats
+if(total>0){const mean=results.reduce((a,b)=>a+b,0)/results.length;
+const variance=results.reduce((a,b)=>a+(b-mean)**2,0)/results.length;
+document.getElementById('vTotal').textContent=total;
+document.getElementById('vMean').textContent=mean.toFixed(3);
+document.getElementById('vExp').textContent=m.expected;
+document.getElementById('vStd').textContent=Math.sqrt(variance).toFixed(3)}
+
+ctx.restore();
+requestAnimationFrame(draw)}
+draw();
+<\/script></body></html>`;
+
+// ── Fibonacci & Golden Ratio ────────────────────────────────────────────────
+const FIBONACCI_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
+canvas{display:block}
+#hud{position:fixed;top:12px;right:12px;width:200px;background:rgba(0,0,0,0.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:#fff;font-size:11px;z-index:10}
+#hud h3{font-size:13px;margin-bottom:6px;color:#34d399}
+.row{display:flex;justify-content:space-between;margin:3px 0}
+.val{color:#fbbf24;font-family:monospace}
+label{display:block;margin:6px 0 2px;color:rgba(255,255,255,0.5);font-size:10px}
+input[type=range]{width:100%;accent-color:#34d399}
+#seq{margin-top:8px;font-family:monospace;font-size:10px;color:rgba(255,255,255,0.5);word-break:break-all}
+#history{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:10px;text-align:center;max-width:520px;z-index:10}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud">
+<h3>Fibonacci & φ</h3>
+<label>Terms: <span id="vN">10</span></label>
+<input type="range" id="sN" min="3" max="20" value="10" oninput="document.getElementById('vN').textContent=this.value">
+<div class="row"><span>φ (golden ratio):</span><span class="val">1.6180...</span></div>
+<div class="row"><span>F(n)/F(n-1):</span><span class="val" id="vRatio">—</span></div>
+<div style="margin-top:6px;font-size:9px;color:rgba(255,255,255,0.3)">
+<b>F(n) = F(n-1) + F(n-2)</b><br>
+φ = (1+√5)/2 ≈ 1.618033...<br>
+<b>Binet: F(n) = (φⁿ - ψⁿ)/√5</b>
+</div>
+<div id="seq"></div>
+</div>
+<div id="history">Fibonacci introduced these numbers to Europe in Liber Abaci (1202), though Indian mathematicians Pingala & Virahanka described the sequence centuries earlier. The golden ratio φ appears in the Parthenon, Renaissance art, DNA helices, and galaxy spirals.</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();window.onresize=resize;
+
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
+let time=0;
+const PHI=(1+Math.sqrt(5))/2;
+const colors=['#f87171','#fb923c','#fbbf24','#a3e635','#34d399','#22d3ee','#60a5fa','#a78bfa','#e879f9','#f472b6','#f87171','#fb923c','#fbbf24','#a3e635','#34d399','#22d3ee','#60a5fa','#a78bfa','#e879f9','#f472b6'];
+
+function fib(n){const f=[1,1];for(let i=2;i<n;i++)f.push(f[i-1]+f[i-2]);return f}
+
+function draw(){
+time+=0.003;
+const n=parseInt(document.getElementById('sN').value);
+const seq=fib(n);
+document.getElementById('vRatio').textContent=(seq[n-1]/seq[n-2]).toFixed(6);
+document.getElementById('seq').textContent=seq.join(', ');
+
+ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+const cx=W*0.4,cy=H*0.5;
+
+// Draw golden rectangles and spiral
+const sc=Math.min(W,H)*0.0015;
+let x=cx,y=cy,dir=0;// 0=right,1=up,2=left,3=down
+const dirs=[[1,0],[0,-1],[-1,0],[0,1]];
+
+for(let i=0;i<n;i++){
+const s=seq[i]*sc*20;
+const col=colors[i%colors.length];
+const alpha=0.15+0.05*Math.sin(time*2+i);
+
+// Rectangle
+ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.globalAlpha=0.4+0.1*Math.sin(time+i);
+ctx.strokeRect(x,y,s*dirs[dir%4===0||dir%4===2?0:0===0?1:1],s);
+// Simplified: draw the rectangle based on direction
+const dx=dirs[dir%4],w=s,h=s;
+let rx=x,ry=y;
+if(dir%4===0){rx=x;ry=y-s;ctx.strokeRect(rx,ry,s,s)}
+else if(dir%4===1){rx=x-s;ry=y-s;ctx.strokeRect(rx,ry,s,s)}
+else if(dir%4===2){rx=x-s;ry=y;ctx.strokeRect(rx,ry,s,s)}
+else{rx=x;ry=y;ctx.strokeRect(rx,ry,s,s)}
+
+// Fill with low alpha
+ctx.fillStyle=col;ctx.globalAlpha=alpha;ctx.fillRect(rx,ry,s,s);
+ctx.globalAlpha=1;
+
+// Spiral arc
+ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+const startAngle=[0,Math.PI*1.5,Math.PI,Math.PI*0.5][dir%4];
+const arcCX=[rx,rx+s,rx+s,rx][dir%4];
+const arcCY=[ry,ry,ry+s,ry+s][dir%4];
+ctx.arc(arcCX,arcCY,s,startAngle,startAngle+Math.PI*0.5);ctx.stroke();
+
+// Number
+ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='bold '+Math.max(8,s*0.3)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText(String(seq[i]),rx+s/2,ry+s/2);
+
+// Move to next position
+if(dir%4===0){x=rx+s;y=ry}
+else if(dir%4===1){x=rx;y=ry}
+else if(dir%4===2){x=rx;y=ry+s}
+else{x=rx+s;y=ry+s}
+dir++}
+
+// Phi convergence graph on the right
+const gx=W*0.72,gy=H*0.15,gw=W*0.22,gh=H*0.35;
+ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;
+ctx.strokeRect(gx,gy,gw,gh);
+// Phi line
+const phiY=gy+gh-((PHI-1)/(2))*gh;
+ctx.strokeStyle='rgba(52,211,153,0.3)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(gx,phiY);ctx.lineTo(gx+gw,phiY);ctx.stroke();ctx.setLineDash([]);
+ctx.fillStyle='#34d399';ctx.font='10px system-ui';ctx.textAlign='left';ctx.fillText('φ = 1.618...',gx+gw+4,phiY+3);
+// Ratio points
+ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='9px system-ui';ctx.textAlign='center';ctx.fillText('F(n)/F(n-1) convergence to φ',gx+gw/2,gy-8);
+for(let i=2;i<n;i++){const ratio=seq[i]/seq[i-1];
+const px=gx+(i-2)/(n-3)*gw;
+const py=gy+gh-((ratio-1)/2)*gh;
+ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();
+if(i>2){ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;const pr=seq[i-1]/seq[i-2];
+const ppx=gx+(i-3)/(n-3)*gw,ppy=gy+gh-((pr-1)/2)*gh;
+ctx.beginPath();ctx.moveTo(ppx,ppy);ctx.lineTo(px,py);ctx.stroke()}}
+
+ctx.restore();
+requestAnimationFrame(draw)}
+draw();
+<\/script></body></html>`;
+
+// ── Complex Numbers Visualiser ──────────────────────────────────────────────
+const COMPLEX_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
+canvas{display:block}
+#panel{position:fixed;right:12px;top:12px;width:220px;background:rgba(0,0,0,0.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:#fff;font-size:11px;z-index:10}
+#panel h3{font-size:13px;margin-bottom:8px;color:#e879f9}
+.inp{display:flex;gap:4px;align-items:center;margin:4px 0}
+.inp label{width:20px;font-weight:700;font-size:12px}
+.inp input{flex:1;padding:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;text-align:center;font-size:12px}
+.row{display:flex;justify-content:space-between;margin:3px 0}
+.val{color:#fbbf24;font-family:monospace}
+button{display:block;width:100%;padding:6px;margin:3px 0;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:7px;cursor:pointer;font-size:10px}
+button:hover{background:rgba(255,255,255,0.15)}
+#eqn{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);font-size:10px;color:rgba(255,255,255,0.4)}
+#history{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:10px;text-align:center;max-width:520px;z-index:10}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="panel">
+<h3>Complex Numbers</h3>
+<div class="inp"><label style="color:#f87171">Z₁</label><input id="z1r" type="number" step="0.5" value="2" style="width:50px"><span>+</span><input id="z1i" type="number" step="0.5" value="1" style="width:50px"><span>i</span></div>
+<div class="inp"><label style="color:#60a5fa">Z₂</label><input id="z2r" type="number" step="0.5" value="-1" style="width:50px"><span>+</span><input id="z2i" type="number" step="0.5" value="2" style="width:50px"><span>i</span></div>
+<button onclick="op='add'">Z₁ + Z₂</button>
+<button onclick="op='sub'">Z₁ − Z₂</button>
+<button onclick="op='mul'">Z₁ × Z₂</button>
+<button onclick="op='conj'">Conjugate Z₁</button>
+<button onclick="op='euler'">Euler: e^(iθ)</button>
+<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px">
+<div class="row"><span>Result:</span><span class="val" id="vRes">—</span></div>
+<div class="row"><span>|Z₁|:</span><span class="val" id="vMod1">—</span></div>
+<div class="row"><span>arg(Z₁):</span><span class="val" id="vArg1">—</span></div>
+</div>
+<div id="eqn">
+<b>Euler's Identity:</b> e<sup>iπ</sup> + 1 = 0<br>
+e<sup>iθ</sup> = cos θ + i sin θ<br>
+|z| = √(a² + b²)<br>
+z·z̄ = |z|²
+</div>
+</div>
+<div id="history">Complex numbers emerged from Cardano's attempts to solve cubic equations (1545). Euler discovered e^(iπ)+1=0 — called "the most beautiful equation". Gauss gave the geometric interpretation on the Argand diagram, and Mandelbrot revealed infinite fractal complexity within z→z²+c.</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();window.onresize=resize;
+
+let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
+c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
+addEventListener('mouseup',()=>{_isPanning=false});
+c.addEventListener('contextmenu',ev=>ev.preventDefault());
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='resetCanvas'){_panX=0;_panY=0;_zoom=1}});
+
+let op='add',time=0;
+function getZ1(){return{r:parseFloat(document.getElementById('z1r').value)||0,i:parseFloat(document.getElementById('z1i').value)||0}}
+function getZ2(){return{r:parseFloat(document.getElementById('z2r').value)||0,i:parseFloat(document.getElementById('z2i').value)||0}}
+
+function compute(){
+const z1=getZ1(),z2=getZ2();
+if(op==='add')return{r:z1.r+z2.r,i:z1.i+z2.i};
+if(op==='sub')return{r:z1.r-z2.r,i:z1.i-z2.i};
+if(op==='mul')return{r:z1.r*z2.r-z1.i*z2.i,i:z1.r*z2.i+z1.i*z2.r};
+if(op==='conj')return{r:z1.r,i:-z1.i};
+if(op==='euler'){const t=time%( Math.PI*2);return{r:Math.cos(t),i:Math.sin(t)}}
+return{r:0,i:0}}
+
+function fmtZ(z){const sign=z.i>=0?'+':'';return z.r.toFixed(2)+sign+z.i.toFixed(2)+'i'}
+
+function drawArrow(ctx,x1,y1,x2,y2,color){
+ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+const a=Math.atan2(y2-y1,x2-x1),hl=10;
+ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-hl*Math.cos(a-0.3),y2-hl*Math.sin(a-0.3));ctx.lineTo(x2-hl*Math.cos(a+0.3),y2-hl*Math.sin(a+0.3));ctx.fill()}
+
+function draw(){
+time+=0.015;
+const z1=getZ1(),z2=getZ2(),res=compute();
+document.getElementById('vRes').textContent=fmtZ(res);
+document.getElementById('vMod1').textContent=Math.sqrt(z1.r*z1.r+z1.i*z1.i).toFixed(3);
+document.getElementById('vArg1').textContent=(Math.atan2(z1.i,z1.r)*180/Math.PI).toFixed(1)+'°';
+
+ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+ctx.save();ctx.translate(_panX,_panY);ctx.scale(_zoom,_zoom);
+const cx=W*0.38,cy=H*0.5,sc=50;
+
+// Grid
+ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+for(let i=-10;i<=10;i++){ctx.beginPath();ctx.moveTo(cx+i*sc,cy-10*sc);ctx.lineTo(cx+i*sc,cy+10*sc);ctx.stroke();
+ctx.beginPath();ctx.moveTo(cx-10*sc,cy+i*sc);ctx.lineTo(cx+10*sc,cy+i*sc);ctx.stroke()}
+
+// Axes
+ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1.5;
+ctx.beginPath();ctx.moveTo(cx-W,cy);ctx.lineTo(cx+W,cy);ctx.stroke();
+ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
+ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='11px system-ui';ctx.textAlign='center';
+ctx.fillText('Real',cx+W*0.3,cy+18);ctx.save();ctx.translate(cx-18,cy-H*0.25);ctx.rotate(-Math.PI/2);ctx.fillText('Imaginary',0,0);ctx.restore();
+
+// Unit circle (faint)
+ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.stroke();
+
+// Z1 arrow
+drawArrow(ctx,cx,cy,cx+z1.r*sc,cy-z1.i*sc,'#f87171');
+ctx.fillStyle='#f87171';ctx.font='bold 12px system-ui';ctx.textAlign='left';
+ctx.fillText('Z₁',cx+z1.r*sc+8,cy-z1.i*sc-8);
+
+// Z2 arrow
+drawArrow(ctx,cx,cy,cx+z2.r*sc,cy-z2.i*sc,'#60a5fa');
+ctx.fillStyle='#60a5fa';ctx.font='bold 12px system-ui';
+ctx.fillText('Z₂',cx+z2.r*sc+8,cy-z2.i*sc-8);
+
+// Result arrow
+drawArrow(ctx,cx,cy,cx+res.r*sc,cy-res.i*sc,'#fbbf24');
+ctx.fillStyle='#fbbf24';ctx.font='bold 12px system-ui';
+ctx.fillText('R',cx+res.r*sc+8,cy-res.i*sc-8);
+
+// If addition, show parallelogram
+if(op==='add'){ctx.strokeStyle='rgba(251,191,36,0.2)';ctx.setLineDash([4,4]);ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(cx+z1.r*sc,cy-z1.i*sc);ctx.lineTo(cx+res.r*sc,cy-res.i*sc);ctx.lineTo(cx+z2.r*sc,cy-z2.i*sc);ctx.stroke();ctx.setLineDash([])}
+
+// Modulus arc for Z1
+const arg1=Math.atan2(z1.i,z1.r);
+ctx.strokeStyle='rgba(248,113,113,0.3)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,20,0,-arg1,arg1>0);ctx.stroke();
+
+// Euler trace (unit circle path)
+if(op==='euler'){ctx.strokeStyle='rgba(232,121,249,0.4)';ctx.lineWidth=2;ctx.beginPath();
+for(let t=0;t<=Math.PI*2;t+=0.05){const x=cx+Math.cos(t)*sc,y=cy-Math.sin(t)*sc;t===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke();
+// Current point
+ctx.fillStyle='#e879f9';ctx.beginPath();ctx.arc(cx+res.r*sc,cy-res.i*sc,6,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#e879f9';ctx.font='11px system-ui';ctx.fillText('e^(i·'+time.toFixed(2)+')',cx+res.r*sc+10,cy-res.i*sc-10)}
+
+// Points
+[{z:z1,c:'#f87171'},{z:z2,c:'#60a5fa'},{z:res,c:'#fbbf24'}].forEach(({z,c:col})=>{
+ctx.fillStyle=col;ctx.beginPath();ctx.arc(cx+z.r*sc,cy-z.i*sc,4,0,Math.PI*2);ctx.fill()});
+
+ctx.restore();
+requestAnimationFrame(draw)}
+draw();
+<\/script></body></html>`;
+
 // ── Categories ───────────────────────────────────────────────────────────────
 
 export const STEM_CATEGORIES: StemCategory[] = [
@@ -7829,6 +8461,66 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Shapes', 'Polygons', 'Transformations', 'Geometry'],
         instructions: 'Use the left panel to pick a tool: Select (click shapes to select/move), Draw (click integer points to place vertices, click near the first point to close the shape), or Vertex (drag individual corners). Drag shapes from the shape bank onto the canvas or click them to place at centre. Fill and stroke colours can be changed from the panel. Select a shape then use the Transformations section to translate (dx, dy), rotate by any angle around any centre, reflect across axes or custom lines, or enlarge by any scale factor around any centre. Coordinates snap to integers. Scroll to zoom, right-drag to pan. Press Delete to remove a shape.',
         html_code: SHAPES_2D_HTML,
+      },
+      {
+        id: 'trigonometry-circle',
+        title: 'Trigonometry Circle Lab',
+        description: 'Interactive unit circle with live sin, cos, tan projections and wave graphs. Drag the point, toggle functions, switch degrees/radians, and watch the identity sin²θ+cos²θ=1 in real time.',
+        icon: 'Activity',
+        gradient: 'from-red-500 to-orange-500',
+        glowColor: 'rgba(239,68,68,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Trigonometry', 'Unit Circle', 'Waves', 'sin cos tan'],
+        instructions: 'Drag the yellow point around the unit circle to change the angle. Toggle sin (red), cos (blue), and tan (purple) projections. Switch between degrees and radians. Press Animate to auto-rotate. The right panel shows the corresponding wave graphs with a vertical marker at the current angle. History of trigonometry from Hipparchus to Indian mathematicians is shown below.',
+        html_code: TRIG_CIRCLE_HTML,
+      },
+      {
+        id: 'matrix-transformer',
+        title: 'Matrix Transformer',
+        description: 'Apply 2×2 transformation matrices to a shape and see rotation, scaling, shearing, and reflection live. Visualise basis vectors, transformed grid, and determinant.',
+        icon: 'Box',
+        gradient: 'from-violet-500 to-purple-500',
+        glowColor: 'rgba(139,92,246,0.35)',
+        difficulty: 'Advanced',
+        tags: ['Matrices', 'Transformations', 'Linear Algebra', 'Determinant'],
+        instructions: 'Edit the 2×2 matrix entries (a,b,c,d) to define a transformation. Use preset buttons for common transforms: Identity, Scale, Reflect, Rotate, Shear. The original shape (dashed) and transformed shape (purple) are shown with basis vectors e₁ (red) and e₂ (green). The transformed grid shows how the entire plane maps. Determinant is displayed — negative means the orientation flips.',
+        html_code: MATRIX_HTML,
+      },
+      {
+        id: 'probability-playground',
+        title: 'Probability Playground',
+        description: 'Simulate coin flips, dice rolls, and sums of two dice. Watch histograms grow and the normal distribution curve emerge via the Central Limit Theorem.',
+        icon: 'Sparkles',
+        gradient: 'from-amber-500 to-yellow-500',
+        glowColor: 'rgba(245,158,11,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Probability', 'Statistics', 'Normal Distribution', 'CLT'],
+        instructions: 'Choose a mode: Coin Flips, Dice Rolls, or Sum of 2 Dice. Click the trial buttons to add 1, 10, 100, or 1000 trials. The histogram updates live with counts and relative frequencies. After enough trials (20+), a blue normal curve overlays the histogram, demonstrating the Central Limit Theorem. Mean, expected value, and standard deviation are displayed.',
+        html_code: PROBABILITY_HTML,
+      },
+      {
+        id: 'fibonacci-golden-ratio',
+        title: 'Fibonacci & Golden Ratio',
+        description: 'Animated Fibonacci spiral with golden rectangles, convergence graph showing F(n)/F(n-1)→φ, and Binet\'s formula. Explore the mathematics behind nature\'s favourite number.',
+        icon: 'Hexagon',
+        gradient: 'from-emerald-500 to-green-500',
+        glowColor: 'rgba(52,211,153,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Fibonacci', 'Golden Ratio', 'Sequences', 'Nature'],
+        instructions: 'Use the Terms slider to control how many Fibonacci numbers to show (3-20). Watch the golden rectangle spiral grow with each term. The convergence graph on the right shows how F(n)/F(n-1) approaches φ = 1.618033... Each rectangle is colour-coded and labelled with its Fibonacci number. The spiral arcs connect through each square.',
+        html_code: FIBONACCI_HTML,
+      },
+      {
+        id: 'complex-numbers',
+        title: 'Complex Numbers Visualiser',
+        description: 'Argand diagram with complex arithmetic — add, subtract, multiply, conjugate. Euler\'s identity e^(iπ)+1=0 animated on the unit circle.',
+        icon: 'Eye',
+        gradient: 'from-fuchsia-500 to-pink-500',
+        glowColor: 'rgba(232,121,249,0.35)',
+        difficulty: 'Advanced',
+        tags: ['Complex Numbers', 'Argand Diagram', 'Euler', 'Imaginary'],
+        instructions: 'Enter Z₁ and Z₂ as a+bi. Click operation buttons to compute: addition (parallelogram rule), subtraction, multiplication (rotation+scaling), or conjugate (reflect over real axis). Select Euler mode to animate e^(iθ) tracing the unit circle. The result vector R (gold) updates live. Modulus |Z| and argument are shown in the panel.',
+        html_code: COMPLEX_HTML,
       },
     ],
   },
