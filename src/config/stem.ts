@@ -58,7 +58,18 @@ button.tool-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,
 #ft .sep{width:1px;background:rgba(255,255,255,0.08);margin:2px 3px}
 #pause-badge{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.12);font-size:16px;pointer-events:none;transition:opacity .3s;z-index:5;background:rgba(255,255,255,0.05);padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);opacity:0}
 #draw-hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.15);font-size:14px;pointer-events:none;transition:opacity .3s;z-index:5}
-@media(max-width:700px){#right-panel{width:160px}}
+@media(max-width:700px){#right-panel{width:160px}#calc-panel{width:220px;left:6px;bottom:6px;max-height:50vh}}
+#calc-panel{position:fixed;bottom:16px;left:16px;width:300px;max-height:55vh;z-index:20;background:rgba(15,15,35,0.94);border:1px solid rgba(255,255,255,0.08);border-radius:14px;backdrop-filter:blur(16px);padding:14px 16px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;font-size:12px;color:rgba(255,255,255,0.7)}
+#calc-panel::-webkit-scrollbar{width:4px}#calc-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+#calc-panel .ct{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:10px}
+#calc-panel .cl{font-size:10px;font-weight:700;color:rgba(99,102,241,0.85);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;margin-top:8px}
+#calc-panel .cl:first-child{margin-top:0}
+#calc-panel .cs{opacity:0;transform:translateY(6px);transition:opacity 0.4s ease,transform 0.4s ease;padding:2px 0;font-family:'SF Mono',Monaco,Consolas,monospace;font-size:12px;line-height:1.6}
+#calc-panel .cs.v{opacity:1;transform:translateY(0)}
+#calc-panel .cs .f{color:rgba(255,255,255,0.4)}
+#calc-panel .cs .s{color:rgba(147,197,253,0.85)}
+#calc-panel .cs .r{color:#93c5fd;font-weight:700}
+#calc-panel .cd{height:1px;background:rgba(255,255,255,0.06);margin:8px 0}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="top-bar">
@@ -107,6 +118,7 @@ button.tool-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,
     <button onclick="set('net_pyr')" id="b-net_pyr">Pyramid Net</button>
   </div></div>
 </div>
+<div id="calc-panel"><div class="ct">Step-by-Step Calculation</div><div id="calc-steps"></div></div>
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H,shape='cube',wire=false,drawMode=false,doodleMode=false,paused=false;
@@ -224,6 +236,7 @@ if(drawMode)document.getElementById('b-draw').classList.add('tool-active');
 if(doodleMode)document.getElementById('b-doodle').classList.add('tool-active');
 document.getElementById('shape-name').textContent=NAMES[s]||s;
 document.getElementById('measurements').textContent=MEASURES[s]||'';
+if(typeof showCalc==='function')showCalc(s);
 updateStatus();}
 
 function updateStatus(){
@@ -487,6 +500,203 @@ addEventListener('touchmove',e=>{if(e.touches.length===2){const dx=e.touches[0].
 document.getElementById('measurements').textContent=MEASURES.cube;
 updateStatus();
 draw();
+
+/* ── Step-by-step calculations ── */
+const CALCS={
+cube:[
+['VOLUME'],
+['f','V = s\\u00b3'],
+['s','V = 2\\u00b3'],
+['r','V = 8 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = 6s\\u00b2'],
+['s','SA = 6 \\u00d7 2\\u00b2'],
+['s','SA = 6 \\u00d7 4'],
+['r','SA = 24 units\\u00b2']
+],
+cuboid:[
+['VOLUME'],
+['f','V = l \\u00d7 w \\u00d7 h'],
+['s','V = 3 \\u00d7 1.6 \\u00d7 1.2'],
+['r','V = 5.76 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = 2(lw + wh + lh)'],
+['s','SA = 2(3\\u00d71.6 + 1.6\\u00d71.2 + 3\\u00d71.2)'],
+['s','SA = 2(4.8 + 1.92 + 3.6)'],
+['s','SA = 2 \\u00d7 10.32'],
+['r','SA = 20.64 units\\u00b2']
+],
+sphere:[
+['VOLUME'],
+['f','V = (4/3)\\u03c0r\\u00b3'],
+['s','V = (4/3) \\u00d7 \\u03c0 \\u00d7 1\\u00b3'],
+['s','V = (4/3) \\u00d7 3.1416'],
+['r','V = 4.19 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = 4\\u03c0r\\u00b2'],
+['s','SA = 4 \\u00d7 \\u03c0 \\u00d7 1\\u00b2'],
+['r','SA = 12.57 units\\u00b2']
+],
+cone:[
+['VOLUME'],
+['f','V = (1/3)\\u03c0r\\u00b2h'],
+['s','V = (1/3) \\u00d7 \\u03c0 \\u00d7 1\\u00b2 \\u00d7 2'],
+['s','V = (1/3) \\u00d7 6.2832'],
+['r','V = 2.09 units\\u00b3'],
+['d'],
+['SLANT HEIGHT'],
+['f','l = \\u221a(r\\u00b2 + h\\u00b2)'],
+['s','l = \\u221a(1 + 4)'],
+['r','l = 2.24'],
+['d'],
+['SURFACE AREA'],
+['f','SA = \\u03c0r\\u00b2 + \\u03c0rl'],
+['s','SA = \\u03c0(1)\\u00b2 + \\u03c0(1)(2.24)'],
+['s','SA = 3.14 + 7.03'],
+['r','SA = 10.17 units\\u00b2']
+],
+cylinder:[
+['VOLUME'],
+['f','V = \\u03c0r\\u00b2h'],
+['s','V = \\u03c0 \\u00d7 0.8\\u00b2 \\u00d7 2'],
+['s','V = \\u03c0 \\u00d7 1.28'],
+['r','V = 4.02 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = 2\\u03c0r\\u00b2 + 2\\u03c0rh'],
+['s','SA = 2\\u03c0(0.64) + 2\\u03c0(0.8)(2)'],
+['s','SA = 4.02 + 10.05'],
+['r','SA = 14.07 units\\u00b2']
+],
+pyramid:[
+['VOLUME'],
+['f','V = (1/3) \\u00d7 base area \\u00d7 h'],
+['s','V = (1/3) \\u00d7 (2\\u00d72) \\u00d7 2'],
+['s','V = (1/3) \\u00d7 8'],
+['r','V = 2.67 units\\u00b3'],
+['d'],
+['SLANT HEIGHT'],
+['f','l = \\u221a(a\\u00b2 + h\\u00b2)   (a = half base)'],
+['s','l = \\u221a(1\\u00b2 + 2\\u00b2) = \\u221a5'],
+['r','l = 2.24'],
+['d'],
+['SURFACE AREA'],
+['f','SA = base + 4 \\u00d7 (\\u00bd \\u00d7 edge \\u00d7 l)'],
+['s','SA = 4 + 4 \\u00d7 (\\u00bd \\u00d7 2 \\u00d7 2.24)'],
+['s','SA = 4 + 8.94'],
+['r','SA = 12.94 units\\u00b2']
+],
+torus:[
+['VOLUME'],
+['f','V = 2\\u03c0\\u00b2Rr\\u00b2'],
+['s','V = 2 \\u00d7 \\u03c0\\u00b2 \\u00d7 1 \\u00d7 0.35\\u00b2'],
+['s','V = 2 \\u00d7 9.87 \\u00d7 0.1225'],
+['r','V = 2.42 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = 4\\u03c0\\u00b2Rr'],
+['s','SA = 4 \\u00d7 \\u03c0\\u00b2 \\u00d7 1 \\u00d7 0.35'],
+['s','SA = 4 \\u00d7 9.87 \\u00d7 0.35'],
+['r','SA = 13.82 units\\u00b2']
+],
+hemisphere:[
+['VOLUME'],
+['f','V = (2/3)\\u03c0r\\u00b3'],
+['s','V = (2/3) \\u00d7 \\u03c0 \\u00d7 1\\u00b3'],
+['r','V = 2.09 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = 2\\u03c0r\\u00b2 + \\u03c0r\\u00b2  (curved + base)'],
+['s','SA = 2\\u03c0(1)\\u00b2 + \\u03c0(1)\\u00b2'],
+['s','SA = 6.28 + 3.14'],
+['r','SA = 9.42 units\\u00b2']
+],
+pyr_cube:[
+['CUBE VOLUME'],
+['f','V\\u2081 = l \\u00d7 w \\u00d7 h'],
+['s','V\\u2081 = 2 \\u00d7 1.6 \\u00d7 2'],
+['r','V\\u2081 = 6.4'],
+['d'],
+['PYRAMID VOLUME'],
+['f','V\\u2082 = (1/3) \\u00d7 base \\u00d7 h'],
+['s','V\\u2082 = (1/3) \\u00d7 4 \\u00d7 1'],
+['r','V\\u2082 = 1.33'],
+['d'],
+['TOTAL'],
+['s','V = V\\u2081 + V\\u2082 = 6.4 + 1.33'],
+['r','V = 7.73 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = SA\\u2081 \\u2212 top + lateral pyramid'],
+['s','SA = 20.8 \\u2212 4 + 5.66'],
+['r','SA = 22.46 units\\u00b2']
+],
+cone_cyl:[
+['CYLINDER VOLUME'],
+['f','V\\u2081 = \\u03c0r\\u00b2h'],
+['s','V\\u2081 = \\u03c0(0.8\\u00b2)(1.4)'],
+['r','V\\u2081 = 2.81'],
+['d'],
+['CONE VOLUME'],
+['f','V\\u2082 = (1/3)\\u03c0r\\u00b2h'],
+['s','V\\u2082 = (1/3)\\u03c0(0.8\\u00b2)(0.7)'],
+['r','V\\u2082 = 0.47'],
+['d'],
+['TOTAL'],
+['s','V = 2.81 + 0.47'],
+['r','V = 3.28 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = lateral cyl + base + lateral cone'],
+['s','SA = 7.04 + 2.01 + 2.67'],
+['r','SA = 11.72 units\\u00b2']
+],
+cyl_hemi:[
+['CYLINDER VOLUME'],
+['f','V\\u2081 = \\u03c0r\\u00b2h'],
+['s','V\\u2081 = \\u03c0(0.8\\u00b2)(1.4)'],
+['r','V\\u2081 = 2.81'],
+['d'],
+['HEMISPHERE VOLUME'],
+['f','V\\u2082 = (2/3)\\u03c0r\\u00b3'],
+['s','V\\u2082 = (2/3)\\u03c0(0.8\\u00b3)'],
+['r','V\\u2082 = 1.07'],
+['d'],
+['TOTAL'],
+['s','V = 2.81 + 1.07'],
+['r','V = 3.88 units\\u00b3'],
+['d'],
+['SURFACE AREA'],
+['f','SA = lateral cyl + base + curved hemi'],
+['s','SA = 7.04 + 2.01 + 4.02'],
+['r','SA = 13.07 units\\u00b2']
+]
+};
+function showCalc(key){
+  const el=document.getElementById('calc-steps');
+  const steps=CALCS[key];
+  if(!steps){el.innerHTML='<div style="color:rgba(255,255,255,0.25);font-size:11px;padding:8px 0">Fold this net to form the 3D shape.\\nSelect the 3D shape to see calculations.</div>';return;}
+  el.innerHTML='';
+  let idx=0;
+  steps.forEach(function(s){
+    if(s[0]==='d'){const d=document.createElement('div');d.className='cd';el.appendChild(d);return;}
+    if(s.length===1){const l=document.createElement('div');l.className='cl';l.textContent=s[0];el.appendChild(l);return;}
+    const div=document.createElement('div');
+    div.className='cs';
+    const span=document.createElement('span');
+    span.className=s[0]==='f'?'f':s[0]==='r'?'r':'s';
+    span.textContent=s[1];
+    div.appendChild(span);
+    el.appendChild(div);
+    const delay=80+idx*100;
+    idx++;
+    setTimeout(function(){div.classList.add('v');},delay);
+  });
+}
+showCalc('cube');
 /* Parent message handler */
 addEventListener('message',e=>{
   if(!e.data||!e.data.type)return;

@@ -183,6 +183,7 @@ export default function SimulationViewer({
     e.preventDefault();
     ftRef.current.style.left = `${Math.max(0, e.clientX - ftDrag.current.dx)}px`;
     ftRef.current.style.top = `${Math.max(48, e.clientY - ftDrag.current.dy)}px`;
+    ftRef.current.style.bottom = 'auto';
     ftRef.current.style.transform = 'none';
   }, []);
 
@@ -525,11 +526,11 @@ export default function SimulationViewer({
       {/* ── Floating Toolbar ──────────────────────────────────────────── */}
       <motion.div
         ref={ftRef}
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.3 }}
         className="fixed z-50 flex items-center gap-1 px-2 py-1.5 rounded-xl backdrop-blur-2xl bg-black/70 border border-white/[0.1] shadow-2xl"
-        style={{ top: 56, left: '50%', transform: 'translateX(-50%)' }}
+        style={{ bottom: 20, left: '50%', transform: 'translateX(-50%)' }}
       >
         {/* Grip handle */}
         <div
