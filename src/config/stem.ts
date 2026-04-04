@@ -2018,7 +2018,7 @@ canvas{display:block}
   <span>Mouse: (<span class="val" id="mx">0</span>, <span class="val" id="my">0</span>)</span>
   <span>Shapes: <span class="val" id="sc">0</span></span>
   <span id="sel-info"></span>
-  <span style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="opacity:0.5">Scroll to zoom &middot; Right-drag to pan</span><button onclick="resetView()" style="padding:3px 10px;font-size:9px;font-weight:700;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;border-radius:5px;cursor:pointer">Reset View</button></span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="opacity:0.5">Scroll to zoom &middot; Drag empty space to pan</span><button onclick="resetView()" style="padding:3px 10px;font-size:9px;font-weight:700;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;border-radius:5px;cursor:pointer">Reset View</button></span>
 </div>
 <div id="draw-hint">Click on grid to draw shapes<br>or drag from the shape bank</div>
 <script>
@@ -2177,21 +2177,25 @@ function drawGrid(){
 function drawShape(s,sel){
   if(s.verts.length<2)return;
   const pts=s.verts.map(v=>w2s(v.x,v.y));
+  const isOrig=s.isOriginal;
   // Fill
-  if(s.fill){ctx.fillStyle=s.fill;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill()}
-  // Stroke
+  if(s.fill&&!isOrig){ctx.fillStyle=s.fill;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill()}
+  // Stroke — originals are dashed and faded
   ctx.strokeStyle=s.stroke||'#3b82f6';ctx.lineWidth=sel?3:2;ctx.lineJoin='round';
-  if(sel){ctx.shadowColor=s.stroke||'#3b82f6';ctx.shadowBlur=12}
+  if(isOrig){ctx.setLineDash([6,4]);ctx.globalAlpha=0.4}
+  if(sel&&!isOrig){ctx.shadowColor=s.stroke||'#3b82f6';ctx.shadowBlur=12}
   ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.stroke();
-  ctx.shadowColor='transparent';ctx.shadowBlur=0;
+  ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.setLineDash([]);ctx.globalAlpha=1;
   // Vertices
   s.verts.forEach((v,i)=>{
     const p=w2s(v.x,v.y);
+    ctx.globalAlpha=isOrig?0.4:1;
     ctx.fillStyle=sel?'#fff':'rgba(255,255,255,0.6)';ctx.beginPath();ctx.arc(p.x,p.y,sel?5:3.5,0,Math.PI*2);ctx.fill();
-    if(sel){ctx.fillStyle='rgba(255,255,255,0.65)';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('('+v.x+','+v.y+')',p.x,p.y-8)}
+    if(sel||isOrig){ctx.fillStyle=isOrig?'rgba(255,255,255,0.35)':'rgba(255,255,255,0.65)';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('('+v.x+','+v.y+')',p.x,p.y-8)}
+    ctx.globalAlpha=1;
   });
-  // Side lengths
-  if(sel){
+  // Side lengths (selected non-originals only)
+  if(sel&&!isOrig){
     ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='9px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
     for(let i=0;i<s.verts.length;i++){
       const a=s.verts[i],b=s.verts[(i+1)%s.verts.length];
@@ -2232,15 +2236,14 @@ function nearVertex(wx,wy,shape){
 }
 
 // Pointer events
-let lastPtr={x:0,y:0},ptrDown=false,rightDown=false;
+let lastPtr={x:0,y:0},ptrDown=false,isPanning=false;
 C.addEventListener('pointerdown',e=>{
   e.preventDefault();const r=C.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;
   const w=s2w(sx,sy),ws={x:snap(w.x),y:snap(w.y)};
   lastPtr={x:e.clientX,y:e.clientY};ptrDown=true;
   // Right click = pan
-  if(e.button===2){rightDown=true;panStart={x:e.clientX,y:e.clientY};camStart={x:cam.x,y:cam.y};C.style.cursor='grabbing';return}
+  if(e.button===2){isPanning=true;panStart={x:e.clientX,y:e.clientY};camStart={x:cam.x,y:cam.y};C.style.cursor='grabbing';return}
   if(tool==='draw'){
-    // Close shape if near first point
     if(drawPts.length>=3){
       const fp=w2s(drawPts[0].x,drawPts[0].y);
       if(Math.hypot(sx-fp.x,sy-fp.y)<15){
@@ -2255,14 +2258,14 @@ C.addEventListener('pointerdown',e=>{
     if(vi>=0){dragType='vertex';dragVertIdx=vi;dragging=true;return}
   }
   if(tool==='select'||tool==='vertex'){
-    // Check vertex first for selected shape
     if(selIdx>=0){
       const vi=nearVertex(w.x,w.y,shapes[selIdx]);
       if(vi>=0&&tool==='vertex'){dragType='vertex';dragVertIdx=vi;dragging=true;return}
     }
     const hi=hitShape(w.x,w.y);
     if(hi>=0){selIdx=hi;dragType='move';dragging=true;dragStart={x:w.x,y:w.y};draw();return}
-    selIdx=-1;draw();
+    // Click on empty space → pan with left mouse
+    selIdx=-1;isPanning=true;panStart={x:e.clientX,y:e.clientY};camStart={x:cam.x,y:cam.y};C.style.cursor='grabbing';draw();
   }
 });
 C.addEventListener('pointermove',e=>{
@@ -2270,7 +2273,7 @@ C.addEventListener('pointermove',e=>{
   const w=s2w(sx,sy);
   document.getElementById('mx').textContent=snap(w.x);
   document.getElementById('my').textContent=snap(w.y);
-  if(rightDown&&panStart){
+  if(isPanning&&panStart){
     const dx=(e.clientX-panStart.x)/cam.z,dy=(e.clientY-panStart.y)/cam.z;
     cam.x=camStart.x-dx;cam.y=camStart.y+dy;draw();return;
   }
@@ -2286,8 +2289,8 @@ C.addEventListener('pointermove',e=>{
     }
   }
 });
-C.addEventListener('pointerup',()=>{ptrDown=false;dragging=false;dragType=null;rightDown=false;panStart=null;C.style.cursor=''});
-C.addEventListener('pointerleave',()=>{ptrDown=false;dragging=false;rightDown=false;panStart=null});
+C.addEventListener('pointerup',()=>{ptrDown=false;dragging=false;dragType=null;isPanning=false;panStart=null;C.style.cursor=''});
+C.addEventListener('pointerleave',()=>{ptrDown=false;dragging=false;isPanning=false;panStart=null});
 C.addEventListener('contextmenu',e=>e.preventDefault());
 
 // Zoom
@@ -2327,41 +2330,55 @@ wrap.addEventListener('drop',e=>{
   }catch(err){}
 });
 
-// Transformations
+// Transformations — keep original, create transformed copy
+function cloneShape(s){return{verts:s.verts.map(v=>({x:v.x,y:v.y})),fill:s.fill,stroke:s.stroke,isOriginal:false}}
+function markOriginal(s){if(!s.isOriginal){s.isOriginal=true;s.origStroke=s.stroke;s.origFill=s.fill}}
+
 function applyTranslate(){
   if(selIdx<0)return;
+  const src=shapes[selIdx];markOriginal(src);
   const dx=parseInt(document.getElementById('tr-dx').value)||0,dy=parseInt(document.getElementById('tr-dy').value)||0;
-  shapes[selIdx].verts.forEach(v=>{v.x+=dx;v.y+=dy});draw();
+  const ns=cloneShape(src);ns.verts.forEach(v=>{v.x+=dx;v.y+=dy});
+  shapes.push(ns);selIdx=shapes.length-1;draw();
 }
 function applyRotate(){
   if(selIdx<0)return;
+  const src=shapes[selIdx];markOriginal(src);
   const ang=(parseFloat(document.getElementById('rot-angle').value)||0)*Math.PI/180;
   const cx=parseFloat(document.getElementById('rot-cx').value)||0,cy=parseFloat(document.getElementById('rot-cy').value)||0;
-  shapes[selIdx].verts.forEach(v=>{
+  const ns=cloneShape(src);
+  ns.verts.forEach(v=>{
     const dx=v.x-cx,dy=v.y-cy;
     v.x=Math.round(cx+dx*Math.cos(ang)-dy*Math.sin(ang));
     v.y=Math.round(cy+dx*Math.sin(ang)+dy*Math.cos(ang));
-  });draw();
+  });
+  shapes.push(ns);selIdx=shapes.length-1;draw();
 }
 function applyReflect(type){
   if(selIdx<0)return;
-  shapes[selIdx].verts.forEach(v=>{
+  const src=shapes[selIdx];markOriginal(src);
+  const ns=cloneShape(src);
+  ns.verts.forEach(v=>{
     if(type==='x'){v.y=-v.y}
     else if(type==='y'){v.x=-v.x}
     else if(type==='yx'){const t=v.x;v.x=v.y;v.y=t}
     else if(type==='y-x'){const t=v.x;v.x=-v.y;v.y=-t}
     else if(type==='vline'){const lx=parseFloat(document.getElementById('ref-x').value)||0;v.x=2*lx-v.x}
     else if(type==='hline'){const ly=parseFloat(document.getElementById('ref-y').value)||0;v.y=2*ly-v.y}
-  });draw();
+  });
+  shapes.push(ns);selIdx=shapes.length-1;draw();
 }
 function applyEnlarge(){
   if(selIdx<0)return;
+  const src=shapes[selIdx];markOriginal(src);
   const k=parseFloat(document.getElementById('enl-k').value)||1;
   const cx=parseFloat(document.getElementById('enl-cx').value)||0,cy=parseFloat(document.getElementById('enl-cy').value)||0;
-  shapes[selIdx].verts.forEach(v=>{
+  const ns=cloneShape(src);
+  ns.verts.forEach(v=>{
     v.x=Math.round(cx+k*(v.x-cx));
     v.y=Math.round(cy+k*(v.y-cy));
-  });draw();
+  });
+  shapes.push(ns);selIdx=shapes.length-1;draw();
 }
 function deleteSelected(){if(selIdx>=0){shapes.splice(selIdx,1);selIdx=-1;draw()}}
 function duplicateSelected(){
