@@ -11,6 +11,11 @@ import {
   Home,
   BookOpen,
   ChevronLeft,
+  Pen,
+  Undo2,
+  Redo2,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 import { useTheme, type Theme } from '@/components/ui/ThemeProvider';
 import type { Simulation, StemCategory } from '@/config/stem';
@@ -99,6 +104,9 @@ function InstructionsPanel({
   );
 }
 
+// ── Stroke type for doodle ───────────────────────────────────────────────────
+type Stroke = { points: { x: number; y: number }[]; color: string; width: number };
+
 // ── Main viewer ──────────────────────────────────────────────────────────────
 export default function SimulationViewer({
   simulation,
@@ -117,9 +125,123 @@ export default function SimulationViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // ── Doodle state ────────────────────────────────────────────────────
+  const [doodleActive, setDoodleActive] = useState(false);
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [redoStack, setRedoStack] = useState<Stroke[]>([]);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const doodleCanvasRef = useRef<HTMLCanvasElement>(null);
+  const currentStrokeRef = useRef<Stroke | null>(null);
+  const [iframeKey, setIframeKey] = useState(0);
+
+  // ── Redraw doodle canvas ────────────────────────────────────────────
+  const redrawDoodle = useCallback((allStrokes: Stroke[]) => {
+    const canvas = doodleCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const stroke of allStrokes) {
+      if (stroke.points.length < 2) continue;
+      ctx.beginPath();
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      }
+      ctx.stroke();
+    }
+  }, []);
+
+  // ── Resize doodle canvas to match container ─────────────────────────
+  useEffect(() => {
+    const canvas = doodleCanvasRef.current;
+    if (!canvas) return;
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      redrawDoodle(strokes);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, [strokes, redrawDoodle]);
+
+  // ── Doodle pointer handlers ─────────────────────────────────────────
+  const getPos = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = doodleCanvasRef.current!.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }, []);
+
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!doodleActive) return;
+    e.preventDefault();
+    setIsDrawing(true);
+    const pos = getPos(e);
+    currentStrokeRef.current = { points: [pos], color: '#ff4444', width: 3 };
+  }, [doodleActive, getPos]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !currentStrokeRef.current) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    currentStrokeRef.current.points.push(pos);
+    redrawDoodle([...strokes, currentStrokeRef.current]);
+  }, [isDrawing, strokes, getPos, redrawDoodle]);
+
+  const onPointerUp = useCallback(() => {
+    if (!isDrawing || !currentStrokeRef.current) return;
+    setIsDrawing(false);
+    if (currentStrokeRef.current.points.length >= 2) {
+      setStrokes((prev) => [...prev, currentStrokeRef.current!]);
+      setRedoStack([]);
+    }
+    currentStrokeRef.current = null;
+  }, [isDrawing]);
+
+  // ── Undo / Redo / Clear ─────────────────────────────────────────────
+  const undoDoodle = useCallback(() => {
+    setStrokes((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setRedoStack((r) => [...r, last]);
+      const next = prev.slice(0, -1);
+      redrawDoodle(next);
+      return next;
+    });
+  }, [redrawDoodle]);
+
+  const redoDoodle = useCallback(() => {
+    setRedoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setStrokes((s) => {
+        const next = [...s, last];
+        redrawDoodle(next);
+        return next;
+      });
+      return prev.slice(0, -1);
+    });
+  }, [redrawDoodle]);
+
+  const clearDoodle = useCallback(() => {
+    setStrokes([]);
+    setRedoStack([]);
+    redrawDoodle([]);
+  }, [redrawDoodle]);
+
+  // ── Reset simulation (reload iframe) ────────────────────────────────
+  const resetSimulation = useCallback(() => {
+    setLoading(true);
+    setIframeKey((k) => k + 1);
+    clearDoodle();
+  }, [clearDoodle]);
+
   // Track iframe load
   const handleIframeLoad = useCallback(() => {
-    // Small delay for the simulation to initialize its canvas
     setTimeout(() => setLoading(false), 600);
   }, []);
 
@@ -146,7 +268,7 @@ export default function SimulationViewer({
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  // Exit lab — use router.back() to preserve scroll position
+  // Exit lab
   const exitLab = useCallback(() => {
     router.back();
   }, [router]);
@@ -155,7 +277,11 @@ export default function SimulationViewer({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !document.fullscreenElement) {
-        exitLab();
+        if (doodleActive) {
+          setDoodleActive(false);
+        } else {
+          exitLab();
+        }
       }
       if (e.key === 'f' || e.key === 'F') {
         toggleFullscreen();
@@ -163,10 +289,21 @@ export default function SimulationViewer({
       if (e.key === 'i' || e.key === 'I') {
         setShowInstructions((p) => !p);
       }
+      if (e.key === 'd' || e.key === 'D') {
+        setDoodleActive((p) => !p);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redoDoodle();
+        } else {
+          undoDoodle();
+        }
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [exitLab, toggleFullscreen]);
+  }, [exitLab, toggleFullscreen, doodleActive, undoDoodle, redoDoodle]);
 
   const hasCode = !!simulation.html_code;
 
@@ -178,6 +315,7 @@ export default function SimulationViewer({
       {/* ── Sandbox iframe ──────────────────────────────────────────────── */}
       {hasCode && (
         <iframe
+          key={iframeKey}
           ref={iframeRef}
           srcDoc={simulation.html_code!}
           sandbox="allow-scripts allow-same-origin"
@@ -186,6 +324,21 @@ export default function SimulationViewer({
           onLoad={handleIframeLoad}
         />
       )}
+
+      {/* ── Doodle overlay canvas ──────────────────────────────────────── */}
+      <canvas
+        ref={doodleCanvasRef}
+        className="absolute inset-0 w-full h-full z-[35]"
+        style={{
+          pointerEvents: doodleActive ? 'auto' : 'none',
+          cursor: doodleActive ? 'crosshair' : 'default',
+          touchAction: doodleActive ? 'none' : 'auto',
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+      />
 
       {/* ── Loading overlay ─────────────────────────────────────────────── */}
       <AnimatePresence>
@@ -241,6 +394,65 @@ export default function SimulationViewer({
 
           {/* Controls */}
           <div className="flex items-center gap-1 shrink-0">
+            {/* Doodle toggle */}
+            <button
+              onClick={() => setDoodleActive((p) => !p)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                doodleActive
+                  ? 'bg-red-500/20 text-red-400'
+                  : hudColors.muted + ' hover:bg-white/[0.08]'
+              }`}
+              title="Toggle doodle (D)"
+            >
+              <Pen className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Doodle</span>
+            </button>
+
+            {/* Undo */}
+            <button
+              onClick={undoDoodle}
+              disabled={strokes.length === 0}
+              className={`p-2 rounded-lg transition-colors ${
+                strokes.length > 0
+                  ? hudColors.muted + ' hover:bg-white/[0.08]'
+                  : 'opacity-30 cursor-not-allowed ' + hudColors.muted
+              }`}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="w-4 h-4" />
+            </button>
+
+            {/* Redo */}
+            <button
+              onClick={redoDoodle}
+              disabled={redoStack.length === 0}
+              className={`p-2 rounded-lg transition-colors ${
+                redoStack.length > 0
+                  ? hudColors.muted + ' hover:bg-white/[0.08]'
+                  : 'opacity-30 cursor-not-allowed ' + hudColors.muted
+              }`}
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <Redo2 className="w-4 h-4" />
+            </button>
+
+            {/* Clear doodle */}
+            <button
+              onClick={clearDoodle}
+              disabled={strokes.length === 0}
+              className={`p-2 rounded-lg transition-colors ${
+                strokes.length > 0
+                  ? hudColors.muted + ' hover:bg-red-500/20 hover:text-red-400'
+                  : 'opacity-30 cursor-not-allowed ' + hudColors.muted
+              }`}
+              title="Clear doodle"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Divider */}
+            <div className={`w-px h-5 mx-1 ${hudColors.border}`} />
+
             {/* Instructions toggle */}
             <button
               onClick={() => setShowInstructions((p) => !p)}
@@ -253,6 +465,15 @@ export default function SimulationViewer({
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Instructions</span>
+            </button>
+
+            {/* Reset simulation */}
+            <button
+              onClick={resetSimulation}
+              className={`p-2 rounded-lg ${hudColors.muted} hover:bg-white/[0.08] transition-colors`}
+              title="Reset simulation"
+            >
+              <RotateCcw className="w-4 h-4" />
             </button>
 
             {/* Fullscreen */}
@@ -275,6 +496,23 @@ export default function SimulationViewer({
           </div>
         </div>
       </motion.div>
+
+      {/* ── Doodle active indicator ────────────────────────────────────── */}
+      <AnimatePresence>
+        {doodleActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur-xl"
+          >
+            <span className="text-red-400 text-xs font-medium flex items-center gap-2">
+              <Pen className="w-3 h-3" />
+              Doodle Mode — Draw anywhere · Press D or Esc to exit
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Instructions panel ──────────────────────────────────────────── */}
       <InstructionsPanel
