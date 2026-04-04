@@ -550,7 +550,7 @@ canvas:active{cursor:grabbing}
 #fn-label{font-size:15px;font-weight:700;letter-spacing:.3px}
 #fn-eq{font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;font-family:'Courier New',monospace}
 #coord-badge{position:fixed;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);font-size:12px;font-family:'Courier New',monospace;pointer-events:none;z-index:30;display:none;backdrop-filter:blur(6px);white-space:nowrap}
-#right-panel{position:fixed;top:50px;right:10px;z-index:20;display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 140px);overflow-y:auto;scrollbar-width:none}
+#right-panel{position:fixed;top:50px;right:10px;z-index:20;display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 220px);overflow-y:auto;scrollbar-width:none}
 #right-panel::-webkit-scrollbar{display:none}
 .panel{background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:10px;line-height:1.7;backdrop-filter:blur(8px);min-width:175px;max-width:200px}
 .panel .lbl{color:rgba(255,255,255,0.4);font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:2px}
@@ -560,7 +560,9 @@ canvas:active{cursor:grabbing}
 .panel input[type=number]{width:46px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px}
 .panel select{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px}
 #hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.08);font-size:14px;pointer-events:none;z-index:5}
-#controls{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:20;flex-wrap:wrap;justify-content:center;max-width:98vw;padding:0 6px}
+#controls-wrap{position:fixed;bottom:0;left:0;right:0;z-index:20;max-height:40vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;background:linear-gradient(0deg,rgba(10,10,26,0.95) 60%,transparent);padding:12px 6px calc(12px + env(safe-area-inset-bottom,0px)) 6px}
+#controls-wrap::-webkit-scrollbar{display:none}
+#controls{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:98vw;margin:0 auto}
 .cg{display:flex;gap:2px;padding:3px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;flex-wrap:wrap;justify-content:center}
 .cw{position:relative;padding-top:10px}
 .cl{position:absolute;top:-13px;left:6px;font-size:7px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:1px;font-weight:700}
@@ -572,6 +574,10 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
 .tang-dot{position:fixed;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid rgba(255,255,255,0.5);transform:translate(-50%,-50%);pointer-events:none;z-index:25;display:none;box-shadow:0 0 8px rgba(239,68,68,0.5)}
 #vol3d{position:fixed;top:50px;left:10px;z-index:20;display:none}
 #vol3d canvas{border-radius:12px;border:1px solid rgba(167,139,250,0.3);background:rgba(5,5,20,0.92);box-shadow:0 0 20px rgba(167,139,250,0.15)}
+#vol3d-bar{display:flex;gap:4px;margin-top:4px;justify-content:center}
+#vol3d-bar button{padding:3px 10px;font-size:9px;border:1px solid rgba(167,139,250,0.3);background:rgba(167,139,250,0.12);color:#c4b5fd;border-radius:6px;cursor:pointer}
+#vol3d-bar button:hover{background:rgba(167,139,250,0.25)}
+#vol3d-bar button.active{background:rgba(167,139,250,0.35);color:#fff}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="top-bar">
@@ -580,7 +586,15 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
 </div>
 <div id="coord-badge"></div>
 <div class="tang-dot" id="tang-dot"></div>
-<div id="vol3d"><canvas id="c3d" width="280" height="280"></canvas></div>
+<div id="vol3d">
+  <canvas id="c3d" width="280" height="280"></canvas>
+  <div id="vol3d-bar">
+    <button onclick="vol3dPlayPause()" id="vol3d-pp" class="active">&#9646;&#9646; Pause</button>
+    <button onclick="vol3dRotL()">&larr; Rotate</button>
+    <button onclick="vol3dRotR()">Rotate &rarr;</button>
+    <button onclick="vol3dReset()">Reset</button>
+  </div>
+</div>
 <div id="right-panel">
   <div class="panel" id="p-transform">
     <div class="lbl" style="color:#f472b6">&#9645; Reflection</div>
@@ -625,6 +639,7 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
   </div>
 </div>
 <div id="hint"></div>
+<div id="controls-wrap">
 <div id="controls">
   <div class="cw"><span class="cl">Linear &amp; Quadratic</span><div class="cg">
     <button onclick="pick('linear')" id="b-linear">y = mx + c</button>
@@ -678,6 +693,7 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
     <button onclick="resetView()" class="rst">Reset</button>
     <button onclick="clearAll()">Clear</button>
   </div></div>
+</div>
 </div>
 <script>
 const cv=document.getElementById('c'),cx=cv.getContext('2d');
@@ -906,12 +922,22 @@ document.getElementById('inp-a').addEventListener('input',calcVol);
 document.getElementById('inp-b').addEventListener('input',calcVol);
 
 /* ── 3D volume mini-canvas ── */
-let rot3d=0;
+let rot3d=0,vol3dPlaying=true,vol3dAnimId=null;
+function vol3dPlayPause(){
+  vol3dPlaying=!vol3dPlaying;
+  const btn=document.getElementById('vol3d-pp');
+  btn.textContent=vol3dPlaying?'\\u23f8 Pause':'\\u25b6 Play';
+  btn.classList.toggle('active',vol3dPlaying);
+  if(vol3dPlaying&&showVol){const fn=getTransFn();if(fn){const a=parseFloat(document.getElementById('inp-a').value)||-2,b=parseFloat(document.getElementById('inp-b').value)||2;draw3DVol(fn,a,b);}}
+}
+function vol3dRotL(){rot3d-=0.3;if(!vol3dPlaying&&showVol){const fn=getTransFn();if(fn){const a=parseFloat(document.getElementById('inp-a').value)||-2,b=parseFloat(document.getElementById('inp-b').value)||2;draw3DVol(fn,a,b);}}}
+function vol3dRotR(){rot3d+=0.3;if(!vol3dPlaying&&showVol){const fn=getTransFn();if(fn){const a=parseFloat(document.getElementById('inp-a').value)||-2,b=parseFloat(document.getElementById('inp-b').value)||2;draw3DVol(fn,a,b);}}}
+function vol3dReset(){rot3d=0;if(!vol3dPlaying&&showVol){const fn=getTransFn();if(fn){const a=parseFloat(document.getElementById('inp-a').value)||-2,b=parseFloat(document.getElementById('inp-b').value)||2;draw3DVol(fn,a,b);}}}
 function draw3DVol(fn,a,b){
   const w=280,h=280;cx3.fillStyle='rgba(5,5,20,0.95)';cx3.fillRect(0,0,w,h);
   const cx0=w/2,cy0=h/2,s3=30,tilt=0.4;
   const cosT=Math.cos(tilt),sinT=Math.sin(tilt);
-  rot3d+=0.015;const cosR=Math.cos(rot3d),sinR=Math.sin(rot3d);
+  if(vol3dPlaying)rot3d+=0.015;const cosR=Math.cos(rot3d),sinR=Math.sin(rot3d);
   function p3(x,y,z){
     const x1=x*cosR-z*sinR,z1=x*sinR+z*cosR;
     const y1=y*cosT-z1*sinT,z2=z1*cosT+y*sinT;
@@ -1006,7 +1032,7 @@ function draw3DVol(fn,a,b){
     cx3.closePath();cx3.fill();cx3.stroke();
   });
 
-  if(showVol)requestAnimationFrame(()=>draw3DVol(fn,a,b));
+  if(showVol&&vol3dPlaying)requestAnimationFrame(()=>draw3DVol(fn,a,b));
 }
 
 /* ── Coordinate conversion ── */
