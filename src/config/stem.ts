@@ -541,80 +541,405 @@ const CALCULUS_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif}
-canvas{display:block}
-#controls{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10;flex-wrap:wrap;justify-content:center}
-button{padding:7px 16px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;backdrop-filter:blur(8px);transition:all .2s}
-button:hover{background:rgba(255,255,255,0.15)}
-button.active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,0.6)}
-#info{position:fixed;top:16px;right:16px;color:rgba(255,255,255,0.5);font-size:12px;text-align:right;line-height:1.8}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;user-select:none;color:#fff}
+canvas{display:block;cursor:grab}
+canvas.doodling{cursor:crosshair}
+canvas:active{cursor:grabbing}
+#top-bar{position:fixed;top:0;left:0;right:0;padding:8px 14px;z-index:20;background:linear-gradient(180deg,rgba(10,10,26,0.92),transparent);display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+#top-bar>*{pointer-events:auto}
+#fn-label{font-size:15px;font-weight:700;letter-spacing:.3px}
+#fn-eq{font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;font-family:'Courier New',monospace}
+#coord-badge{position:fixed;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.15);font-size:12px;font-family:'Courier New',monospace;pointer-events:none;z-index:30;display:none;backdrop-filter:blur(6px);white-space:nowrap}
+#vol-panel{position:fixed;top:60px;right:14px;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;font-size:11px;line-height:1.8;z-index:20;display:none;backdrop-filter:blur(8px);min-width:180px}
+#vol-panel .lbl{color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;letter-spacing:1px}
+#vol-panel .val{color:#a78bfa;font-weight:700;font-family:'Courier New',monospace}
+#hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.08);font-size:14px;pointer-events:none;z-index:5}
+#controls{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:20;flex-wrap:wrap;justify-content:center;max-width:98vw;padding:0 8px}
+.cg{display:flex;gap:3px;padding:4px 5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:9px}
+.cw{position:relative;padding-top:10px}
+.cl{position:absolute;top:-13px;left:6px;font-size:7px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+button{padding:5px 10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.65);border-radius:7px;cursor:pointer;font-size:10px;font-weight:600;transition:all .2s;white-space:nowrap}
+button:hover{background:rgba(255,255,255,0.12);color:#fff;transform:translateY(-1px)}
+button.on{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd;box-shadow:0 0 10px rgba(59,130,246,0.15)}
+button.tool{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.4);color:#6ee7b7;box-shadow:0 0 10px rgba(16,185,129,0.15)}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="controls">
-  <button onclick="setFn('sin')" id="btn-sin" class="active">sin(x)</button>
-  <button onclick="setFn('x2')" id="btn-x2">x&sup2;</button>
-  <button onclick="setFn('x3')" id="btn-x3">x&sup3;</button>
-  <button onclick="setFn('exp')" id="btn-exp">e^x</button>
-  <button onclick="toggleDeriv()" id="btn-d">Derivative</button>
-  <button onclick="toggleInteg()" id="btn-i">Integral</button>
+<div id="top-bar">
+  <div><div id="fn-label">sin(x)</div><div id="fn-eq">y = sin(x)</div></div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.35);text-align:right;line-height:1.6">Drag to pan · Scroll to zoom<br>Click graph for coordinates</div>
 </div>
-<div id="info">Drag to pan &middot; Scroll to zoom</div>
+<div id="coord-badge"></div>
+<div id="vol-panel">
+  <div class="lbl">Volume of Revolution (x-axis)</div>
+  <div>V = &pi; &int; y&sup2; dx from <span id="vol-a">-2</span> to <span id="vol-b">2</span></div>
+  <div class="val" id="vol-val">V = 0</div>
+  <div style="margin-top:6px" class="lbl">Bounds</div>
+  <div style="display:flex;gap:6px;margin-top:4px">
+    <label style="font-size:10px">a: <input id="inp-a" type="number" value="-2" step="0.5" style="width:50px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px"></label>
+    <label style="font-size:10px">b: <input id="inp-b" type="number" value="2" step="0.5" style="width:50px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px"></label>
+  </div>
+</div>
+<div id="hint"></div>
+<div id="controls">
+  <div class="cw"><span class="cl">O-Level</span><div class="cg">
+    <button onclick="pick('linear')" id="b-linear">y=mx+c</button>
+    <button onclick="pick('quadratic')" id="b-quadratic" class="on">x&sup2;</button>
+    <button onclick="pick('cubic')" id="b-cubic">x&sup3;</button>
+    <button onclick="pick('reciprocal')" id="b-reciprocal">1/x</button>
+    <button onclick="pick('sqrt')" id="b-sqrt">&radic;x</button>
+    <button onclick="pick('abs')" id="b-abs">|x|</button>
+  </div></div>
+  <div class="cw"><span class="cl">A-Level</span><div class="cg">
+    <button onclick="pick('sin')" id="b-sin">sin</button>
+    <button onclick="pick('cos')" id="b-cos">cos</button>
+    <button onclick="pick('tan')" id="b-tan">tan</button>
+    <button onclick="pick('exp')" id="b-exp">e<sup>x</sup></button>
+    <button onclick="pick('ln')" id="b-ln">ln</button>
+    <button onclick="pick('x4')" id="b-x4">x&#8308;</button>
+    <button onclick="pick('sinc')" id="b-sinc">sin/x</button>
+    <button onclick="pick('gauss')" id="b-gauss">e<sup>-x&sup2;</sup></button>
+  </div></div>
+  <div class="cw"><span class="cl">Extras</span><div class="cg">
+    <button onclick="pick('circle')" id="b-circle">Circle</button>
+    <button onclick="pick('parabola')" id="b-parabola">x=y&sup2;</button>
+    <button onclick="pick('hyperbola')" id="b-hyperbola">Hyperbola</button>
+    <button onclick="pick('ellipse')" id="b-ellipse">Ellipse</button>
+  </div></div>
+  <div class="cw"><span class="cl">Tools</span><div class="cg">
+    <button onclick="togDeriv()" id="b-deriv">f'(x)</button>
+    <button onclick="togInteg()" id="b-integ">Integral</button>
+    <button onclick="togVol()" id="b-vol">Volume</button>
+    <button onclick="togDoodle()" id="b-doodle">Doodle</button>
+    <button onclick="togPoints()" id="b-pts">Points</button>
+    <button onclick="clearAll()">Clear</button>
+  </div></div>
+</div>
 <script>
-const c=document.getElementById('c'),ctx=c.getContext('2d');
-let W,H,fn='sin',showDeriv=false,showInteg=false,oX=0,oY=0,scaleX=60,scaleY=60,dragging=false,lastX,lastY;
-function resize(){W=c.width=innerWidth;H=c.height=innerHeight;oX=W/2;oY=H/2;}
-resize();addEventListener('resize',resize);
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let W,H,oX,oY,sc=60,dragging=false,lx,ly,didDrag=false;
+let curFn='quadratic',showDeriv=false,showInteg=false,showVol=false;
+let doodleMode=false,pointMode=false;
+let doodleStrokes=[],curStroke=null;
+let userPts=[],selectedPt=-1;
+const PI=Math.PI;
 
-const fns={sin:x=>Math.sin(x),x2:x=>x*x,x3:x=>x*x*x,exp:x=>Math.exp(x)};
-const derivs={sin:x=>Math.cos(x),x2:x=>2*x,x3:x=>3*x*x,exp:x=>Math.exp(x)};
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;if(!oX){oX=W/2;oY=H/2;}}
+resize();addEventListener('resize',()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;});
 
-function setFn(f){fn=f;document.querySelectorAll('#controls button').forEach(b=>{if(b.id.startsWith('btn-')&&b.id!=='btn-d'&&b.id!=='btn-i')b.classList.toggle('active',b.id==='btn-'+f);});}
-function toggleDeriv(){showDeriv=!showDeriv;document.getElementById('btn-d').classList.toggle('active',showDeriv);}
-function toggleInteg(){showInteg=!showInteg;document.getElementById('btn-i').classList.toggle('active',showInteg);}
+/* ── Graph definitions ── */
+const G={
+  linear:{fn:x=>2*x+1,deriv:x=>2,label:'Linear',eq:'y = 2x + 1',color:'#3b82f6',param:false},
+  quadratic:{fn:x=>x*x,deriv:x=>2*x,label:'Quadratic',eq:'y = x\\u00b2',color:'#10b981',param:false},
+  cubic:{fn:x=>x*x*x,deriv:x=>3*x*x,label:'Cubic',eq:'y = x\\u00b3',color:'#8b5cf6',param:false},
+  reciprocal:{fn:x=>Math.abs(x)<0.05?NaN:1/x,deriv:x=>-1/(x*x),label:'Reciprocal',eq:'y = 1/x',color:'#f59e0b',param:false},
+  sqrt:{fn:x=>x>=0?Math.sqrt(x):NaN,deriv:x=>x>0?0.5/Math.sqrt(x):NaN,label:'Square Root',eq:'y = \\u221ax',color:'#ec4899',param:false},
+  abs:{fn:x=>Math.abs(x),deriv:x=>x>0?1:x<0?-1:0,label:'Modulus',eq:'y = |x|',color:'#06b6d4',param:false},
+  sin:{fn:x=>Math.sin(x),deriv:x=>Math.cos(x),label:'Sine',eq:'y = sin(x)',color:'#10b981',param:false},
+  cos:{fn:x=>Math.cos(x),deriv:x=>-Math.sin(x),label:'Cosine',eq:'y = cos(x)',color:'#6366f1',param:false},
+  tan:{fn:x=>{const v=Math.tan(x);return Math.abs(v)>50?NaN:v;},deriv:x=>{const c=Math.cos(x);return c===0?NaN:1/(c*c);},label:'Tangent',eq:'y = tan(x)',color:'#f97316',param:false},
+  exp:{fn:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},deriv:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},label:'Exponential',eq:'y = e\\u02e3',color:'#ef4444',param:false},
+  ln:{fn:x=>x>0?Math.log(x):NaN,deriv:x=>x>0?1/x:NaN,label:'Natural Log',eq:'y = ln(x)',color:'#14b8a6',param:false},
+  x4:{fn:x=>x*x*x*x,deriv:x=>4*x*x*x,label:'Quartic',eq:'y = x\\u2074',color:'#a855f7',param:false},
+  sinc:{fn:x=>Math.abs(x)<0.001?1:Math.sin(x)/x,deriv:x=>Math.abs(x)<0.001?0:(Math.cos(x)*x-Math.sin(x))/(x*x),label:'Sinc',eq:'y = sin(x)/x',color:'#22d3ee',param:false},
+  gauss:{fn:x=>Math.exp(-x*x),deriv:x=>-2*x*Math.exp(-x*x),label:'Gaussian',eq:'y = e^(-x\\u00b2)',color:'#f472b6',param:false},
+  circle:{param:true,label:'Unit Circle',eq:'x\\u00b2 + y\\u00b2 = 4',color:'#fbbf24'},
+  parabola:{param:true,label:'Sideways Parabola',eq:'x = y\\u00b2',color:'#34d399'},
+  hyperbola:{param:true,label:'Hyperbola',eq:'x\\u00b2/4 - y\\u00b2 = 1',color:'#fb923c'},
+  ellipse:{param:true,label:'Ellipse',eq:'x\\u00b2/9 + y\\u00b2/4 = 1',color:'#c084fc'},
+};
 
-function draw(){
-  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
-  // Grid
-  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
-  const sx=scaleX,sy=scaleY;
-  for(let x=Math.floor(-oX/sx)*sx;x<W;x+=sx){const px=oX+x;ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();}
-  for(let y=Math.floor(-oY/sy)*sy;y<H;y+=sy){const py=oY+y;ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py);ctx.stroke();}
-  // Axes
-  ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,oY);ctx.lineTo(W,oY);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(oX,0);ctx.lineTo(oX,H);ctx.stroke();
-
-  function plotFn(f,color,width){
-    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;
-    let first=true;
-    for(let px=0;px<W;px+=1){
-      const x=(px-oX)/sx;const y=f(x);const py=oY-y*sy;
-      if(first){ctx.moveTo(px,py);first=false;}else ctx.lineTo(px,py);
-    }ctx.stroke();
-  }
-
-  // Integral fill
-  if(showInteg){
-    ctx.beginPath();const f=fns[fn];
-    const x0=-2,x1=2;const px0=oX+x0*sx,px1=oX+x1*sx;
-    ctx.moveTo(px0,oY);
-    for(let px=px0;px<=px1;px++){const x=(px-oX)/sx;ctx.lineTo(px,oY-f(x)*sy);}
-    ctx.lineTo(px1,oY);ctx.closePath();
-    ctx.fillStyle='rgba(16,185,129,0.12)';ctx.fill();
-  }
-
-  plotFn(fns[fn],'#10b981',2.5);
-  if(showDeriv)plotFn(derivs[fn],'#f59e0b',1.8);
-
-  requestAnimationFrame(draw);
+function pick(k){curFn=k;
+  document.querySelectorAll('#controls button').forEach(b=>b.classList.remove('on'));
+  const el=document.getElementById('b-'+k);if(el)el.classList.add('on');
+  if(showDeriv)document.getElementById('b-deriv').classList.add('tool');
+  if(showInteg)document.getElementById('b-integ').classList.add('tool');
+  if(showVol)document.getElementById('b-vol').classList.add('tool');
+  if(doodleMode)document.getElementById('b-doodle').classList.add('tool');
+  if(pointMode)document.getElementById('b-pts').classList.add('tool');
+  const g=G[k];
+  document.getElementById('fn-label').textContent=g.label;
+  document.getElementById('fn-eq').textContent=g.eq;
+  if(g.param){showDeriv=false;document.getElementById('b-deriv').classList.remove('tool');}
+  calcVol();
 }
 
-c.addEventListener('mousedown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY});
-addEventListener('mouseup',()=>dragging=false);
-addEventListener('mousemove',e=>{if(!dragging)return;oX+=e.clientX-lastX;oY+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;});
-c.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?0.9:1.1;scaleX*=f;scaleY*=f;scaleX=Math.max(10,Math.min(300,scaleX));scaleY=Math.max(10,Math.min(300,scaleY));},{passive:false});
+function togDeriv(){if(G[curFn].param)return;showDeriv=!showDeriv;document.getElementById('b-deriv').classList.toggle('tool',showDeriv);}
+function togInteg(){showInteg=!showInteg;document.getElementById('b-integ').classList.toggle('tool',showInteg);}
+function togVol(){showVol=!showVol;document.getElementById('b-vol').classList.toggle('tool',showVol);document.getElementById('vol-panel').style.display=showVol?'block':'none';if(showVol)calcVol();}
+function togDoodle(){doodleMode=!doodleMode;if(doodleMode)pointMode=false;
+  document.getElementById('b-doodle').classList.toggle('tool',doodleMode);
+  document.getElementById('b-pts').classList.remove('tool');
+  cv.classList.toggle('doodling',doodleMode);
+  document.getElementById('hint').textContent=doodleMode?'Draw freely with mouse or pen':'';
+}
+function togPoints(){pointMode=!pointMode;if(pointMode)doodleMode=false;
+  document.getElementById('b-pts').classList.toggle('tool',pointMode);
+  document.getElementById('b-doodle').classList.remove('tool');
+  cv.classList.remove('doodling');
+  document.getElementById('hint').textContent=pointMode?'Click anywhere to place points':'';
+}
+function clearAll(){doodleStrokes=[];curStroke=null;userPts=[];selectedPt=-1;}
 
-draw();
+/* Volume of revolution */
+function calcVol(){
+  if(!showVol)return;
+  const g=G[curFn];if(!g||g.param)return;
+  const a=parseFloat(document.getElementById('inp-a').value)||-2;
+  const b=parseFloat(document.getElementById('inp-b').value)||2;
+  const n=500;const dx=(b-a)/n;let sum=0;
+  for(let i=0;i<n;i++){const x=a+(i+0.5)*dx;const y=g.fn(x);if(isFinite(y))sum+=y*y*dx;}
+  const vol=PI*Math.abs(sum);
+  document.getElementById('vol-a').textContent=a.toFixed(1);
+  document.getElementById('vol-b').textContent=b.toFixed(1);
+  document.getElementById('vol-val').textContent='V = '+vol.toFixed(4)+' units\\u00b3';
+}
+document.getElementById('inp-a').addEventListener('input',calcVol);
+document.getElementById('inp-b').addEventListener('input',calcVol);
+
+/* ── Coordinate conversion ── */
+function toScreen(x,y){return[oX+x*sc,oY-y*sc];}
+function toMath(px,py){return[(px-oX)/sc,(oY-py)/sc];}
+
+/* ── Drawing ── */
+function drawGrid(){
+  const step=getGridStep();
+  cx.strokeStyle='rgba(255,255,255,0.04)';cx.lineWidth=1;
+  const xMin=Math.floor((0-oX)/sc/step)*step,xMax=Math.ceil((W-oX)/sc/step)*step;
+  const yMin=Math.floor((oY-H)/sc/step)*step,yMax=Math.ceil(oY/sc/step)*step;
+  for(let x=xMin;x<=xMax;x+=step){const px=oX+x*sc;cx.beginPath();cx.moveTo(px,0);cx.lineTo(px,H);cx.stroke();}
+  for(let y=yMin;y<=yMax;y+=step){const py=oY-y*sc;cx.beginPath();cx.moveTo(0,py);cx.lineTo(W,py);cx.stroke();}
+}
+function getGridStep(){if(sc>100)return 0.5;if(sc>40)return 1;if(sc>15)return 2;if(sc>6)return 5;return 10;}
+
+function drawAxes(){
+  cx.strokeStyle='rgba(255,255,255,0.25)';cx.lineWidth=2;
+  cx.beginPath();cx.moveTo(0,oY);cx.lineTo(W,oY);cx.stroke();
+  cx.beginPath();cx.moveTo(oX,0);cx.lineTo(oX,H);cx.stroke();
+  /* Tick labels */
+  cx.fillStyle='rgba(255,255,255,0.3)';cx.font='10px system-ui';cx.textAlign='center';
+  const step=getGridStep();
+  const xMin=Math.floor((0-oX)/sc/step)*step,xMax=Math.ceil((W-oX)/sc/step)*step;
+  for(let x=xMin;x<=xMax;x+=step){if(Math.abs(x)<0.001)continue;const px=oX+x*sc;
+    cx.beginPath();cx.moveTo(px,oY-4);cx.lineTo(px,oY+4);cx.strokeStyle='rgba(255,255,255,0.2)';cx.lineWidth=1;cx.stroke();
+    cx.fillText(Number(x.toFixed(2)),px,oY+16);}
+  cx.textAlign='right';
+  const yMin=Math.floor((oY-H)/sc/step)*step,yMax=Math.ceil(oY/sc/step)*step;
+  for(let y=yMin;y<=yMax;y+=step){if(Math.abs(y)<0.001)continue;const py=oY-y*sc;
+    cx.beginPath();cx.moveTo(oX-4,py);cx.lineTo(oX+4,py);cx.strokeStyle='rgba(255,255,255,0.2)';cx.lineWidth=1;cx.stroke();
+    cx.fillText(Number(y.toFixed(2)),oX-8,py+4);}
+  cx.fillStyle='rgba(255,255,255,0.15)';cx.textAlign='left';cx.fillText('0',oX+4,oY+14);
+}
+
+function plotFunction(fn,color,width,glow){
+  cx.beginPath();cx.strokeStyle=color;cx.lineWidth=width;
+  if(glow){cx.shadowColor=color;cx.shadowBlur=8;}
+  let first=true,prevOk=false;
+  for(let px=0;px<=W;px+=1){
+    const x=(px-oX)/sc;const y=fn(x);
+    if(!isFinite(y)||Math.abs(y)>1e4){prevOk=false;continue;}
+    const py=oY-y*sc;
+    if(!prevOk){cx.moveTo(px,py);first=false;prevOk=true;}
+    else cx.lineTo(px,py);
+  }
+  cx.stroke();cx.shadowBlur=0;
+}
+
+function plotParametric(type,color){
+  cx.strokeStyle=color;cx.lineWidth=3;cx.shadowColor=color;cx.shadowBlur=8;
+  if(type==='circle'){
+    cx.beginPath();for(let t=0;t<=2*PI+0.05;t+=0.05){const x=2*Math.cos(t),y=2*Math.sin(t);const[px,py]=toScreen(x,y);t===0?cx.moveTo(px,py):cx.lineTo(px,py);}cx.closePath();cx.stroke();
+  }else if(type==='parabola'){
+    cx.beginPath();let f=true;for(let t=-4;t<=4;t+=0.05){const x=t*t,y=t;const[px,py]=toScreen(x,y);f?(cx.moveTo(px,py),f=false):cx.lineTo(px,py);}cx.stroke();
+  }else if(type==='hyperbola'){
+    for(let branch=0;branch<2;branch++){cx.beginPath();let f=true;for(let t=-3;t<=3;t+=0.05){const x=(branch?-1:1)*2*Math.cosh(t),y=Math.sinh(t);const[px,py]=toScreen(x,y);f?(cx.moveTo(px,py),f=false):cx.lineTo(px,py);}cx.stroke();}
+  }else if(type==='ellipse'){
+    cx.beginPath();for(let t=0;t<=2*PI+0.05;t+=0.05){const x=3*Math.cos(t),y=2*Math.sin(t);const[px,py]=toScreen(x,y);t===0?cx.moveTo(px,py):cx.lineTo(px,py);}cx.closePath();cx.stroke();
+  }
+  cx.shadowBlur=0;
+}
+
+function drawIntegral(){
+  const g=G[curFn];if(!g||g.param)return;
+  const a=parseFloat(document.getElementById('inp-a').value)||-2;
+  const b=parseFloat(document.getElementById('inp-b').value)||2;
+  cx.beginPath();const[sx0,sy0]=toScreen(a,0);cx.moveTo(sx0,sy0);
+  for(let px=Math.min(oX+a*sc,oX+b*sc);px<=Math.max(oX+a*sc,oX+b*sc);px++){
+    const x=(px-oX)/sc;const y=g.fn(x);if(!isFinite(y))continue;cx.lineTo(px,oY-y*sc);
+  }
+  const[ex,ey]=toScreen(b,0);cx.lineTo(ex,ey);cx.closePath();
+  cx.fillStyle='rgba(16,185,129,0.12)';cx.fill();
+  cx.strokeStyle='rgba(16,185,129,0.3)';cx.lineWidth=1;cx.stroke();
+  /* Bound lines */
+  cx.setLineDash([4,4]);cx.strokeStyle='rgba(16,185,129,0.4)';cx.lineWidth=1.5;
+  cx.beginPath();cx.moveTo(oX+a*sc,oY-200);cx.lineTo(oX+a*sc,oY+200);cx.stroke();
+  cx.beginPath();cx.moveTo(oX+b*sc,oY-200);cx.lineTo(oX+b*sc,oY+200);cx.stroke();
+  cx.setLineDash([]);
+}
+
+function drawVolRotation(){
+  const g=G[curFn];if(!g||g.param)return;
+  const a=parseFloat(document.getElementById('inp-a').value)||-2;
+  const b=parseFloat(document.getElementById('inp-b').value)||2;
+  /* Draw semi-transparent rotation surface suggestion */
+  cx.globalAlpha=0.06;
+  for(let px=Math.min(oX+a*sc,oX+b*sc);px<=Math.max(oX+a*sc,oX+b*sc);px+=4){
+    const x=(px-oX)/sc;const y=g.fn(x);if(!isFinite(y))continue;
+    const r=Math.abs(y)*sc;
+    cx.beginPath();cx.ellipse(px,oY,3,r,0,0,PI*2);
+    cx.strokeStyle='#a78bfa';cx.lineWidth=1;cx.stroke();
+  }
+  cx.globalAlpha=1;
+}
+
+function drawDoodle(){
+  const all=[...doodleStrokes];if(curStroke)all.push(curStroke);
+  all.forEach(st=>{if(st.pts.length<2)return;
+    cx.strokeStyle='#f59e0b';cx.lineWidth=3;cx.lineCap='round';cx.lineJoin='round';
+    cx.shadowColor='#f59e0b';cx.shadowBlur=4;
+    cx.beginPath();cx.moveTo(st.pts[0][0],st.pts[0][1]);
+    for(let i=1;i<st.pts.length;i++)cx.lineTo(st.pts[i][0],st.pts[i][1]);
+    cx.stroke();
+  });cx.shadowBlur=0;
+}
+
+function drawUserPts(){
+  userPts.forEach((p,i)=>{
+    const[px,py]=toScreen(p[0],p[1]);
+    const sel=i===selectedPt;
+    cx.beginPath();cx.arc(px,py,sel?8:6,0,PI*2);
+    cx.fillStyle=sel?'rgba(251,191,36,1)':'rgba(251,191,36,0.85)';cx.fill();
+    cx.strokeStyle='rgba(0,0,0,0.3)';cx.lineWidth=2;cx.stroke();
+    if(sel){cx.strokeStyle='rgba(251,191,36,0.3)';cx.lineWidth=2;cx.beginPath();cx.arc(px,py,14,0,PI*2);cx.stroke();}
+  });
+  /* Connect consecutive points */
+  if(userPts.length>1){
+    cx.strokeStyle='rgba(251,191,36,0.4)';cx.lineWidth=2;cx.setLineDash([6,4]);
+    cx.beginPath();const[fx,fy]=toScreen(userPts[0][0],userPts[0][1]);cx.moveTo(fx,fy);
+    for(let i=1;i<userPts.length;i++){const[px,py]=toScreen(userPts[i][0],userPts[i][1]);cx.lineTo(px,py);}
+    cx.stroke();cx.setLineDash([]);
+  }
+}
+
+/* Hover coordinate on graph */
+const coordBadge=document.getElementById('coord-badge');
+let mouseX=-999,mouseY=-999;
+
+function drawCursor(){
+  const g=G[curFn];if(!g||doodleMode||pointMode)return;
+  const[mx,my]=toMath(mouseX,mouseY);
+  let y;
+  if(g.param){
+    /* For parametric, find closest point */
+    return;
+  }else{y=g.fn(mx);}
+  if(!isFinite(y))return;
+  const[sx,sy]=toScreen(mx,y);
+  const dist=Math.abs(mouseY-sy);
+  if(dist<30){
+    cx.beginPath();cx.arc(sx,sy,6,0,PI*2);cx.fillStyle=g.color;cx.fill();
+    cx.strokeStyle='rgba(255,255,255,0.5)';cx.lineWidth=2;cx.beginPath();cx.arc(sx,sy,10,0,PI*2);cx.stroke();
+    /* Crosshair */
+    cx.setLineDash([3,3]);cx.strokeStyle='rgba(255,255,255,0.1)';cx.lineWidth=1;
+    cx.beginPath();cx.moveTo(sx,0);cx.lineTo(sx,H);cx.stroke();
+    cx.beginPath();cx.moveTo(0,sy);cx.lineTo(W,sy);cx.stroke();
+    cx.setLineDash([]);
+    coordBadge.style.display='block';
+    coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
+    coordBadge.innerHTML='<span style="color:'+g.color+'">\\u25cf</span> ('+mx.toFixed(3)+', '+y.toFixed(3)+')';
+  }else{coordBadge.style.display='none';}
+}
+
+function render(){
+  cx.fillStyle='#0a0a1a';cx.fillRect(0,0,W,H);
+  drawGrid();drawAxes();
+  if(showInteg)drawIntegral();
+  if(showVol)drawVolRotation();
+  const g=G[curFn];
+  if(g.param){plotParametric(curFn,g.color);}
+  else{
+    plotFunction(g.fn,g.color,3,true);
+    if(showDeriv)plotFunction(g.deriv,'#f59e0b',2,false);
+  }
+  drawDoodle();drawUserPts();drawCursor();
+  requestAnimationFrame(render);
+}
+
+/* ── Input handling ── */
+cv.addEventListener('mousedown',e=>{
+  didDrag=false;
+  if(doodleMode){curStroke={pts:[[e.clientX,e.clientY]]};return;}
+  if(pointMode){
+    /* Check if clicking existing point */
+    for(let i=0;i<userPts.length;i++){const[px,py]=toScreen(userPts[i][0],userPts[i][1]);if(Math.hypot(e.clientX-px,e.clientY-py)<15){selectedPt=i;showPtCoord(i);return;}}
+    const[mx,my]=toMath(e.clientX,e.clientY);userPts.push([mx,my]);selectedPt=userPts.length-1;showPtCoord(selectedPt);return;
+  }
+  dragging=true;lx=e.clientX;ly=e.clientY;
+});
+addEventListener('mouseup',e=>{
+  if(doodleMode&&curStroke){if(curStroke.pts.length>1)doodleStrokes.push(curStroke);curStroke=null;return;}
+  dragging=false;
+  /* Click on graph to show coordinates */
+  if(!didDrag&&!doodleMode&&!pointMode){
+    const g=G[curFn];if(g&&!g.param){
+      const[mx]=toMath(e.clientX,e.clientY);const y=g.fn(mx);
+      if(isFinite(y)){const[,sy]=toScreen(mx,y);if(Math.abs(e.clientY-sy)<30){showClickCoord(mx,y,g.color);}}
+    }
+  }
+});
+addEventListener('mousemove',e=>{
+  mouseX=e.clientX;mouseY=e.clientY;
+  if(doodleMode&&curStroke){curStroke.pts.push([e.clientX,e.clientY]);return;}
+  if(!dragging)return;
+  const dx=e.clientX-lx,dy=e.clientY-ly;
+  if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;
+  oX+=dx;oY+=dy;lx=e.clientX;ly=e.clientY;
+});
+cv.addEventListener('wheel',e=>{e.preventDefault();
+  const mx=e.clientX,my=e.clientY;
+  const[bx,by]=toMath(mx,my);
+  const f=e.deltaY>0?0.92:1.08;
+  sc=Math.max(5,Math.min(500,sc*f));
+  oX=mx-bx*sc;oY=my+by*sc;
+  calcVol();
+},{passive:false});
+
+/* Touch */
+let touchT=0;
+cv.addEventListener('touchstart',e=>{touchT=Date.now();didDrag=false;
+  if(doodleMode&&e.touches.length===1){const t=e.touches[0];curStroke={pts:[[t.clientX,t.clientY]]};return;}
+  if(pointMode&&e.touches.length===1){const t=e.touches[0];const[mx,my]=toMath(t.clientX,t.clientY);userPts.push([mx,my]);selectedPt=userPts.length-1;showPtCoord(selectedPt);return;}
+  if(e.touches.length===1){dragging=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
+},{passive:true});
+addEventListener('touchend',()=>{if(doodleMode&&curStroke){if(curStroke.pts.length>1)doodleStrokes.push(curStroke);curStroke=null;}dragging=false;});
+addEventListener('touchmove',e=>{
+  if(doodleMode&&curStroke&&e.touches.length===1){const t=e.touches[0];curStroke.pts.push([t.clientX,t.clientY]);return;}
+  if(!dragging||e.touches.length!==1)return;
+  const t=e.touches[0],dx=t.clientX-lx,dy=t.clientY-ly;
+  if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;
+  oX+=dx;oY+=dy;lx=t.clientX;ly=t.clientY;
+},{passive:true});
+/* Pinch zoom */
+let pinchDist=0;
+cv.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinchDist=Math.sqrt(dx*dx+dy*dy);}},{passive:true});
+addEventListener('touchmove',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const d=Math.sqrt(dx*dx+dy*dy);sc=Math.max(5,Math.min(500,sc*(d/pinchDist)));pinchDist=d;}},{passive:true});
+
+function showClickCoord(x,y,color){
+  coordBadge.style.display='block';
+  const[sx,sy]=toScreen(x,y);
+  coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
+  coordBadge.innerHTML='<span style="color:'+color+'">\\u25cf</span> ('+x.toFixed(3)+', '+y.toFixed(3)+')';
+  setTimeout(()=>coordBadge.style.display='none',3000);
+}
+function showPtCoord(i){
+  if(i<0||i>=userPts.length)return;
+  const p=userPts[i];const[sx,sy]=toScreen(p[0],p[1]);
+  coordBadge.style.display='block';
+  coordBadge.style.left=(sx+16)+'px';coordBadge.style.top=(sy-30)+'px';
+  coordBadge.innerHTML='<span style="color:#fbbf24">\\u25cf</span> P'+(i+1)+' ('+p[0].toFixed(3)+', '+p[1].toFixed(3)+')';
+}
+
+pick('quadratic');
+render();
 <\/script></body></html>`;
 
 const ATOMIC_HTML = `<!DOCTYPE html>
@@ -1100,14 +1425,14 @@ export const STEM_CATEGORIES: StemCategory[] = [
       },
       {
         id: 'calculus-visualiser',
-        title: '3D Calculus Visualiser',
-        description: 'Plot functions, visualise derivatives and integrals, and explore limits on interactive graphs.',
+        title: 'Interactive Graph Explorer',
+        description: 'Plot all O-Level and A-Level graphs with derivatives, integrals, volume of rotation, doodle drawing, and coordinate inspection on an infinite canvas.',
         icon: 'TrendingUp',
         gradient: 'from-emerald-500 to-teal-500',
         glowColor: 'rgba(16,185,129,0.35)',
-        difficulty: 'Advanced',
-        tags: ['Differentiation', 'Integration', 'Limits'],
-        instructions: 'Select a function from the bottom bar. Toggle "Derivative" to overlay the derivative curve in amber. Toggle "Integral" to shade the area under the curve between x = -2 and x = 2. Drag to pan the graph. Scroll to zoom.',
+        difficulty: 'Intermediate',
+        tags: ['Graphs', 'Differentiation', 'Integration', 'Volume of Rotation'],
+        instructions: 'Choose any graph from O-Level (linear, quadratic, cubic, reciprocal, square root, modulus) or A-Level (sin, cos, tan, exponential, ln, quartic, sinc, Gaussian) categories, plus parametric curves (circle, parabola, hyperbola, ellipse). Drag to pan the infinite canvas. Scroll to zoom. Hover near the curve to see coordinates; click to pin them. Toggle f\\u2032(x) for derivatives, Integral for shaded area, or Volume for revolution visualization with adjustable bounds. Use Doodle to freehand draw, or Points to place and connect coordinate points.',
         html_code: CALCULUS_HTML,
       },
     ],
