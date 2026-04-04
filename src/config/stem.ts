@@ -4376,6 +4376,493 @@ if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){running=false;initAt
 });
 <\/script></body></html>`;
 
+// ── Momentum & Collisions ──────────────────────────────────────────────────
+const MOMENTUM_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#3b82f6}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(59,130,246,0.25);border-color:rgba(59,130,246,0.5);color:#60a5fa}
+.btns{display:flex;gap:4px;margin-bottom:8px}
+.btns button{flex:1;font-size:9px}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#60a5fa;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Collision Type</div>
+<div class="btns"><button id="bElastic" class="active">Elastic</button><button id="bInelastic">Inelastic</button></div>
+</div>
+<div class="sec">
+<div class="sec-title">Object A (Blue)</div>
+<label>Mass A <span id="vMA">3</span> kg</label>
+<input type="range" id="sMA" min="1" max="20" value="3" step="1">
+<label>Velocity A <span id="vVA">5</span> m/s</label>
+<input type="range" id="sVA" min="-10" max="10" value="5" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Object B (Red)</div>
+<label>Mass B <span id="vMB">5</span> kg</label>
+<input type="range" id="sMB" min="1" max="20" value="5" step="1">
+<label>Velocity B <span id="vVB">-3</span> m/s</label>
+<input type="range" id="sVB" min="-10" max="10" value="-3" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bLaunch">Launch</button>
+<button id="bReset">Reset</button>
+</div>
+<div class="sec">
+<div class="sec-title">Before / After</div>
+<div class="info" id="readings">Set up and launch</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Conservation of Momentum:</b><br>m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'<br><br>
+<b>Elastic:</b> KE conserved<br>
+<b>Inelastic:</b> objects stick, KE lost<br><br>
+p = mv, KE = ½mv²
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let mA=3,mB=5,vA=5,vB=-3,elastic=true,running=false,collided=false;
+let posA,posB,curVA,curVB,finalVA,finalVB;
+const sMA=document.getElementById('sMA'),sMB=document.getElementById('sMB'),sVA=document.getElementById('sVA'),sVB=document.getElementById('sVB');
+sMA.oninput=()=>{mA=+sMA.value;document.getElementById('vMA').textContent=mA};
+sMB.oninput=()=>{mB=+sMB.value;document.getElementById('vMB').textContent=mB};
+sVA.oninput=()=>{vA=+sVA.value;document.getElementById('vVA').textContent=vA};
+sVB.oninput=()=>{vB=+sVB.value;document.getElementById('vVB').textContent=vB};
+document.getElementById('bElastic').onclick=()=>{elastic=true;document.getElementById('bElastic').classList.add('active');document.getElementById('bInelastic').classList.remove('active')};
+document.getElementById('bInelastic').onclick=()=>{elastic=false;document.getElementById('bInelastic').classList.add('active');document.getElementById('bElastic').classList.remove('active')};
+function reset(){
+running=false;collided=false;
+posA=W*0.25;posB=W*0.65;
+curVA=0;curVB=0;
+}
+reset();
+document.getElementById('bLaunch').onclick=()=>{reset();curVA=vA;curVB=vB;running=true;collided=false};
+document.getElementById('bReset').onclick=reset;
+function draw(){
+X.clearRect(0,0,W,H);
+const cy=H*0.45,ground=cy+60;
+// ground
+X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;X.beginPath();X.moveTo(0,ground);X.lineTo(W,ground);X.stroke();
+const rA=15+mA*1.5,rB=15+mB*1.5;
+// object A
+X.beginPath();X.arc(posA,cy,rA,0,Math.PI*2);
+X.fillStyle='rgba(59,130,246,0.5)';X.fill();X.strokeStyle='rgba(59,130,246,0.8)';X.lineWidth=2;X.stroke();
+X.fillStyle='#fff';X.font='bold 10px system-ui';X.textAlign='center';X.fillText(mA+'kg',posA,cy+4);
+// velocity arrow A
+if(Math.abs(curVA)>0.1){
+const aLen=curVA*8;
+X.beginPath();X.moveTo(posA,cy-rA-10);X.lineTo(posA+aLen,cy-rA-10);
+X.strokeStyle='rgba(59,130,246,0.7)';X.lineWidth=2;X.stroke();
+X.fillStyle='rgba(59,130,246,0.7)';X.font='9px system-ui';X.fillText(curVA.toFixed(1)+' m/s',posA+aLen/2,cy-rA-18);
+}
+// object B
+if(!collided||elastic){
+X.beginPath();X.arc(posB,cy,rB,0,Math.PI*2);
+X.fillStyle='rgba(239,68,68,0.5)';X.fill();X.strokeStyle='rgba(239,68,68,0.8)';X.lineWidth=2;X.stroke();
+X.fillStyle='#fff';X.fillText(mB+'kg',posB,cy+4);
+if(Math.abs(curVB)>0.1){
+const bLen=curVB*8;
+X.beginPath();X.moveTo(posB,cy-rB-10);X.lineTo(posB+bLen,cy-rB-10);
+X.strokeStyle='rgba(239,68,68,0.7)';X.lineWidth=2;X.stroke();
+X.fillStyle='rgba(239,68,68,0.7)';X.font='9px system-ui';X.fillText(curVB.toFixed(1)+' m/s',posB+bLen/2,cy-rB-18);
+}
+}else{
+// combined mass after inelastic
+const combinedR=15+(mA+mB)*1.2;
+X.beginPath();X.arc(posA,cy,combinedR,0,Math.PI*2);
+const cGrad=X.createLinearGradient(posA-combinedR,cy,posA+combinedR,cy);
+cGrad.addColorStop(0,'rgba(59,130,246,0.4)');cGrad.addColorStop(1,'rgba(239,68,68,0.4)');
+X.fillStyle=cGrad;X.fill();X.strokeStyle='rgba(168,85,247,0.8)';X.lineWidth=2;X.stroke();
+X.fillStyle='#fff';X.fillText((mA+mB)+'kg',posA,cy+4);
+}
+X.textAlign='left';
+// momentum bars at bottom
+const barY=H*0.7,barH=30;
+const pBefore=mA*vA+mB*vB;
+const keBefore=0.5*mA*vA*vA+0.5*mB*vB*vB;
+let pAfter=pBefore,keAfter;
+if(elastic){
+finalVA=((mA-mB)*vA+2*mB*vB)/(mA+mB);
+finalVB=((mB-mA)*vB+2*mA*vA)/(mA+mB);
+keAfter=0.5*mA*finalVA*finalVA+0.5*mB*finalVB*finalVB;
+}else{
+const vFinal=pBefore/(mA+mB);
+finalVA=finalVB=vFinal;
+keAfter=0.5*(mA+mB)*vFinal*vFinal;
+}
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';
+X.fillText('Total momentum before: '+(pBefore).toFixed(1)+' kg⋅m/s',30,barY);
+X.fillText('Total momentum after: '+(pAfter).toFixed(1)+' kg⋅m/s',30,barY+20);
+X.fillText('KE before: '+keBefore.toFixed(1)+' J    KE after: '+keAfter.toFixed(1)+' J'+(elastic?' (conserved)':' (lost: '+(keBefore-keAfter).toFixed(1)+' J)'),30,barY+40);
+document.getElementById('readings').innerHTML=
+'<b>Before:</b><br>p_A: <span class="val">'+(mA*vA).toFixed(1)+'</span> | p_B: <span class="val">'+(mB*vB).toFixed(1)+'</span><br>'+
+'Total p: <span class="val">'+pBefore.toFixed(1)+'</span> kg⋅m/s<br>'+
+'Total KE: <span class="val">'+keBefore.toFixed(1)+'</span> J<br><br>'+
+'<b>After:</b><br>v_A\': <span class="val">'+finalVA.toFixed(2)+'</span> | v_B\': <span class="val">'+finalVB.toFixed(2)+'</span><br>'+
+'Total p: <span class="val">'+pAfter.toFixed(1)+'</span> kg⋅m/s<br>'+
+'Total KE: <span class="val">'+keAfter.toFixed(1)+'</span> J';
+}
+function loop(){
+requestAnimationFrame(loop);
+if(running){
+const rA=15+mA*1.5,rB=15+mB*1.5;
+posA+=curVA*1.5;posB+=curVB*1.5;
+if(!collided&&Math.abs(posA-posB)<(rA+rB)){
+collided=true;
+if(elastic){curVA=finalVA;curVB=finalVB}
+else{curVA=(mA*vA+mB*vB)/(mA+mB);curVB=curVA;posB=posA}
+}
+if(collided&&!elastic){posB=posA}
+if(posA<-50||posA>W+50)running=false;
+if(posB<-50||posB>W+50)running=false;
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph')reset();
+});
+<\/script></body></html>`;
+
+// ── Circular Motion ────────────────────────────────────────────────────────
+const CIRCULAR_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#14b8a6}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#14b8a6;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Parameters</div>
+<label>Radius <span id="vR">120</span> px</label>
+<input type="range" id="sR" min="50" max="250" value="120" step="5">
+<label>Speed <span id="vS">3.0</span> m/s</label>
+<input type="range" id="sS" min="1" max="80" value="30" step="1">
+<label>Mass <span id="vM">2</span> kg</label>
+<input type="range" id="sM" min="1" max="20" value="2" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bRelease">Release Object</button>
+<button id="bReset">Reset</button>
+<button id="bVectors">Toggle Vectors</button>
+<button id="bTrail">Toggle Trail</button>
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Adjust parameters</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Centripetal acceleration:</b><br>a = v²/r (toward centre)<br><br>
+<b>Centripetal force:</b><br>F = mv²/r<br><br>
+<b>Angular velocity:</b><br>ω = v/r = 2πf<br><br>
+<b>Period:</b> T = 2πr/v<br><br>
+If released, object moves in a straight line (tangent) — Newton's 1st Law.
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let radius=120,speed=3,mass=2,angle=0,released=false,relAngle=0,relX=0,relY=0,relVx=0,relVy=0;
+let showVectors=true,showTrail=true,trail=[];
+const sR=document.getElementById('sR'),sS=document.getElementById('sS'),sM=document.getElementById('sM');
+sR.oninput=()=>{radius=+sR.value;document.getElementById('vR').textContent=radius};
+sS.oninput=()=>{speed=(+sS.value)/10;document.getElementById('vS').textContent=speed.toFixed(1)};
+sM.oninput=()=>{mass=+sM.value;document.getElementById('vM').textContent=mass};
+document.getElementById('bRelease').onclick=()=>{
+if(!released){released=true;relAngle=angle;
+const cx=W*0.4,cy=H/2;
+relX=cx+radius*Math.cos(angle);relY=cy+radius*Math.sin(angle);
+relVx=-speed*Math.sin(angle)*40;relVy=speed*Math.cos(angle)*40;
+}};
+document.getElementById('bReset').onclick=()=>{released=false;trail=[];angle=0};
+document.getElementById('bVectors').onclick=()=>{showVectors=!showVectors};
+document.getElementById('bTrail').onclick=()=>{showTrail=!showTrail};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H/2;
+// orbit circle
+X.beginPath();X.arc(cx,cy,radius,0,Math.PI*2);
+X.strokeStyle='rgba(20,184,166,0.2)';X.lineWidth=1;X.setLineDash([4,4]);X.stroke();X.setLineDash([]);
+// centre
+X.beginPath();X.arc(cx,cy,4,0,Math.PI*2);X.fillStyle='rgba(255,255,255,0.3)';X.fill();
+let objX,objY;
+if(!released){
+objX=cx+radius*Math.cos(angle);objY=cy+radius*Math.sin(angle);
+}else{
+objX=relX;objY=relY;
+}
+// trail
+if(showTrail){
+trail.push({x:objX,y:objY});if(trail.length>200)trail.shift();
+X.beginPath();trail.forEach((p,i)=>{i===0?X.moveTo(p.x,p.y):X.lineTo(p.x,p.y)});
+X.strokeStyle='rgba(20,184,166,0.3)';X.lineWidth=1.5;X.stroke();
+}
+// object
+const r=8+mass;
+X.beginPath();X.arc(objX,objY,r,0,Math.PI*2);
+X.fillStyle='rgba(20,184,166,0.6)';X.fill();X.strokeStyle='rgba(20,184,166,0.9)';X.lineWidth=2;X.stroke();
+X.fillStyle='#fff';X.font='bold 9px system-ui';X.textAlign='center';X.fillText(mass+'kg',objX,objY+3);X.textAlign='left';
+if(showVectors&&!released){
+// velocity (tangent)
+const vScale=20;
+const vx=-Math.sin(angle)*speed*vScale,vy=Math.cos(angle)*speed*vScale;
+X.beginPath();X.moveTo(objX,objY);X.lineTo(objX+vx,objY+vy);
+X.strokeStyle='rgba(16,185,129,0.8)';X.lineWidth=2;X.stroke();
+drawArrowHead(X,objX+vx,objY+vy,Math.atan2(vy,vx),'rgba(16,185,129,0.8)');
+X.fillStyle='rgba(16,185,129,0.8)';X.font='9px system-ui';X.fillText('v',objX+vx+5,objY+vy-5);
+// centripetal acceleration (toward centre)
+const aScale=5;
+const ac=speed*speed/(radius/100);
+const ax=(cx-objX)/radius*ac*aScale,ay=(cy-objY)/radius*ac*aScale;
+X.beginPath();X.moveTo(objX,objY);X.lineTo(objX+ax,objY+ay);
+X.strokeStyle='rgba(239,68,68,0.8)';X.lineWidth=2;X.stroke();
+drawArrowHead(X,objX+ax,objY+ay,Math.atan2(ay,ax),'rgba(239,68,68,0.8)');
+X.fillStyle='rgba(239,68,68,0.8)';X.fillText('a',objX+ax+5,objY+ay-5);
+// string/force line
+X.setLineDash([3,3]);X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=1;
+X.beginPath();X.moveTo(objX,objY);X.lineTo(cx,cy);X.stroke();X.setLineDash([]);
+}
+if(released){
+// tangent direction line from release point
+X.setLineDash([4,4]);X.strokeStyle='rgba(16,185,129,0.3)';X.lineWidth=1;
+X.beginPath();X.moveTo(cx+radius*Math.cos(relAngle),cy+radius*Math.sin(relAngle));
+X.lineTo(cx+radius*Math.cos(relAngle)+relVx*3,cy+radius*Math.sin(relAngle)+relVy*3);X.stroke();X.setLineDash([]);
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';X.textAlign='center';
+X.fillText('Object released — moves in straight line (tangent)',W*0.4,H-40);X.textAlign='left';
+}
+const omega=speed/(radius/100);
+const T=2*Math.PI/omega;
+const F=mass*speed*speed/(radius/100);
+const ac=speed*speed/(radius/100);
+document.getElementById('readings').innerHTML=
+'Centripetal a: <span class="val">'+ac.toFixed(2)+'</span> m/s²<br>'+
+'Centripetal F: <span class="val">'+F.toFixed(2)+'</span> N<br>'+
+'Angular vel ω: <span class="val">'+omega.toFixed(2)+'</span> rad/s<br>'+
+'Period T: <span class="val">'+T.toFixed(2)+'</span> s<br>'+
+'Speed v: <span class="val">'+speed.toFixed(1)+'</span> m/s';
+}
+function drawArrowHead(ctx,x,y,a,color){
+ctx.save();ctx.translate(x,y);ctx.rotate(a);
+ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-8,-4);ctx.lineTo(-8,4);ctx.closePath();
+ctx.fillStyle=color;ctx.fill();ctx.restore();
+}
+function loop(){
+requestAnimationFrame(loop);
+if(!released){
+angle+=speed*0.02;
+}else{
+relX+=relVx/60;relY+=relVy/60;
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){released=false;trail=[];angle=0}
+});
+<\/script></body></html>`;
+
+// ── Simple Machines ────────────────────────────────────────────────────────
+const MACHINES_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#f59e0b}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(245,158,11,0.25);border-color:rgba(245,158,11,0.5);color:#f59e0b}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#f59e0b;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Machine Type</div>
+<button id="bLever" class="active">Lever</button>
+<button id="bPulley">Pulley</button>
+<button id="bGear">Gears</button>
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<label>Effort force <span id="vE">50</span> N</label>
+<input type="range" id="sE" min="10" max="200" value="50" step="5">
+<label>Load <span id="vL">100</span> N</label>
+<input type="range" id="sL" min="10" max="300" value="100" step="5">
+<label>Ratio <span id="vR">2</span></label>
+<input type="range" id="sR" min="1" max="6" value="2" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Select a machine</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Mechanical Advantage:</b><br>MA = Load / Effort<br><br>
+<b>Lever:</b> F₁d₁ = F₂d₂ (moments)<br><br>
+<b>Pulley:</b> MA = number of supporting ropes<br><br>
+<b>Gears:</b> gear ratio = driven teeth / driver teeth<br>
+Smaller driver → more torque, less speed
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let machine='lever',effort=50,load=100,ratio=2,time=0;
+const sE=document.getElementById('sE'),sL=document.getElementById('sL'),sR=document.getElementById('sR');
+sE.oninput=()=>{effort=+sE.value;document.getElementById('vE').textContent=effort};
+sL.oninput=()=>{load=+sL.value;document.getElementById('vL').textContent=load};
+sR.oninput=()=>{ratio=+sR.value;document.getElementById('vR').textContent=ratio};
+function setM(m,id){machine=m;document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+document.getElementById('bLever').onclick=()=>setM('lever','bLever');
+document.getElementById('bPulley').onclick=()=>setM('pulley','bPulley');
+document.getElementById('bGear').onclick=()=>setM('gear','bGear');
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.42,cy=H*0.45;
+if(machine==='lever'){
+const fulX=cx,fulY=cy+50;
+const leverLen=300;
+const effortArm=leverLen*ratio/(ratio+1),loadArm=leverLen/(ratio+1);
+const tilt=Math.sin(time*2)*0.05*(effort*effortArm>load*loadArm?1:effort*effortArm<load*loadArm?-1:0);
+X.save();X.translate(fulX,fulY);X.rotate(tilt);
+// lever beam
+X.fillStyle='rgba(245,158,11,0.3)';X.strokeStyle='rgba(245,158,11,0.6)';X.lineWidth=2;
+X.fillRect(-effortArm,-8,leverLen,16);X.strokeRect(-effortArm,-8,leverLen,16);
+// effort side
+X.fillStyle='rgba(59,130,246,0.5)';X.fillRect(-effortArm-10,-25,30,25);
+X.fillStyle='#60a5fa';X.font='bold 9px system-ui';X.textAlign='center';X.fillText(effort+'N',-effortArm+5,-30);
+// load side
+X.fillStyle='rgba(239,68,68,0.5)';const loadW=20+load*0.08;X.fillRect(loadArm-loadW/2,-20-load*0.08,loadW,load*0.08+12);
+X.fillStyle='#ef4444';X.fillText(load+'N',loadArm,-30-load*0.05);
+X.textAlign='left';X.restore();
+// fulcrum triangle
+X.beginPath();X.moveTo(fulX,fulY);X.lineTo(fulX-15,fulY+25);X.lineTo(fulX+15,fulY+25);X.closePath();
+X.fillStyle='rgba(255,255,255,0.2)';X.fill();X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=1.5;X.stroke();
+// labels
+X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';X.textAlign='center';
+X.fillText('Effort arm: '+effortArm.toFixed(0)+'px',fulX-effortArm/2,fulY+50);
+X.fillText('Load arm: '+loadArm.toFixed(0)+'px',fulX+loadArm/2,fulY+50);
+X.fillText('▲ Fulcrum',fulX,fulY+70);
+const MA=effortArm/loadArm;
+document.getElementById('readings').innerHTML='MA: <span class="val">'+MA.toFixed(1)+'</span><br>Effort arm: <span class="val">'+effortArm.toFixed(0)+'</span> px<br>Load arm: <span class="val">'+loadArm.toFixed(0)+'</span> px<br>Balanced: '+(Math.abs(effort*effortArm-load*loadArm)<5?'<span style="color:#10b981">Yes ✓</span>':'<span style="color:#ef4444">No</span>');
+}else if(machine==='pulley'){
+const nPulleys=ratio;
+const topY=60,bottomY=cy+100;
+for(let p=0;p<nPulleys;p++){
+const py=topY+p*50;const px=cx+(p%2)*60-30;
+// pulley wheel
+X.beginPath();X.arc(px,py,18,0,Math.PI*2);X.strokeStyle='rgba(245,158,11,0.6)';X.lineWidth=2;X.stroke();
+X.beginPath();X.arc(px,py,4,0,Math.PI*2);X.fillStyle='rgba(245,158,11,0.4)';X.fill();
+}
+// rope
+X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=1.5;
+X.beginPath();X.moveTo(cx-30,topY);
+for(let p=0;p<nPulleys;p++){
+const py=topY+p*50;const px=cx+(p%2)*60-30;
+X.lineTo(px,py-18);X.lineTo(px,py+18);
+}
+X.lineTo(cx,bottomY);X.stroke();
+// load
+X.fillStyle='rgba(239,68,68,0.5)';X.strokeStyle='rgba(239,68,68,0.7)';X.lineWidth=2;
+X.fillRect(cx-20,bottomY,40,40);X.strokeRect(cx-20,bottomY,40,40);
+X.fillStyle='#ef4444';X.font='bold 10px system-ui';X.textAlign='center';X.fillText(load+'N',cx,bottomY+25);
+// effort arrow
+const effortNeeded=load/nPulleys;
+X.strokeStyle='rgba(59,130,246,0.7)';X.lineWidth=2;
+const ey=topY-20+Math.sin(time*3)*5;
+X.beginPath();X.moveTo(cx-40,topY+20);X.lineTo(cx-40,ey);X.stroke();
+X.fillStyle='rgba(59,130,246,0.8)';X.fillText(effortNeeded.toFixed(1)+'N ↑',cx-60,ey);
+X.textAlign='left';
+document.getElementById('readings').innerHTML='Pulleys: <span class="val">'+nPulleys+'</span><br>MA: <span class="val">'+nPulleys+'</span><br>Effort needed: <span class="val">'+effortNeeded.toFixed(1)+'</span> N<br>Load: <span class="val">'+load+'</span> N';
+}else{
+// gears
+const r1=40,r2=r1*ratio;
+const g1x=cx-r2*0.3,g2x=cx+r1+r2-r2*0.3;
+const gy=cy;
+const teeth1=12,teeth2=teeth1*ratio;
+const ang1=time*2,ang2=-time*2/ratio;
+// draw gear function
+function drawGear(gx,gy2,r,teeth,ang,color){
+X.save();X.translate(gx,gy2);X.rotate(ang);
+X.beginPath();
+for(let t=0;t<teeth;t++){
+const a1=(t/teeth)*Math.PI*2;
+const a2=((t+0.3)/teeth)*Math.PI*2;
+const a3=((t+0.5)/teeth)*Math.PI*2;
+const a4=((t+0.8)/teeth)*Math.PI*2;
+X.lineTo(Math.cos(a1)*(r-5),Math.sin(a1)*(r-5));
+X.lineTo(Math.cos(a2)*(r+5),Math.sin(a2)*(r+5));
+X.lineTo(Math.cos(a3)*(r+5),Math.sin(a3)*(r+5));
+X.lineTo(Math.cos(a4)*(r-5),Math.sin(a4)*(r-5));
+}
+X.closePath();X.fillStyle=color+'30)';X.fill();X.strokeStyle=color+'80)';X.lineWidth=2;X.stroke();
+X.beginPath();X.arc(0,0,6,0,Math.PI*2);X.fillStyle=color+'60)';X.fill();
+X.restore();
+}
+drawGear(g1x,gy,r1,teeth1,ang1,'rgba(59,130,246,0.');
+drawGear(g2x,gy,r2,teeth2,ang2,'rgba(239,68,68,0.');
+X.fillStyle='rgba(255,255,255,0.4)';X.font='10px system-ui';X.textAlign='center';
+X.fillText('Driver ('+teeth1+' teeth)',g1x,gy+r1+25);
+X.fillText('Driven ('+teeth2+' teeth)',g2x,gy+r2+25);
+X.textAlign='left';
+document.getElementById('readings').innerHTML='Gear ratio: <span class="val">1:'+ratio+'</span><br>Driver teeth: <span class="val">'+teeth1+'</span><br>Driven teeth: <span class="val">'+teeth2+'</span><br>Driven turns '+(ratio)+'× slower<br>Torque ×'+ratio;
+}
+}
+function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -5228,6 +5715,42 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Half-life', 'Alpha', 'Beta', 'Gamma', 'Nuclear'],
         instructions: "Set the number of atoms and half-life. Choose decay type (alpha, beta, or gamma). Click Start to watch random decay events. The graph plots remaining atoms vs time alongside the theoretical N₀×(½)^(t/T½) curve. Half-life markers help identify each interval.",
         html_code: RADIOACTIVE_HTML,
+      },
+      {
+        id: 'momentum-collisions',
+        title: 'Momentum & Collisions',
+        description: 'Simulate elastic and inelastic collisions — set mass and velocity for two objects, then watch momentum conservation in action.',
+        icon: 'Zap',
+        gradient: 'from-blue-500 to-indigo-500',
+        glowColor: 'rgba(59,130,246,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Momentum', 'Collisions', 'Conservation', 'Kinetic Energy'],
+        instructions: "Set mass and velocity for objects A and B. Choose elastic (KE conserved) or inelastic (objects stick). Click Launch to see the collision. Before/after readings show momentum is always conserved while KE may be lost in inelastic collisions.",
+        html_code: MOMENTUM_HTML,
+      },
+      {
+        id: 'circular-motion',
+        title: 'Circular Motion',
+        description: 'See centripetal force and acceleration vectors, adjust radius and speed, and release the object to see tangential motion.',
+        icon: 'Activity',
+        gradient: 'from-teal-500 to-cyan-500',
+        glowColor: 'rgba(20,184,166,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Centripetal', 'Angular Velocity', 'Period', 'Tangent'],
+        instructions: "Adjust radius, speed, and mass. Watch velocity (green, tangent) and acceleration (red, toward centre) vectors. Click Release to let the object fly off in a straight line — demonstrating Newton's 1st Law. Toggle trail to see the path.",
+        html_code: CIRCULAR_HTML,
+      },
+      {
+        id: 'simple-machines',
+        title: 'Simple Machines',
+        description: 'Explore levers, pulleys, and gears — see mechanical advantage, effort vs load, and how machines multiply force.',
+        icon: 'Hexagon',
+        gradient: 'from-amber-500 to-yellow-500',
+        glowColor: 'rgba(245,158,11,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Lever', 'Pulley', 'Gears', 'Mechanical Advantage'],
+        instructions: "Switch between Lever, Pulley, and Gears. Adjust effort force, load, and ratio. For levers, see if moments balance. For pulleys, see how more pulleys reduce effort. For gears, watch how the gear ratio affects speed and torque.",
+        html_code: MACHINES_HTML,
       },
     ],
   },
