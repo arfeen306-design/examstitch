@@ -3870,6 +3870,512 @@ if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;selected=3;up
 });
 <\/script></body></html>`;
 
+// ── Gas Laws ───────────────────────────────────────────────────────────────
+const GAS_LAWS_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#10b981}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.5);color:#10b981}
+.btns{display:flex;gap:4px;margin-bottom:8px}
+.btns button{flex:1;font-size:9px}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#10b981;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Gas Law</div>
+<div class="btns"><button id="bBoyle" class="active">Boyle's</button><button id="bCharles">Charles's</button><button id="bPressure">Pressure</button></div>
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<label>Temperature <span id="vT">300</span> K</label>
+<input type="range" id="sT" min="100" max="800" value="300" step="10">
+<label>Volume <span id="vV">50</span>%</label>
+<input type="range" id="sV" min="20" max="100" value="50" step="1">
+<label>Particles <span id="vN">40</span></label>
+<input type="range" id="sN" min="10" max="80" value="40" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Adjust sliders</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info" id="theory">
+<b>Boyle's Law:</b> PV = constant (at constant T)<br>P₁V₁ = P₂V₂<br><br>
+<b>Charles's Law:</b> V/T = constant (at constant P)<br>V₁/T₁ = V₂/T₂<br><br>
+<b>Pressure Law:</b> P/T = constant (at constant V)<br>P₁/T₁ = P₂/T₂<br><br>
+<b>Ideal Gas:</b> PV = nRT
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let law='boyle',temp=300,volume=50,nParts=40;
+let particles=[];
+function initParticles(){
+particles=[];
+for(let i=0;i<nParts;i++){
+particles.push({x:Math.random(),y:Math.random(),vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2});
+}
+}
+initParticles();
+const sT=document.getElementById('sT'),sV=document.getElementById('sV'),sN=document.getElementById('sN');
+sT.oninput=()=>{temp=+sT.value;document.getElementById('vT').textContent=temp};
+sV.oninput=()=>{volume=+sV.value;document.getElementById('vV').textContent=volume};
+sN.oninput=()=>{nParts=+sN.value;document.getElementById('vN').textContent=nParts;initParticles()};
+document.getElementById('bBoyle').onclick=()=>{law='boyle';document.querySelectorAll('.btns button').forEach(b=>b.classList.remove('active'));document.getElementById('bBoyle').classList.add('active')};
+document.getElementById('bCharles').onclick=()=>{law='charles';document.querySelectorAll('.btns button').forEach(b=>b.classList.remove('active'));document.getElementById('bCharles').classList.add('active')};
+document.getElementById('bPressure').onclick=()=>{law='pressure';document.querySelectorAll('.btns button').forEach(b=>b.classList.remove('active'));document.getElementById('bPressure').classList.add('active')};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.42,cy=H*0.5;
+const maxW=Math.min(W*0.6,H*0.7);
+const boxW=maxW*(volume/100);
+const boxH=maxW*0.6;
+const bx=cx-boxW/2,by=cy-boxH/2;
+// container
+X.strokeStyle='rgba(16,185,129,0.5)';X.lineWidth=3;
+X.strokeRect(bx,by,boxW,boxH);
+// piston on right
+X.fillStyle='rgba(16,185,129,0.2)';X.fillRect(bx+boxW-8,by,8,boxH);
+X.strokeStyle='rgba(16,185,129,0.7)';X.lineWidth=2;
+X.beginPath();X.moveTo(bx+boxW,by);X.lineTo(bx+boxW,by+boxH);X.stroke();
+// piston handle
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=4;
+X.beginPath();X.moveTo(bx+boxW,cy);X.lineTo(bx+boxW+30,cy);X.stroke();
+// temperature color
+const tNorm=(temp-100)/700;
+const r=Math.floor(50+tNorm*200),g=Math.floor(50+50*(1-tNorm)),b2=Math.floor(200-tNorm*150);
+X.fillStyle='rgba('+r+','+g+','+b2+',0.05)';X.fillRect(bx,by,boxW,boxH);
+// particles
+const speed=Math.sqrt(temp/300)*2;
+particles.forEach(p=>{
+p.x+=p.vx*speed*0.005;p.y+=p.vy*speed*0.005;
+if(p.x<0){p.x=0;p.vx*=-1}if(p.x>1){p.x=1;p.vx*=-1}
+if(p.y<0){p.y=0;p.vy*=-1}if(p.y>1){p.y=1;p.vy*=-1}
+const px=bx+p.x*boxW,py=by+p.y*boxH;
+X.beginPath();X.arc(px,py,3,0,Math.PI*2);
+X.fillStyle='rgba('+r+','+g+','+b2+',0.8)';X.fill();
+});
+// pressure calculation
+const P=(nParts*temp)/(volume*10);
+// graph area
+const gx=20,gy=H-170,gw=W*0.35,gh=140;
+X.fillStyle='rgba(0,0,0,0.3)';X.fillRect(gx,gy,gw,gh);
+X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;X.strokeRect(gx,gy,gw,gh);
+// draw PV, VT, or PT graph
+X.beginPath();
+if(law==='boyle'){
+X.fillStyle='rgba(255,255,255,0.3)';X.font='9px system-ui';X.fillText('P vs V (Boyle\'s Law)',gx+4,gy+12);
+X.fillText('V →',gx+gw-20,gy+gh-4);X.fillText('P ↑',gx+4,gy+24);
+for(let i=0;i<gw;i++){
+const v2=20+i*(80/gw);
+const p2=(nParts*temp)/(v2*10);
+const py=gy+gh-10-(p2/15)*gh*0.8;
+i===0?X.moveTo(gx+10+i,Math.max(gy,py)):X.lineTo(gx+10+i,Math.max(gy,py));
+}
+}else if(law==='charles'){
+X.fillStyle='rgba(255,255,255,0.3)';X.font='9px system-ui';X.fillText('V vs T (Charles\'s Law)',gx+4,gy+12);
+X.fillText('T →',gx+gw-20,gy+gh-4);X.fillText('V ↑',gx+4,gy+24);
+for(let i=0;i<gw;i++){
+const t2=100+i*(700/gw);
+const v2=volume*(t2/temp);
+const py=gy+gh-10-(v2/150)*gh*0.8;
+i===0?X.moveTo(gx+10+i,Math.max(gy,py)):X.lineTo(gx+10+i,Math.max(gy,py));
+}
+}else{
+X.fillStyle='rgba(255,255,255,0.3)';X.font='9px system-ui';X.fillText('P vs T (Pressure Law)',gx+4,gy+12);
+X.fillText('T →',gx+gw-20,gy+gh-4);X.fillText('P ↑',gx+4,gy+24);
+for(let i=0;i<gw;i++){
+const t2=100+i*(700/gw);
+const p2=(nParts*t2)/(volume*10);
+const py=gy+gh-10-(p2/15)*gh*0.8;
+i===0?X.moveTo(gx+10+i,Math.max(gy,py)):X.lineTo(gx+10+i,Math.max(gy,py));
+}
+}
+X.strokeStyle='rgba(16,185,129,0.7)';X.lineWidth=2;X.stroke();
+// current point on graph
+const dotX=gx+10+(law==='boyle'?(volume-20)/(80)*gw:law==='charles'?(temp-100)/700*gw:(temp-100)/700*gw);
+const dotY=law==='boyle'?gy+gh-10-(P/15)*gh*0.8:law==='charles'?gy+gh-10-(volume/150)*gh*0.8:gy+gh-10-(P/15)*gh*0.8;
+X.beginPath();X.arc(dotX,Math.max(gy+5,dotY),5,0,Math.PI*2);X.fillStyle='#10b981';X.fill();
+document.getElementById('readings').innerHTML=
+'Pressure: <span class="val">'+P.toFixed(1)+'</span> kPa<br>'+
+'Volume: <span class="val">'+volume+'</span>%<br>'+
+'Temperature: <span class="val">'+temp+'</span> K<br>'+
+'Particles: <span class="val">'+nParts+'</span><br>'+
+'Avg KE ∝ T: <span class="val">'+(temp*0.0138).toFixed(2)+'</span> ×10⁻²¹ J';
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){temp=300;volume=50;sT.value=300;sV.value=50;document.getElementById('vT').textContent=300;document.getElementById('vV').textContent=50}
+});
+<\/script></body></html>`;
+
+// ── Heat Transfer ──────────────────────────────────────────────────────────
+const HEAT_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.5);color:#ef4444}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#ef4444;font-weight:700}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#ef4444}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Transfer Type</div>
+<button id="bCond" class="active">Conduction</button>
+<button id="bConv">Convection</button>
+<button id="bRad">Radiation</button>
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<label>Hot temp <span id="vH">400</span> °C</label>
+<input type="range" id="sH" min="100" max="800" value="400" step="10">
+<label>Cold temp <span id="vC">20</span> °C</label>
+<input type="range" id="sC" min="-20" max="100" value="20" step="5">
+<button id="bReset">Reset</button>
+</div>
+<div class="sec">
+<div class="sec-title">Info</div>
+<div class="info" id="info">Select a transfer type</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Conduction:</b> Heat flows through a material via particle vibrations. Metals are good conductors.<br><br>
+<b>Convection:</b> Hot fluid rises, cool fluid sinks — creating convection currents (liquids & gases only).<br><br>
+<b>Radiation:</b> Heat transfer via infrared EM waves. No medium needed. All objects emit radiation.
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let mode='conduction',hotT=400,coldT=20,time=0,particles=[];
+const sH=document.getElementById('sH'),sC=document.getElementById('sC');
+sH.oninput=()=>{hotT=+sH.value;document.getElementById('vH').textContent=hotT};
+sC.oninput=()=>{coldT=+sC.value;document.getElementById('vC').textContent=coldT};
+document.getElementById('bCond').onclick=()=>{mode='conduction';setActive('bCond');initParticles()};
+document.getElementById('bConv').onclick=()=>{mode='convection';setActive('bConv');initParticles()};
+document.getElementById('bRad').onclick=()=>{mode='radiation';setActive('bRad');initParticles()};
+document.getElementById('bReset').onclick=()=>{time=0;initParticles()};
+function setActive(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function initParticles(){
+particles=[];
+for(let i=0;i<60;i++){
+particles.push({x:Math.random()*W*0.7,y:Math.random()*H,vx:0,vy:0,temp:coldT+(hotT-coldT)*Math.random()});
+}
+}
+initParticles();
+function tempColor(t){
+const n=Math.max(0,Math.min(1,(t-coldT)/(hotT-coldT+1)));
+return 'rgba('+(50+n*205)+','+(50+80*(1-n))+','+(200-n*180)+',0.8)';
+}
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,cy=H*0.5;
+if(mode==='conduction'){
+const barW=W*0.6,barH=60,bx=cx-barW/2,by=cy-barH/2;
+// metal bar
+const grad=X.createLinearGradient(bx,0,bx+barW,0);
+const progress=Math.min(1,time*0.3);
+grad.addColorStop(0,'rgba(239,68,68,0.6)');
+grad.addColorStop(progress,'rgba(239,68,68,'+(0.6*Math.max(0,1-progress))+')');
+grad.addColorStop(1,'rgba(59,130,246,0.3)');
+X.fillStyle=grad;X.fillRect(bx,by,barW,barH);
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=2;X.strokeRect(bx,by,barW,barH);
+// heat source
+X.fillStyle='rgba(239,68,68,0.3)';X.fillRect(bx-40,by-10,40,barH+20);
+X.fillStyle='#ef4444';X.font='bold 10px system-ui';X.textAlign='center';X.fillText(hotT+'°C',bx-20,by+barH/2+4);
+// cold end
+X.fillStyle='rgba(59,130,246,0.3)';X.fillRect(bx+barW,by-10,40,barH+20);
+X.fillStyle='#3b82f6';X.fillText(coldT+'°C',bx+barW+20,by+barH/2+4);X.textAlign='left';
+// vibrating particles in bar
+for(let i=0;i<20;i++){
+const frac=i/19;
+const t=hotT-(hotT-coldT)*Math.min(1,frac/(progress+0.01));
+const vibAmp=(t/hotT)*6;
+const px=bx+10+frac*(barW-20);
+const py=by+barH/2+Math.sin(time*5+i*2)*vibAmp;
+X.beginPath();X.arc(px,py,4,0,Math.PI*2);X.fillStyle=tempColor(t);X.fill();
+}
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';X.textAlign='center';
+X.fillText('Heat flows from hot to cold via particle vibrations',cx,by+barH+40);
+document.getElementById('info').innerHTML='<b>Conduction</b><br>Hot end: <span class="val">'+hotT+'</span>°C<br>Cold end: <span class="val">'+coldT+'</span>°C<br>Heat flows → through material';
+}else if(mode==='convection'){
+const tankW=W*0.5,tankH=H*0.6,tx=cx-tankW/2,ty=cy-tankH/2;
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=2;X.strokeRect(tx,ty,tankW,tankH);
+X.fillStyle='rgba(59,130,246,0.08)';X.fillRect(tx,ty,tankW,tankH);
+// heat source at bottom
+X.fillStyle='rgba(239,68,68,0.4)';X.fillRect(tx+tankW*0.3,ty+tankH-10,tankW*0.4,10);
+// convection current arrows
+const arrowPath=[
+{x:0.5,y:0.9},{x:0.5,y:0.2},{x:0.8,y:0.2},{x:0.8,y:0.8},{x:0.5,y:0.9}
+];
+X.beginPath();
+arrowPath.forEach((p,i)=>{
+const px=tx+p.x*tankW,py=ty+p.y*tankH;
+i===0?X.moveTo(px,py):X.lineTo(px,py);
+});
+X.strokeStyle='rgba(239,68,68,0.3)';X.lineWidth=2;X.setLineDash([5,5]);X.stroke();X.setLineDash([]);
+// animated particles
+particles.forEach(p=>{
+const inTank=p.x>tx&&p.x<tx+tankW&&p.y>ty&&p.y<ty+tankH;
+if(!inTank){p.x=tx+Math.random()*tankW;p.y=ty+Math.random()*tankH}
+const distToHeat=Math.max(0,1-(ty+tankH-p.y)/(tankH*0.3));
+p.temp=coldT+(hotT-coldT)*distToHeat;
+const rise=(p.temp-coldT)/(hotT-coldT)*-1.5;
+p.vy+=rise*0.05;p.vy*=0.98;
+if(p.y<ty+20){p.vx+=0.3;p.vy+=0.1}
+if(p.y>ty+tankH-20){p.vx-=0.1;p.vy-=0.3}
+if(p.x>tx+tankW-20)p.vx-=0.2;
+if(p.x<tx+20)p.vx+=0.1;
+p.x+=p.vx;p.y+=p.vy;
+p.x=Math.max(tx+5,Math.min(tx+tankW-5,p.x));
+p.y=Math.max(ty+5,Math.min(ty+tankH-5,p.y));
+X.beginPath();X.arc(p.x,p.y,3,0,Math.PI*2);X.fillStyle=tempColor(p.temp);X.fill();
+});
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';X.textAlign='center';
+X.fillText('Hot fluid rises, cool fluid sinks → convection current',cx,ty+tankH+30);
+document.getElementById('info').innerHTML='<b>Convection</b><br>Hot fluid rises ↑<br>Cool fluid sinks ↓<br>Creates circular current';
+}else{
+// radiation — sun emitting waves
+const sunR=50;
+X.beginPath();X.arc(cx-120,cy,sunR,0,Math.PI*2);
+const sg=X.createRadialGradient(cx-120,cy,0,cx-120,cy,sunR);
+sg.addColorStop(0,'rgba(253,224,71,0.9)');sg.addColorStop(1,'rgba(239,68,68,0.4)');
+X.fillStyle=sg;X.fill();
+// radiation waves
+for(let r=1;r<=8;r++){
+const radius=sunR+r*30+time*20%30;
+X.beginPath();X.arc(cx-120,cy,radius,Math.PI*-0.5,Math.PI*0.5);
+X.strokeStyle='rgba(239,68,68,'+(0.4-r*0.04)+')';X.lineWidth=2;X.stroke();
+}
+// object receiving radiation
+X.fillStyle='rgba(100,100,100,0.5)';X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=2;
+X.fillRect(cx+80,cy-30,60,60);X.strokeRect(cx+80,cy-30,60,60);
+const objTemp=coldT+(hotT-coldT)*Math.min(1,time*0.1);
+X.fillStyle=tempColor(objTemp);X.font='bold 10px system-ui';X.textAlign='center';
+X.fillText(objTemp.toFixed(0)+'°C',cx+110,cy+5);
+X.fillStyle='rgba(255,255,255,0.3)';X.font='11px system-ui';
+X.fillText('IR radiation transfers heat without contact',cx,cy+80);
+document.getElementById('info').innerHTML='<b>Radiation</b><br>Source: <span class="val">'+hotT+'</span>°C<br>Object: <span class="val">'+objTemp.toFixed(0)+'</span>°C<br>No medium needed';
+}
+X.textAlign='left';
+}
+function loop(){requestAnimationFrame(loop);time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;initParticles()}
+});
+<\/script></body></html>`;
+
+// ── Radioactive Decay ──────────────────────────────────────────────────────
+const RADIOACTIVE_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#a855f7}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(168,85,247,0.25);border-color:rgba(168,85,247,0.5);color:#a855f7}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#a855f7;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Sample</div>
+<label>Initial atoms <span id="vN">200</span></label>
+<input type="range" id="sN" min="50" max="500" value="200" step="10">
+<label>Half-life <span id="vHL">3</span> s</label>
+<input type="range" id="sHL" min="1" max="20" value="3" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Decay Type</div>
+<button id="bAlpha" class="active">α Alpha</button>
+<button id="bBeta">β Beta</button>
+<button id="bGamma">γ Gamma</button>
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bStart">Start Decay</button>
+<button id="bReset">Reset</button>
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Press Start</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Half-life:</b> time for half the atoms to decay.<br><br>
+N = N₀ × (½)^(t/T½)<br><br>
+<b>α decay:</b> emits He-4 nucleus (2p+2n), mass −4, charge −2<br><br>
+<b>β decay:</b> neutron → proton + electron, mass same, charge +1<br><br>
+<b>γ decay:</b> emits high-energy photon, no mass/charge change<br><br>
+<b>Activity:</b> A = λN = (ln2/T½)×N
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let initN=200,halfLife=3,decayType='alpha',running=false,time=0,atoms=[],decayed=0,history=[];
+const sN=document.getElementById('sN'),sHL=document.getElementById('sHL');
+sN.oninput=()=>{initN=+sN.value;document.getElementById('vN').textContent=initN};
+sHL.oninput=()=>{halfLife=+sHL.value;document.getElementById('vHL').textContent=halfLife};
+document.getElementById('bAlpha').onclick=()=>{decayType='alpha';setActive('bAlpha')};
+document.getElementById('bBeta').onclick=()=>{decayType='beta';setActive('bBeta')};
+document.getElementById('bGamma').onclick=()=>{decayType='gamma';setActive('bGamma')};
+function setActive(id){document.querySelectorAll('.sec:nth-child(2) button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function initAtoms(){
+atoms=[];decayed=0;history=[];time=0;
+const cols=Math.ceil(Math.sqrt(initN*1.5)),rows=Math.ceil(initN/cols);
+const sx=30,sy=30,sp=Math.min((W*0.7-60)/cols,(H*0.5-60)/rows,14);
+for(let i=0;i<initN;i++){
+const r=Math.floor(i/cols),col=i%cols;
+atoms.push({x:sx+col*sp+sp/2,y:sy+r*sp+sp/2,alive:true,decayTime:Infinity});
+}
+}
+initAtoms();
+document.getElementById('bStart').onclick=()=>{
+if(!running){initAtoms();
+const lambda=Math.log(2)/halfLife;
+atoms.forEach(a=>{a.decayTime=-Math.log(Math.random())/lambda});
+running=true;document.getElementById('bStart').textContent='Running...'}
+};
+document.getElementById('bReset').onclick=()=>{running=false;initAtoms();document.getElementById('bStart').textContent='Start Decay'};
+function draw(){
+X.clearRect(0,0,W,H);
+let alive=0;
+atoms.forEach(a=>{
+if(a.alive&&time>=a.decayTime){a.alive=false;decayed++}
+X.beginPath();X.arc(a.x,a.y,4,0,Math.PI*2);
+if(a.alive){X.fillStyle='rgba(168,85,247,0.8)';alive++}
+else{X.fillStyle='rgba(100,100,100,0.3)'}
+X.fill();
+});
+// decay particles animation
+if(running){
+atoms.forEach(a=>{
+if(!a.alive&&time-a.decayTime<1){
+const dt=time-a.decayTime;
+const col=decayType==='alpha'?'rgba(239,68,68,':'rgba(59,130,246,';
+if(decayType!=='gamma'){
+X.beginPath();X.arc(a.x+dt*30,a.y-dt*20,2,0,Math.PI*2);
+X.fillStyle=col+(1-dt)+')';X.fill();
+}else{
+X.strokeStyle='rgba(253,224,71,'+(1-dt)+')';X.lineWidth=1;
+X.beginPath();X.moveTo(a.x,a.y);
+for(let w=0;w<30*dt;w+=4){X.lineTo(a.x+w,a.y-2+Math.sin(w)*4)}X.stroke();
+}
+}
+});
+}
+// decay curve graph
+const gx=20,gy=H*0.55,gw=W*0.55,gh=H*0.35;
+X.fillStyle='rgba(0,0,0,0.3)';X.fillRect(gx,gy,gw,gh);
+X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;X.strokeRect(gx,gy,gw,gh);
+X.fillStyle='rgba(255,255,255,0.3)';X.font='9px system-ui';
+X.fillText('N vs t (Decay Curve)',gx+4,gy+12);
+X.fillText('t →',gx+gw-15,gy+gh-4);X.fillText('N ↑',gx+4,gy+24);
+// theoretical curve
+X.beginPath();
+const maxT=halfLife*6;
+for(let i=0;i<=gw;i++){
+const t2=(i/gw)*maxT;
+const n=initN*Math.pow(0.5,t2/halfLife);
+const py=gy+gh-10-(n/initN)*(gh-20);
+i===0?X.moveTo(gx+i,py):X.lineTo(gx+i,py);
+}
+X.strokeStyle='rgba(168,85,247,0.4)';X.lineWidth=1.5;X.setLineDash([4,4]);X.stroke();X.setLineDash([]);
+// actual data
+if(history.length>1){
+X.beginPath();
+history.forEach((h,i)=>{
+const px=gx+(h.t/maxT)*gw;
+const py=gy+gh-10-(h.n/initN)*(gh-20);
+i===0?X.moveTo(px,py):X.lineTo(px,py);
+});
+X.strokeStyle='rgba(168,85,247,0.8)';X.lineWidth=2;X.stroke();
+}
+// half-life markers
+for(let hl=1;hl<=5;hl++){
+const tx=gx+(hl*halfLife/maxT)*gw;
+if(tx<gx+gw){
+X.setLineDash([2,4]);X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;
+X.beginPath();X.moveTo(tx,gy);X.lineTo(tx,gy+gh);X.stroke();X.setLineDash([]);
+X.fillStyle='rgba(255,255,255,0.2)';X.font='8px system-ui';X.fillText('T½×'+hl,tx-8,gy+gh+12);
+}
+}
+document.getElementById('readings').innerHTML=
+'Time: <span class="val">'+time.toFixed(1)+'</span> s<br>'+
+'Remaining: <span class="val">'+alive+'</span> / '+initN+'<br>'+
+'Decayed: <span class="val">'+decayed+'</span><br>'+
+'Half-lives passed: <span class="val">'+(time/halfLife).toFixed(1)+'</span><br>'+
+'Activity: <span class="val">'+(Math.log(2)/halfLife*alive).toFixed(1)+'</span> decays/s<br>'+
+'Type: <span class="val">'+decayType+'</span>';
+}
+const dt=1/60;
+let histTimer=0;
+function loop(){
+requestAnimationFrame(loop);
+if(running){
+time+=dt;histTimer+=dt;
+if(histTimer>0.2){
+histTimer=0;
+const alive=atoms.filter(a=>a.alive).length;
+history.push({t:time,n:alive});
+if(alive===0){running=false;document.getElementById('bStart').textContent='Start Decay'}
+}
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){running=false;initAtoms();document.getElementById('bStart').textContent='Start Decay'}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -4686,6 +5192,42 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['EM Waves', 'Light', 'Radiation', 'Spectrum'],
         instructions: "Click any region of the spectrum in the right panel to highlight it. See wavelength range, frequency range, common uses, sources, and danger level. The animated wave at the bottom shows how the wave pattern changes across the spectrum.",
         html_code: EM_SPECTRUM_HTML,
+      },
+      {
+        id: 'gas-laws',
+        title: 'Gas Laws',
+        description: "Boyle's, Charles's, and Pressure Laws with animated particles, adjustable temperature and volume, and live PV/VT/PT graphs.",
+        icon: 'FlaskConical',
+        gradient: 'from-emerald-500 to-teal-500',
+        glowColor: 'rgba(16,185,129,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Boyle', 'Charles', 'Pressure', 'PV=nRT'],
+        instructions: "Select a gas law (Boyle's, Charles's, or Pressure). Adjust temperature, volume, and particle count. Watch particles bounce faster at higher temperatures. The graph shows the relationship between the variables for the selected law.",
+        html_code: GAS_LAWS_HTML,
+      },
+      {
+        id: 'heat-transfer',
+        title: 'Heat Transfer',
+        description: 'Visualise conduction, convection, and radiation — animated particles, convection currents, and infrared waves.',
+        icon: 'Activity',
+        gradient: 'from-red-500 to-orange-500',
+        glowColor: 'rgba(239,68,68,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Conduction', 'Convection', 'Radiation', 'Thermal'],
+        instructions: "Choose between Conduction (heat through a metal bar), Convection (heated fluid currents in a tank), and Radiation (infrared waves from a hot source). Adjust hot and cold temperatures to see how heat flows.",
+        html_code: HEAT_HTML,
+      },
+      {
+        id: 'radioactive-decay',
+        title: 'Radioactive Decay',
+        description: 'Watch atoms decay in real time — half-life curves, alpha/beta/gamma emission, and activity calculations.',
+        icon: 'Atom',
+        gradient: 'from-purple-500 to-violet-500',
+        glowColor: 'rgba(168,85,247,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Half-life', 'Alpha', 'Beta', 'Gamma', 'Nuclear'],
+        instructions: "Set the number of atoms and half-life. Choose decay type (alpha, beta, or gamma). Click Start to watch random decay events. The graph plots remaining atoms vs time alongside the theoretical N₀×(½)^(t/T½) curve. Half-life markers help identify each interval.",
+        html_code: RADIOACTIVE_HTML,
       },
     ],
   },
