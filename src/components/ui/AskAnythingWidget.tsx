@@ -40,47 +40,55 @@ const MIN_H = 420;
 const DEFAULT_W = 440;
 const DEFAULT_H = 560;
 
-// ── Animated Robot Icon ──────────────────────────────────────────────────────
-function RobotIcon({ className = '' }: { className?: string }) {
+// ── Calculator Icon ──────────────────────────────────────────────────────────
+function CalcIcon({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <style>{`
-        @keyframes wave { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-20deg)} 50%{transform:rotate(12deg)} 75%{transform:rotate(-10deg)} }
-        @keyframes think { 0%,100%{opacity:0.4;r:1.8} 50%{opacity:1;r:2.5} }
-        .robot-wave { animation: wave 1.8s ease-in-out infinite; transform-origin: 28px 16px; }
-        .robot-think { animation: think 2s ease-in-out infinite; }
-        .robot-think2 { animation: think 2s ease-in-out infinite 0.4s; }
-      `}</style>
-      {/* Antenna */}
-      <line x1="18" y1="4" x2="18" y2="8" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <circle className="robot-think" cx="18" cy="3" r="1.8" fill="white" />
-      {/* Thought bubbles */}
-      <circle className="robot-think2" cx="23" cy="5" r="1.2" fill="white" opacity="0.5" />
-      <circle className="robot-think" cx="26" cy="3.5" r="0.8" fill="white" opacity="0.35" />
-      {/* Head */}
-      <rect x="9" y="8" width="18" height="14" rx="4" fill="white" />
-      {/* Eyes — happy curves */}
-      <path d="M14 14.5c0-1.2 0.8-2 1.8-2s1.8 0.8 1.8 2" stroke="#4D6BFE" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-      <path d="M20.4 14.5c0-1.2 0.8-2 1.8-2s1.8 0.8 1.8 2" stroke="#4D6BFE" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-      {/* Smile */}
-      <path d="M14.5 17.5 Q18 20.5 21.5 17.5" stroke="#4D6BFE" strokeWidth="1.3" strokeLinecap="round" fill="none" />
-      {/* Cheek blush */}
-      <circle cx="13" cy="17" r="1.2" fill="white" opacity="0.5" />
-      <circle cx="23" cy="17" r="1.2" fill="white" opacity="0.5" />
-      {/* Body */}
-      <rect x="12" y="23" width="12" height="7" rx="2.5" fill="white" opacity="0.85" />
-      {/* Left arm */}
-      <rect x="7" y="24" width="4" height="5" rx="2" fill="white" opacity="0.7" />
-      {/* Right arm — waving! */}
-      <g className="robot-wave">
-        <rect x="25" y="23" width="4" height="6" rx="2" fill="white" opacity="0.8" />
-        {/* Little hand wave lines */}
-        <line x1="30" y1="22" x2="31.5" y2="20.5" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
-        <line x1="31" y1="23" x2="33" y2="22" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
-      </g>
-      {/* Feet */}
-      <rect x="13.5" y="30.5" width="3.5" height="2" rx="1" fill="white" opacity="0.6" />
-      <rect x="19" y="30.5" width="3.5" height="2" rx="1" fill="white" opacity="0.6" />
+      <defs>
+        <linearGradient id="calcBody" x1="6" y1="2" x2="30" y2="34">
+          <stop offset="0%" stopColor="#1e1e2e" />
+          <stop offset="100%" stopColor="#11111b" />
+        </linearGradient>
+        <linearGradient id="calcScreen" x1="9" y1="6" x2="27" y2="14">
+          <stop offset="0%" stopColor="#89dceb" />
+          <stop offset="100%" stopColor="#74c7ec" />
+        </linearGradient>
+      </defs>
+      {/* Body — rounded dark slate */}
+      <rect x="6" y="2" width="24" height="32" rx="4.5" fill="url(#calcBody)" stroke="#313244" strokeWidth="0.8" />
+      {/* Inner bezel highlight */}
+      <rect x="6.5" y="2.5" width="23" height="31" rx="4" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+      {/* Screen */}
+      <rect x="9" y="5.5" width="18" height="8" rx="2.5" fill="url(#calcScreen)" opacity="0.9" />
+      {/* Screen text — "3.14" */}
+      <text x="24.5" y="12" textAnchor="end" fill="#1e1e2e" fontSize="5.5" fontFamily="monospace" fontWeight="700">3.14</text>
+      {/* Screen reflection */}
+      <rect x="9" y="5.5" width="18" height="3.5" rx="2.5" fill="white" opacity="0.12" />
+      {/* Button grid — row 1 */}
+      <rect x="9.5" y="16" width="4" height="3.2" rx="1" fill="#f38ba8" opacity="0.85" />
+      <rect x="16" y="16" width="4" height="3.2" rx="1" fill="#45475a" />
+      <rect x="22.5" y="16" width="4" height="3.2" rx="1" fill="#45475a" />
+      {/* Button grid — row 2 */}
+      <rect x="9.5" y="20.8" width="4" height="3.2" rx="1" fill="#45475a" />
+      <rect x="16" y="20.8" width="4" height="3.2" rx="1" fill="#45475a" />
+      <rect x="22.5" y="20.8" width="4" height="3.2" rx="1" fill="#45475a" />
+      {/* Button grid — row 3 */}
+      <rect x="9.5" y="25.6" width="4" height="3.2" rx="1" fill="#45475a" />
+      <rect x="16" y="25.6" width="4" height="3.2" rx="1" fill="#45475a" />
+      <rect x="22.5" y="25.6" width="4" height="6.8" rx="1" fill="#a6e3a1" opacity="0.8" />
+      {/* Button grid — row 4 (0 wide + dot) */}
+      <rect x="9.5" y="30.4" width="10.5" height="3.2" rx="1" fill="#45475a" />
+      {/* Button labels */}
+      <text x="11.5" y="18.4" textAnchor="middle" fill="white" fontSize="2.6" fontFamily="sans-serif" fontWeight="600">C</text>
+      <text x="18" y="18.4" textAnchor="middle" fill="#cdd6f4" fontSize="2.6" fontFamily="sans-serif" fontWeight="500">/</text>
+      <text x="24.5" y="18.4" textAnchor="middle" fill="#cdd6f4" fontSize="2.6" fontFamily="sans-serif" fontWeight="500">x</text>
+      <text x="11.5" y="23.2" textAnchor="middle" fill="#cdd6f4" fontSize="2.8" fontFamily="sans-serif" fontWeight="500">7</text>
+      <text x="18" y="23.2" textAnchor="middle" fill="#cdd6f4" fontSize="2.8" fontFamily="sans-serif" fontWeight="500">8</text>
+      <text x="24.5" y="23.2" textAnchor="middle" fill="#cdd6f4" fontSize="2.8" fontFamily="sans-serif" fontWeight="500">9</text>
+      <text x="11.5" y="28" textAnchor="middle" fill="#cdd6f4" fontSize="2.8" fontFamily="sans-serif" fontWeight="500">4</text>
+      <text x="18" y="28" textAnchor="middle" fill="#cdd6f4" fontSize="2.8" fontFamily="sans-serif" fontWeight="500">5</text>
+      <text x="24.5" y="30.4" textAnchor="middle" fill="#1e1e2e" fontSize="3" fontFamily="sans-serif" fontWeight="700">=</text>
+      <text x="14.7" y="32.8" textAnchor="middle" fill="#cdd6f4" fontSize="2.8" fontFamily="sans-serif" fontWeight="500">0</text>
     </svg>
   );
 }
@@ -91,18 +99,19 @@ const Fab = memo(function Fab({ onClick }: { onClick: () => void }) {
     <motion.button
       onClick={onClick}
       className="group relative w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center
-                 bg-gradient-to-br from-[#4D6BFE] via-[#3B5BDB] to-[#2B4ACB]
-                 hover:from-[#5A78FF] hover:via-[#4868E8] hover:to-[#3857D8]
-                 transition-shadow duration-300 hover:shadow-[0_8px_40px_rgba(77,107,254,0.45)]"
+                 bg-gradient-to-br from-[#1e1e2e] via-[#181825] to-[#11111b]
+                 hover:from-[#2a2a3e] hover:via-[#1e1e30] hover:to-[#161625]
+                 transition-shadow duration-300 hover:shadow-[0_8px_40px_rgba(137,220,235,0.25)]
+                 border border-[#313244]/60"
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
-      aria-label="Ask Anything — Open AI Assistant"
+      aria-label="Ask Anything — Open Tools"
     >
       {/* Outer glow ring */}
-      <span className="absolute inset-0 rounded-2xl ring-2 ring-[#4D6BFE]/25 group-hover:ring-[#4D6BFE]/45 transition-all" />
+      <span className="absolute inset-0 rounded-2xl ring-2 ring-[#89dceb]/15 group-hover:ring-[#89dceb]/35 transition-all" />
       {/* Pulse ring */}
-      <span className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-[#4D6BFE]" style={{ animationDuration: '2.5s' }} />
-      <RobotIcon className="w-8 h-8 drop-shadow-lg relative z-10" />
+      <span className="absolute inset-0 rounded-2xl animate-ping opacity-15 bg-[#89dceb]" style={{ animationDuration: '2.5s' }} />
+      <CalcIcon className="w-9 h-9 drop-shadow-lg relative z-10" />
     </motion.button>
   );
 });
@@ -365,7 +374,7 @@ export default function AskAnythingWidget() {
                 <GripVertical className="w-3.5 h-3.5 text-white/20" />
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${activeProvider.accent} flex items-center justify-center shadow-lg`}>
-                    <RobotIcon className="w-4 h-4" />
+                    <CalcIcon className="w-4 h-4" />
                   </div>
                   <span className="text-[13px] font-semibold text-white/80 tracking-tight">
                     Ask Anything
