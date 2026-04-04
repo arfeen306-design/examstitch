@@ -23,12 +23,12 @@ const PROVIDERS = [
     ring: 'ring-emerald-400/30',
   },
   {
-    id: 'genspark',
-    label: 'Genspark AI',
-    url: 'https://www.genspark.ai/',
-    icon: '✨',
-    accent: 'from-violet-500 to-fuchsia-400',
-    ring: 'ring-fuchsia-400/30',
+    id: 'soundcloud',
+    label: 'Music',
+    url: 'https://soundcloud.com/discover',
+    icon: '🎵',
+    accent: 'from-orange-500 to-amber-400',
+    ring: 'ring-orange-400/30',
   },
 ] as const;
 
