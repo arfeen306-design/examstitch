@@ -30,14 +30,6 @@ const PROVIDERS = [
     accent: 'from-violet-500 to-fuchsia-400',
     ring: 'ring-fuchsia-400/30',
   },
-  {
-    id: 'soundcloud',
-    label: 'Music',
-    url: 'https://soundcloud.com/discover',
-    icon: '🎵',
-    accent: 'from-orange-500 to-amber-400',
-    ring: 'ring-orange-400/30',
-  },
 ] as const;
 
 type ProviderId = (typeof PROVIDERS)[number]['id'];
@@ -163,7 +155,7 @@ const TabBar = memo(function TabBar({
 });
 
 // ── Known embeddable domains (skip block-detection for these) ───────────────
-const EMBEDDABLE_HOSTS = ['www.desmos.com', 'soundcloud.com'];
+const EMBEDDABLE_HOSTS = ['www.desmos.com'];
 
 // ── Iframe with loading state + X-Frame-Options fallback ────────────────────
 const AiFrame = memo(function AiFrame({
