@@ -133,11 +133,11 @@ function CategoryCard({
           style={{ background: category.glowColor }}
         />
 
-        <div className="relative bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-8 sm:p-10 h-full
-                        hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300 overflow-hidden">
+        <div className="relative bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-color)] rounded-2xl p-8 sm:p-10 h-full
+                        hover:border-[var(--accent)] hover:shadow-lg transition-all duration-300 overflow-hidden shadow-[0_2px_16px_var(--shadow-color)]">
           {/* Gradient accent line */}
           <div
-            className={`absolute top-0 left-8 right-8 h-[2px] bg-gradient-to-r ${category.gradient} rounded-full opacity-60`}
+            className={`absolute top-0 left-8 right-8 h-[2px] bg-gradient-to-r ${category.gradient} rounded-full opacity-80`}
           />
 
           {/* Floating icon */}
@@ -149,20 +149,20 @@ function CategoryCard({
             <Icon className="w-8 h-8 text-white" strokeWidth={1.8} />
           </motion.div>
 
-          <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">
+          <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2 tracking-tight">
             {category.label}
           </h3>
-          <p className="text-sm text-white/50 mb-6 leading-relaxed max-w-sm">
+          <p className="text-sm text-[var(--text-muted)] mb-6 leading-relaxed max-w-sm">
             {category.description}
           </p>
 
           <div className="flex items-center justify-between">
-            <span className="text-xs text-white/40 font-medium">
+            <span className="text-xs text-[var(--text-muted)] font-medium">
               {category.simulations.length} simulations
             </span>
             <motion.div
               whileHover={{ x: 4 }}
-              className="flex items-center gap-1.5 text-sm font-semibold text-white/60 group-hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors"
             >
               Enter Lab <ArrowRight className="w-4 h-4" />
             </motion.div>
