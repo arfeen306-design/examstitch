@@ -734,12 +734,16 @@ canvas.panning{cursor:grabbing}
 </div>
 <div id="info">
 <b>Equations:</b><br>
-|V| = \\u221a(x\\u00b2 + y\\u00b2)<br>
-A+B = (a\\u2081+b\\u2081, a\\u2082+b\\u2082)<br>
-A\\u00b7B = a\\u2081b\\u2081 + a\\u2082b\\u2082<br>
-\\u03b8 = arccos(A\\u00b7B / |A||B|)<br><br>
+|V| = \u221a(x\u00b2 + y\u00b2)<br>
+A+B = (a\u2081+b\u2081, a\u2082+b\u2082)<br>
+A\u2212B = (a\u2081\u2212b\u2081, a\u2082\u2212b\u2082)<br>
+A\u00b7B = a\u2081b\u2081 + a\u2082b\u2082<br>
+A\u00d7B = a\u2081b\u2082 \u2212 a\u2082b\u2081<br>
+\u03b8 = arccos(A\u00b7B / |A||B|)<br>
+proj<sub>B</sub>(A) = (A\u00b7B / |B|\u00b2)B<br>
+\u00c2 = A / |A|<br><br>
 <b>Controls:</b><br>
-Drag to pan \\u00b7 Scroll to zoom<br>
+Drag to pan \u00b7 Scroll to zoom<br>
 Drag vector tips to move them
 </div>
 <div id="panel">
@@ -747,9 +751,12 @@ Drag vector tips to move them
   <div class="vec-input"><label class="cb">B</label><input id="bx" type="number" value="-3"><input id="by" type="number" value="6"></div>
   <div class="ops">
     <button class="active" id="opAdd" onclick="setOp('add')">A + B</button>
-    <button id="opSub" onclick="setOp('sub')">A \\u2212 B</button>
-    <button id="opDot" onclick="setOp('dot')">A \\u00b7 B</button>
+    <button id="opSub" onclick="setOp('sub')">A \u2212 B</button>
+    <button id="opDot" onclick="setOp('dot')">A \u00b7 B</button>
+    <button id="opCross" onclick="setOp('cross')">A \u00d7 B</button>
     <button id="opProj" onclick="setOp('proj')">proj</button>
+    <button id="opUnit" onclick="setOp('unit')">\u00c2</button>
+    <button id="opScale" onclick="setOp('scale')">kA</button>
   </div>
 </div>
 <script>
@@ -870,23 +877,39 @@ function loop(){
   const a={x:V('ax'),y:V('ay')},b={x:V('bx'),y:V('by')};
 
   // Result
-  let r=null,resTxt='',angleTxt='';
+  let r=null,resTxt='',angleTxt='',extraTxt='';
   const magA=Math.hypot(a.x,a.y),magB=Math.hypot(b.x,b.y);
   if(op==='add'){r={x:a.x+b.x,y:a.y+b.y};resTxt='A+B = ('+r.x+', '+r.y+')';
-    // Parallelogram
+    extraTxt='|A+B| = '+Math.hypot(r.x,r.y).toFixed(2);
     drawDashedLine(a.x,a.y,r.x,r.y,'rgba(251,191,36,0.2)');drawDashedLine(b.x,b.y,r.x,r.y,'rgba(251,191,36,0.2)')}
-  else if(op==='sub'){r={x:a.x-b.x,y:a.y-b.y};resTxt='A\\u2212B = ('+r.x+', '+r.y+')';
+  else if(op==='sub'){r={x:a.x-b.x,y:a.y-b.y};resTxt='A\u2212B = ('+r.x+', '+r.y+')';
+    extraTxt='|A\u2212B| = '+Math.hypot(r.x,r.y).toFixed(2);
     drawDashedLine(b.x,b.y,a.x,a.y,'rgba(251,191,36,0.2)')}
-  else if(op==='dot'){const d=a.x*b.x+a.y*b.y;resTxt='A\\u00b7B = '+d.toFixed(2);
-    if(magA>0&&magB>0){const cosA=d/(magA*magB);angleTxt='\\u03b8 = '+((Math.acos(Math.max(-1,Math.min(1,cosA))))*180/Math.PI).toFixed(1)+'\\u00b0'}
-    // Draw angle arc
+  else if(op==='dot'){const d=a.x*b.x+a.y*b.y;resTxt='A\u00b7B = '+d.toFixed(2);
+    if(magA>0&&magB>0){const cosA=d/(magA*magB);angleTxt='\u03b8 = '+((Math.acos(Math.max(-1,Math.min(1,cosA))))*180/Math.PI).toFixed(1)+'\u00b0'}
+    extraTxt=d>0?'Vectors: acute angle':d<0?'Vectors: obtuse angle':'Vectors: perpendicular';
     if(magA>0&&magB>0){const angA=Math.atan2(a.y,a.x),angB=Math.atan2(b.y,b.x);
     const sp=toS(0,0);X.strokeStyle='rgba(251,191,36,0.4)';X.lineWidth=1.5;X.beginPath();
     X.arc(sp.x,sp.y,30,-angA,-angB,angA>angB);X.stroke()}}
-  else if(op==='proj'){// Projection of A onto B
+  else if(op==='cross'){const cross=a.x*b.y-a.y*b.x;resTxt='A\u00d7B = '+cross.toFixed(2);
+    extraTxt='Area of parallelogram = '+Math.abs(cross).toFixed(2);
+    if(magA>0&&magB>0){const angA=Math.atan2(a.y,a.x),angB=Math.atan2(b.y,b.x);
+    const sp=toS(0,0);X.strokeStyle='rgba(251,191,36,0.3)';X.lineWidth=1.5;X.beginPath();
+    X.arc(sp.x,sp.y,30,-angA,-angB,angA>angB);X.stroke()}
+    // Draw parallelogram
+    drawDashedLine(a.x,a.y,a.x+b.x,a.y+b.y,'rgba(251,191,36,0.15)');drawDashedLine(b.x,b.y,a.x+b.x,a.y+b.y,'rgba(251,191,36,0.15)')}
+  else if(op==='proj'){
     if(magB>0){const scalar=(a.x*b.x+a.y*b.y)/(magB*magB);r={x:scalar*b.x,y:scalar*b.y};
     resTxt='proj_B(A) = ('+r.x.toFixed(2)+', '+r.y.toFixed(2)+')';
+    extraTxt='scalar = A\u00b7B/|B|\u00b2 = '+scalar.toFixed(2);
     drawDashedLine(a.x,a.y,r.x,r.y,'rgba(251,191,36,0.25)')}else{resTxt='B is zero vector'}}
+  else if(op==='unit'){
+    if(magA>0){r={x:a.x/magA,y:a.y/magA};resTxt='\u00c2 = ('+r.x.toFixed(3)+', '+r.y.toFixed(3)+')';
+    extraTxt='|\u00c2| = 1.000 (unit length)';
+    drawArrow(0,0,r.x,r.y,'#f472b6',2.5,'\u00c2')}else{resTxt='A is zero vector'}}
+  else if(op==='scale'){const k=2;r={x:a.x*k,y:a.y*k};resTxt=k+'A = ('+r.x+', '+r.y+')';
+    extraTxt='|'+k+'A| = '+Math.hypot(r.x,r.y).toFixed(2)+' = '+k+'\u00d7|A|';
+    drawDashedLine(a.x,a.y,r.x,r.y,'rgba(251,191,36,0.2)')}
 
   // Draw vectors
   drawArrow(0,0,a.x,a.y,'#818cf8',3,'A ('+a.x+', '+a.y+')');
@@ -909,9 +932,9 @@ function loop(){
   const angA2=(Math.atan2(a.y,a.x)*180/Math.PI).toFixed(1);
   const angB2=(Math.atan2(b.y,b.x)*180/Math.PI).toFixed(1);
   document.getElementById('stats').innerHTML=
-    '<span class="ca">|A| = '+magA.toFixed(2)+' &nbsp; \\u03b8 = '+angA2+'\\u00b0</span><br>'+
-    '<span class="cb">|B| = '+magB.toFixed(2)+' &nbsp; \\u03b8 = '+angB2+'\\u00b0</span><br>'+
-    '<span class="cr">'+resTxt+'</span>'+(angleTxt?'<br><span class="cr">'+angleTxt+'</span>':'');
+    '<span class="ca">|A| = '+magA.toFixed(2)+' &nbsp; \u03b8 = '+angA2+'\u00b0</span><br>'+
+    '<span class="cb">|B| = '+magB.toFixed(2)+' &nbsp; \u03b8 = '+angB2+'\u00b0</span><br>'+
+    '<span class="cr">'+resTxt+'</span>'+(angleTxt?'<br><span class="cr">'+angleTxt+'</span>':'')+(extraTxt?'<br><span style="color:rgba(255,255,255,0.4);font-size:11px">'+extraTxt+'</span>':'');
 
   requestAnimationFrame(loop)}
 loop();
