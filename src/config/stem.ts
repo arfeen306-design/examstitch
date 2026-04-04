@@ -575,29 +575,29 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="top-bar">
-  <div><div id="fn-label">Quadratic</div><div id="fn-eq">y = x\\u00b2</div></div>
-  <div style="font-size:9px;color:rgba(255,255,255,0.3);text-align:right;line-height:1.5">Drag to pan \\u00b7 Scroll to zoom<br>Click graph for tangent line</div>
+  <div><div id="fn-label">Quadratic</div><div id="fn-eq">y = x&sup2;</div></div>
+  <div style="font-size:9px;color:rgba(255,255,255,0.3);text-align:right;line-height:1.5">Drag to pan &middot; Scroll to zoom<br>Click graph for tangent line</div>
 </div>
 <div id="coord-badge"></div>
 <div class="tang-dot" id="tang-dot"></div>
 <div id="vol3d"><canvas id="c3d" width="280" height="280"></canvas></div>
 <div id="right-panel">
   <div class="panel" id="p-transform">
-    <div class="lbl" style="color:#f472b6">\\u2b12 Reflection</div>
+    <div class="lbl" style="color:#f472b6">&#9645; Reflection</div>
     <div style="display:flex;gap:4px;margin:4px 0 6px">
       <button onclick="togRefX()" id="b-refx" style="flex:1;font-size:9px">x-axis</button>
       <button onclick="togRefY()" id="b-refy" style="flex:1;font-size:9px">y-axis</button>
-      <button onclick="togRefO()" id="b-refo" style="flex:1;font-size:9px">y=x</button>
+      <button onclick="togRefO()" id="b-refo" style="flex:1;font-size:9px">y = x</button>
     </div>
-    <div class="lbl" style="color:#60a5fa">\\u2b13 Translation</div>
+    <div class="lbl" style="color:#60a5fa">&#8644; Translation</div>
     <div style="display:grid;grid-template-columns:50px 1fr 30px;align-items:center;gap:2px;margin:4px 0 6px">
-      <span style="font-size:9px">\\u2194 Horiz</span><input type="range" id="sl-tx" min="-10" max="10" step="0.1" value="0"><span id="v-tx" style="font-size:9px">0</span>
-      <span style="font-size:9px">\\u2195 Vert</span><input type="range" id="sl-ty" min="-10" max="10" step="0.1" value="0"><span id="v-ty" style="font-size:9px">0</span>
+      <span style="font-size:9px">&harr; Horiz</span><input type="range" id="sl-tx" min="-10" max="10" step="0.1" value="0"><span id="v-tx" style="font-size:9px">0</span>
+      <span style="font-size:9px">&varr; Vert</span><input type="range" id="sl-ty" min="-10" max="10" step="0.1" value="0"><span id="v-ty" style="font-size:9px">0</span>
     </div>
-    <div class="lbl" style="color:#a78bfa">\\u2922 Stretch</div>
+    <div class="lbl" style="color:#a78bfa">&#8596; Stretch</div>
     <div style="display:grid;grid-template-columns:50px 1fr 30px;align-items:center;gap:2px;margin:4px 0 2px">
-      <span style="font-size:9px">\\u2194 x-str</span><input type="range" id="sl-sx" min="0.1" max="5" step="0.1" value="1"><span id="v-sx" style="font-size:9px">1</span>
-      <span style="font-size:9px">\\u2195 y-str</span><input type="range" id="sl-sy" min="0.1" max="5" step="0.1" value="1"><span id="v-sy" style="font-size:9px">1</span>
+      <span style="font-size:9px">&harr; x-str</span><input type="range" id="sl-sx" min="0.1" max="5" step="0.1" value="1"><span id="v-sx" style="font-size:9px">1</span>
+      <span style="font-size:9px">&varr; y-str</span><input type="range" id="sl-sy" min="0.1" max="5" step="0.1" value="1"><span id="v-sy" style="font-size:9px">1</span>
     </div>
     <div id="trans-summary" style="margin-top:4px;font-size:9px;color:rgba(255,255,255,0.35);font-family:'Courier New',monospace;line-height:1.4"></div>
   </div>
@@ -611,7 +611,7 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
   </div>
   <div class="panel" id="p-vol" style="display:none">
     <div class="lbl">Volume of Revolution</div>
-    <div style="font-size:9px">V = \\u03c0 \\u222b y\\u00b2 dx</div>
+    <div style="font-size:9px">V = &pi; &int; y&sup2; dx</div>
     <div class="val" id="vol-val" style="margin:4px 0">V = 0</div>
     <div class="lbl" style="margin-top:4px">Bounds</div>
     <div style="display:flex;gap:6px;margin-top:2px">
@@ -626,41 +626,51 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
 </div>
 <div id="hint"></div>
 <div id="controls">
-  <div class="cw"><span class="cl">O-Level</span><div class="cg">
-    <button onclick="pick('linear')" id="b-linear">y=mx+c</button>
-    <button onclick="pick('quadratic')" id="b-quadratic" class="on">x\\u00b2</button>
-    <button onclick="pick('cubic')" id="b-cubic">x\\u00b3</button>
-    <button onclick="pick('reciprocal')" id="b-reciprocal">1/x</button>
-    <button onclick="pick('sqrt')" id="b-sqrt">\\u221ax</button>
-    <button onclick="pick('abs')" id="b-abs">|x|</button>
+  <div class="cw"><span class="cl">Linear &amp; Quadratic</span><div class="cg">
+    <button onclick="pick('linear')" id="b-linear">y = mx + c</button>
+    <button onclick="pick('quadratic')" id="b-quadratic" class="on">y = x&sup2;</button>
+    <button onclick="pick('quad2')" id="b-quad2">y = x&sup2;&minus;4</button>
+    <button onclick="pick('reciprocal')" id="b-reciprocal">y = 1/x</button>
+    <button onclick="pick('sqrt')" id="b-sqrt">y = &radic;x</button>
+    <button onclick="pick('abs')" id="b-abs">y = |x|</button>
   </div></div>
-  <div class="cw"><span class="cl">Trig</span><div class="cg">
-    <button onclick="pick('sin')" id="b-sin">sin</button>
-    <button onclick="pick('cos')" id="b-cos">cos</button>
-    <button onclick="pick('tan')" id="b-tan">tan</button>
-    <button onclick="pick('csc')" id="b-csc">csc</button>
-    <button onclick="pick('sec')" id="b-sec">sec</button>
-    <button onclick="pick('cot')" id="b-cot">cot</button>
-    <button onclick="pick('asin')" id="b-asin">sin\\u207b\\u00b9</button>
-    <button onclick="pick('acos')" id="b-acos">cos\\u207b\\u00b9</button>
-    <button onclick="pick('atan')" id="b-atan">tan\\u207b\\u00b9</button>
+  <div class="cw"><span class="cl">Cubic</span><div class="cg">
+    <button onclick="pick('cubic')" id="b-cubic">y = x&sup3;</button>
+    <button onclick="pick('cubic2')" id="b-cubic2">y = x&sup3;&minus;3x</button>
+    <button onclick="pick('cubic3')" id="b-cubic3">y = x&sup3;&minus;x</button>
+    <button onclick="pick('cubic4')" id="b-cubic4">(x&minus;1)(x&minus;2)(x&minus;3)</button>
+    <button onclick="pick('cubic5')" id="b-cubic5">y = x&sup3;+x</button>
+    <button onclick="pick('cubic6')" id="b-cubic6">y = &minus;x&sup3;</button>
+    <button onclick="pick('x4')" id="b-x4">y = x&#8308;</button>
   </div></div>
-  <div class="cw"><span class="cl">A-Level</span><div class="cg">
-    <button onclick="pick('exp')" id="b-exp">e\\u02e3</button>
-    <button onclick="pick('ln')" id="b-ln">ln</button>
-    <button onclick="pick('x4')" id="b-x4">x\\u2074</button>
-    <button onclick="pick('sinc')" id="b-sinc">sin/x</button>
-    <button onclick="pick('gauss')" id="b-gauss">e\\u207b\\u02e3\\u00b2</button>
+  <div class="cw"><span class="cl">Trigonometric</span><div class="cg">
+    <button onclick="pick('sin')" id="b-sin">sin x</button>
+    <button onclick="pick('cos')" id="b-cos">cos x</button>
+    <button onclick="pick('tan')" id="b-tan">tan x</button>
+    <button onclick="pick('csc')" id="b-csc">csc x</button>
+    <button onclick="pick('sec')" id="b-sec">sec x</button>
+    <button onclick="pick('cot')" id="b-cot">cot x</button>
   </div></div>
-  <div class="cw"><span class="cl">Curves</span><div class="cg">
+  <div class="cw"><span class="cl">Inverse Trig</span><div class="cg">
+    <button onclick="pick('asin')" id="b-asin">sin<sup>&minus;1</sup>(x)</button>
+    <button onclick="pick('acos')" id="b-acos">cos<sup>&minus;1</sup>(x)</button>
+    <button onclick="pick('atan')" id="b-atan">tan<sup>&minus;1</sup>(x)</button>
+  </div></div>
+  <div class="cw"><span class="cl">Exponential &amp; Log</span><div class="cg">
+    <button onclick="pick('exp')" id="b-exp">y = e<sup>x</sup></button>
+    <button onclick="pick('ln')" id="b-ln">y = ln(x)</button>
+    <button onclick="pick('sinc')" id="b-sinc">y = sin(x)/x</button>
+    <button onclick="pick('gauss')" id="b-gauss">y = e<sup>&minus;x&sup2;</sup></button>
+  </div></div>
+  <div class="cw"><span class="cl">Parametric Curves</span><div class="cg">
     <button onclick="pick('circle')" id="b-circle">Circle</button>
-    <button onclick="pick('parabola')" id="b-parabola">x=y\\u00b2</button>
+    <button onclick="pick('parabola')" id="b-parabola">x = y&sup2;</button>
     <button onclick="pick('hyperbola')" id="b-hyperbola">Hyperbola</button>
     <button onclick="pick('ellipse')" id="b-ellipse">Ellipse</button>
   </div></div>
   <div class="cw"><span class="cl">Tools</span><div class="cg">
-    <button onclick="togDeriv()" id="b-deriv">f'(x)</button>
-    <button onclick="togInteg()" id="b-integ">\\u222b</button>
+    <button onclick="togDeriv()" id="b-deriv">f&prime;(x)</button>
+    <button onclick="togInteg()" id="b-integ">&int; dx</button>
     <button onclick="togVol()" id="b-vol">Volume</button>
     <button onclick="togTangent()" id="b-tang">Tangent</button>
     <button onclick="togDoodle()" id="b-doodle">Doodle</button>
@@ -696,29 +706,35 @@ function fromRad(x){return unit==='deg'?x/DEG:x;}
 const TRIG_SET=new Set(['sin','cos','tan','csc','sec','cot','asin','acos','atan']);
 const G={
   linear:{fn:x=>x,deriv:x=>1,label:'Linear',eq:'y = x',color:'#3b82f6'},
-  quadratic:{fn:x=>x*x,deriv:x=>2*x,label:'Quadratic',eq:'y = x\\u00b2',color:'#10b981'},
-  cubic:{fn:x=>x*x*x,deriv:x=>3*x*x,label:'Cubic',eq:'y = x\\u00b3',color:'#8b5cf6'},
+  quadratic:{fn:x=>x*x,deriv:x=>2*x,label:'Quadratic',eq:'y = x\xb2',color:'#10b981'},
+  quad2:{fn:x=>x*x-4,deriv:x=>2*x,label:'Quadratic',eq:'y = x\xb2 \u2212 4',color:'#059669'},
+  cubic:{fn:x=>x*x*x,deriv:x=>3*x*x,label:'Cubic',eq:'y = x\xb3',color:'#8b5cf6'},
+  cubic2:{fn:x=>x*x*x-3*x,deriv:x=>3*x*x-3,label:'Cubic (2 turning pts)',eq:'y = x\xb3 \u2212 3x',color:'#7c3aed'},
+  cubic3:{fn:x=>x*x*x-x,deriv:x=>3*x*x-1,label:'Cubic (3 roots)',eq:'y = x\xb3 \u2212 x',color:'#6d28d9'},
+  cubic4:{fn:x=>(x-1)*(x-2)*(x-3),deriv:x=>3*x*x-12*x+11,label:'Cubic (roots 1,2,3)',eq:'y = (x\u22121)(x\u22122)(x\u22123)',color:'#5b21b6'},
+  cubic5:{fn:x=>x*x*x+x,deriv:x=>3*x*x+1,label:'Cubic (monotonic)',eq:'y = x\xb3 + x',color:'#4c1d95'},
+  cubic6:{fn:x=>-x*x*x,deriv:x=>-3*x*x,label:'Cubic (negative)',eq:'y = \u2212x\xb3',color:'#a855f7'},
   reciprocal:{fn:x=>Math.abs(x)<0.02?NaN:1/x,deriv:x=>-1/(x*x),label:'Reciprocal',eq:'y = 1/x',color:'#f59e0b'},
-  sqrt:{fn:x=>x>=0?Math.sqrt(x):NaN,deriv:x=>x>0.001?0.5/Math.sqrt(x):NaN,label:'Square Root',eq:'y = \\u221ax',color:'#ec4899'},
+  sqrt:{fn:x=>x>=0?Math.sqrt(x):NaN,deriv:x=>x>0.001?0.5/Math.sqrt(x):NaN,label:'Square Root',eq:'y = \u221ax',color:'#ec4899'},
   abs:{fn:x=>Math.abs(x),deriv:x=>x>0?1:x<0?-1:0,label:'Modulus',eq:'y = |x|',color:'#06b6d4'},
-  sin:{fn:x=>Math.sin(toRad(x)),deriv:x=>(unit==='deg'?DEG:1)*Math.cos(toRad(x)),label:'Sine',eq:'y = sin(x)',color:'#10b981',trig:true,domain:'All reals',range:'[-1, 1]'},
-  cos:{fn:x=>Math.cos(toRad(x)),deriv:x=>-(unit==='deg'?DEG:1)*Math.sin(toRad(x)),label:'Cosine',eq:'y = cos(x)',color:'#6366f1',trig:true,domain:'All reals',range:'[-1, 1]'},
-  tan:{fn:x=>{const v=Math.tan(toRad(x));return Math.abs(v)>80?NaN:v;},deriv:x=>{const c=Math.cos(toRad(x));return Math.abs(c)<0.01?NaN:(unit==='deg'?DEG:1)/(c*c);},label:'Tangent',eq:'y = tan(x)',color:'#f97316',trig:true,domain:unit==='deg'?'x \\u2260 90n':'x \\u2260 \\u03c0/2 + n\\u03c0',range:'(-\\u221e, \\u221e)'},
-  csc:{fn:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:1/s;},deriv:x=>{const s=Math.sin(toRad(x)),c=Math.cos(toRad(x));return Math.abs(s)<0.02?NaN:-(unit==='deg'?DEG:1)*c/(s*s);},label:'Cosecant',eq:'y = csc(x)',color:'#f472b6',trig:true,domain:unit==='deg'?'x \\u2260 180n':'x \\u2260 n\\u03c0',range:'(-\\u221e,-1] \\u222a [1,\\u221e)'},
-  sec:{fn:x=>{const c=Math.cos(toRad(x));return Math.abs(c)<0.02?NaN:1/c;},deriv:x=>{const s=Math.sin(toRad(x)),c=Math.cos(toRad(x));return Math.abs(c)<0.02?NaN:(unit==='deg'?DEG:1)*s/(c*c);},label:'Secant',eq:'y = sec(x)',color:'#a78bfa',trig:true,domain:unit==='deg'?'x \\u2260 90+180n':'x \\u2260 \\u03c0/2 + n\\u03c0',range:'(-\\u221e,-1] \\u222a [1,\\u221e)'},
-  cot:{fn:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:Math.cos(toRad(x))/s;},deriv:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:-(unit==='deg'?DEG:1)/(s*s);},label:'Cotangent',eq:'y = cot(x)',color:'#22d3ee',trig:true,domain:unit==='deg'?'x \\u2260 180n':'x \\u2260 n\\u03c0',range:'(-\\u221e, \\u221e)'},
-  asin:{fn:x=>Math.abs(x)>1?NaN:fromRad(Math.asin(x)),deriv:x=>Math.abs(x)>=1?NaN:fromRad(1/Math.sqrt(1-x*x)),label:'Arcsin',eq:'y = sin\\u207b\\u00b9(x)',color:'#34d399',trig:true,domain:'[-1, 1]',range:unit==='deg'?'[-90\\u00b0, 90\\u00b0]':'[-\\u03c0/2, \\u03c0/2]'},
-  acos:{fn:x=>Math.abs(x)>1?NaN:fromRad(Math.acos(x)),deriv:x=>Math.abs(x)>=1?NaN:fromRad(-1/Math.sqrt(1-x*x)),label:'Arccos',eq:'y = cos\\u207b\\u00b9(x)',color:'#fb923c',trig:true,domain:'[-1, 1]',range:unit==='deg'?'[0\\u00b0, 180\\u00b0]':'[0, \\u03c0]'},
-  atan:{fn:x=>fromRad(Math.atan(x)),deriv:x=>fromRad(1/(1+x*x)),label:'Arctan',eq:'y = tan\\u207b\\u00b9(x)',color:'#c084fc',trig:true,domain:'All reals',range:unit==='deg'?'(-90\\u00b0, 90\\u00b0)':'(-\\u03c0/2, \\u03c0/2)'},
-  exp:{fn:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},deriv:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},label:'Exponential',eq:'y = e\\u02e3',color:'#ef4444'},
+  sin:{fn:x=>Math.sin(toRad(x)),deriv:x=>(unit==='deg'?DEG:1)*Math.cos(toRad(x)),label:'Sine',eq:'y = sin(x)',color:'#10b981',trig:true,domain:'All reals',range:'[\u22121, 1]'},
+  cos:{fn:x=>Math.cos(toRad(x)),deriv:x=>-(unit==='deg'?DEG:1)*Math.sin(toRad(x)),label:'Cosine',eq:'y = cos(x)',color:'#6366f1',trig:true,domain:'All reals',range:'[\u22121, 1]'},
+  tan:{fn:x=>{const v=Math.tan(toRad(x));return Math.abs(v)>80?NaN:v;},deriv:x=>{const c=Math.cos(toRad(x));return Math.abs(c)<0.01?NaN:(unit==='deg'?DEG:1)/(c*c);},label:'Tangent',eq:'y = tan(x)',color:'#f97316',trig:true,domain:unit==='deg'?'x \u2260 90\xb0n':'x \u2260 \u03c0/2 + n\u03c0',range:'(\u2212\u221e, \u221e)'},
+  csc:{fn:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:1/s;},deriv:x=>{const s=Math.sin(toRad(x)),c=Math.cos(toRad(x));return Math.abs(s)<0.02?NaN:-(unit==='deg'?DEG:1)*c/(s*s);},label:'Cosecant',eq:'y = csc(x)',color:'#f472b6',trig:true,domain:unit==='deg'?'x \u2260 180\xb0n':'x \u2260 n\u03c0',range:'(\u2212\u221e,\u22121] \u222a [1,\u221e)'},
+  sec:{fn:x=>{const c=Math.cos(toRad(x));return Math.abs(c)<0.02?NaN:1/c;},deriv:x=>{const s=Math.sin(toRad(x)),c=Math.cos(toRad(x));return Math.abs(c)<0.02?NaN:(unit==='deg'?DEG:1)*s/(c*c);},label:'Secant',eq:'y = sec(x)',color:'#a78bfa',trig:true,domain:unit==='deg'?'x \u2260 90\xb0+180\xb0n':'x \u2260 \u03c0/2 + n\u03c0',range:'(\u2212\u221e,\u22121] \u222a [1,\u221e)'},
+  cot:{fn:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:Math.cos(toRad(x))/s;},deriv:x=>{const s=Math.sin(toRad(x));return Math.abs(s)<0.02?NaN:-(unit==='deg'?DEG:1)/(s*s);},label:'Cotangent',eq:'y = cot(x)',color:'#22d3ee',trig:true,domain:unit==='deg'?'x \u2260 180\xb0n':'x \u2260 n\u03c0',range:'(\u2212\u221e, \u221e)'},
+  asin:{fn:x=>Math.abs(x)>1?NaN:fromRad(Math.asin(x)),deriv:x=>Math.abs(x)>=1?NaN:fromRad(1/Math.sqrt(1-x*x)),label:'Arcsine',eq:'y = sin\u207b\xb9(x)',color:'#34d399',trig:true,domain:'[\u22121, 1]',range:unit==='deg'?'[\u221290\xb0, 90\xb0]':'[\u2212\u03c0/2, \u03c0/2]'},
+  acos:{fn:x=>Math.abs(x)>1?NaN:fromRad(Math.acos(x)),deriv:x=>Math.abs(x)>=1?NaN:fromRad(-1/Math.sqrt(1-x*x)),label:'Arccosine',eq:'y = cos\u207b\xb9(x)',color:'#fb923c',trig:true,domain:'[\u22121, 1]',range:unit==='deg'?'[0\xb0, 180\xb0]':'[0, \u03c0]'},
+  atan:{fn:x=>fromRad(Math.atan(x)),deriv:x=>fromRad(1/(1+x*x)),label:'Arctangent',eq:'y = tan\u207b\xb9(x)',color:'#c084fc',trig:true,domain:'All reals',range:unit==='deg'?'(\u221290\xb0, 90\xb0)':'(\u2212\u03c0/2, \u03c0/2)'},
+  exp:{fn:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},deriv:x=>{const v=Math.exp(x);return v>1e6?NaN:v;},label:'Exponential',eq:'y = e\u02e3',color:'#ef4444'},
   ln:{fn:x=>x>0?Math.log(x):NaN,deriv:x=>x>0?1/x:NaN,label:'Natural Log',eq:'y = ln(x)',color:'#14b8a6'},
-  x4:{fn:x=>x*x*x*x,deriv:x=>4*x*x*x,label:'Quartic',eq:'y = x\\u2074',color:'#a855f7'},
+  x4:{fn:x=>x*x*x*x,deriv:x=>4*x*x*x,label:'Quartic',eq:'y = x\u2074',color:'#a855f7'},
   sinc:{fn:x=>Math.abs(x)<0.001?1:Math.sin(x)/x,deriv:x=>Math.abs(x)<0.001?0:(Math.cos(x)*x-Math.sin(x))/(x*x),label:'Sinc',eq:'y = sin(x)/x',color:'#22d3ee'},
-  gauss:{fn:x=>Math.exp(-x*x),deriv:x=>-2*x*Math.exp(-x*x),label:'Gaussian',eq:'y = e^(-x\\u00b2)',color:'#f472b6'},
-  circle:{param:true,label:'Unit Circle',eq:'x\\u00b2 + y\\u00b2 = 4',color:'#fbbf24'},
-  parabola:{param:true,label:'Sideways Parabola',eq:'x = y\\u00b2',color:'#34d399'},
-  hyperbola:{param:true,label:'Hyperbola',eq:'x\\u00b2/4 - y\\u00b2 = 1',color:'#fb923c'},
-  ellipse:{param:true,label:'Ellipse',eq:'x\\u00b2/9 + y\\u00b2/4 = 1',color:'#c084fc'},
+  gauss:{fn:x=>Math.exp(-x*x),deriv:x=>-2*x*Math.exp(-x*x),label:'Gaussian',eq:'y = e\u207b\u02e3\xb2',color:'#f472b6'},
+  circle:{param:true,label:'Unit Circle',eq:'x\xb2 + y\xb2 = 4',color:'#fbbf24'},
+  parabola:{param:true,label:'Sideways Parabola',eq:'x = y\xb2',color:'#34d399'},
+  hyperbola:{param:true,label:'Hyperbola',eq:'x\xb2/4 \u2212 y\xb2 = 1',color:'#fb923c'},
+  ellipse:{param:true,label:'Ellipse',eq:'x\xb2/9 + y\xb2/4 = 1',color:'#c084fc'},
 };
 
 /* ── Transformed function wrapper ── */
