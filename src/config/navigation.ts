@@ -140,6 +140,10 @@ export const mainNavItems = [
     href: '/alevel',
   },
   {
+    label: 'STEM',
+    href: '/stem',
+  },
+  {
     label: 'Digital Skills',
     href: '/digital-skills',
   },
