@@ -487,6 +487,13 @@ addEventListener('touchmove',e=>{if(e.touches.length===2){const dx=e.touches[0].
 document.getElementById('measurements').textContent=MEASURES.cube;
 updateStatus();
 draw();
+/* Parent message handler */
+addEventListener('message',e=>{
+  if(!e.data||!e.data.type)return;
+  if(e.data.type==='resetCanvas'){resetView();}
+  if(e.data.type==='resetGraph'){set('cube');}
+  if(e.data.type==='selectAll'){}
+});
 <\/script></body></html>`;
 
 const VECTOR_HTML = `<!DOCTYPE html>
@@ -1537,6 +1544,13 @@ function showPtCoord(i){
 
 pick('quadratic');
 render();
+/* Parent message handler */
+addEventListener('message',e=>{
+  if(!e.data||!e.data.type)return;
+  if(e.data.type==='resetCanvas'){resetView();}
+  if(e.data.type==='resetGraph'){resetView();pick('quadratic');}
+  if(e.data.type==='selectAll'){}
+});
 <\/script></body></html>`;
 
 const ATOMIC_HTML = `<!DOCTYPE html>
@@ -2526,6 +2540,13 @@ window.addEventListener('resize',resize);
 
 // Init
 initColors();initBank();resize();resetView();
+/* Parent message handler */
+addEventListener('message',e=>{
+  if(!e.data||!e.data.type)return;
+  if(e.data.type==='resetCanvas'){resetView();}
+  if(e.data.type==='resetGraph'){shapes=[];selIdx=-1;resetView();}
+  if(e.data.type==='selectAll'){selIdx=-1;draw();}
+});
 <\/script></body></html>`;
 
 // ── Categories ───────────────────────────────────────────────────────────────

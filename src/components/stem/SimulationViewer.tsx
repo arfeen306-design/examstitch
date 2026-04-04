@@ -16,6 +16,11 @@ import {
   Redo2,
   Trash2,
   RotateCcw,
+  Lock,
+  Unlock,
+  MousePointer,
+  GripVertical,
+  RefreshCw,
 } from 'lucide-react';
 import { useTheme, type Theme } from '@/components/ui/ThemeProvider';
 import type { Simulation, StemCategory } from '@/config/stem';
@@ -133,6 +138,52 @@ export default function SimulationViewer({
   const doodleCanvasRef = useRef<HTMLCanvasElement>(null);
   const currentStrokeRef = useRef<Stroke | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
+  const [canvasLocked, setCanvasLocked] = useState(false);
+
+  // ── Floating toolbar drag ───────────────────────────────────────────
+  const ftRef = useRef<HTMLDivElement>(null);
+  const ftDrag = useRef({ active: false, dx: 0, dy: 0 });
+
+  const onFtGripDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const ft = ftRef.current;
+    if (!ft) return;
+    const r = ft.getBoundingClientRect();
+    ftDrag.current = { active: true, dx: e.clientX - r.left, dy: e.clientY - r.top };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const onFtGripMove = useCallback((e: React.PointerEvent) => {
+    if (!ftDrag.current.active || !ftRef.current) return;
+    e.preventDefault();
+    ftRef.current.style.left = `${Math.max(0, e.clientX - ftDrag.current.dx)}px`;
+    ftRef.current.style.top = `${Math.max(48, e.clientY - ftDrag.current.dy)}px`;
+    ftRef.current.style.transform = 'none';
+  }, []);
+
+  const onFtGripUp = useCallback(() => {
+    ftDrag.current.active = false;
+  }, []);
+
+  // ── Iframe messaging helpers ────────────────────────────────────────
+  const postToIframe = useCallback((msg: Record<string, unknown>) => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(msg, '*');
+    }
+  }, []);
+
+  const selectAllInIframe = useCallback(() => {
+    postToIframe({ type: 'selectAll' });
+  }, [postToIframe]);
+
+  const resetCanvasInIframe = useCallback(() => {
+    postToIframe({ type: 'resetCanvas' });
+  }, [postToIframe]);
+
+  const resetGraphInIframe = useCallback(() => {
+    postToIframe({ type: 'resetGraph' });
+  }, [postToIframe]);
 
   // ── Redraw doodle canvas ────────────────────────────────────────────
   const redrawDoodle = useCallback((allStrokes: Stroke[]) => {
@@ -336,6 +387,11 @@ export default function SimulationViewer({
         />
       )}
 
+      {/* ── Lock overlay ──────────────────────────────────────────────── */}
+      {canvasLocked && (
+        <div className="absolute inset-0 z-[34] cursor-not-allowed" />
+      )}
+
       {/* ── Doodle overlay canvas ──────────────────────────────────────── */}
       <canvas
         ref={doodleCanvasRef}
@@ -403,67 +459,8 @@ export default function SimulationViewer({
             </span>
           </nav>
 
-          {/* Controls */}
+          {/* Controls — minimal in top bar */}
           <div className="flex items-center gap-1 shrink-0">
-            {/* Doodle toggle */}
-            <button
-              onClick={() => setDoodleActive((p) => !p)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                doodleActive
-                  ? 'bg-red-500/20 text-red-400'
-                  : hudColors.muted + ' hover:bg-white/[0.08]'
-              }`}
-              title="Toggle doodle (D)"
-            >
-              <Pen className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Doodle</span>
-            </button>
-
-            {/* Undo */}
-            <button
-              onClick={undoDoodle}
-              disabled={strokes.length === 0}
-              className={`p-2 rounded-lg transition-colors ${
-                strokes.length > 0
-                  ? hudColors.muted + ' hover:bg-white/[0.08]'
-                  : 'opacity-30 cursor-not-allowed ' + hudColors.muted
-              }`}
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 className="w-4 h-4" />
-            </button>
-
-            {/* Redo */}
-            <button
-              onClick={redoDoodle}
-              disabled={redoStack.length === 0}
-              className={`p-2 rounded-lg transition-colors ${
-                redoStack.length > 0
-                  ? hudColors.muted + ' hover:bg-white/[0.08]'
-                  : 'opacity-30 cursor-not-allowed ' + hudColors.muted
-              }`}
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <Redo2 className="w-4 h-4" />
-            </button>
-
-            {/* Clear doodle */}
-            <button
-              onClick={clearDoodle}
-              disabled={strokes.length === 0}
-              className={`p-2 rounded-lg transition-colors ${
-                strokes.length > 0
-                  ? hudColors.muted + ' hover:bg-red-500/20 hover:text-red-400'
-                  : 'opacity-30 cursor-not-allowed ' + hudColors.muted
-              }`}
-              title="Clear doodle"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Divider */}
-            <div className={`w-px h-5 mx-1 ${hudColors.border}`} />
-
             {/* Instructions toggle */}
             <button
               onClick={() => setShowInstructions((p) => !p)}
@@ -476,15 +473,6 @@ export default function SimulationViewer({
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Instructions</span>
-            </button>
-
-            {/* Reset simulation */}
-            <button
-              onClick={resetSimulation}
-              className={`p-2 rounded-lg ${hudColors.muted} hover:bg-white/[0.08] transition-colors`}
-              title="Reset simulation"
-            >
-              <RotateCcw className="w-4 h-4" />
             </button>
 
             {/* Fullscreen */}
@@ -508,18 +496,141 @@ export default function SimulationViewer({
         </div>
       </motion.div>
 
-      {/* ── Doodle active indicator ────────────────────────────────────── */}
+      {/* ── Floating Toolbar ──────────────────────────────────────────── */}
+      <motion.div
+        ref={ftRef}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.3 }}
+        className="fixed z-50 flex items-center gap-1 px-2 py-1.5 rounded-xl backdrop-blur-2xl bg-black/70 border border-white/[0.1] shadow-2xl"
+        style={{ top: 56, left: '50%', transform: 'translateX(-50%)' }}
+      >
+        {/* Grip handle */}
+        <div
+          className="flex flex-col gap-[3px] px-1 py-2 cursor-grab active:cursor-grabbing mr-1"
+          onPointerDown={onFtGripDown}
+          onPointerMove={onFtGripMove}
+          onPointerUp={onFtGripUp}
+        >
+          <GripVertical className="w-3 h-3 text-white/20" />
+        </div>
+
+        {/* Select All */}
+        <button
+          onClick={selectAllInIframe}
+          className="p-1.5 rounded-lg text-white/50 hover:bg-white/[0.08] hover:text-white transition-colors"
+          title="Select All"
+        >
+          <MousePointer className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Doodle */}
+        <button
+          onClick={() => setDoodleActive((p) => !p)}
+          className={`p-1.5 rounded-lg transition-colors ${
+            doodleActive ? 'bg-red-500/25 text-red-400' : 'text-white/50 hover:bg-white/[0.08] hover:text-white'
+          }`}
+          title="Doodle (D)"
+        >
+          <Pen className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Lock Canvas */}
+        <button
+          onClick={() => setCanvasLocked((p) => !p)}
+          className={`p-1.5 rounded-lg transition-colors ${
+            canvasLocked ? 'bg-amber-500/25 text-amber-400' : 'text-white/50 hover:bg-white/[0.08] hover:text-white'
+          }`}
+          title="Lock Canvas"
+        >
+          {canvasLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+        </button>
+
+        <div className="w-px h-5 bg-white/[0.08] mx-0.5" />
+
+        {/* Undo */}
+        <button
+          onClick={undoDoodle}
+          disabled={strokes.length === 0}
+          className={`p-1.5 rounded-lg transition-colors ${
+            strokes.length > 0 ? 'text-white/50 hover:bg-white/[0.08] hover:text-white' : 'text-white/20 cursor-not-allowed'
+          }`}
+          title="Undo (Ctrl+Z)"
+        >
+          <Undo2 className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Redo */}
+        <button
+          onClick={redoDoodle}
+          disabled={redoStack.length === 0}
+          className={`p-1.5 rounded-lg transition-colors ${
+            redoStack.length > 0 ? 'text-white/50 hover:bg-white/[0.08] hover:text-white' : 'text-white/20 cursor-not-allowed'
+          }`}
+          title="Redo (Ctrl+Shift+Z)"
+        >
+          <Redo2 className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Clear Doodle */}
+        <button
+          onClick={clearDoodle}
+          disabled={strokes.length === 0}
+          className={`p-1.5 rounded-lg transition-colors ${
+            strokes.length > 0 ? 'text-white/50 hover:bg-red-500/20 hover:text-red-400' : 'text-white/20 cursor-not-allowed'
+          }`}
+          title="Clear doodle"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="w-px h-5 bg-white/[0.08] mx-0.5" />
+
+        {/* Reset Canvas (view/pan/zoom) */}
+        <button
+          onClick={resetCanvasInIframe}
+          className="p-1.5 rounded-lg text-white/50 hover:bg-white/[0.08] hover:text-white transition-colors"
+          title="Reset Canvas (view/pan/zoom)"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Reset Graph (full simulation reset) */}
+        <button
+          onClick={() => { resetGraphInIframe(); clearDoodle(); }}
+          className="p-1.5 rounded-lg text-white/50 hover:bg-amber-500/20 hover:text-amber-400 transition-colors"
+          title="Reset Graph"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Reset Simulation (reload iframe) */}
+        <button
+          onClick={resetSimulation}
+          className="p-1.5 rounded-lg text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+          title="Reset Simulation (reload)"
+        >
+          <RotateCcw className="w-4 h-4" strokeWidth={2.5} />
+        </button>
+      </motion.div>
+
+      {/* ── Status indicators ──────────────────────────────────────────── */}
       <AnimatePresence>
-        {doodleActive && (
+        {(doodleActive || canvasLocked) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur-xl"
+            className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full backdrop-blur-xl border ${
+              doodleActive ? 'bg-red-500/20 border-red-500/30' : 'bg-amber-500/20 border-amber-500/30'
+            }`}
           >
-            <span className="text-red-400 text-xs font-medium flex items-center gap-2">
-              <Pen className="w-3 h-3" />
-              Doodle Mode — Draw anywhere · Press D or Esc to exit
+            <span className={`text-xs font-medium flex items-center gap-2 ${doodleActive ? 'text-red-400' : 'text-amber-400'}`}>
+              {doodleActive ? (
+                <><Pen className="w-3 h-3" /> Doodle Mode — Draw anywhere · Press D or Esc to exit</>
+              ) : (
+                <><Lock className="w-3 h-3" /> Canvas Locked — Click lock icon to unlock</>
+              )}
             </span>
           </motion.div>
         )}
