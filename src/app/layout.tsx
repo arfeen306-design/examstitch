@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 import './globals.css';
 
 const PlexusBackground = dynamic(() => import('@/components/ui/PlexusBackground'), { ssr: false });
+const AskAnythingWidget = dynamic(() => import('@/components/ui/AskAnythingWidget'), { ssr: false });
 
 const inter = Inter({
   subsets: ['latin'],
@@ -84,6 +85,7 @@ export default async function RootLayout({
               <main className="flex-1">{children}</main>
               <Footer />
               <WhatsAppFloat />
+              <AskAnythingWidget />
             </>
           )}
         </ThemeProvider>
