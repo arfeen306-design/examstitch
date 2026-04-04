@@ -1997,6 +1997,415 @@ demoId=requestAnimationFrame(anim);}
 addEventListener('resize',resize);resize();
 <\/script></body></html>`;
 
+// ── Newton's Laws ───────────────────────────────────────────────────────────
+const NEWTON_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;user-select:none;color:#fff}
+canvas{display:block}
+#ui{position:fixed;top:48px;right:0;bottom:0;width:210px;z-index:20;background:rgba(15,15,35,0.92);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;display:flex;flex-direction:column}
+#ui::-webkit-scrollbar{width:4px}#ui::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.pn{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.pn-t{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px}
+.pn button{display:block;width:100%;padding:7px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border-radius:7px;cursor:pointer;font-size:10px;font-weight:600;text-align:left;transition:all .2s}
+.pn button:hover{background:rgba(255,255,255,0.1);color:#fff}
+.pn button.on{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd}
+.sl-row{display:flex;align-items:center;gap:4px;margin:4px 0}
+.sl-row label{font-size:9px;color:rgba(255,255,255,0.4);min-width:40px}
+.sl-row input[type=range]{flex:1;height:4px;-webkit-appearance:none;background:rgba(255,255,255,0.1);border-radius:2px;outline:none}
+.sl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#3b82f6;cursor:pointer}
+.sl-row span{font-size:9px;color:rgba(255,255,255,0.6);min-width:30px;text-align:right;font-weight:600}
+#info{position:fixed;bottom:8px;left:8px;z-index:20;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;font-size:10px;line-height:1.6;backdrop-filter:blur(8px);max-width:280px}
+#info .val{color:#60a5fa;font-weight:700;font-family:'Courier New',monospace}
+@media(max-width:700px){#ui{width:170px}}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div class="pn"><div class="pn-t">Newton's Laws</div>
+    <button class="on" onclick="setLaw(1)" id="l1">1st Law — Inertia</button>
+    <button onclick="setLaw(2)" id="l2">2nd Law — F = ma</button>
+    <button onclick="setLaw(3)" id="l3">3rd Law — Action-Reaction</button>
+  </div>
+  <div class="pn" id="p-controls">
+    <div class="pn-t">Controls</div>
+    <div class="sl-row"><label>Force</label><input type="range" id="sl-f" min="0" max="100" value="0"><span id="v-f">0 N</span></div>
+    <div class="sl-row"><label>Mass</label><input type="range" id="sl-m" min="1" max="20" value="5"><span id="v-m">5 kg</span></div>
+    <div class="sl-row"><label>Friction</label><input type="range" id="sl-mu" min="0" max="0.5" step="0.01" value="0"><span id="v-mu">0</span></div>
+  </div>
+  <div class="pn"><button onclick="resetSim()" style="text-align:center;color:#fca5a5;border-color:rgba(239,68,68,0.3)">Reset</button>
+    <button onclick="playpause()" id="b-pp" style="text-align:center;color:#6ee7b7;border-color:rgba(16,185,129,0.3)">&#9654; Play</button>
+  </div>
+</div>
+<div id="info"></div>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+let W,H,law=1,running=false,t=0,dt=1/60;
+let force=0,mass=5,mu=0,vel=0,pos=0,acc=0;
+// Law 3 state
+let rocketX=0,rocketV=0,gasParticles=[];
+
+function resize(){W=C.width=innerWidth;H=C.height=innerHeight}
+resize();addEventListener('resize',resize);
+
+function setLaw(n){law=n;document.querySelectorAll('#ui .pn:first-child button').forEach(b=>b.classList.remove('on'));document.getElementById('l'+n).classList.add('on');resetSim();}
+
+document.getElementById('sl-f').oninput=e=>{force=+e.target.value;document.getElementById('v-f').textContent=force+' N'};
+document.getElementById('sl-m').oninput=e=>{mass=+e.target.value;document.getElementById('v-m').textContent=mass+' kg'};
+document.getElementById('sl-mu').oninput=e=>{mu=+e.target.value;document.getElementById('v-mu').textContent=mu.toFixed(2)};
+
+function resetSim(){vel=0;pos=0;acc=0;t=0;rocketX=0;rocketV=0;gasParticles=[];running=false;document.getElementById('b-pp').innerHTML='&#9654; Play'}
+function playpause(){running=!running;document.getElementById('b-pp').innerHTML=running?'&#9646;&#9646; Pause':'&#9654; Play'}
+
+function draw(){
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  const cw=W-210,ch=H;
+  // Ground
+  const gy=ch*0.7;
+  ctx.fillStyle='rgba(255,255,255,0.03)';ctx.fillRect(0,gy,cw,ch-gy);
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(cw,gy);ctx.stroke();
+
+  if(law===1) drawLaw1(cw,gy);
+  else if(law===2) drawLaw2(cw,gy);
+  else drawLaw3(cw,gy);
+
+  if(running) t+=dt;
+  requestAnimationFrame(draw);
+}
+
+function drawLaw1(cw,gy){
+  // Block on frictionless surface — stays still or constant velocity
+  const bw=80,bh=60;
+  if(running&&force===0&&mu===0){pos+=vel*dt*50;}
+  if(running&&force>0){vel=force/mass;pos+=vel*dt*50;}
+  const bx=cw/2-bw/2+pos%cw;
+  // Block
+  ctx.fillStyle='rgba(59,130,246,0.3)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=2;
+  ctx.fillRect(bx,gy-bh,bw,bh);ctx.strokeRect(bx,gy-bh,bw,bh);
+  ctx.fillStyle='#fff';ctx.font='bold 12px system-ui';ctx.textAlign='center';
+  ctx.fillText(mass+' kg',bx+bw/2,gy-bh/2+4);
+  // Force arrow
+  if(force>0){
+    const aw=force*1.5;
+    ctx.strokeStyle='#ef4444';ctx.lineWidth=3;ctx.beginPath();
+    ctx.moveTo(bx-10,gy-bh/2);ctx.lineTo(bx-10-aw,gy-bh/2);ctx.stroke();
+    ctx.fillStyle='#ef4444';ctx.beginPath();ctx.moveTo(bx-10,gy-bh/2);ctx.lineTo(bx-20,gy-bh/2-8);ctx.lineTo(bx-20,gy-bh/2+8);ctx.fill();
+    ctx.fillStyle='#ef4444';ctx.font='bold 11px system-ui';ctx.textAlign='center';
+    ctx.fillText('F = '+force+' N',bx-10-aw/2,gy-bh/2-15);
+  }
+  // Velocity arrow
+  if(Math.abs(vel)>0.1){
+    ctx.strokeStyle='#10b981';ctx.lineWidth=3;const vw=vel*20;
+    ctx.beginPath();ctx.moveTo(bx+bw+10,gy-bh/2);ctx.lineTo(bx+bw+10+vw,gy-bh/2);ctx.stroke();
+    ctx.fillStyle='#10b981';ctx.beginPath();ctx.moveTo(bx+bw+10+vw,gy-bh/2);ctx.lineTo(bx+bw+vw,gy-bh/2-8);ctx.lineTo(bx+bw+vw,gy-bh/2+8);ctx.fill();
+    ctx.fillStyle='#10b981';ctx.font='10px system-ui';ctx.fillText('v = '+vel.toFixed(1)+' m/s',bx+bw+10+vw/2,gy-bh/2-12);
+  }
+  // Title
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='bold 18px system-ui';ctx.textAlign='center';
+  ctx.fillText("Newton's 1st Law: An object at rest stays at rest",cw/2,60);
+  ctx.font='14px system-ui';ctx.fillText("unless acted upon by an external force",cw/2,85);
+  // Info
+  document.getElementById('info').innerHTML='<b style="color:#93c5fd">1st Law — Inertia</b><br>Velocity: <span class="val">'+vel.toFixed(2)+' m/s</span><br>Position: <span class="val">'+pos.toFixed(1)+' m</span><br>'+(force===0&&vel===0?'<span style="color:#10b981">Object at rest — no net force</span>':'<span style="color:#f59e0b">Object in motion — constant velocity</span>');
+}
+
+function drawLaw2(cw,gy){
+  const bw=60+mass*3,bh=40+mass*2;
+  const friction=mu*mass*9.8;
+  const netF=Math.max(0,force-friction);
+  acc=netF/mass;
+  if(running){vel+=acc*dt;pos+=vel*dt*30;}
+  const bx=cw/2-bw/2+(pos%cw);
+  ctx.fillStyle='rgba(139,92,246,0.3)';ctx.strokeStyle='#8b5cf6';ctx.lineWidth=2;
+  ctx.fillRect(bx,gy-bh,bw,bh);ctx.strokeRect(bx,gy-bh,bw,bh);
+  ctx.fillStyle='#fff';ctx.font='bold 11px system-ui';ctx.textAlign='center';
+  ctx.fillText(mass+' kg',bx+bw/2,gy-bh/2+4);
+  // Force arrows
+  if(force>0){const aw=force*1.2;ctx.strokeStyle='#ef4444';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx+bw+5,gy-bh/2);ctx.lineTo(bx+bw+5+aw,gy-bh/2);ctx.stroke();ctx.fillStyle='#ef4444';ctx.font='10px system-ui';ctx.fillText('F='+force+'N',bx+bw+5+aw/2,gy-bh/2-10);}
+  if(friction>0.1){const fw=friction*1.2;ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(bx-5,gy-bh/2);ctx.lineTo(bx-5-fw,gy-bh/2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#f59e0b';ctx.font='9px system-ui';ctx.textAlign='center';ctx.fillText('f='+friction.toFixed(1)+'N',bx-5-fw/2,gy-bh/2-10);}
+  // a vector
+  if(acc>0.01){ctx.strokeStyle='#10b981';ctx.lineWidth=2;const aw2=acc*15;ctx.beginPath();ctx.moveTo(bx+bw/2,gy-bh-10);ctx.lineTo(bx+bw/2+aw2,gy-bh-10);ctx.stroke();ctx.fillStyle='#10b981';ctx.font='9px system-ui';ctx.fillText('a='+acc.toFixed(2)+' m/s\\xb2',bx+bw/2+aw2/2,gy-bh-20);}
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='bold 18px system-ui';ctx.textAlign='center';
+  ctx.fillText("Newton's 2nd Law: F = ma",cw/2,60);
+  ctx.font='14px system-ui';ctx.fillText("Acceleration is proportional to net force, inversely to mass",cw/2,85);
+  document.getElementById('info').innerHTML='<b style="color:#a78bfa">2nd Law — F = ma</b><br>Net Force: <span class="val">'+netF.toFixed(1)+' N</span><br>Acceleration: <span class="val">'+acc.toFixed(2)+' m/s\\xb2</span><br>Velocity: <span class="val">'+vel.toFixed(2)+' m/s</span><br>Friction: <span class="val">'+friction.toFixed(1)+' N</span>';
+}
+
+function drawLaw3(cw,gy){
+  // Rocket
+  if(running){
+    rocketV+=2*dt;rocketX-=rocketV*dt*5;
+    if(Math.random()<0.4)gasParticles.push({x:cw/2+40,y:gy-50,vx:3+Math.random()*3,vy:(Math.random()-0.5)*2,life:1});
+  }
+  gasParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life-=0.02;});
+  gasParticles=gasParticles.filter(p=>p.life>0);
+  const rx=cw/2-30+rocketX,ry=gy-100;
+  // Rocket body
+  ctx.fillStyle='rgba(239,68,68,0.3)';ctx.strokeStyle='#ef4444';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(rx,ry);ctx.lineTo(rx-15,ry+60);ctx.lineTo(rx+15,ry+60);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle='rgba(59,130,246,0.4)';ctx.fillRect(rx-12,ry+30,24,30);
+  // Flame
+  if(running){ctx.fillStyle='rgba(245,158,11,0.6)';ctx.beginPath();ctx.moveTo(rx-10,ry+60);ctx.lineTo(rx+10,ry+60);ctx.lineTo(rx,ry+60+20+Math.random()*15);ctx.fill();}
+  // Gas particles
+  ctx.fillStyle='rgba(245,158,11,0.5)';gasParticles.forEach(p=>{ctx.globalAlpha=p.life;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
+  // Action arrow (thrust left)
+  ctx.strokeStyle='#3b82f6';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(rx-20,ry+30);ctx.lineTo(rx-60,ry+30);ctx.stroke();
+  ctx.fillStyle='#3b82f6';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText('Action (thrust)',rx-40,ry+20);
+  // Reaction arrow (gas right)
+  ctx.strokeStyle='#f59e0b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(rx+20,ry+50);ctx.lineTo(rx+60,ry+50);ctx.stroke();
+  ctx.fillStyle='#f59e0b';ctx.fillText('Reaction (exhaust)',rx+40,ry+68);
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='bold 18px system-ui';ctx.textAlign='center';
+  ctx.fillText("Newton's 3rd Law: Every action has an equal opposite reaction",cw/2,60);
+  document.getElementById('info').innerHTML='<b style="color:#fca5a5">3rd Law — Action-Reaction</b><br>Rocket pushes gas <span class="val">right</span><br>Gas pushes rocket <span class="val">left</span><br>Velocity: <span class="val">'+rocketV.toFixed(2)+' m/s</span>';
+}
+
+addEventListener('message',e=>{if(!e.data||!e.data.type)return;if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){resetSim();}});
+draw();
+<\/script></body></html>`;
+
+// ── Projectile Motion ───────────────────────────────────────────────────────
+const PROJECTILE_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;user-select:none;color:#fff}
+canvas{display:block}
+#ui{position:fixed;top:48px;right:0;bottom:0;width:210px;z-index:20;background:rgba(15,15,35,0.92);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;display:flex;flex-direction:column}
+.pn{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.pn-t{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px}
+.sl-row{display:flex;align-items:center;gap:4px;margin:4px 0}
+.sl-row label{font-size:9px;color:rgba(255,255,255,0.4);min-width:45px}
+.sl-row input[type=range]{flex:1;height:4px;-webkit-appearance:none;background:rgba(255,255,255,0.1);border-radius:2px;outline:none}
+.sl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#3b82f6;cursor:pointer}
+.sl-row span{font-size:9px;color:rgba(255,255,255,0.6);min-width:35px;text-align:right;font-weight:600}
+.pn button{display:block;width:100%;padding:7px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border-radius:7px;cursor:pointer;font-size:10px;font-weight:600;text-align:center;transition:all .2s}
+.pn button:hover{background:rgba(255,255,255,0.1);color:#fff}
+#info{position:fixed;bottom:8px;left:8px;z-index:20;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;font-size:10px;line-height:1.6;backdrop-filter:blur(8px)}
+#info .val{color:#60a5fa;font-weight:700;font-family:'Courier New',monospace}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div class="pn"><div class="pn-t">Launch Settings</div>
+    <div class="sl-row"><label>Angle</label><input type="range" id="sl-a" min="5" max="85" value="45"><span id="v-a">45&deg;</span></div>
+    <div class="sl-row"><label>Velocity</label><input type="range" id="sl-v" min="5" max="50" value="25"><span id="v-v">25 m/s</span></div>
+    <div class="sl-row"><label>Gravity</label><input type="range" id="sl-g" min="1" max="20" step="0.1" value="9.8"><span id="v-g">9.8</span></div>
+    <div class="sl-row"><label>Height</label><input type="range" id="sl-h" min="0" max="20" value="0"><span id="v-h">0 m</span></div>
+  </div>
+  <div class="pn">
+    <button onclick="launch()" style="color:#6ee7b7;border-color:rgba(16,185,129,0.3)">&#9654; Launch</button>
+    <button onclick="resetSim()" style="color:#fca5a5;border-color:rgba(239,68,68,0.3)">Reset</button>
+    <button onclick="toggleTrace()" id="b-trace" style="color:#93c5fd;border-color:rgba(59,130,246,0.3)">Trace: ON</button>
+  </div>
+  <div class="pn"><div class="pn-t">Theory</div>
+    <div style="font-size:9px;color:rgba(255,255,255,0.4);line-height:1.6">
+      Range = v&sup2;sin(2&theta;)/g<br>
+      Max Height = v&sup2;sin&sup2;(&theta;)/2g<br>
+      Time = 2v&middot;sin(&theta;)/g
+    </div>
+  </div>
+</div>
+<div id="info"></div>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+let W,H;
+let angle=45,v0=25,g=9.8,h0=0;
+let t=0,running=false,px=0,py=0,trail=[],showTrace=true;
+let traces=[];
+
+function resize(){W=C.width=innerWidth;H=C.height=innerHeight}
+resize();addEventListener('resize',resize);
+
+const slA=document.getElementById('sl-a'),slV=document.getElementById('sl-v'),slG=document.getElementById('sl-g'),slH=document.getElementById('sl-h');
+slA.oninput=e=>{angle=+e.target.value;document.getElementById('v-a').innerHTML=angle+'&deg;'};
+slV.oninput=e=>{v0=+e.target.value;document.getElementById('v-v').textContent=v0+' m/s'};
+slG.oninput=e=>{g=+e.target.value;document.getElementById('v-g').textContent=g.toFixed(1)};
+slH.oninput=e=>{h0=+e.target.value;document.getElementById('v-h').textContent=h0+' m'};
+
+function launch(){
+  t=0;running=true;trail=[];
+  px=0;py=h0;
+}
+function resetSim(){t=0;running=false;px=0;py=h0;trail=[];traces=[];}
+function toggleTrace(){showTrace=!showTrace;document.getElementById('b-trace').textContent='Trace: '+(showTrace?'ON':'OFF');}
+
+const sc=12; // pixels per meter
+function toScreen(x,y){const cw=W-210;const ox=80,oy=H-60;return[ox+x*sc,oy-y*sc];}
+
+function draw(){
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  const cw=W-210;
+  // Ground
+  const gy=H-60;
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(cw,gy);ctx.stroke();
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=1;
+  for(let x=0;x<cw;x+=sc*5){ctx.beginPath();ctx.moveTo(80+x,0);ctx.lineTo(80+x,gy);ctx.stroke();}
+  for(let y=0;y<gy;y+=sc*5){ctx.beginPath();ctx.moveTo(0,gy-y);ctx.lineTo(cw,gy-y);ctx.stroke();}
+
+  // Physics
+  const rad=angle*Math.PI/180;
+  const vx=v0*Math.cos(rad),vy=v0*Math.sin(rad);
+  const range=h0===0?(v0*v0*Math.sin(2*rad)/g):(vx/g*(vy+Math.sqrt(vy*vy+2*g*h0)));
+  const maxH=h0+vy*vy/(2*g);
+  const tTotal=h0===0?(2*vy/g):(vy+Math.sqrt(vy*vy+2*g*h0))/g;
+
+  // Predicted path (dashed)
+  ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;ctx.beginPath();
+  for(let tt=0;tt<=tTotal;tt+=0.05){
+    const xx=vx*tt,yy=h0+vy*tt-0.5*g*tt*tt;
+    const[sx,sy]=toScreen(xx,Math.max(0,yy));
+    tt===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+  }ctx.stroke();ctx.setLineDash([]);
+
+  // Old traces
+  traces.forEach(tr=>{
+    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.beginPath();
+    tr.forEach((p,i)=>{const[sx,sy]=toScreen(p[0],p[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy)});ctx.stroke();
+  });
+
+  // Active trail
+  if(showTrace&&trail.length>1){
+    ctx.strokeStyle='rgba(59,130,246,0.6)';ctx.lineWidth=2;ctx.beginPath();
+    trail.forEach((p,i)=>{const[sx,sy]=toScreen(p[0],p[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy)});ctx.stroke();
+  }
+
+  // Simulate
+  if(running){
+    t+=1/60;
+    px=vx*t;py=h0+vy*t-0.5*g*t*t;
+    if(py>=0)trail.push([px,py]);
+    if(py<0){py=0;running=false;traces.push([...trail]);}
+  }
+
+  // Projectile
+  const[bx,by]=toScreen(px,py);
+  ctx.beginPath();ctx.arc(bx,by,6,0,Math.PI*2);ctx.fillStyle='#ef4444';ctx.fill();
+  ctx.beginPath();ctx.arc(bx,by,10,0,Math.PI*2);ctx.strokeStyle='rgba(239,68,68,0.3)';ctx.lineWidth=2;ctx.stroke();
+
+  // Launch angle indicator
+  const[ox,oy]=toScreen(0,h0);
+  ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(ox,oy,30,-Math.PI,0);ctx.stroke();
+  ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+50*Math.cos(-rad),oy+50*Math.sin(-rad));ctx.stroke();
+  ctx.fillStyle='#f59e0b';ctx.font='10px system-ui';ctx.fillText(angle+'\\xb0',ox+35,oy-10);
+
+  // Height indicator
+  if(h0>0){ctx.fillStyle='rgba(16,185,129,0.3)';ctx.fillRect(60,gy-h0*sc,20,h0*sc);ctx.fillStyle='#10b981';ctx.font='9px system-ui';ctx.textAlign='center';ctx.fillText(h0+'m',70,gy-h0*sc-5);ctx.textAlign='left';}
+
+  // Info
+  document.getElementById('info').innerHTML='<b style="color:#93c5fd">Projectile Motion</b><br>Range: <span class="val">'+range.toFixed(1)+' m</span><br>Max Height: <span class="val">'+maxH.toFixed(1)+' m</span><br>Flight Time: <span class="val">'+tTotal.toFixed(2)+' s</span><br>Current: (<span class="val">'+px.toFixed(1)+'</span>, <span class="val">'+py.toFixed(1)+'</span>)';
+
+  requestAnimationFrame(draw);
+}
+addEventListener('message',e=>{if(!e.data||!e.data.type)return;if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){resetSim();}});
+draw();
+<\/script></body></html>`;
+
+// ── Solar System ────────────────────────────────────────────────────────────
+const SOLAR_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#020210;overflow:hidden;font-family:system-ui,sans-serif;user-select:none;color:#fff}
+canvas{display:block}
+#ui{position:fixed;top:48px;right:0;bottom:0;width:200px;z-index:20;background:rgba(5,5,25,0.92);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;display:flex;flex-direction:column}
+.pn{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.pn-t{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px}
+.planet-btn{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;margin-bottom:3px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);border-radius:7px;cursor:pointer;font-size:10px;font-weight:600;transition:all .2s}
+.planet-btn:hover{background:rgba(255,255,255,0.08);color:#fff}
+.planet-btn.on{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.3);color:#93c5fd}
+.planet-btn .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sl-row{display:flex;align-items:center;gap:4px;margin:4px 0}
+.sl-row label{font-size:9px;color:rgba(255,255,255,0.4);min-width:40px}
+.sl-row input[type=range]{flex:1;height:4px;-webkit-appearance:none;background:rgba(255,255,255,0.1);border-radius:2px;outline:none}
+.sl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#f59e0b;cursor:pointer}
+.sl-row span{font-size:9px;color:rgba(255,255,255,0.6);min-width:25px;text-align:right;font-weight:600}
+#planet-info{position:fixed;bottom:8px;left:8px;z-index:20;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;font-size:10px;line-height:1.7;backdrop-filter:blur(8px);max-width:260px}
+#planet-info .val{color:#fbbf24;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div class="pn"><div class="pn-t">Speed</div>
+    <div class="sl-row"><label>Speed</label><input type="range" id="sl-spd" min="0.1" max="10" step="0.1" value="1"><span id="v-spd">1x</span></div>
+  </div>
+  <div class="pn"><div class="pn-t">Planets</div><div id="planet-list"></div></div>
+</div>
+<div id="planet-info"></div>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+let W,H,speed=1,selPlanet=null,t=0;
+function resize(){W=C.width=innerWidth;H=C.height=innerHeight}
+resize();addEventListener('resize',resize);
+
+const PLANETS=[
+  {name:'Mercury',r:8, orbit:50, period:0.24,color:'#94a3b8',mass:'3.3\\u00d710\\xb2\\xb3 kg',dist:'57.9M km',temp:'167\\xb0C',moons:0},
+  {name:'Venus',  r:12,orbit:75, period:0.62,color:'#f59e0b',mass:'4.87\\u00d710\\xb2\\u2074 kg',dist:'108.2M km',temp:'464\\xb0C',moons:0},
+  {name:'Earth',  r:13,orbit:105,period:1,   color:'#3b82f6',mass:'5.97\\u00d710\\xb2\\u2074 kg',dist:'149.6M km',temp:'15\\xb0C',moons:1},
+  {name:'Mars',   r:10,orbit:140,period:1.88,color:'#ef4444',mass:'6.42\\u00d710\\xb2\\xb3 kg',dist:'227.9M km',temp:'-65\\xb0C',moons:2},
+  {name:'Jupiter',r:28,orbit:195,period:11.86,color:'#f97316',mass:'1.9\\u00d710\\xb2\\u2077 kg',dist:'778.5M km',temp:'-110\\xb0C',moons:95},
+  {name:'Saturn', r:24,orbit:250,period:29.46,color:'#eab308',mass:'5.68\\u00d710\\xb2\\u2076 kg',dist:'1.43B km',temp:'-140\\xb0C',moons:146},
+  {name:'Uranus', r:18,orbit:300,period:84.01,color:'#06b6d4',mass:'8.68\\u00d710\\xb2\\u2075 kg',dist:'2.87B km',temp:'-195\\xb0C',moons:28},
+  {name:'Neptune',r:17,orbit:340,period:164.8,color:'#6366f1',mass:'1.02\\u00d710\\xb2\\u2076 kg',dist:'4.5B km',temp:'-200\\xb0C',moons:16},
+];
+
+// Build planet list
+const pl=document.getElementById('planet-list');
+PLANETS.forEach((p,i)=>{
+  const btn=document.createElement('div');btn.className='planet-btn';btn.innerHTML='<div class="dot" style="background:'+p.color+'"></div>'+p.name;
+  btn.onclick=()=>{selPlanet=selPlanet===i?null:i;document.querySelectorAll('.planet-btn').forEach(b=>b.classList.remove('on'));if(selPlanet!==null)btn.classList.add('on');};
+  pl.appendChild(btn);
+});
+
+document.getElementById('sl-spd').oninput=e=>{speed=+e.target.value;document.getElementById('v-spd').textContent=speed.toFixed(1)+'x'};
+
+// Stars background
+const stars=Array.from({length:200},()=>({x:Math.random()*2000,y:Math.random()*2000,s:Math.random()*1.5+0.5,b:Math.random()}));
+
+function draw(){
+  ctx.fillStyle='#020210';ctx.fillRect(0,0,W,H);
+  const cw=W-200,cx=cw/2,cy=H/2;
+
+  // Stars
+  stars.forEach(s=>{ctx.fillStyle='rgba(255,255,255,'+(0.3+0.3*Math.sin(t*2+s.b*10))+')';ctx.beginPath();ctx.arc(s.x%cw,s.y%H,s.s,0,Math.PI*2);ctx.fill()});
+
+  // Sun
+  const sunR=22;
+  const sunGrad=ctx.createRadialGradient(cx,cy,0,cx,cy,sunR*3);
+  sunGrad.addColorStop(0,'rgba(255,200,50,0.8)');sunGrad.addColorStop(0.3,'rgba(255,150,0,0.4)');sunGrad.addColorStop(1,'transparent');
+  ctx.fillStyle=sunGrad;ctx.beginPath();ctx.arc(cx,cy,sunR*3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(cx,cy,sunR,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillText('Sun',cx,cy+sunR+12);
+
+  // Planets
+  PLANETS.forEach((p,i)=>{
+    const a=t*speed*2*Math.PI/p.period;
+    const px=cx+p.orbit*Math.cos(a),py=cy+p.orbit*0.4*Math.sin(a);
+    // Orbit ring
+    ctx.strokeStyle=selPlanet===i?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.ellipse(cx,cy,p.orbit,p.orbit*0.4,0,0,Math.PI*2);ctx.stroke();
+    // Planet glow
+    if(selPlanet===i){ctx.beginPath();ctx.arc(px,py,p.r+6,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fill();}
+    // Planet
+    ctx.beginPath();ctx.arc(px,py,p.r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();
+    // Saturn ring
+    if(p.name==='Saturn'){ctx.strokeStyle='rgba(234,179,8,0.4)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(px,py,p.r+12,4,0.3,0,Math.PI*2);ctx.stroke();}
+    // Label
+    ctx.fillStyle=selPlanet===i?'#fff':'rgba(255,255,255,0.35)';ctx.font=(selPlanet===i?'bold ':'')+' 8px system-ui';ctx.textAlign='center';ctx.fillText(p.name,px,py+p.r+10);
+  });
+
+  // Info panel
+  if(selPlanet!==null){
+    const p=PLANETS[selPlanet];
+    document.getElementById('planet-info').innerHTML='<b style="color:'+p.color+'">'+p.name+'</b><br>Mass: <span class="val">'+p.mass+'</span><br>Distance: <span class="val">'+p.dist+'</span><br>Temp: <span class="val">'+p.temp+'</span><br>Moons: <span class="val">'+p.moons+'</span><br>Orbital Period: <span class="val">'+p.period+' years</span>';
+  } else {
+    document.getElementById('planet-info').innerHTML='<span style="opacity:0.4">Click a planet for details</span>';
+  }
+
+  t+=1/60;
+  requestAnimationFrame(draw);
+}
+addEventListener('message',e=>{if(!e.data||!e.data.type)return;if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){t=0;speed=1;selPlanet=null;document.getElementById('sl-spd').value=1;document.getElementById('v-spd').textContent='1.0x';document.querySelectorAll('.planet-btn').forEach(b=>b.classList.remove('on'));}});
+draw();
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -2669,6 +3078,42 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Lenses', 'Ray Tracing', 'Optics', 'Refraction'],
         instructions: 'Choose a lens type (Convex or Concave) using the toggle. Adjust focal length, object distance, and object height with the sliders or drag the candle on the canvas. Observe how rays bend through the lens and where the image forms. The data panel shows image distance, magnification, and image properties (real/virtual, upright/inverted, magnified/diminished). Click "Run Demo" for an animated walkthrough.',
         html_code: OPTICS_HTML,
+      },
+      {
+        id: 'newtons-laws',
+        title: "Newton's Laws of Motion",
+        description: "Explore all three of Newton's laws with animated demonstrations — inertia, F=ma, and action-reaction.",
+        icon: 'Zap',
+        gradient: 'from-orange-500 to-red-500',
+        glowColor: 'rgba(249,115,22,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Forces', 'Motion', 'Inertia', 'F=ma'],
+        instructions: "Select a law from the right panel. Law 1: watch a block on a frictionless surface maintain constant velocity. Law 2: adjust force, mass, and friction sliders to see F=ma in action with real-time acceleration and force arrows. Law 3: observe a rocket demonstrating action-reaction with animated exhaust particles.",
+        html_code: NEWTON_HTML,
+      },
+      {
+        id: 'projectile-motion',
+        title: 'Projectile Motion',
+        description: 'Launch projectiles at any angle and velocity — trace parabolic paths, measure range, height, and flight time.',
+        icon: 'Activity',
+        gradient: 'from-violet-500 to-indigo-500',
+        glowColor: 'rgba(139,92,246,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Kinematics', 'Parabola', 'Gravity', 'Trajectory'],
+        instructions: "Adjust the launch angle, initial velocity, gravity, and launch height using sliders. Click Launch to fire the projectile and trace its path. Toggle 'Show Trace' to keep previous trajectories visible. The theory panel shows the physics formulas and calculated values for range, max height, and flight time.",
+        html_code: PROJECTILE_HTML,
+      },
+      {
+        id: 'solar-system',
+        title: 'Solar System Explorer',
+        description: 'Watch all 8 planets orbit the Sun with correct relative periods — click any planet for real data on mass, distance, and temperature.',
+        icon: 'Atom',
+        gradient: 'from-blue-500 to-purple-600',
+        glowColor: 'rgba(99,102,241,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Planets', 'Orbits', 'Astronomy', 'Space'],
+        instructions: "Watch the solar system animate. Click any planet name in the right panel or click directly on a planet to see its information — mass, distance from Sun, surface temperature, number of moons, and orbital period. Use the speed slider to slow down or speed up the simulation.",
+        html_code: SOLAR_HTML,
       },
     ],
   },
