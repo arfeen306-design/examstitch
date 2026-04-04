@@ -124,14 +124,14 @@ function SimCard({
       <Link href={`/stem/${categorySlug}/${sim.id}`}>
         {/* Glow */}
         <motion.div
-          className="absolute -inset-1 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+          className="absolute -inset-1 rounded-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-xl"
           style={{ background: sim.glowColor }}
         />
 
-        <div className="relative bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 h-full
-                        hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300 overflow-hidden">
+        <div className="relative bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-color)] rounded-2xl p-6 h-full
+                        hover:border-[var(--accent)] hover:shadow-lg transition-all duration-300 overflow-hidden shadow-[0_2px_16px_var(--shadow-color)]">
           {/* Gradient accent line */}
-          <div className={`absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r ${sim.gradient} rounded-full opacity-60`} />
+          <div className={`absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r ${sim.gradient} rounded-full opacity-80`} />
 
           {/* Floating icon */}
           <motion.div
@@ -142,15 +142,15 @@ function SimCard({
             <Icon className="w-7 h-7 text-white" strokeWidth={1.8} />
           </motion.div>
 
-          <h3 className="text-lg font-bold text-white mb-1 tracking-tight">{sim.title}</h3>
-          <p className="text-sm text-white/50 mb-4 leading-relaxed">{sim.description}</p>
+          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1 tracking-tight">{sim.title}</h3>
+          <p className="text-sm text-[var(--text-muted)] mb-4 leading-relaxed">{sim.description}</p>
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1.5 mb-4">
             {sim.tags.map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] font-medium text-white/50 bg-white/[0.06] border border-white/[0.08] rounded-full px-2.5 py-0.5"
+                className="text-[10px] font-medium text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-full px-2.5 py-0.5"
               >
                 {tag}
               </span>
@@ -165,7 +165,7 @@ function SimCard({
             </span>
             <motion.div
               whileHover={{ x: 4 }}
-              className="flex items-center gap-1 text-xs font-semibold text-white/60 group-hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors"
             >
               Enter Lab <ArrowRight className="w-3.5 h-3.5" />
             </motion.div>
@@ -191,15 +191,15 @@ export default function SimulationGrid({ category }: { category: StemCategory })
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-1.5 text-sm mb-8">
-            <Link href="/" className="text-white/40 hover:text-white transition-colors">
+            <Link href="/" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
               <Home className="w-3.5 h-3.5" />
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-            <Link href="/stem" className="text-white/40 hover:text-white transition-colors font-medium">
+            <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] opacity-50" />
+            <Link href="/stem" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors font-medium">
               STEM
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-white/20" />
-            <span className="text-white/70 font-medium">{category.label}</span>
+            <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] opacity-50" />
+            <span className="text-[var(--text-secondary)] font-medium">{category.label}</span>
           </nav>
 
           <div className="flex items-center gap-4 mb-4">
@@ -215,7 +215,7 @@ export default function SimulationGrid({ category }: { category: StemCategory })
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight"
+                className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight"
               >
                 {category.label}{' '}
                 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
@@ -226,7 +226,7 @@ export default function SimulationGrid({ category }: { category: StemCategory })
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="text-sm text-white/50 mt-1"
+                className="text-sm text-[var(--text-muted)] mt-1"
               >
                 {category.description}
               </motion.p>
