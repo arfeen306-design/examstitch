@@ -2902,6 +2902,543 @@ if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0;paused=false}
 });
 <\/script></body></html>`;
 
+// ── Circuit Builder ─────────────────────────────────────────────────────────
+const CIRCUIT_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block;cursor:crosshair}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(59,130,246,0.25);border-color:rgba(59,130,246,0.5);color:#60a5fa}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#60a5fa;font-weight:700}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#60a5fa}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Components</div>
+<button id="bBat" class="active">🔋 Battery</button>
+<button id="bRes">⚡ Resistor</button>
+<button id="bBulb">💡 Bulb</button>
+<button id="bSwitch">🔌 Switch</button>
+<button id="bWire">➖ Wire</button>
+</div>
+<div class="sec">
+<div class="sec-title">Presets</div>
+<button id="pSeries">Series Circuit</button>
+<button id="pParallel">Parallel Circuit</button>
+<button id="pClear">Clear All</button>
+</div>
+<div class="sec">
+<div class="sec-title">Battery</div>
+<label>Voltage <span id="vV">9</span> V</label>
+<input type="range" id="sV" min="1" max="24" value="9" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Build a circuit to see readings</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Ohm's Law:</b> V = IR<br><br>
+<b>Series:</b> R_total = R₁ + R₂ + ...<br>
+Same current through all<br><br>
+<b>Parallel:</b> 1/R = 1/R₁ + 1/R₂ + ...<br>
+Same voltage across all<br><br>
+<b>Power:</b> P = VI = I²R = V²/R
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let voltage=9,components=[],wires=[],selectedComp='battery',dragging=null,dragOff={x:0,y:0};
+let switchOn=true,electrons=[];
+const sV=document.getElementById('sV');
+sV.oninput=()=>{voltage=+sV.value;document.getElementById('vV').textContent=voltage;calc()};
+['bBat','bRes','bBulb','bSwitch','bWire'].forEach(id=>{
+document.getElementById(id).onclick=()=>{
+document.querySelectorAll('#right-panel .sec:first-child button').forEach(b=>b.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+selectedComp={bBat:'battery',bRes:'resistor',bBulb:'bulb',bSwitch:'switch',bWire:'wire'}[id];
+}});
+function addComp(type,x,y){
+const c={type,x,y,w:60,h:40,r:type==='resistor'?100:type==='bulb'?200:0};
+components.push(c);return c;
+}
+function buildSeries(){
+components=[];wires=[];electrons=[];switchOn=true;
+const cx=W/2,cy=H/2;
+const bat=addComp('battery',cx-150,cy-100);
+const r1=addComp('resistor',cx+50,cy-100);
+const bulb=addComp('bulb',cx+50,cy+60);
+const sw=addComp('switch',cx-150,cy+60);
+wires.push({from:bat,to:r1},{from:r1,to:bulb},{from:bulb,to:sw},{from:sw,to:bat});
+initElectrons();calc();
+}
+function buildParallel(){
+components=[];wires=[];electrons=[];switchOn=true;
+const cx=W/2,cy=H/2;
+const bat=addComp('battery',cx-180,cy);
+const r1=addComp('resistor',cx+40,cy-60);
+const r2=addComp('bulb',cx+40,cy+60);
+wires.push({from:bat,to:r1},{from:bat,to:r2},{from:r1,to:bat},{from:r2,to:bat});
+initElectrons();calc();
+}
+document.getElementById('pSeries').onclick=buildSeries;
+document.getElementById('pParallel').onclick=buildParallel;
+document.getElementById('pClear').onclick=()=>{components=[];wires=[];electrons=[];document.getElementById('readings').innerHTML='Build a circuit'};
+function initElectrons(){
+electrons=[];
+wires.forEach(w=>{
+for(let i=0;i<6;i++){electrons.push({wire:w,t:Math.random(),speed:0.003})}
+});
+}
+function calc(){
+if(components.length===0)return;
+const resistors=components.filter(c=>c.type==='resistor'||c.type==='bulb');
+if(resistors.length===0){document.getElementById('readings').innerHTML='Add resistors/bulbs';return}
+const totalR=resistors.reduce((s,c)=>s+c.r,0);
+const I=switchOn?voltage/totalR:0;
+const P=voltage*I;
+document.getElementById('readings').innerHTML=
+'Voltage: <span class="val">'+voltage+'</span> V<br>'+
+'Total R: <span class="val">'+totalR+'</span> Ω<br>'+
+'Current: <span class="val">'+I.toFixed(3)+'</span> A<br>'+
+'Power: <span class="val">'+P.toFixed(2)+'</span> W<br>'+
+(switchOn?'<span style="color:#10b981">Circuit: ON</span>':'<span style="color:#ef4444">Circuit: OFF</span>');
+}
+C.onmousedown=e=>{
+const mx=e.offsetX,my=e.offsetY;
+// check switch toggle
+for(const c of components){
+if(c.type==='switch'&&mx>c.x&&mx<c.x+c.w&&my>c.y&&my<c.y+c.h){switchOn=!switchOn;calc();return}
+}
+// drag existing
+for(const c of components){
+if(mx>c.x&&mx<c.x+c.w&&my>c.y&&my<c.y+c.h){dragging=c;dragOff={x:mx-c.x,y:my-c.y};return}
+}
+// place new
+if(selectedComp!=='wire')addComp(selectedComp,mx-30,my-20);
+calc();
+};
+C.onmousemove=e=>{if(dragging){dragging.x=e.offsetX-dragOff.x;dragging.y=e.offsetY-dragOff.y}};
+C.onmouseup=()=>{dragging=null};
+function drawComp(c){
+X.save();
+if(c.type==='battery'){
+X.fillStyle='rgba(245,158,11,0.3)';X.strokeStyle='rgba(245,158,11,0.7)';X.lineWidth=2;
+X.fillRect(c.x,c.y,c.w,c.h);X.strokeRect(c.x,c.y,c.w,c.h);
+X.fillStyle='#f59e0b';X.font='bold 9px system-ui';X.textAlign='center';
+X.fillText(voltage+'V',c.x+c.w/2,c.y+c.h/2+3);
+X.fillText('+',c.x+c.w-8,c.y+12);X.fillText('−',c.x+8,c.y+12);
+}else if(c.type==='resistor'){
+X.fillStyle='rgba(59,130,246,0.2)';X.strokeStyle='rgba(59,130,246,0.6)';X.lineWidth=2;
+X.fillRect(c.x,c.y,c.w,c.h);X.strokeRect(c.x,c.y,c.w,c.h);
+// zigzag
+X.beginPath();const zx=c.x+8,zy=c.y+c.h/2;
+X.moveTo(zx,zy);for(let i=0;i<5;i++){X.lineTo(zx+4+i*9,zy+(i%2?-8:8))}X.lineTo(c.x+c.w-8,zy);
+X.strokeStyle='rgba(59,130,246,0.8)';X.lineWidth=1.5;X.stroke();
+X.fillStyle='#60a5fa';X.font='8px system-ui';X.textAlign='center';X.fillText(c.r+'Ω',c.x+c.w/2,c.y-4);
+}else if(c.type==='bulb'){
+X.fillStyle=switchOn?'rgba(253,224,71,0.3)':'rgba(255,255,255,0.05)';
+X.strokeStyle=switchOn?'rgba(253,224,71,0.7)':'rgba(255,255,255,0.2)';X.lineWidth=2;
+X.beginPath();X.arc(c.x+c.w/2,c.y+c.h/2,18,0,Math.PI*2);X.fill();X.stroke();
+if(switchOn){X.beginPath();X.arc(c.x+c.w/2,c.y+c.h/2,24,0,Math.PI*2);X.fillStyle='rgba(253,224,71,0.08)';X.fill()}
+X.fillStyle=switchOn?'#fde047':'rgba(255,255,255,0.3)';X.font='12px system-ui';X.textAlign='center';X.fillText('💡',c.x+c.w/2,c.y+c.h/2+5);
+X.fillStyle='rgba(255,255,255,0.5)';X.font='8px system-ui';X.fillText(c.r+'Ω',c.x+c.w/2,c.y-4);
+}else if(c.type==='switch'){
+X.fillStyle='rgba(16,185,129,0.15)';X.strokeStyle=switchOn?'rgba(16,185,129,0.6)':'rgba(239,68,68,0.6)';X.lineWidth=2;
+X.fillRect(c.x,c.y,c.w,c.h);X.strokeRect(c.x,c.y,c.w,c.h);
+X.beginPath();X.arc(c.x+12,c.y+c.h/2,4,0,Math.PI*2);X.fillStyle=switchOn?'#10b981':'#ef4444';X.fill();
+X.beginPath();X.arc(c.x+c.w-12,c.y+c.h/2,4,0,Math.PI*2);X.fill();
+if(switchOn){X.beginPath();X.moveTo(c.x+12,c.y+c.h/2);X.lineTo(c.x+c.w-12,c.y+c.h/2);X.strokeStyle='#10b981';X.lineWidth=2;X.stroke()}
+else{X.beginPath();X.moveTo(c.x+12,c.y+c.h/2);X.lineTo(c.x+c.w-12,c.y+c.h/2-15);X.strokeStyle='#ef4444';X.lineWidth=2;X.stroke()}
+X.fillStyle='rgba(255,255,255,0.4)';X.font='8px system-ui';X.textAlign='center';X.fillText(switchOn?'ON':'OFF',c.x+c.w/2,c.y+c.h+12);
+}
+X.textAlign='left';X.restore();
+}
+function draw(){
+X.clearRect(0,0,W,H);
+// grid
+X.strokeStyle='rgba(255,255,255,0.03)';X.lineWidth=1;
+for(let y=0;y<H;y+=30){X.beginPath();X.moveTo(0,y);X.lineTo(W,y);X.stroke()}
+for(let x=0;x<W;x+=30){X.beginPath();X.moveTo(x,0);X.lineTo(x,H);X.stroke()}
+// wires
+wires.forEach(w=>{
+X.beginPath();
+X.moveTo(w.from.x+w.from.w/2,w.from.y+w.from.h/2);
+X.lineTo(w.to.x+w.to.w/2,w.to.y+w.to.h/2);
+X.strokeStyle=switchOn?'rgba(59,130,246,0.4)':'rgba(255,255,255,0.1)';X.lineWidth=2;X.stroke();
+});
+// electrons
+if(switchOn){
+electrons.forEach(el=>{
+el.t+=el.speed;if(el.t>1)el.t-=1;
+const fx=el.wire.from.x+el.wire.from.w/2,fy=el.wire.from.y+el.wire.from.h/2;
+const tx=el.wire.to.x+el.wire.to.w/2,ty=el.wire.to.y+el.wire.to.h/2;
+const ex=fx+(tx-fx)*el.t,ey=fy+(ty-fy)*el.t;
+X.beginPath();X.arc(ex,ey,2.5,0,Math.PI*2);X.fillStyle='rgba(96,165,250,0.8)';X.fill();
+});
+}
+components.forEach(drawComp);
+if(components.length===0){
+X.fillStyle='rgba(255,255,255,0.2)';X.font='14px system-ui';X.textAlign='center';
+X.fillText('Click a component, then click the canvas to place it',W/2,H/2-10);
+X.fillText('Or use a preset circuit from the right panel',W/2,H/2+14);
+X.textAlign='left';
+}
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();calc();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){components=[];wires=[];electrons=[];switchOn=true}
+});
+<\/script></body></html>`;
+
+// ── DC Motor ───────────────────────────────────────────────────────────────
+const MOTOR_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#f59e0b}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#f59e0b;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Motor Controls</div>
+<label>Voltage <span id="vV">12</span> V</label>
+<input type="range" id="sV" min="0" max="24" value="12" step="1">
+<label>Field Strength <span id="vB">80</span>%</label>
+<input type="range" id="sB" min="10" max="100" value="80" step="1">
+<label>Coil Turns <span id="vN">4</span></label>
+<input type="range" id="sN" min="1" max="8" value="4" step="1">
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<button id="bToggle">Start Motor</button>
+<button id="bReverse">Reverse Direction</button>
+<button id="bLabels">Toggle Labels</button>
+</div>
+<div class="sec">
+<div class="sec-title">Readings</div>
+<div class="info" id="readings">Press Start to begin</div>
+</div>
+<div class="sec">
+<div class="sec-title">How DC Motor Works</div>
+<div class="info">
+<b>Principle:</b> A current-carrying coil in a magnetic field experiences a force (F = BIL).<br><br>
+<b>Components:</b><br>
+• Magnets (N/S) create field<br>
+• Coil carries current<br>
+• Commutator reverses current every half turn<br>
+• Brushes maintain contact<br><br>
+<b>Fleming's Left-Hand Rule:</b><br>
+Thumb=Force, Index=Field, Middle=Current
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let voltage=12,fieldStrength=0.8,nTurns=4,running=false,angle=0,direction=1,showLabels=true;
+const sV=document.getElementById('sV'),sB=document.getElementById('sB'),sN=document.getElementById('sN');
+sV.oninput=()=>{voltage=+sV.value;document.getElementById('vV').textContent=voltage};
+sB.oninput=()=>{fieldStrength=(+sB.value)/100;document.getElementById('vB').textContent=+sB.value};
+sN.oninput=()=>{nTurns=+sN.value;document.getElementById('vN').textContent=nTurns};
+document.getElementById('bToggle').onclick=()=>{running=!running;document.getElementById('bToggle').textContent=running?'Stop Motor':'Start Motor'};
+document.getElementById('bReverse').onclick=()=>{direction*=-1};
+document.getElementById('bLabels').onclick=()=>{showLabels=!showLabels};
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.42,cy=H*0.45,R=Math.min(W,H)*0.22;
+// Magnetic field lines
+X.strokeStyle='rgba(59,130,246,0.15)';X.lineWidth=1;
+for(let i=-3;i<=3;i++){
+const y=cy+i*25;
+X.beginPath();X.moveTo(cx-R*1.6,y);X.lineTo(cx+R*1.6,y);X.stroke();
+// arrows
+X.fillStyle='rgba(59,130,246,0.3)';
+X.beginPath();X.moveTo(cx+20,y);X.lineTo(cx+14,y-3);X.lineTo(cx+14,y+3);X.closePath();X.fill();
+}
+// Magnets
+X.fillStyle='rgba(239,68,68,0.3)';X.strokeStyle='rgba(239,68,68,0.6)';X.lineWidth=2;
+X.fillRect(cx-R*1.6-30,cy-R*0.8,30,R*1.6);X.strokeRect(cx-R*1.6-30,cy-R*0.8,30,R*1.6);
+X.fillStyle='#ef4444';X.font='bold 16px system-ui';X.textAlign='center';X.fillText('N',cx-R*1.6-15,cy+6);
+X.fillStyle='rgba(59,130,246,0.3)';X.strokeStyle='rgba(59,130,246,0.6)';
+X.fillRect(cx+R*1.6,cy-R*0.8,30,R*1.6);X.strokeRect(cx+R*1.6,cy-R*0.8,30,R*1.6);
+X.fillStyle='#3b82f6';X.fillText('S',cx+R*1.6+15,cy+6);X.textAlign='left';
+// Coil
+X.save();X.translate(cx,cy);X.rotate(angle);
+for(let t=0;t<nTurns;t++){
+const offset=(t-nTurns/2+0.5)*6;
+X.strokeStyle='rgba(245,158,11,0.7)';X.lineWidth=2.5;
+X.beginPath();X.ellipse(0,0,R*0.7+offset,R*0.4,0,0,Math.PI*2);X.stroke();
+}
+// current direction arrows on coil
+const currentDir=direction*(Math.cos(angle)>0?1:-1);
+X.fillStyle='rgba(245,158,11,0.9)';X.font='14px system-ui';X.textAlign='center';
+X.fillText(currentDir>0?'→':'←',R*0.7,0);
+X.fillText(currentDir>0?'←':'→',-R*0.7,0);
+// Force arrows
+if(running&&showLabels){
+const forceScale=voltage*fieldStrength*0.5;
+// up force on left side
+X.strokeStyle='rgba(16,185,129,0.8)';X.lineWidth=2;
+X.beginPath();X.moveTo(-R*0.7,0);X.lineTo(-R*0.7,-forceScale);X.stroke();
+X.fillStyle='rgba(16,185,129,0.8)';X.beginPath();X.moveTo(-R*0.7,-forceScale);X.lineTo(-R*0.7-5,-forceScale+8);X.lineTo(-R*0.7+5,-forceScale+8);X.closePath();X.fill();
+// down force on right
+X.beginPath();X.moveTo(R*0.7,0);X.lineTo(R*0.7,forceScale);X.stroke();
+X.beginPath();X.moveTo(R*0.7,forceScale);X.lineTo(R*0.7-5,forceScale-8);X.lineTo(R*0.7+5,forceScale-8);X.closePath();X.fill();
+}
+X.restore();
+// Commutator (split ring)
+X.save();X.translate(cx,cy+R*0.4+20);
+X.rotate(angle);
+X.beginPath();X.arc(0,0,12,0,Math.PI);X.strokeStyle='rgba(245,158,11,0.6)';X.lineWidth=3;X.stroke();
+X.beginPath();X.arc(0,0,12,Math.PI,Math.PI*2);X.strokeStyle='rgba(139,92,246,0.6)';X.lineWidth=3;X.stroke();
+X.restore();
+// Brushes
+X.fillStyle='rgba(156,163,175,0.5)';
+X.fillRect(cx-18,cy+R*0.4+30,8,16);X.fillRect(cx+10,cy+R*0.4+30,8,16);
+// Labels
+if(showLabels){
+X.fillStyle='rgba(255,255,255,0.5)';X.font='10px system-ui';X.textAlign='center';
+X.fillText('Commutator',cx,cy+R*0.4+60);
+X.fillText('Brushes',cx,cy+R*0.4+72);
+X.fillText('B field →',cx,cy-R*0.5-10);
+if(running){X.fillStyle='rgba(16,185,129,0.6)';X.fillText('Force (F=BIL)',cx-R*0.7-40,cy-10)}
+}
+// RPM indicator
+const speed=running?voltage*fieldStrength*direction*2:0;
+const rpm=Math.abs(speed*60/(2*Math.PI)).toFixed(0);
+document.getElementById('readings').innerHTML=
+'Speed: <span class="val">'+rpm+'</span> RPM<br>'+
+'Direction: <span class="val">'+(direction>0?'Clockwise':'Counter-CW')+'</span><br>'+
+'Torque ∝ BIN: <span class="val">'+(voltage*fieldStrength*nTurns*0.1).toFixed(1)+'</span><br>'+
+'Status: '+(running?'<span style="color:#10b981">Running</span>':'<span style="color:#ef4444">Stopped</span>');
+}
+function loop(){
+requestAnimationFrame(loop);
+if(running){
+const speed=voltage*fieldStrength*direction*0.002;
+angle+=speed;
+}
+draw();
+}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){angle=0;running=false;document.getElementById('bToggle').textContent='Start Motor'}
+});
+<\/script></body></html>`;
+
+// ── Electric Fields ────────────────────────────────────────────────────────
+const EFIELD_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block;cursor:crosshair}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(139,92,246,0.25);border-color:rgba(139,92,246,0.5);color:#8b5cf6}
+.btns{display:flex;gap:4px;margin-bottom:8px}
+.btns button{flex:1}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#8b5cf6;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Place Charges</div>
+<div class="btns"><button id="bPos" class="active">+ Charge</button><button id="bNeg">− Charge</button></div>
+</div>
+<div class="sec">
+<div class="sec-title">Presets</div>
+<button id="pDipole">Dipole</button>
+<button id="pSame">Two Positive</button>
+<button id="pQuad">Quadrupole</button>
+<button id="pClear">Clear All</button>
+</div>
+<div class="sec">
+<div class="sec-title">Display</div>
+<button id="bLines">Toggle Field Lines</button>
+<button id="bVectors">Toggle Vector Field</button>
+<button id="bPotential">Toggle Potential</button>
+</div>
+<div class="sec">
+<div class="sec-title">Info</div>
+<div class="info" id="info">Click canvas to place charges. Drag to move them.</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Coulomb's Law:</b><br>
+F = kq₁q₂/r²<br><br>
+<b>Electric field:</b><br>
+E = kQ/r² (away from +, toward −)<br><br>
+<b>Field lines:</b><br>
+• Start on + charges, end on −<br>
+• Never cross<br>
+• Density ∝ field strength<br><br>
+k = 8.99 × 10⁹ N⋅m²/C²
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let charges=[],placeType=1,dragging=null,dragOff={x:0,y:0};
+let showLines=true,showVectors=false,showPotential=false;
+document.getElementById('bPos').onclick=()=>{placeType=1;document.getElementById('bPos').classList.add('active');document.getElementById('bNeg').classList.remove('active')};
+document.getElementById('bNeg').onclick=()=>{placeType=-1;document.getElementById('bNeg').classList.add('active');document.getElementById('bPos').classList.remove('active')};
+document.getElementById('bLines').onclick=()=>{showLines=!showLines};
+document.getElementById('bVectors').onclick=()=>{showVectors=!showVectors};
+document.getElementById('bPotential').onclick=()=>{showPotential=!showPotential};
+function preset(arr){charges=arr.map(a=>({x:W*a[0],y:H*a[1],q:a[2]}))}
+document.getElementById('pDipole').onclick=()=>preset([[0.35,0.5,1],[0.65,0.5,-1]]);
+document.getElementById('pSame').onclick=()=>preset([[0.35,0.5,1],[0.65,0.5,1]]);
+document.getElementById('pQuad').onclick=()=>preset([[0.35,0.35,1],[0.65,0.35,-1],[0.35,0.65,-1],[0.65,0.65,1]]);
+document.getElementById('pClear').onclick=()=>{charges=[]};
+C.onmousedown=e=>{
+const mx=e.offsetX,my=e.offsetY;
+for(const c of charges){
+if(Math.hypot(mx-c.x,my-c.y)<20){dragging=c;dragOff={x:mx-c.x,y:my-c.y};return}
+}
+charges.push({x:mx,y:my,q:placeType});
+};
+C.onmousemove=e=>{if(dragging){dragging.x=e.offsetX-dragOff.x;dragging.y=e.offsetY-dragOff.y}};
+C.onmouseup=()=>{dragging=null};
+function fieldAt(px,py){
+let ex=0,ey=0;
+for(const c of charges){
+const dx=px-c.x,dy=py-c.y;
+const r2=dx*dx+dy*dy;
+if(r2<100)continue;
+const r=Math.sqrt(r2);
+const E=c.q*5000/r2;
+ex+=E*dx/r;ey+=E*dy/r;
+}
+return{x:ex,y:ey};
+}
+function potentialAt(px,py){
+let V=0;
+for(const c of charges){
+const r=Math.hypot(px-c.x,py-c.y);
+if(r<10)continue;
+V+=c.q*500/r;
+}
+return V;
+}
+function draw(){
+X.clearRect(0,0,W,H);
+// potential heatmap
+if(showPotential&&charges.length>0){
+const step=8;
+for(let y=0;y<H;y+=step){
+for(let x=0;x<W;x+=step){
+const V=potentialAt(x,y);
+const clamped=Math.max(-1,Math.min(1,V/3));
+if(clamped>0)X.fillStyle='rgba(239,68,68,'+(clamped*0.15)+')';
+else X.fillStyle='rgba(59,130,246,'+(-clamped*0.15)+')';
+X.fillRect(x,y,step,step);
+}}
+}
+// vector field
+if(showVectors&&charges.length>0){
+const step=35;
+for(let y=20;y<H;y+=step){
+for(let x=20;x<W;x+=step){
+const f=fieldAt(x,y);
+const mag=Math.sqrt(f.x*f.x+f.y*f.y);
+if(mag<0.01)continue;
+const len=Math.min(mag*2,15);
+const nx=f.x/mag,ny=f.y/mag;
+X.beginPath();X.moveTo(x,y);X.lineTo(x+nx*len,y+ny*len);
+X.strokeStyle='rgba(139,92,246,'+Math.min(0.6,mag*0.05)+')';X.lineWidth=1;X.stroke();
+X.beginPath();X.moveTo(x+nx*len,y+ny*len);X.lineTo(x+nx*len-ny*3-nx*3,y+ny*len+nx*3-ny*3);
+X.lineTo(x+nx*len+ny*3-nx*3,y+ny*len-nx*3-ny*3);X.closePath();
+X.fillStyle='rgba(139,92,246,'+Math.min(0.6,mag*0.05)+')';X.fill();
+}}
+}
+// field lines
+if(showLines&&charges.length>0){
+for(const c of charges){
+if(c.q<=0)continue;
+const nLines=12;
+for(let i=0;i<nLines;i++){
+const a=(i/nLines)*Math.PI*2;
+let lx=c.x+Math.cos(a)*15,ly=c.y+Math.sin(a)*15;
+X.beginPath();X.moveTo(lx,ly);
+for(let s=0;s<300;s++){
+const f=fieldAt(lx,ly);
+const mag=Math.sqrt(f.x*f.x+f.y*f.y);
+if(mag<0.01)break;
+lx+=f.x/mag*3;ly+=f.y/mag*3;
+if(lx<0||lx>W||ly<0||ly>H)break;
+X.lineTo(lx,ly);
+let hitNeg=false;
+for(const ch of charges){if(ch.q<0&&Math.hypot(lx-ch.x,ly-ch.y)<12){hitNeg=true;break}}
+if(hitNeg)break;
+}
+X.strokeStyle='rgba(139,92,246,0.35)';X.lineWidth=1.2;X.stroke();
+}
+}
+}
+// charges
+for(const c of charges){
+const grad=X.createRadialGradient(c.x,c.y,0,c.x,c.y,25);
+if(c.q>0){grad.addColorStop(0,'rgba(239,68,68,0.6)');grad.addColorStop(1,'rgba(239,68,68,0)')}
+else{grad.addColorStop(0,'rgba(59,130,246,0.6)');grad.addColorStop(1,'rgba(59,130,246,0)')}
+X.fillStyle=grad;X.beginPath();X.arc(c.x,c.y,25,0,Math.PI*2);X.fill();
+X.beginPath();X.arc(c.x,c.y,14,0,Math.PI*2);
+X.fillStyle=c.q>0?'rgba(239,68,68,0.8)':'rgba(59,130,246,0.8)';X.fill();
+X.strokeStyle=c.q>0?'#ef4444':'#3b82f6';X.lineWidth=2;X.stroke();
+X.fillStyle='#fff';X.font='bold 14px system-ui';X.textAlign='center';X.textBaseline='middle';
+X.fillText(c.q>0?'+':'−',c.x,c.y);X.textBaseline='alphabetic';X.textAlign='left';
+}
+if(charges.length===0){
+X.fillStyle='rgba(255,255,255,0.2)';X.font='14px system-ui';X.textAlign='center';
+X.fillText('Click to place charges, or use a preset',W/2,H/2);X.textAlign='left';
+}
+document.getElementById('info').innerHTML=charges.length+' charge'+(charges.length!==1?'s':'')+' placed<br>Drag to reposition';
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){charges=[]}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -3646,6 +4183,42 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Waves', 'Transverse', 'Longitudinal', 'v=fλ'],
         instructions: "Switch between Transverse and Longitudinal wave types. Adjust amplitude, wavelength, frequency, and particle count. Toggle particles to see individual oscillations. Toggle labels to see wavelength and amplitude measurements. v = fλ is calculated in real time.",
         html_code: WAVE_HTML,
+      },
+      {
+        id: 'circuit-builder',
+        title: 'Circuit Builder',
+        description: 'Build series and parallel circuits with batteries, resistors, bulbs, and switches — see Ohm\'s Law in action with animated electrons.',
+        icon: 'Zap',
+        gradient: 'from-blue-500 to-cyan-500',
+        glowColor: 'rgba(59,130,246,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Circuits', 'Ohm\'s Law', 'Resistance', 'Current'],
+        instructions: "Select a component (battery, resistor, bulb, switch, wire) and click the canvas to place it. Use preset buttons for instant series or parallel circuits. Adjust battery voltage with the slider. Click a switch to toggle it. Drag components to rearrange. Watch electron flow animate through the circuit.",
+        html_code: CIRCUIT_HTML,
+      },
+      {
+        id: 'dc-motor',
+        title: 'DC Motor',
+        description: "See how a DC motor works — spinning coil, commutator, brushes, and Fleming's Left-Hand Rule with adjustable voltage and field strength.",
+        icon: 'Hexagon',
+        gradient: 'from-amber-500 to-orange-500',
+        glowColor: 'rgba(245,158,11,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Motor', 'Electromagnetism', 'F=BIL', 'Commutator'],
+        instructions: "Adjust voltage, magnetic field strength, and number of coil turns. Click Start to spin the motor. Reverse direction to see the coil spin the other way. Toggle labels to see force arrows and component names. Watch how the commutator reverses current every half turn.",
+        html_code: MOTOR_HTML,
+      },
+      {
+        id: 'electric-fields',
+        title: 'Electric Fields',
+        description: 'Place positive and negative charges and watch electric field lines, vector fields, and potential maps form in real time.',
+        icon: 'Zap',
+        gradient: 'from-purple-500 to-violet-500',
+        glowColor: 'rgba(139,92,246,0.35)',
+        difficulty: 'Advanced',
+        tags: ['Coulomb\'s Law', 'E-field', 'Potential', 'Charges'],
+        instructions: "Select + or − charge, then click the canvas to place. Drag charges to move them. Use presets for dipole, same-charge, or quadrupole configurations. Toggle field lines, vector field arrows, and potential heatmap. Field lines flow from + to − charges.",
+        html_code: EFIELD_HTML,
       },
     ],
   },
