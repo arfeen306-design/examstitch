@@ -1890,6 +1890,506 @@ demoId=requestAnimationFrame(anim);}
 addEventListener('resize',resize);resize();
 <\/script></body></html>`;
 
+// ── 2D Shapes Lab ───────────────────────────────────────────────────────────
+const SHAPES_2D_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;user-select:none;color:#fff}
+canvas{display:block}
+#ui{position:fixed;top:48px;left:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.92);border-right:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
+#ui::-webkit-scrollbar{width:4px}#ui::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.panel{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.panel-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+.shape-bank{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bank-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;cursor:grab;transition:all .2s;font-size:9px;color:rgba(255,255,255,0.5)}
+.bank-item:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:#fff;transform:translateY(-1px)}
+.bank-item:active{cursor:grabbing}
+.bank-item canvas{width:48px;height:48px;pointer-events:none}
+.tools{display:flex;gap:4px;flex-wrap:wrap}
+.tool-btn{padding:6px 10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;transition:all .2s;flex:1;text-align:center;min-width:0}
+.tool-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+.tool-btn.active{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd}
+.color-row{display:flex;gap:4px;flex-wrap:wrap}
+.color-swatch{width:22px;height:22px;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.color-swatch:hover{transform:scale(1.15)}
+.color-swatch.active{border-color:#fff;box-shadow:0 0 8px rgba(255,255,255,0.3)}
+.tf-section{margin-bottom:8px}
+.tf-label{font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:4px;font-weight:600}
+.tf-row{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+.tf-row label{font-size:9px;color:rgba(255,255,255,0.35);min-width:14px}
+.tf-row input[type=number]{width:52px;padding:3px 5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#fff;font-size:10px;text-align:center;outline:none}
+.tf-row input[type=number]:focus{border-color:rgba(59,130,246,0.5)}
+.tf-btn{padding:5px 8px;background:rgba(59,130,246,0.25);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;border-radius:5px;cursor:pointer;font-size:9px;font-weight:700;transition:all .2s;flex:1;text-align:center}
+.tf-btn:hover{background:rgba(59,130,246,0.4)}
+.tf-btn.red{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color:#fca5a5}
+.tf-btn.red:hover{background:rgba(239,68,68,0.35)}
+.tf-btn.green{background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.4);color:#6ee7b7}
+.tf-btn.green:hover{background:rgba(16,185,129,0.35)}
+#info-bar{position:fixed;bottom:0;left:220px;right:0;height:32px;background:rgba(15,15,35,0.9);border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;padding:0 12px;gap:16px;font-size:10px;color:rgba(255,255,255,0.4);z-index:20;backdrop-filter:blur(8px)}
+#info-bar span.val{color:rgba(255,255,255,0.7);font-weight:600}
+#canvas-wrap{position:fixed;top:48px;left:220px;right:0;bottom:32px}
+#draw-hint{position:fixed;top:50%;left:calc(220px + (100% - 220px)/2);transform:translate(-50%,-50%);color:rgba(255,255,255,0.08);font-size:13px;pointer-events:none;z-index:5;text-align:center;line-height:1.8}
+@media(max-width:700px){
+  #ui{width:180px}
+  #canvas-wrap{left:180px}
+  #info-bar{left:180px}
+  #draw-hint{left:calc(180px + (100% - 180px)/2)}
+  .shape-bank{grid-template-columns:1fr 1fr}
+  .bank-item canvas{width:36px;height:36px}
+}
+</style></head><body>
+<div id="ui">
+  <!-- Tools -->
+  <div class="panel">
+    <div class="panel-title">Tools</div>
+    <div class="tools" id="tools">
+      <div class="tool-btn active" data-tool="select" onclick="setTool('select')">Select</div>
+      <div class="tool-btn" data-tool="draw" onclick="setTool('draw')">Draw</div>
+      <div class="tool-btn" data-tool="vertex" onclick="setTool('vertex')">Vertex</div>
+    </div>
+  </div>
+  <!-- Colors -->
+  <div class="panel">
+    <div class="panel-title">Fill Color</div>
+    <div class="color-row" id="colors"></div>
+    <div style="margin-top:6px">
+      <div class="tool-btn" onclick="setFill(null)" style="font-size:9px">No Fill</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Stroke Color</div>
+    <div class="color-row" id="stroke-colors"></div>
+  </div>
+  <!-- Shape Bank -->
+  <div class="panel">
+    <div class="panel-title">Triangles</div>
+    <div class="shape-bank" id="bank-tri"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Quadrilaterals</div>
+    <div class="shape-bank" id="bank-quad"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Polygons</div>
+    <div class="shape-bank" id="bank-poly"></div>
+  </div>
+  <!-- Transforms -->
+  <div class="panel">
+    <div class="panel-title">Transformations</div>
+    <div class="tf-section">
+      <div class="tf-label">Translate</div>
+      <div class="tf-row"><label>dx</label><input type="number" id="tr-dx" value="2" step="1"><label>dy</label><input type="number" id="tr-dy" value="0" step="1"></div>
+      <div class="tf-btn" onclick="applyTranslate()">Translate</div>
+    </div>
+    <div class="tf-section">
+      <div class="tf-label">Rotate</div>
+      <div class="tf-row"><label>&deg;</label><input type="number" id="rot-angle" value="90" step="1"></div>
+      <div class="tf-row"><label>cx</label><input type="number" id="rot-cx" value="0" step="1"><label>cy</label><input type="number" id="rot-cy" value="0" step="1"></div>
+      <div class="tf-btn" onclick="applyRotate()">Rotate</div>
+    </div>
+    <div class="tf-section">
+      <div class="tf-label">Reflect</div>
+      <div class="tools" style="margin-bottom:4px">
+        <div class="tool-btn" onclick="applyReflect('x')" style="font-size:9px">x-axis</div>
+        <div class="tool-btn" onclick="applyReflect('y')" style="font-size:9px">y-axis</div>
+      </div>
+      <div class="tools" style="margin-bottom:4px">
+        <div class="tool-btn" onclick="applyReflect('yx')" style="font-size:9px">y=x</div>
+        <div class="tool-btn" onclick="applyReflect('y-x')" style="font-size:9px">y=&minus;x</div>
+      </div>
+      <div class="tf-row"><label>x=</label><input type="number" id="ref-x" value="0" step="1"><div class="tf-btn" onclick="applyReflect('vline')" style="flex:0 0 auto;padding:5px 10px">Reflect</div></div>
+      <div class="tf-row"><label>y=</label><input type="number" id="ref-y" value="0" step="1"><div class="tf-btn" onclick="applyReflect('hline')" style="flex:0 0 auto;padding:5px 10px">Reflect</div></div>
+    </div>
+    <div class="tf-section">
+      <div class="tf-label">Enlarge</div>
+      <div class="tf-row"><label>k</label><input type="number" id="enl-k" value="2" step="0.5" min="-5" max="5"></div>
+      <div class="tf-row"><label>cx</label><input type="number" id="enl-cx" value="0" step="1"><label>cy</label><input type="number" id="enl-cy" value="0" step="1"></div>
+      <div class="tf-btn" onclick="applyEnlarge()">Enlarge</div>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:6px">
+      <div class="tf-btn red" onclick="deleteSelected()">Delete</div>
+      <div class="tf-btn" onclick="duplicateSelected()">Duplicate</div>
+    </div>
+  </div>
+</div>
+<div id="canvas-wrap"><canvas id="c"></canvas></div>
+<div id="info-bar">
+  <span>Mouse: (<span class="val" id="mx">0</span>, <span class="val" id="my">0</span>)</span>
+  <span>Shapes: <span class="val" id="sc">0</span></span>
+  <span id="sel-info"></span>
+  <span style="margin-left:auto;opacity:0.5">Scroll to zoom &middot; Right-drag to pan</span>
+</div>
+<div id="draw-hint">Click on grid to draw shapes<br>or drag from the shape bank</div>
+<script>
+const C=document.getElementById('c'),ctx=C.getContext('2d'),wrap=document.getElementById('canvas-wrap');
+// State
+let W=800,H=600,cam={x:0,y:0,z:1},shapes=[],selIdx=-1,tool='select';
+let drawPts=[],dragging=false,dragStart={x:0,y:0},dragType=null,dragVertIdx=-1;
+let panStart=null,camStart=null;
+let currentFill='rgba(59,130,246,0.25)',currentStroke='#3b82f6';
+let dropShape=null,dropPos=null;
+const GRID=1,SNAP=true;
+const COLORS=['#3b82f6','#8b5cf6','#ec4899','#ef4444','#f59e0b','#10b981','#06b6d4','#6366f1','#f97316','#84cc16',
+  'rgba(59,130,246,0.25)','rgba(139,92,246,0.25)','rgba(236,72,153,0.25)','rgba(239,68,68,0.25)','rgba(245,158,11,0.25)','rgba(16,185,129,0.25)'];
+const STROKE_COLORS=['#3b82f6','#8b5cf6','#ec4899','#ef4444','#f59e0b','#10b981','#06b6d4','#fff','#94a3b8','#f97316'];
+
+// Coordinate transforms
+function s2w(sx,sy){return{x:(sx-W/2)/cam.z+cam.x,y:-(sy-H/2)/cam.z+cam.y}}
+function w2s(wx,wy){return{x:(wx-cam.x)*cam.z+W/2,y:-(wy-cam.y)*cam.z+H/2}}
+function snap(v){return SNAP?Math.round(v):v}
+
+// Shape definitions for bank
+const BANK_SHAPES={
+  triangles:[
+    {name:'Equilateral',pts:[[0,0],[4,0],[2,3]]},
+    {name:'Right',pts:[[0,0],[4,0],[0,3]]},
+    {name:'Isosceles',pts:[[0,0],[4,0],[2,5]]},
+    {name:'Scalene',pts:[[0,0],[5,0],[2,3]]},
+    {name:'Right Isos.',pts:[[0,0],[3,0],[0,3]]},
+    {name:'Obtuse',pts:[[0,0],[6,0],[1,2]]},
+  ],
+  quads:[
+    {name:'Square',pts:[[0,0],[3,0],[3,3],[0,3]]},
+    {name:'Rectangle',pts:[[0,0],[5,0],[5,3],[0,3]]},
+    {name:'Parallelogram',pts:[[1,0],[5,0],[4,3],[0,3]]},
+    {name:'Rhombus',pts:[[2,0],[4,2],[2,4],[0,2]]},
+    {name:'Trapezium',pts:[[1,0],[4,0],[5,3],[0,3]]},
+    {name:'Kite',pts:[[2,0],[4,2],[2,5],[0,2]]},
+    {name:'Arrowhead',pts:[[2,0],[4,3],[2,2],[0,3]]},
+    {name:'Irregular',pts:[[0,0],[4,1],[5,4],[1,3]]},
+  ],
+  polys:[
+    {name:'Pentagon',pts:regPoly(5,2)},
+    {name:'Hexagon',pts:regPoly(6,2)},
+    {name:'Heptagon',pts:regPoly(7,2)},
+    {name:'Octagon',pts:regPoly(8,2)},
+    {name:'Nonagon',pts:regPoly(9,2)},
+    {name:'Decagon',pts:regPoly(10,2)},
+  ]
+};
+function regPoly(n,r){const pts=[];for(let i=0;i<n;i++){const a=Math.PI/2+2*Math.PI*i/n;pts.push([Math.round(r*Math.cos(a)*100)/100,Math.round(r*Math.sin(a)*100)/100])}return pts}
+
+// Init color swatches
+function initColors(){
+  const ce=document.getElementById('colors'),se=document.getElementById('stroke-colors');
+  COLORS.forEach(c=>{const d=document.createElement('div');d.className='color-swatch'+(c===currentFill?' active':'');d.style.background=c;d.onclick=()=>{currentFill=c;document.querySelectorAll('#colors .color-swatch').forEach(s=>s.classList.remove('active'));d.classList.add('active');if(selIdx>=0){shapes[selIdx].fill=c;draw()}};ce.appendChild(d)});
+  STROKE_COLORS.forEach(c=>{const d=document.createElement('div');d.className='color-swatch'+(c===currentStroke?' active':'');d.style.background=c;d.onclick=()=>{currentStroke=c;document.querySelectorAll('#stroke-colors .color-swatch').forEach(s=>s.classList.remove('active'));d.classList.add('active');if(selIdx>=0){shapes[selIdx].stroke=c;draw()}};se.appendChild(d)});
+}
+function setFill(c){currentFill=c;document.querySelectorAll('#colors .color-swatch').forEach(s=>s.classList.remove('active'));if(selIdx>=0){shapes[selIdx].fill=c;draw()}}
+
+// Init shape bank
+function initBank(){
+  buildBank('bank-tri',BANK_SHAPES.triangles);
+  buildBank('bank-quad',BANK_SHAPES.quads);
+  buildBank('bank-poly',BANK_SHAPES.polys);
+}
+function buildBank(id,list){
+  const el=document.getElementById(id);
+  list.forEach(s=>{
+    const item=document.createElement('div');item.className='bank-item';
+    const cv=document.createElement('canvas');cv.width=96;cv.height=96;
+    drawBankThumb(cv,s.pts);
+    item.appendChild(cv);
+    const lbl=document.createElement('span');lbl.textContent=s.name;item.appendChild(lbl);
+    item.draggable=true;
+    item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',JSON.stringify(s.pts));e.dataTransfer.effectAllowed='copy'});
+    item.addEventListener('touchstart',e=>{dropShape=s.pts;},{passive:true});
+    item.addEventListener('click',()=>{placeShapeAtCenter(s.pts)});
+    el.appendChild(item);
+  });
+}
+function drawBankThumb(cv,pts){
+  const c=cv.getContext('2d');
+  let mnx=Infinity,mny=Infinity,mxx=-Infinity,mxy=-Infinity;
+  pts.forEach(p=>{mnx=Math.min(mnx,p[0]);mny=Math.min(mny,p[1]);mxx=Math.max(mxx,p[0]);mxy=Math.max(mxy,p[1])});
+  const w=mxx-mnx||1,h=mxy-mny||1,s=Math.min(70/w,70/h),ox=(96-w*s)/2,oy=(96-h*s)/2;
+  c.fillStyle='rgba(59,130,246,0.15)';c.strokeStyle='#3b82f6';c.lineWidth=2;c.lineJoin='round';
+  c.beginPath();pts.forEach((p,i)=>{const x=ox+(p[0]-mnx)*s,y=oy+(mxy-p[1])*s;i?c.lineTo(x,y):c.moveTo(x,y)});c.closePath();c.fill();c.stroke();
+  // dots
+  c.fillStyle='#60a5fa';pts.forEach(p=>{const x=ox+(p[0]-mnx)*s,y=oy+(mxy-p[1])*s;c.beginPath();c.arc(x,y,3,0,Math.PI*2);c.fill()});
+}
+function placeShapeAtCenter(pts){
+  let cx=0,cy=0;pts.forEach(p=>{cx+=p[0];cy+=p[1]});cx/=pts.length;cy/=pts.length;
+  const verts=pts.map(p=>({x:snap(Math.round(p[0]-cx+cam.x)),y:snap(Math.round(p[1]-cy+cam.y))}));
+  shapes.push({verts,fill:currentFill,stroke:currentStroke});
+  selIdx=shapes.length-1;tool='select';updateToolUI();draw();
+}
+
+// Tool management
+function setTool(t){tool=t;drawPts=[];updateToolUI();draw()}
+function updateToolUI(){document.querySelectorAll('#tools .tool-btn').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool))}
+
+// Drawing
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // Grid
+  drawGrid();
+  // Shapes
+  shapes.forEach((s,i)=>drawShape(s,i===selIdx));
+  // Drawing points
+  if(tool==='draw'&&drawPts.length>0){
+    ctx.strokeStyle='rgba(16,185,129,0.6)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+    ctx.beginPath();drawPts.forEach((p,i)=>{const sp=w2s(p.x,p.y);i?ctx.lineTo(sp.x,sp.y):ctx.moveTo(sp.x,sp.y)});
+    if(drawPts.length>1)ctx.stroke();ctx.setLineDash([]);
+    drawPts.forEach(p=>{const sp=w2s(p.x,p.y);ctx.fillStyle='#10b981';ctx.beginPath();ctx.arc(sp.x,sp.y,5,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillText('('+p.x+','+p.y+')',sp.x,sp.y-10)});
+  }
+  // Drop preview
+  if(dropShape&&dropPos){
+    ctx.globalAlpha=0.4;ctx.strokeStyle='#3b82f6';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+    ctx.beginPath();dropShape.forEach((p,i)=>{const sp=w2s(p[0]+dropPos.x,p[1]+dropPos.y);i?ctx.lineTo(sp.x,sp.y):ctx.moveTo(sp.x,sp.y)});
+    ctx.closePath();ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+  }
+  // Hint
+  document.getElementById('draw-hint').style.opacity=shapes.length===0&&drawPts.length===0?'1':'0';
+  document.getElementById('sc').textContent=shapes.length;
+  updateSelInfo();
+}
+function drawGrid(){
+  const step=GRID;
+  const tl=s2w(0,0),br=s2w(W,H);
+  const minX=Math.floor(Math.min(tl.x,br.x)/step)*step,maxX=Math.ceil(Math.max(tl.x,br.x)/step)*step;
+  const minY=Math.floor(Math.min(tl.y,br.y)/step)*step,maxY=Math.ceil(Math.max(tl.y,br.y)/step)*step;
+  // Determine grid density — skip lines if too dense
+  const pxPerUnit=step*cam.z;
+  let drawStep=step;
+  if(pxPerUnit<8)drawStep=step*Math.ceil(8/pxPerUnit);
+  // Minor grid
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+  ctx.beginPath();
+  for(let x=minX;x<=maxX;x+=drawStep){if(x===0)continue;const sx=w2s(x,0).x;ctx.moveTo(sx,0);ctx.lineTo(sx,H)}
+  for(let y=minY;y<=maxY;y+=drawStep){if(y===0)continue;const sy=w2s(0,y).y;ctx.moveTo(0,sy);ctx.lineTo(W,sy)}
+  ctx.stroke();
+  // Axes
+  const ox=w2s(0,0);
+  ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,ox.y);ctx.lineTo(W,ox.y);ctx.moveTo(ox.x,0);ctx.lineTo(ox.x,H);ctx.stroke();
+  // Labels
+  if(pxPerUnit>=20){
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='9px system-ui';ctx.textAlign='center';ctx.textBaseline='top';
+    for(let x=minX;x<=maxX;x+=drawStep){if(x===0)continue;const sx=w2s(x,0);ctx.fillText(x,sx.x,ox.y+4)}
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    for(let y=minY;y<=maxY;y+=drawStep){if(y===0)continue;const sy=w2s(0,y);ctx.fillText(y,ox.x-6,sy.y)}
+    ctx.fillText('O',ox.x-6,ox.y+10);
+  }
+}
+function drawShape(s,sel){
+  if(s.verts.length<2)return;
+  const pts=s.verts.map(v=>w2s(v.x,v.y));
+  // Fill
+  if(s.fill){ctx.fillStyle=s.fill;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill()}
+  // Stroke
+  ctx.strokeStyle=s.stroke||'#3b82f6';ctx.lineWidth=sel?3:2;ctx.lineJoin='round';
+  if(sel){ctx.shadowColor=s.stroke||'#3b82f6';ctx.shadowBlur=12}
+  ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.stroke();
+  ctx.shadowColor='transparent';ctx.shadowBlur=0;
+  // Vertices
+  s.verts.forEach((v,i)=>{
+    const p=w2s(v.x,v.y);
+    ctx.fillStyle=sel?'#fff':'rgba(255,255,255,0.6)';ctx.beginPath();ctx.arc(p.x,p.y,sel?5:3.5,0,Math.PI*2);ctx.fill();
+    if(sel){ctx.fillStyle='rgba(255,255,255,0.65)';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('('+v.x+','+v.y+')',p.x,p.y-8)}
+  });
+  // Side lengths
+  if(sel){
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='9px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+    for(let i=0;i<s.verts.length;i++){
+      const a=s.verts[i],b=s.verts[(i+1)%s.verts.length];
+      const len=Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2);
+      const mp=w2s((a.x+b.x)/2,(a.y+b.y)/2);
+      const dx=b.x-a.x,dy=b.y-a.y;
+      const nx=-dy/Math.sqrt(dx*dx+dy*dy)*12,ny=dx/Math.sqrt(dx*dx+dy*dy)*12;
+      ctx.fillText(len.toFixed(2),mp.x+nx,mp.y-ny);
+    }
+  }
+}
+function updateSelInfo(){
+  const el=document.getElementById('sel-info');
+  if(selIdx<0||!shapes[selIdx]){el.textContent='';return}
+  const s=shapes[selIdx],n=s.verts.length;
+  const names={3:'Triangle',4:'Quadrilateral',5:'Pentagon',6:'Hexagon',7:'Heptagon',8:'Octagon',9:'Nonagon',10:'Decagon'};
+  const name=names[n]||(n+'-gon');
+  // area via shoelace
+  let area=0;for(let i=0;i<n;i++){const j=(i+1)%n;area+=s.verts[i].x*s.verts[j].y-s.verts[j].x*s.verts[i].y}area=Math.abs(area)/2;
+  // perimeter
+  let peri=0;for(let i=0;i<n;i++){const j=(i+1)%n;peri+=Math.sqrt((s.verts[j].x-s.verts[i].x)**2+(s.verts[j].y-s.verts[i].y)**2)}
+  el.innerHTML='<span class="val">'+name+'</span> &nbsp; Area: <span class="val">'+area.toFixed(1)+'</span> &nbsp; Perimeter: <span class="val">'+peri.toFixed(2)+'</span>';
+}
+
+// Hit testing
+function hitShape(wx,wy){
+  for(let i=shapes.length-1;i>=0;i--){if(pointInPoly(wx,wy,shapes[i].verts))return i}return-1;
+}
+function pointInPoly(x,y,verts){
+  let inside=false;for(let i=0,j=verts.length-1;i<verts.length;j=i++){
+    const xi=verts[i].x,yi=verts[i].y,xj=verts[j].x,yj=verts[j].y;
+    if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))inside=!inside;
+  }return inside;
+}
+function nearVertex(wx,wy,shape){
+  const thr=8/cam.z;
+  for(let i=0;i<shape.verts.length;i++){const v=shape.verts[i];if(Math.abs(v.x-wx)<thr&&Math.abs(v.y-wy)<thr)return i}return-1;
+}
+
+// Pointer events
+let lastPtr={x:0,y:0},ptrDown=false,rightDown=false;
+C.addEventListener('pointerdown',e=>{
+  e.preventDefault();const r=C.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;
+  const w=s2w(sx,sy),ws={x:snap(w.x),y:snap(w.y)};
+  lastPtr={x:e.clientX,y:e.clientY};ptrDown=true;
+  // Right click = pan
+  if(e.button===2){rightDown=true;panStart={x:e.clientX,y:e.clientY};camStart={x:cam.x,y:cam.y};C.style.cursor='grabbing';return}
+  if(tool==='draw'){
+    // Close shape if near first point
+    if(drawPts.length>=3){
+      const fp=w2s(drawPts[0].x,drawPts[0].y);
+      if(Math.hypot(sx-fp.x,sy-fp.y)<15){
+        shapes.push({verts:[...drawPts],fill:currentFill,stroke:currentStroke});
+        selIdx=shapes.length-1;drawPts=[];draw();return;
+      }
+    }
+    drawPts.push(ws);draw();return;
+  }
+  if(tool==='vertex'&&selIdx>=0){
+    const vi=nearVertex(w.x,w.y,shapes[selIdx]);
+    if(vi>=0){dragType='vertex';dragVertIdx=vi;dragging=true;return}
+  }
+  if(tool==='select'||tool==='vertex'){
+    // Check vertex first for selected shape
+    if(selIdx>=0){
+      const vi=nearVertex(w.x,w.y,shapes[selIdx]);
+      if(vi>=0&&tool==='vertex'){dragType='vertex';dragVertIdx=vi;dragging=true;return}
+    }
+    const hi=hitShape(w.x,w.y);
+    if(hi>=0){selIdx=hi;dragType='move';dragging=true;dragStart={x:w.x,y:w.y};draw();return}
+    selIdx=-1;draw();
+  }
+});
+C.addEventListener('pointermove',e=>{
+  const r=C.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;
+  const w=s2w(sx,sy);
+  document.getElementById('mx').textContent=snap(w.x);
+  document.getElementById('my').textContent=snap(w.y);
+  if(rightDown&&panStart){
+    const dx=(e.clientX-panStart.x)/cam.z,dy=(e.clientY-panStart.y)/cam.z;
+    cam.x=camStart.x-dx;cam.y=camStart.y+dy;draw();return;
+  }
+  if(!ptrDown||!dragging)return;
+  const ws={x:snap(w.x),y:snap(w.y)};
+  if(dragType==='vertex'&&selIdx>=0){
+    shapes[selIdx].verts[dragVertIdx]={x:ws.x,y:ws.y};draw();
+  }else if(dragType==='move'&&selIdx>=0){
+    const dx=snap(w.x-dragStart.x),dy=snap(w.y-dragStart.y);
+    if(dx!==0||dy!==0){
+      shapes[selIdx].verts.forEach(v=>{v.x+=dx;v.y+=dy});
+      dragStart={x:dragStart.x+dx,y:dragStart.y+dy};draw();
+    }
+  }
+});
+C.addEventListener('pointerup',()=>{ptrDown=false;dragging=false;dragType=null;rightDown=false;panStart=null;C.style.cursor=''});
+C.addEventListener('pointerleave',()=>{ptrDown=false;dragging=false;rightDown=false;panStart=null});
+C.addEventListener('contextmenu',e=>e.preventDefault());
+
+// Zoom
+C.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=C.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;
+  const w0=s2w(sx,sy);
+  const factor=e.deltaY<0?1.12:1/1.12;
+  cam.z=Math.max(0.1,Math.min(200,cam.z*factor));
+  const w1=s2w(sx,sy);
+  cam.x-=w1.x-w0.x;cam.y-=w1.y-w0.y;
+  draw();
+},{passive:false});
+
+// Touch pan (two-finger)
+let touches=[];
+C.addEventListener('touchstart',e=>{
+  if(e.touches.length===2){e.preventDefault();touches=[...e.touches];panStart={x:(touches[0].clientX+touches[1].clientX)/2,y:(touches[0].clientY+touches[1].clientY)/2};camStart={x:cam.x,y:cam.y}}
+},{passive:false});
+C.addEventListener('touchmove',e=>{
+  if(e.touches.length===2&&panStart){e.preventDefault();const mx=(e.touches[0].clientX+e.touches[1].clientX)/2,my=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    const dx=(mx-panStart.x)/cam.z,dy=(my-panStart.y)/cam.z;cam.x=camStart.x-dx;cam.y=camStart.y+dy;draw()}
+},{passive:false});
+
+// Drop from bank
+wrap.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy'});
+wrap.addEventListener('drop',e=>{
+  e.preventDefault();
+  try{
+    const pts=JSON.parse(e.dataTransfer.getData('text/plain'));
+    const r=C.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;
+    const w=s2w(sx,sy);
+    let cx=0,cy=0;pts.forEach(p=>{cx+=p[0];cy+=p[1]});cx/=pts.length;cy/=pts.length;
+    const verts=pts.map(p=>({x:snap(Math.round(p[0]-cx+w.x)),y:snap(Math.round(p[1]-cy+w.y))}));
+    shapes.push({verts,fill:currentFill,stroke:currentStroke});
+    selIdx=shapes.length-1;tool='select';updateToolUI();draw();
+  }catch(err){}
+});
+
+// Transformations
+function applyTranslate(){
+  if(selIdx<0)return;
+  const dx=parseInt(document.getElementById('tr-dx').value)||0,dy=parseInt(document.getElementById('tr-dy').value)||0;
+  shapes[selIdx].verts.forEach(v=>{v.x+=dx;v.y+=dy});draw();
+}
+function applyRotate(){
+  if(selIdx<0)return;
+  const ang=(parseFloat(document.getElementById('rot-angle').value)||0)*Math.PI/180;
+  const cx=parseFloat(document.getElementById('rot-cx').value)||0,cy=parseFloat(document.getElementById('rot-cy').value)||0;
+  shapes[selIdx].verts.forEach(v=>{
+    const dx=v.x-cx,dy=v.y-cy;
+    v.x=Math.round(cx+dx*Math.cos(ang)-dy*Math.sin(ang));
+    v.y=Math.round(cy+dx*Math.sin(ang)+dy*Math.cos(ang));
+  });draw();
+}
+function applyReflect(type){
+  if(selIdx<0)return;
+  shapes[selIdx].verts.forEach(v=>{
+    if(type==='x'){v.y=-v.y}
+    else if(type==='y'){v.x=-v.x}
+    else if(type==='yx'){const t=v.x;v.x=v.y;v.y=t}
+    else if(type==='y-x'){const t=v.x;v.x=-v.y;v.y=-t}
+    else if(type==='vline'){const lx=parseFloat(document.getElementById('ref-x').value)||0;v.x=2*lx-v.x}
+    else if(type==='hline'){const ly=parseFloat(document.getElementById('ref-y').value)||0;v.y=2*ly-v.y}
+  });draw();
+}
+function applyEnlarge(){
+  if(selIdx<0)return;
+  const k=parseFloat(document.getElementById('enl-k').value)||1;
+  const cx=parseFloat(document.getElementById('enl-cx').value)||0,cy=parseFloat(document.getElementById('enl-cy').value)||0;
+  shapes[selIdx].verts.forEach(v=>{
+    v.x=Math.round(cx+k*(v.x-cx));
+    v.y=Math.round(cy+k*(v.y-cy));
+  });draw();
+}
+function deleteSelected(){if(selIdx>=0){shapes.splice(selIdx,1);selIdx=-1;draw()}}
+function duplicateSelected(){
+  if(selIdx<0)return;
+  const s=shapes[selIdx];
+  const ns={verts:s.verts.map(v=>({x:v.x+2,y:v.y+2})),fill:s.fill,stroke:s.stroke};
+  shapes.push(ns);selIdx=shapes.length-1;draw();
+}
+
+// Keyboard
+window.addEventListener('keydown',e=>{
+  if(e.key==='Delete'||e.key==='Backspace'){deleteSelected()}
+  if(e.key==='Escape'){if(tool==='draw'&&drawPts.length>0){drawPts=[];draw()}else{selIdx=-1;draw()}}
+  if(e.ctrlKey&&e.key==='z'){/* todo: full undo */}
+});
+
+// Resize
+function resize(){
+  const r=wrap.getBoundingClientRect();W=r.width;H=r.height;
+  C.width=W*devicePixelRatio;C.height=H*devicePixelRatio;C.style.width=W+'px';C.style.height=H+'px';
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);draw();
+}
+window.addEventListener('resize',resize);
+
+// Init
+initColors();initBank();resize();
+<\/script></body></html>`;
+
 // ── Categories ───────────────────────────────────────────────────────────────
 
 export const STEM_CATEGORIES: StemCategory[] = [
@@ -1938,6 +2438,18 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Graphs', 'Trigonometry', 'Calculus', 'Volume of Rotation'],
         instructions: 'Choose from O-Level (linear, quadratic, cubic, 1/x, \\u221ax, |x|), all 9 trig functions (sin, cos, tan, csc, sec, cot, arcsin, arccos, arctan) with domain restriction lines and radian/degree toggle, A-Level (e\\u02e3, ln, x\\u2074, sinc, Gaussian), or parametric curves. Use transformation sliders (a, b, c, d) to see y = a\\u00b7f(b(x-c))+d live. Click on the curve with Tangent mode to draw the tangent line and see slope/angle. Volume mode shows a rotating 3D wireframe preview and computes V = \\u03c0\\u222by\\u00b2dx. Doodle to freehand draw; Points to place and connect coordinates. Reset button centres the view and resets all transforms.',
         html_code: CALCULUS_HTML,
+      },
+      {
+        id: '2d-shapes',
+        title: '2D Shapes Lab',
+        description: 'Draw and transform every polygon — triangles, quadrilaterals, pentagons, hexagons and beyond. Integer grid, drag-and-drop shape bank, fill colours, vertex editing, translate, rotate, reflect, and enlarge.',
+        icon: 'Pentagon',
+        gradient: 'from-pink-500 to-rose-500',
+        glowColor: 'rgba(236,72,153,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Shapes', 'Polygons', 'Transformations', 'Geometry'],
+        instructions: 'Use the left panel to pick a tool: Select (click shapes to select/move), Draw (click integer points to place vertices, click near the first point to close the shape), or Vertex (drag individual corners). Drag shapes from the shape bank onto the canvas or click them to place at centre. Fill and stroke colours can be changed from the panel. Select a shape then use the Transformations section to translate (dx, dy), rotate by any angle around any centre, reflect across axes or custom lines, or enlarge by any scale factor around any centre. Coordinates snap to integers. Scroll to zoom, right-drag to pan. Press Delete to remove a shape.',
+        html_code: SHAPES_2D_HTML,
       },
     ],
   },
