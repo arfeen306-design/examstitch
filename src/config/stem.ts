@@ -4869,28 +4869,37 @@ const PERIODIC_HTML = `<!DOCTYPE html>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
-canvas{display:block;cursor:pointer}
-#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+canvas{display:block;cursor:grab}
+canvas.panning{cursor:grabbing}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:240px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
 #right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
-.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
-.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
-button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+.sec{margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:6px}
+button{width:100%;padding:7px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:10px;font-weight:600;transition:all .2s;margin-bottom:5px}
 button:hover{background:rgba(255,255,255,0.14);color:#fff}
 button.active{background:rgba(59,130,246,0.25);border-color:rgba(59,130,246,0.5);color:#60a5fa}
 .info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
 .val{color:#60a5fa;font-weight:700}
+#search{width:100%;padding:6px 10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff;border-radius:8px;font-size:11px;outline:none;margin-bottom:8px}
+#search::placeholder{color:rgba(255,255,255,0.3)}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="right-panel">
 <div class="sec">
+<div class="sec-title">Search</div>
+<input type="text" id="search" placeholder="Search element...">
+</div>
+<div class="sec">
 <div class="sec-title">Color By</div>
 <button id="bCat" class="active">Category</button>
-<button id="bState">State</button>
+<button id="bState">State (25°C)</button>
 <button id="bElecNeg">Electronegativity</button>
+<button id="bDensity">Density</button>
+<button id="bYear">Discovery Year</button>
 </div>
 <div class="sec">
 <div class="sec-title">Selected Element</div>
-<div class="info" id="info">Click an element on the table</div>
+<div class="info" id="info">Click an element on the table<br><br>Scroll to zoom · Right-drag to pan</div>
 </div>
 <div class="sec">
 <div class="sec-title">Legend</div>
@@ -4899,108 +4908,242 @@ button.active{background:rgba(59,130,246,0.25);border-color:rgba(59,130,246,0.5)
 </div>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
-let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let W,H;function resize(){W=C.width=innerWidth-240;H=C.height=innerHeight}resize();window.onresize=resize;
+/* All 118 elements: z=atomic#, s=symbol, n=name, m=mass, cat=category, st=state@25C, en=electronegativity, g=group(1-18), p=period(1-7), ec=electron config, d=density(g/cm3), mp=melting(C), bp=boiling(C), yr=discovery year, nat=natural occurrence/shape */
 const E=[
-{z:1,s:'H',n:'Hydrogen',m:1.008,cat:'nonmetal',st:'gas',en:2.2,g:1,p:1},
-{z:2,s:'He',n:'Helium',m:4.003,cat:'noble',st:'gas',en:0,g:18,p:1},
-{z:3,s:'Li',n:'Lithium',m:6.941,cat:'alkali',st:'solid',en:0.98,g:1,p:2},
-{z:4,s:'Be',n:'Beryllium',m:9.012,cat:'alkaline',st:'solid',en:1.57,g:2,p:2},
-{z:5,s:'B',n:'Boron',m:10.81,cat:'metalloid',st:'solid',en:2.04,g:13,p:2},
-{z:6,s:'C',n:'Carbon',m:12.01,cat:'nonmetal',st:'solid',en:2.55,g:14,p:2},
-{z:7,s:'N',n:'Nitrogen',m:14.01,cat:'nonmetal',st:'gas',en:3.04,g:15,p:2},
-{z:8,s:'O',n:'Oxygen',m:16.00,cat:'nonmetal',st:'gas',en:3.44,g:16,p:2},
-{z:9,s:'F',n:'Fluorine',m:19.00,cat:'halogen',st:'gas',en:3.98,g:17,p:2},
-{z:10,s:'Ne',n:'Neon',m:20.18,cat:'noble',st:'gas',en:0,g:18,p:2},
-{z:11,s:'Na',n:'Sodium',m:22.99,cat:'alkali',st:'solid',en:0.93,g:1,p:3},
-{z:12,s:'Mg',n:'Magnesium',m:24.31,cat:'alkaline',st:'solid',en:1.31,g:2,p:3},
-{z:13,s:'Al',n:'Aluminium',m:26.98,cat:'metal',st:'solid',en:1.61,g:13,p:3},
-{z:14,s:'Si',n:'Silicon',m:28.09,cat:'metalloid',st:'solid',en:1.90,g:14,p:3},
-{z:15,s:'P',n:'Phosphorus',m:30.97,cat:'nonmetal',st:'solid',en:2.19,g:15,p:3},
-{z:16,s:'S',n:'Sulphur',m:32.07,cat:'nonmetal',st:'solid',en:2.58,g:16,p:3},
-{z:17,s:'Cl',n:'Chlorine',m:35.45,cat:'halogen',st:'gas',en:3.16,g:17,p:3},
-{z:18,s:'Ar',n:'Argon',m:39.95,cat:'noble',st:'gas',en:0,g:18,p:3},
-{z:19,s:'K',n:'Potassium',m:39.10,cat:'alkali',st:'solid',en:0.82,g:1,p:4},
-{z:20,s:'Ca',n:'Calcium',m:40.08,cat:'alkaline',st:'solid',en:1.00,g:2,p:4},
-{z:26,s:'Fe',n:'Iron',m:55.85,cat:'transition',st:'solid',en:1.83,g:8,p:4},
-{z:29,s:'Cu',n:'Copper',m:63.55,cat:'transition',st:'solid',en:1.90,g:11,p:4},
-{z:30,s:'Zn',n:'Zinc',m:65.38,cat:'transition',st:'solid',en:1.65,g:12,p:4},
-{z:35,s:'Br',n:'Bromine',m:79.90,cat:'halogen',st:'liquid',en:2.96,g:17,p:4},
-{z:36,s:'Kr',n:'Krypton',m:83.80,cat:'noble',st:'gas',en:3.00,g:18,p:4},
-{z:47,s:'Ag',n:'Silver',m:107.87,cat:'transition',st:'solid',en:1.93,g:11,p:5},
-{z:79,s:'Au',n:'Gold',m:196.97,cat:'transition',st:'solid',en:2.54,g:11,p:6},
-{z:82,s:'Pb',n:'Lead',m:207.2,cat:'metal',st:'solid',en:2.33,g:14,p:6},
+{z:1,s:'H',n:'Hydrogen',m:1.008,cat:'nonmetal',st:'gas',en:2.20,g:1,p:1,ec:'1s1',d:0.00009,mp:-259,bp:-253,yr:1766,nat:'Diatomic gas, most abundant element in universe'},
+{z:2,s:'He',n:'Helium',m:4.003,cat:'noble',st:'gas',en:0,g:18,p:1,ec:'1s2',d:0.00018,mp:-272,bp:-269,yr:1868,nat:'Monatomic noble gas, found in natural gas deposits'},
+{z:3,s:'Li',n:'Lithium',m:6.941,cat:'alkali',st:'solid',en:0.98,g:1,p:2,ec:'[He]2s1',d:0.534,mp:180,bp:1342,yr:1817,nat:'Soft silvery metal, found in spodumene & petalite minerals'},
+{z:4,s:'Be',n:'Beryllium',m:9.012,cat:'alkaline',st:'solid',en:1.57,g:2,p:2,ec:'[He]2s2',d:1.85,mp:1287,bp:2469,yr:1798,nat:'Hard grey metal, found in beryl (emerald/aquamarine)'},
+{z:5,s:'B',n:'Boron',m:10.81,cat:'metalloid',st:'solid',en:2.04,g:13,p:2,ec:'[He]2s2 2p1',d:2.34,mp:2076,bp:3927,yr:1808,nat:'Black crystalline solid, found in borax minerals'},
+{z:6,s:'C',n:'Carbon',m:12.01,cat:'nonmetal',st:'solid',en:2.55,g:14,p:2,ec:'[He]2s2 2p2',d:2.27,mp:3550,bp:4027,yr:-1,nat:'Diamond (cubic), graphite (hexagonal layers), fullerenes'},
+{z:7,s:'N',n:'Nitrogen',m:14.01,cat:'nonmetal',st:'gas',en:3.04,g:15,p:2,ec:'[He]2s2 2p3',d:0.0013,mp:-210,bp:-196,yr:1772,nat:'Diatomic gas N₂, 78% of atmosphere'},
+{z:8,s:'O',n:'Oxygen',m:16.00,cat:'nonmetal',st:'gas',en:3.44,g:16,p:2,ec:'[He]2s2 2p4',d:0.0014,mp:-218,bp:-183,yr:1774,nat:'Diatomic gas O₂, 21% of atmosphere, also ozone O₃'},
+{z:9,s:'F',n:'Fluorine',m:19.00,cat:'halogen',st:'gas',en:3.98,g:17,p:2,ec:'[He]2s2 2p5',d:0.0017,mp:-220,bp:-188,yr:1886,nat:'Pale yellow diatomic gas, found in fluorite (CaF₂)'},
+{z:10,s:'Ne',n:'Neon',m:20.18,cat:'noble',st:'gas',en:0,g:18,p:2,ec:'[He]2s2 2p6',d:0.0009,mp:-249,bp:-246,yr:1898,nat:'Monatomic gas, trace in atmosphere, used in signs'},
+{z:11,s:'Na',n:'Sodium',m:22.99,cat:'alkali',st:'solid',en:0.93,g:1,p:3,ec:'[Ne]3s1',d:0.97,mp:98,bp:883,yr:1807,nat:'Soft silvery metal, found in halite (rock salt NaCl)'},
+{z:12,s:'Mg',n:'Magnesium',m:24.31,cat:'alkaline',st:'solid',en:1.31,g:2,p:3,ec:'[Ne]3s2',d:1.74,mp:650,bp:1091,yr:1755,nat:'Light silvery metal, found in magnesite & dolomite'},
+{z:13,s:'Al',n:'Aluminium',m:26.98,cat:'metal',st:'solid',en:1.61,g:13,p:3,ec:'[Ne]3s2 3p1',d:2.70,mp:660,bp:2519,yr:1825,nat:'Silvery metal, most abundant metal in Earth crust (bauxite)'},
+{z:14,s:'Si',n:'Silicon',m:28.09,cat:'metalloid',st:'solid',en:1.90,g:14,p:3,ec:'[Ne]3s2 3p2',d:2.33,mp:1414,bp:3265,yr:1824,nat:'Dark grey crystalline solid, found in quartz (SiO₂)'},
+{z:15,s:'P',n:'Phosphorus',m:30.97,cat:'nonmetal',st:'solid',en:2.19,g:15,p:3,ec:'[Ne]3s2 3p3',d:1.82,mp:44,bp:281,yr:1669,nat:'White P₄ (tetrahedral), red (amorphous), black (layered)'},
+{z:16,s:'S',n:'Sulphur',m:32.07,cat:'nonmetal',st:'solid',en:2.58,g:16,p:3,ec:'[Ne]3s2 3p4',d:2.07,mp:115,bp:445,yr:-1,nat:'Yellow S₈ rings (orthorhombic crystals), volcanic deposits'},
+{z:17,s:'Cl',n:'Chlorine',m:35.45,cat:'halogen',st:'gas',en:3.16,g:17,p:3,ec:'[Ne]3s2 3p5',d:0.0032,mp:-101,bp:-34,yr:1774,nat:'Yellow-green diatomic gas Cl₂, found in halite (NaCl)'},
+{z:18,s:'Ar',n:'Argon',m:39.95,cat:'noble',st:'gas',en:0,g:18,p:3,ec:'[Ne]3s2 3p6',d:0.0018,mp:-189,bp:-186,yr:1894,nat:'Monatomic gas, ~1% of atmosphere'},
+{z:19,s:'K',n:'Potassium',m:39.10,cat:'alkali',st:'solid',en:0.82,g:1,p:4,ec:'[Ar]4s1',d:0.86,mp:64,bp:759,yr:1807,nat:'Soft silvery metal, found in sylvite (KCl) & carnallite'},
+{z:20,s:'Ca',n:'Calcium',m:40.08,cat:'alkaline',st:'solid',en:1.00,g:2,p:4,ec:'[Ar]4s2',d:1.55,mp:842,bp:1484,yr:1808,nat:'Silvery metal, found in limestone (CaCO₃) & gypsum'},
+{z:21,s:'Sc',n:'Scandium',m:44.96,cat:'transition',st:'solid',en:1.36,g:3,p:4,ec:'[Ar]3d1 4s2',d:2.99,mp:1541,bp:2836,yr:1879,nat:'Silvery metal, found in thortveitite & gadolinite'},
+{z:22,s:'Ti',n:'Titanium',m:47.87,cat:'transition',st:'solid',en:1.54,g:4,p:4,ec:'[Ar]3d2 4s2',d:4.51,mp:1668,bp:3287,yr:1791,nat:'Strong silvery metal, found in rutile (TiO₂) & ilmenite'},
+{z:23,s:'V',n:'Vanadium',m:50.94,cat:'transition',st:'solid',en:1.63,g:5,p:4,ec:'[Ar]3d3 4s2',d:6.11,mp:1910,bp:3407,yr:1801,nat:'Hard silvery metal, found in vanadinite & carnotite'},
+{z:24,s:'Cr',n:'Chromium',m:52.00,cat:'transition',st:'solid',en:1.66,g:6,p:4,ec:'[Ar]3d5 4s1',d:7.19,mp:1907,bp:2671,yr:1797,nat:'Hard lustrous metal, found in chromite (FeCr₂O₄)'},
+{z:25,s:'Mn',n:'Manganese',m:54.94,cat:'transition',st:'solid',en:1.55,g:7,p:4,ec:'[Ar]3d5 4s2',d:7.44,mp:1246,bp:2061,yr:1774,nat:'Grey-white brittle metal, found in pyrolusite (MnO₂)'},
+{z:26,s:'Fe',n:'Iron',m:55.85,cat:'transition',st:'solid',en:1.83,g:8,p:4,ec:'[Ar]3d6 4s2',d:7.87,mp:1538,bp:2862,yr:-1,nat:'BCC/FCC metal, found in hematite (Fe₂O₃) & magnetite'},
+{z:27,s:'Co',n:'Cobalt',m:58.93,cat:'transition',st:'solid',en:1.88,g:9,p:4,ec:'[Ar]3d7 4s2',d:8.90,mp:1495,bp:2927,yr:1735,nat:'Hard lustrous metal, found in cobaltite & erythrite'},
+{z:28,s:'Ni',n:'Nickel',m:58.69,cat:'transition',st:'solid',en:1.91,g:10,p:4,ec:'[Ar]3d8 4s2',d:8.91,mp:1455,bp:2913,yr:1751,nat:'Silvery-white metal (FCC), found in pentlandite & garnierite'},
+{z:29,s:'Cu',n:'Copper',m:63.55,cat:'transition',st:'solid',en:1.90,g:11,p:4,ec:'[Ar]3d10 4s1',d:8.96,mp:1085,bp:2562,yr:-1,nat:'Reddish FCC metal, native copper, malachite, chalcopyrite'},
+{z:30,s:'Zn',n:'Zinc',m:65.38,cat:'transition',st:'solid',en:1.65,g:12,p:4,ec:'[Ar]3d10 4s2',d:7.13,mp:420,bp:907,yr:1746,nat:'Bluish-white metal (HCP), found in sphalerite (ZnS)'},
+{z:31,s:'Ga',n:'Gallium',m:69.72,cat:'metal',st:'solid',en:1.81,g:13,p:4,ec:'[Ar]3d10 4s2 4p1',d:5.91,mp:30,bp:2204,yr:1875,nat:'Soft silvery metal, melts near body temp, in bauxite'},
+{z:32,s:'Ge',n:'Germanium',m:72.63,cat:'metalloid',st:'solid',en:2.01,g:14,p:4,ec:'[Ar]3d10 4s2 4p2',d:5.32,mp:938,bp:2833,yr:1886,nat:'Grey-white crystalline (diamond cubic), in germanite'},
+{z:33,s:'As',n:'Arsenic',m:74.92,cat:'metalloid',st:'solid',en:2.18,g:15,p:4,ec:'[Ar]3d10 4s2 4p3',d:5.73,mp:817,bp:614,yr:-1,nat:'Grey metallic (rhombohedral), yellow As₄, in arsenopyrite'},
+{z:34,s:'Se',n:'Selenium',m:78.97,cat:'nonmetal',st:'solid',en:2.55,g:16,p:4,ec:'[Ar]3d10 4s2 4p4',d:4.81,mp:221,bp:685,yr:1817,nat:'Red (amorphous), grey (hexagonal chains), in copper ores'},
+{z:35,s:'Br',n:'Bromine',m:79.90,cat:'halogen',st:'liquid',en:2.96,g:17,p:4,ec:'[Ar]3d10 4s2 4p5',d:3.12,mp:-7,bp:59,yr:1826,nat:'Red-brown diatomic liquid Br₂, in brine & seawater'},
+{z:36,s:'Kr',n:'Krypton',m:83.80,cat:'noble',st:'gas',en:3.00,g:18,p:4,ec:'[Ar]3d10 4s2 4p6',d:0.0037,mp:-157,bp:-153,yr:1898,nat:'Monatomic gas, trace in atmosphere'},
+{z:37,s:'Rb',n:'Rubidium',m:85.47,cat:'alkali',st:'solid',en:0.82,g:1,p:5,ec:'[Kr]5s1',d:1.53,mp:39,bp:688,yr:1861,nat:'Soft silvery metal, found in lepidolite & pollucite'},
+{z:38,s:'Sr',n:'Strontium',m:87.62,cat:'alkaline',st:'solid',en:0.95,g:2,p:5,ec:'[Kr]5s2',d:2.64,mp:777,bp:1382,yr:1790,nat:'Silvery metal, found in celestine (SrSO₄) & strontianite'},
+{z:39,s:'Y',n:'Yttrium',m:88.91,cat:'transition',st:'solid',en:1.22,g:3,p:5,ec:'[Kr]4d1 5s2',d:4.47,mp:1526,bp:3345,yr:1794,nat:'Silvery metal, found in xenotime & monazite'},
+{z:40,s:'Zr',n:'Zirconium',m:91.22,cat:'transition',st:'solid',en:1.33,g:4,p:5,ec:'[Kr]4d2 5s2',d:6.51,mp:1855,bp:4409,yr:1789,nat:'Grey-white metal, found in zircon (ZrSiO₄)'},
+{z:41,s:'Nb',n:'Niobium',m:92.91,cat:'transition',st:'solid',en:1.60,g:5,p:5,ec:'[Kr]4d4 5s1',d:8.57,mp:2477,bp:4744,yr:1801,nat:'Grey lustrous metal, found in columbite-tantalite'},
+{z:42,s:'Mo',n:'Molybdenum',m:95.95,cat:'transition',st:'solid',en:2.16,g:6,p:5,ec:'[Kr]4d5 5s1',d:10.28,mp:2623,bp:4639,yr:1781,nat:'Silvery metal (BCC), found in molybdenite (MoS₂)'},
+{z:43,s:'Tc',n:'Technetium',m:98,cat:'transition',st:'solid',en:1.90,g:7,p:5,ec:'[Kr]4d5 5s2',d:11.5,mp:2157,bp:4265,yr:1937,nat:'Radioactive, first artificially produced element'},
+{z:44,s:'Ru',n:'Ruthenium',m:101.1,cat:'transition',st:'solid',en:2.20,g:8,p:5,ec:'[Kr]4d7 5s1',d:12.37,mp:2334,bp:4150,yr:1844,nat:'Hard silvery metal (HCP), found in platinum ores'},
+{z:45,s:'Rh',n:'Rhodium',m:102.9,cat:'transition',st:'solid',en:2.28,g:9,p:5,ec:'[Kr]4d8 5s1',d:12.41,mp:1964,bp:3695,yr:1803,nat:'Silvery-white metal, found with platinum in river sands'},
+{z:46,s:'Pd',n:'Palladium',m:106.4,cat:'transition',st:'solid',en:2.20,g:10,p:5,ec:'[Kr]4d10',d:12.02,mp:1555,bp:2963,yr:1803,nat:'Lustrous silvery-white metal (FCC), in copper/nickel ores'},
+{z:47,s:'Ag',n:'Silver',m:107.9,cat:'transition',st:'solid',en:1.93,g:11,p:5,ec:'[Kr]4d10 5s1',d:10.49,mp:962,bp:2162,yr:-1,nat:'Lustrous white metal (FCC), native & in argentite (Ag₂S)'},
+{z:48,s:'Cd',n:'Cadmium',m:112.4,cat:'transition',st:'solid',en:1.69,g:12,p:5,ec:'[Kr]4d10 5s2',d:8.65,mp:321,bp:767,yr:1817,nat:'Soft bluish-white metal, found in zinc ores (greenockite)'},
+{z:49,s:'In',n:'Indium',m:114.8,cat:'metal',st:'solid',en:1.78,g:13,p:5,ec:'[Kr]4d10 5s2 5p1',d:7.31,mp:157,bp:2072,yr:1863,nat:'Very soft silvery metal, found in zinc & copper ores'},
+{z:50,s:'Sn',n:'Tin',m:118.7,cat:'metal',st:'solid',en:1.96,g:14,p:5,ec:'[Kr]4d10 5s2 5p2',d:7.29,mp:232,bp:2602,yr:-1,nat:'White tin (tetragonal) & grey tin (diamond cubic), cassiterite'},
+{z:51,s:'Sb',n:'Antimony',m:121.8,cat:'metalloid',st:'solid',en:2.05,g:15,p:5,ec:'[Kr]4d10 5s2 5p3',d:6.69,mp:631,bp:1587,yr:-1,nat:'Silvery lustrous (rhombohedral), found in stibnite (Sb₂S₃)'},
+{z:52,s:'Te',n:'Tellurium',m:127.6,cat:'metalloid',st:'solid',en:2.10,g:16,p:5,ec:'[Kr]4d10 5s2 5p4',d:6.24,mp:450,bp:988,yr:1783,nat:'Silvery-white crystalline (hexagonal), in gold tellurides'},
+{z:53,s:'I',n:'Iodine',m:126.9,cat:'halogen',st:'solid',en:2.66,g:17,p:5,ec:'[Kr]4d10 5s2 5p5',d:4.93,mp:114,bp:184,yr:1811,nat:'Purple-black crystalline solid I₂, in seaweed & brine'},
+{z:54,s:'Xe',n:'Xenon',m:131.3,cat:'noble',st:'gas',en:2.60,g:18,p:5,ec:'[Kr]4d10 5s2 5p6',d:0.0059,mp:-112,bp:-108,yr:1898,nat:'Dense monatomic gas, trace in atmosphere'},
+{z:55,s:'Cs',n:'Caesium',m:132.9,cat:'alkali',st:'solid',en:0.79,g:1,p:6,ec:'[Xe]6s1',d:1.87,mp:28,bp:671,yr:1860,nat:'Soft gold-coloured metal, lowest melting alkali, in pollucite'},
+{z:56,s:'Ba',n:'Barium',m:137.3,cat:'alkaline',st:'solid',en:0.89,g:2,p:6,ec:'[Xe]6s2',d:3.59,mp:727,bp:1845,yr:1808,nat:'Soft silvery metal, found in barite (BaSO₄) & witherite'},
+{z:57,s:'La',n:'Lanthanum',m:138.9,cat:'lanthanide',st:'solid',en:1.10,g:3,p:6,ec:'[Xe]5d1 6s2',d:6.15,mp:920,bp:3464,yr:1839,nat:'Soft silvery metal, found in monazite & bastnäsite'},
+{z:58,s:'Ce',n:'Cerium',m:140.1,cat:'lanthanide',st:'solid',en:1.12,g:3,p:6,ec:'[Xe]4f1 5d1 6s2',d:6.77,mp:798,bp:3443,yr:1803,nat:'Silvery metal, most abundant rare earth, in monazite'},
+{z:59,s:'Pr',n:'Praseodymium',m:140.9,cat:'lanthanide',st:'solid',en:1.13,g:3,p:6,ec:'[Xe]4f3 6s2',d:6.77,mp:931,bp:3520,yr:1885,nat:'Soft silvery metal, green salts, in monazite'},
+{z:60,s:'Nd',n:'Neodymium',m:144.2,cat:'lanthanide',st:'solid',en:1.14,g:3,p:6,ec:'[Xe]4f4 6s2',d:7.01,mp:1016,bp:3074,yr:1885,nat:'Silvery metal, used in strongest permanent magnets'},
+{z:61,s:'Pm',n:'Promethium',m:145,cat:'lanthanide',st:'solid',en:1.13,g:3,p:6,ec:'[Xe]4f5 6s2',d:7.26,mp:1042,bp:3000,yr:1945,nat:'Radioactive, does not occur naturally in significant amounts'},
+{z:62,s:'Sm',n:'Samarium',m:150.4,cat:'lanthanide',st:'solid',en:1.17,g:3,p:6,ec:'[Xe]4f6 6s2',d:7.52,mp:1074,bp:1794,yr:1879,nat:'Silvery metal, in monazite, used in SmCo magnets'},
+{z:63,s:'Eu',n:'Europium',m:152.0,cat:'lanthanide',st:'solid',en:1.20,g:3,p:6,ec:'[Xe]4f7 6s2',d:5.24,mp:822,bp:1529,yr:1901,nat:'Softest rare earth, red phosphors in screens'},
+{z:64,s:'Gd',n:'Gadolinium',m:157.3,cat:'lanthanide',st:'solid',en:1.20,g:3,p:6,ec:'[Xe]4f7 5d1 6s2',d:7.90,mp:1313,bp:3273,yr:1880,nat:'Silvery metal, ferromagnetic, used in MRI contrast'},
+{z:65,s:'Tb',n:'Terbium',m:158.9,cat:'lanthanide',st:'solid',en:1.10,g:3,p:6,ec:'[Xe]4f9 6s2',d:8.23,mp:1356,bp:3230,yr:1843,nat:'Silvery metal, green phosphors'},
+{z:66,s:'Dy',n:'Dysprosium',m:162.5,cat:'lanthanide',st:'solid',en:1.22,g:3,p:6,ec:'[Xe]4f10 6s2',d:8.55,mp:1412,bp:2567,yr:1886,nat:'Silvery metal, in NdFeB magnets for heat resistance'},
+{z:67,s:'Ho',n:'Holmium',m:164.9,cat:'lanthanide',st:'solid',en:1.23,g:3,p:6,ec:'[Xe]4f11 6s2',d:8.80,mp:1474,bp:2700,yr:1878,nat:'Silvery metal, highest magnetic moment of any element'},
+{z:68,s:'Er',n:'Erbium',m:167.3,cat:'lanthanide',st:'solid',en:1.24,g:3,p:6,ec:'[Xe]4f12 6s2',d:9.07,mp:1529,bp:2868,yr:1842,nat:'Silvery metal, pink salts, used in fibre optic amplifiers'},
+{z:69,s:'Tm',n:'Thulium',m:168.9,cat:'lanthanide',st:'solid',en:1.25,g:3,p:6,ec:'[Xe]4f13 6s2',d:9.32,mp:1545,bp:1950,yr:1879,nat:'Silvery metal, rarest naturally-occurring lanthanide'},
+{z:70,s:'Yb',n:'Ytterbium',m:173.0,cat:'lanthanide',st:'solid',en:1.10,g:3,p:6,ec:'[Xe]4f14 6s2',d:6.90,mp:819,bp:1196,yr:1878,nat:'Soft silvery metal, in monazite & xenotime'},
+{z:71,s:'Lu',n:'Lutetium',m:175.0,cat:'lanthanide',st:'solid',en:1.27,g:3,p:6,ec:'[Xe]4f14 5d1 6s2',d:9.84,mp:1663,bp:3402,yr:1907,nat:'Hardest & densest lanthanide, silvery-white metal'},
+{z:72,s:'Hf',n:'Hafnium',m:178.5,cat:'transition',st:'solid',en:1.30,g:4,p:6,ec:'[Xe]4f14 5d2 6s2',d:13.31,mp:2233,bp:4603,yr:1923,nat:'Lustrous silvery metal (HCP), always with zirconium'},
+{z:73,s:'Ta',n:'Tantalum',m:180.9,cat:'transition',st:'solid',en:1.50,g:5,p:6,ec:'[Xe]4f14 5d3 6s2',d:16.65,mp:3017,bp:5458,yr:1802,nat:'Hard blue-grey metal (BCC), in columbite-tantalite'},
+{z:74,s:'W',n:'Tungsten',m:183.8,cat:'transition',st:'solid',en:2.36,g:6,p:6,ec:'[Xe]4f14 5d4 6s2',d:19.25,mp:3422,bp:5555,yr:1783,nat:'Hard grey metal, highest melting point, in wolframite'},
+{z:75,s:'Re',n:'Rhenium',m:186.2,cat:'transition',st:'solid',en:1.90,g:7,p:6,ec:'[Xe]4f14 5d5 6s2',d:21.02,mp:3186,bp:5596,yr:1925,nat:'Dense silvery metal, one of rarest, in molybdenite'},
+{z:76,s:'Os',n:'Osmium',m:190.2,cat:'transition',st:'solid',en:2.20,g:8,p:6,ec:'[Xe]4f14 5d6 6s2',d:22.59,mp:3033,bp:5012,yr:1803,nat:'Densest naturally occurring element, blue-grey (HCP)'},
+{z:77,s:'Ir',n:'Iridium',m:192.2,cat:'transition',st:'solid',en:2.20,g:9,p:6,ec:'[Xe]4f14 5d7 6s2',d:22.56,mp:2466,bp:4428,yr:1803,nat:'Hard brittle silvery metal (FCC), in platinum ores'},
+{z:78,s:'Pt',n:'Platinum',m:195.1,cat:'transition',st:'solid',en:2.28,g:10,p:6,ec:'[Xe]4f14 5d9 6s1',d:21.45,mp:1768,bp:3825,yr:1735,nat:'Silvery-white metal (FCC), native nuggets, in alluvial'},
+{z:79,s:'Au',n:'Gold',m:197.0,cat:'transition',st:'solid',en:2.54,g:11,p:6,ec:'[Xe]4f14 5d10 6s1',d:19.30,mp:1064,bp:2856,yr:-1,nat:'Yellow metal (FCC), native nuggets, most malleable metal'},
+{z:80,s:'Hg',n:'Mercury',m:200.6,cat:'transition',st:'liquid',en:2.00,g:12,p:6,ec:'[Xe]4f14 5d10 6s2',d:13.55,mp:-39,bp:357,yr:-1,nat:'Only metal liquid at room temp, in cinnabar (HgS)'},
+{z:81,s:'Tl',n:'Thallium',m:204.4,cat:'metal',st:'solid',en:1.62,g:13,p:6,ec:'[Xe]4f14 5d10 6s2 6p1',d:11.85,mp:304,bp:1473,yr:1861,nat:'Soft grey metal, toxic, in pyrite & zinc ores'},
+{z:82,s:'Pb',n:'Lead',m:207.2,cat:'metal',st:'solid',en:2.33,g:14,p:6,ec:'[Xe]4f14 5d10 6s2 6p2',d:11.34,mp:327,bp:1749,yr:-1,nat:'Soft grey metal (FCC), found in galena (PbS)'},
+{z:83,s:'Bi',n:'Bismuth',m:209.0,cat:'metal',st:'solid',en:2.02,g:15,p:6,ec:'[Xe]4f14 5d10 6s2 6p3',d:9.78,mp:271,bp:1564,yr:1753,nat:'Iridescent oxide crystals (rhombohedral), in bismuthinite'},
+{z:84,s:'Po',n:'Polonium',m:209,cat:'metalloid',st:'solid',en:2.00,g:16,p:6,ec:'[Xe]4f14 5d10 6s2 6p4',d:9.20,mp:254,bp:962,yr:1898,nat:'Radioactive, extremely rare, in uranium ores'},
+{z:85,s:'At',n:'Astatine',m:210,cat:'halogen',st:'solid',en:2.20,g:17,p:6,ec:'[Xe]4f14 5d10 6s2 6p5',d:7,mp:302,bp:337,yr:1940,nat:'Rarest naturally occurring element, radioactive'},
+{z:86,s:'Rn',n:'Radon',m:222,cat:'noble',st:'gas',en:2.20,g:18,p:6,ec:'[Xe]4f14 5d10 6s2 6p6',d:0.0097,mp:-71,bp:-62,yr:1900,nat:'Radioactive noble gas, from radium decay in rocks'},
+{z:87,s:'Fr',n:'Francium',m:223,cat:'alkali',st:'solid',en:0.70,g:1,p:7,ec:'[Rn]7s1',d:1.87,mp:27,bp:677,yr:1939,nat:'Most unstable natural element, from actinium decay'},
+{z:88,s:'Ra',n:'Radium',m:226,cat:'alkaline',st:'solid',en:0.90,g:2,p:7,ec:'[Rn]7s2',d:5.50,mp:700,bp:1737,yr:1898,nat:'Luminous radioactive metal, in uraninite (pitchblende)'},
+{z:89,s:'Ac',n:'Actinium',m:227,cat:'actinide',st:'solid',en:1.10,g:3,p:7,ec:'[Rn]6d1 7s2',d:10.07,mp:1050,bp:3198,yr:1899,nat:'Radioactive silvery metal, in uranium ores'},
+{z:90,s:'Th',n:'Thorium',m:232.0,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]6d2 7s2',d:11.72,mp:1750,bp:4788,yr:1829,nat:'Silvery radioactive metal, in monazite & thorianite'},
+{z:91,s:'Pa',n:'Protactinium',m:231.0,cat:'actinide',st:'solid',en:1.50,g:3,p:7,ec:'[Rn]5f2 6d1 7s2',d:15.37,mp:1572,bp:4000,yr:1913,nat:'Radioactive, scarce, in uranium ores'},
+{z:92,s:'U',n:'Uranium',m:238.0,cat:'actinide',st:'solid',en:1.38,g:3,p:7,ec:'[Rn]5f3 6d1 7s2',d:19.05,mp:1135,bp:4131,yr:1789,nat:'Dense silvery metal, in uraninite, nuclear fuel'},
+{z:93,s:'Np',n:'Neptunium',m:237,cat:'actinide',st:'solid',en:1.36,g:3,p:7,ec:'[Rn]5f4 6d1 7s2',d:20.45,mp:644,bp:3902,yr:1940,nat:'Radioactive, trace in uranium ores, first transuranium'},
+{z:94,s:'Pu',n:'Plutonium',m:244,cat:'actinide',st:'solid',en:1.28,g:3,p:7,ec:'[Rn]5f6 7s2',d:19.82,mp:640,bp:3228,yr:1940,nat:'Radioactive, 6 allotropes (most of any element)'},
+{z:95,s:'Am',n:'Americium',m:243,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f7 7s2',d:12,mp:1176,bp:2011,yr:1944,nat:'Synthetic, used in smoke detectors'},
+{z:96,s:'Cm',n:'Curium',m:247,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f7 6d1 7s2',d:13.51,mp:1345,bp:3110,yr:1944,nat:'Synthetic radioactive metal, glows red in dark'},
+{z:97,s:'Bk',n:'Berkelium',m:247,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f9 7s2',d:14.78,mp:986,bp:2627,yr:1949,nat:'Synthetic, silvery metal'},
+{z:98,s:'Cf',n:'Californium',m:251,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f10 7s2',d:15.1,mp:900,bp:1472,yr:1950,nat:'Synthetic, strong neutron emitter, used in analysis'},
+{z:99,s:'Es',n:'Einsteinium',m:252,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f11 7s2',d:8.84,mp:860,bp:996,yr:1952,nat:'Synthetic, first found in nuclear test debris'},
+{z:100,s:'Fm',n:'Fermium',m:257,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f12 7s2',d:9.7,mp:1527,bp:0,yr:1952,nat:'Synthetic, from nuclear explosions'},
+{z:101,s:'Md',n:'Mendelevium',m:258,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f13 7s2',d:10.3,mp:827,bp:0,yr:1955,nat:'Synthetic'},
+{z:102,s:'No',n:'Nobelium',m:259,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f14 7s2',d:9.9,mp:827,bp:0,yr:1958,nat:'Synthetic'},
+{z:103,s:'Lr',n:'Lawrencium',m:266,cat:'actinide',st:'solid',en:1.30,g:3,p:7,ec:'[Rn]5f14 7s2 7p1',d:15.6,mp:1627,bp:0,yr:1961,nat:'Synthetic'},
+{z:104,s:'Rf',n:'Rutherfordium',m:267,cat:'transition',st:'solid',en:0,g:4,p:7,ec:'[Rn]5f14 6d2 7s2',d:23.2,mp:0,bp:0,yr:1964,nat:'Synthetic, superheavy'},
+{z:105,s:'Db',n:'Dubnium',m:268,cat:'transition',st:'solid',en:0,g:5,p:7,ec:'[Rn]5f14 6d3 7s2',d:29.3,mp:0,bp:0,yr:1967,nat:'Synthetic, superheavy'},
+{z:106,s:'Sg',n:'Seaborgium',m:269,cat:'transition',st:'solid',en:0,g:6,p:7,ec:'[Rn]5f14 6d4 7s2',d:35,mp:0,bp:0,yr:1974,nat:'Synthetic, superheavy'},
+{z:107,s:'Bh',n:'Bohrium',m:270,cat:'transition',st:'solid',en:0,g:7,p:7,ec:'[Rn]5f14 6d5 7s2',d:37.1,mp:0,bp:0,yr:1981,nat:'Synthetic, superheavy'},
+{z:108,s:'Hs',n:'Hassium',m:277,cat:'transition',st:'solid',en:0,g:8,p:7,ec:'[Rn]5f14 6d6 7s2',d:41,mp:0,bp:0,yr:1984,nat:'Synthetic, superheavy'},
+{z:109,s:'Mt',n:'Meitnerium',m:278,cat:'transition',st:'solid',en:0,g:9,p:7,ec:'[Rn]5f14 6d7 7s2',d:37.4,mp:0,bp:0,yr:1982,nat:'Synthetic, superheavy'},
+{z:110,s:'Ds',n:'Darmstadtium',m:281,cat:'transition',st:'solid',en:0,g:10,p:7,ec:'[Rn]5f14 6d8 7s2',d:34.8,mp:0,bp:0,yr:1994,nat:'Synthetic, superheavy'},
+{z:111,s:'Rg',n:'Roentgenium',m:282,cat:'transition',st:'solid',en:0,g:11,p:7,ec:'[Rn]5f14 6d9 7s2',d:28.7,mp:0,bp:0,yr:1994,nat:'Synthetic, superheavy'},
+{z:112,s:'Cn',n:'Copernicium',m:285,cat:'transition',st:'liquid',en:0,g:12,p:7,ec:'[Rn]5f14 6d10 7s2',d:23.7,mp:0,bp:0,yr:1996,nat:'Synthetic, predicted liquid at room temp'},
+{z:113,s:'Nh',n:'Nihonium',m:286,cat:'metal',st:'solid',en:0,g:13,p:7,ec:'[Rn]5f14 6d10 7s2 7p1',d:16,mp:0,bp:0,yr:2003,nat:'Synthetic, superheavy'},
+{z:114,s:'Fl',n:'Flerovium',m:289,cat:'metal',st:'solid',en:0,g:14,p:7,ec:'[Rn]5f14 6d10 7s2 7p2',d:14,mp:0,bp:0,yr:1998,nat:'Synthetic, may be volatile noble-gas-like'},
+{z:115,s:'Mc',n:'Moscovium',m:290,cat:'metal',st:'solid',en:0,g:15,p:7,ec:'[Rn]5f14 6d10 7s2 7p3',d:13.5,mp:0,bp:0,yr:2003,nat:'Synthetic, superheavy'},
+{z:116,s:'Lv',n:'Livermorium',m:293,cat:'metal',st:'solid',en:0,g:16,p:7,ec:'[Rn]5f14 6d10 7s2 7p4',d:12.9,mp:0,bp:0,yr:2000,nat:'Synthetic, superheavy'},
+{z:117,s:'Ts',n:'Tennessine',m:294,cat:'halogen',st:'solid',en:0,g:17,p:7,ec:'[Rn]5f14 6d10 7s2 7p5',d:7.2,mp:0,bp:0,yr:2010,nat:'Synthetic, superheavy halogen'},
+{z:118,s:'Og',n:'Oganesson',m:294,cat:'noble',st:'gas',en:0,g:18,p:7,ec:'[Rn]5f14 6d10 7s2 7p6',d:5.0,mp:0,bp:0,yr:2002,nat:'Synthetic, predicted noble gas (may be solid)'},
 ];
-const catColors={alkali:'#ef4444',alkaline:'#f97316',transition:'#f59e0b',metal:'#84cc16',metalloid:'#10b981',nonmetal:'#06b6d4',halogen:'#8b5cf6',noble:'#ec4899'};
+const catColors={alkali:'#ef4444',alkaline:'#f97316',transition:'#f59e0b',metal:'#84cc16',metalloid:'#10b981',nonmetal:'#06b6d4',halogen:'#8b5cf6',noble:'#ec4899',lanthanide:'#14b8a6',actinide:'#f43f5e'};
 const stateColors={solid:'#3b82f6',liquid:'#10b981',gas:'#ef4444'};
-let colorBy='category',selected=null;
+let colorBy='category',selected=null,searchTerm='';
+// Pan & zoom
+let panX=0,panY=0,zoom=1,isPanning=false,panSX=0,panSY=0;
+C.addEventListener('wheel',ev=>{ev.preventDefault();const z=zoom;zoom=Math.max(0.3,Math.min(4,zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;panX=mx-(mx-panX)*zoom/z;panY=my-(my-panY)*zoom/z},{passive:false});
+C.addEventListener('mousedown',ev=>{if(ev.button===2||ev.button===1){isPanning=true;panSX=ev.clientX-panX;panSY=ev.clientY-panY;C.classList.add('panning');ev.preventDefault()}});
+C.addEventListener('mousemove',ev=>{if(isPanning){panX=ev.clientX-panSX;panY=ev.clientY-panSY}});
+C.addEventListener('mouseup',ev=>{if(ev.button===2||ev.button===1){isPanning=false;C.classList.remove('panning')}});
+C.addEventListener('contextmenu',ev=>ev.preventDefault());
 document.getElementById('bCat').onclick=()=>{colorBy='category';setBtn('bCat');updateLegend()};
 document.getElementById('bState').onclick=()=>{colorBy='state';setBtn('bState');updateLegend()};
 document.getElementById('bElecNeg').onclick=()=>{colorBy='en';setBtn('bElecNeg');updateLegend()};
-function setBtn(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+document.getElementById('bDensity').onclick=()=>{colorBy='density';setBtn('bDensity');updateLegend()};
+document.getElementById('bYear').onclick=()=>{colorBy='year';setBtn('bYear');updateLegend()};
+document.getElementById('search').oninput=e=>{searchTerm=e.target.value.toLowerCase()};
+function setBtn(id){document.querySelectorAll('#right-panel .sec:nth-child(2) button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
 function updateLegend(){
-let html='';
-if(colorBy==='category'){Object.entries(catColors).forEach(([k,v])=>{html+='<span style="color:'+v+'">■</span> '+k+'<br>'})}
-else if(colorBy==='state'){Object.entries(stateColors).forEach(([k,v])=>{html+='<span style="color:'+v+'">■</span> '+k+'<br>'})}
-else{html='Low (blue) → High (red)'}
-document.getElementById('legend').innerHTML=html;
+let h='';
+if(colorBy==='category'){Object.entries(catColors).forEach(([k,v])=>{h+='<span style="color:'+v+'">■</span> '+k+'<br>'})}
+else if(colorBy==='state'){Object.entries(stateColors).forEach(([k,v])=>{h+='<span style="color:'+v+'">■</span> '+k+'<br>'})}
+else if(colorBy==='density')h='Low density (blue) → High (red)<br>Scale: 0–23 g/cm³';
+else if(colorBy==='year')h='Ancient (gold) → Modern (blue)<br>Synthetic (purple)';
+else h='Low (blue) → High (red)';
+document.getElementById('legend').innerHTML=h;
 }
 updateLegend();
 function getColor(el){
 if(colorBy==='category')return catColors[el.cat]||'#666';
 if(colorBy==='state')return stateColors[el.st]||'#666';
+if(colorBy==='density'){const n=Math.min(1,el.d/23);return 'rgb('+(50+n*200)+','+(50+100*(1-n))+','+(200-n*150)+')';}
+if(colorBy==='year'){if(el.yr<0)return'#f59e0b';if(el.yr>1939)return'#8b5cf6';const n=(el.yr-1660)/340;return'rgb('+(50+n*100)+','+(100+80*(1-n))+','+(150+n*100)+')';}
 const n=el.en/4;return 'rgb('+(50+n*200)+','+(50+100*(1-n))+','+(200-n*150)+')';
+}
+// Position: lanthanides row 8, actinides row 9, offset by their index in the f-block
+function elPos(el){
+if(el.cat==='lanthanide'){const i=el.z-57;return{col:2+i,row:8}}
+if(el.cat==='actinide'){const i=el.z-89;return{col:2+i,row:9}}
+return{col:el.g-1,row:el.p-1};
 }
 function draw(){
 X.clearRect(0,0,W,H);
-const cellW=Math.min((W-40)/18,45),cellH=cellW*1.1;
-const ox=(W-18*cellW)/2,oy=20;
+X.save();X.translate(panX,panY);X.scale(zoom,zoom);
+const cellW=42,cellH=48;
+const ox=20,oy=20;
+// search filter
+const matchZ=searchTerm?E.filter(el=>el.n.toLowerCase().includes(searchTerm)||el.s.toLowerCase().includes(searchTerm)||String(el.z)===searchTerm):null;
 E.forEach(el=>{
-const col=el.g-1,row=el.p-1;
-const ex=ox+col*cellW,ey=oy+row*cellH;
+const pos=elPos(el);
+const ex=ox+pos.col*cellW,ey=oy+pos.row*cellH;
 const color=getColor(el);
 const isSelected=selected&&selected.z===el.z;
-X.fillStyle=isSelected?color+'':color+'40';
-X.strokeStyle=color;X.lineWidth=isSelected?2:1;
-X.fillRect(ex+1,ey+1,cellW-2,cellH-2);X.strokeRect(ex+1,ey+1,cellW-2,cellH-2);
-X.fillStyle=isSelected?'#fff':'rgba(255,255,255,0.7)';X.font='bold '+(cellW*0.35)+'px system-ui';X.textAlign='center';
-X.fillText(el.s,ex+cellW/2,ey+cellH*0.55);
-X.fillStyle='rgba(255,255,255,0.35)';X.font=(cellW*0.2)+'px system-ui';
-X.fillText(el.z,ex+cellW/2,ey+cellH*0.22);
-X.fillText(el.m.toFixed(1),ex+cellW/2,ey+cellH*0.82);
+const isMatch=matchZ?matchZ.includes(el):true;
+const alpha=isMatch?1:0.15;
+X.globalAlpha=alpha;
+X.fillStyle=isSelected?color:color+'40';
+X.strokeStyle=color;X.lineWidth=isSelected?2.5:1;
+X.beginPath();X.roundRect(ex+1,ey+1,cellW-2,cellH-2,4);X.fill();X.stroke();
+X.fillStyle=isSelected?'#fff':'rgba(255,255,255,0.8)';X.font='bold 13px system-ui';X.textAlign='center';
+X.fillText(el.s,ex+cellW/2,ey+cellH*0.52);
+X.fillStyle='rgba(255,255,255,0.4)';X.font='8px system-ui';
+X.fillText(el.z,ex+cellW/2,ey+12);
+X.fillText(el.m>260?'('+el.m+')':el.m.toFixed(el.m<10?3:el.m<100?2:1),ex+cellW/2,ey+cellH-5);
+X.globalAlpha=1;
 });
-X.textAlign='left';
 // group/period labels
-X.fillStyle='rgba(255,255,255,0.2)';X.font='9px system-ui';
-for(let g=1;g<=18;g++){X.textAlign='center';X.fillText(g,ox+(g-0.5)*cellW,oy-5)}
-for(let p=1;p<=7;p++){X.textAlign='right';X.fillText(p,ox-5,oy+p*cellH-cellH*0.4)}
-X.textAlign='left';
+X.fillStyle='rgba(255,255,255,0.25)';X.font='bold 9px system-ui';X.textAlign='center';
+for(let g=1;g<=18;g++)X.fillText(g,ox+(g-0.5)*cellW,oy-4);
+for(let p=1;p<=7;p++){X.textAlign='right';X.fillText(p,ox-4,oy+p*cellH-cellH*0.35)}
+// lanthanide/actinide labels
+X.textAlign='left';X.fillStyle='rgba(20,184,166,0.5)';X.font='bold 8px system-ui';
+X.fillText('Lanthanides',ox-10,oy+8*cellH+cellH*0.55);
+X.fillStyle='rgba(244,63,94,0.5)';
+X.fillText('Actinides',ox-10,oy+9*cellH+cellH*0.55);
+// connector lines from main table to f-block rows
+X.setLineDash([3,3]);X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;
+X.beginPath();X.moveTo(ox+2*cellW+cellW/2,oy+5*cellH+cellH);X.lineTo(ox+2*cellW+cellW/2,oy+8*cellH);X.stroke();
+X.beginPath();X.moveTo(ox+2*cellW+cellW/2,oy+6*cellH+cellH);X.lineTo(ox+2*cellW+cellW/2,oy+9*cellH);X.stroke();
+X.setLineDash([]);
+X.restore();
 }
 C.onclick=e=>{
-const cellW=Math.min((W-40)/18,45),cellH=cellW*1.1;
-const ox=(W-18*cellW)/2,oy=20;
-const mx=e.offsetX,my=e.offsetY;
+if(isPanning)return;
+const mx=(e.offsetX-panX)/zoom,my=(e.offsetY-panY)/zoom;
+const cellW=42,cellH=48,ox=20,oy=20;
 selected=null;
 E.forEach(el=>{
-const col=el.g-1,row=el.p-1;
-const ex=ox+col*cellW,ey=oy+row*cellH;
+const pos=elPos(el);
+const ex=ox+pos.col*cellW,ey=oy+pos.row*cellH;
 if(mx>ex&&mx<ex+cellW&&my>ey&&my<ey+cellH)selected=el;
 });
 if(selected){
+const el=selected;
 document.getElementById('info').innerHTML=
-'<b style="font-size:16px">'+selected.s+'</b> — '+selected.n+'<br><br>'+
-'Atomic number: <span class="val">'+selected.z+'</span><br>'+
-'Mass: <span class="val">'+selected.m+'</span> u<br>'+
-'Category: <span class="val">'+selected.cat+'</span><br>'+
-'State (25°C): <span class="val">'+selected.st+'</span><br>'+
-'Electronegativity: <span class="val">'+(selected.en||'N/A')+'</span><br>'+
-'Group: <span class="val">'+selected.g+'</span> | Period: <span class="val">'+selected.p+'</span>';
+'<div style="text-align:center;margin-bottom:6px"><span style="font-size:28px;font-weight:800;color:'+getColor(el)+'">'+el.s+'</span><br><b style="font-size:13px">'+el.n+'</b></div>'+
+'<b>Atomic #:</b> <span class="val">'+el.z+'</span><br>'+
+'<b>Mass:</b> <span class="val">'+el.m+'</span> u<br>'+
+'<b>Category:</b> <span class="val">'+el.cat+'</span><br>'+
+'<b>State (25°C):</b> <span class="val">'+el.st+'</span><br>'+
+'<b>Electron config:</b> <span class="val" style="font-size:9px">'+el.ec+'</span><br>'+
+'<b>Electronegativity:</b> <span class="val">'+(el.en||'N/A')+'</span><br>'+
+'<b>Density:</b> <span class="val">'+el.d+'</span> g/cm³<br>'+
+(el.mp?'<b>Melting:</b> <span class="val">'+el.mp+'</span> °C<br>':'')+
+(el.bp?'<b>Boiling:</b> <span class="val">'+el.bp+'</span> °C<br>':'')+
+'<b>Group:</b> <span class="val">'+el.g+'</span> | <b>Period:</b> <span class="val">'+el.p+'</span><br>'+
+(el.yr>0?'<b>Discovered:</b> <span class="val">'+el.yr+'</span><br>':'<b>Known since:</b> <span class="val">antiquity</span><br>')+
+'<br><b style="color:rgba(255,255,255,0.6)">In Nature:</b><br><span style="color:rgba(255,255,255,0.55);font-size:9px">'+el.nat+'</span>';
 }
 };
 function loop(){requestAnimationFrame(loop);draw()}
 loop();
 window.addEventListener('message',e=>{
 if(!e.data||typeof e.data!=='object')return;
-if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){selected=null;colorBy='category';updateLegend()}
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){selected=null;colorBy='category';panX=0;panY=0;zoom=1;updateLegend();document.getElementById('search').value='';searchTerm=''}
 });
 <\/script></body></html>`;
 
