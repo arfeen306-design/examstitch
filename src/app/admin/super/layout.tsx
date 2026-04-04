@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {
   Globe, LogOut, Shield, Home, Database, FolderTree,
   Newspaper, Users, CalendarCheck, GraduationCap, Monitor, Sparkles,
-  ChevronRight, Crown, Palette,
+  ChevronRight, Crown, Palette, FlaskConical,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -59,6 +59,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
       items: [
         { label: 'Control Center', href: '/admin/super', icon: Globe },
         { label: 'Digital Skills', href: '/admin/super/digital-skills', icon: Sparkles },
+        { label: 'STEM Manager', href: '/admin/super/stem', icon: FlaskConical },
       ],
     },
     {
