@@ -571,7 +571,7 @@ button.tool{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.4);c
 button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color:#fca5a5}
 .tang-dot{position:fixed;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid rgba(255,255,255,0.5);transform:translate(-50%,-50%);pointer-events:none;z-index:25;display:none;box-shadow:0 0 8px rgba(239,68,68,0.5)}
 #vol3d{position:fixed;top:50px;left:10px;z-index:20;display:none}
-#vol3d canvas{border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.5)}
+#vol3d canvas{border-radius:12px;border:1px solid rgba(167,139,250,0.3);background:rgba(5,5,20,0.92);box-shadow:0 0 20px rgba(167,139,250,0.15)}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="top-bar">
@@ -580,7 +580,7 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
 </div>
 <div id="coord-badge"></div>
 <div class="tang-dot" id="tang-dot"></div>
-<div id="vol3d"><canvas id="c3d" width="220" height="220"></canvas></div>
+<div id="vol3d"><canvas id="c3d" width="280" height="280"></canvas></div>
 <div id="right-panel">
   <div class="panel" id="p-transform">
     <div class="lbl">Transform: y = a \\u00b7 f(b(x - c)) + d</div>
@@ -829,57 +829,104 @@ document.getElementById('inp-b').addEventListener('input',calcVol);
 /* ── 3D volume mini-canvas ── */
 let rot3d=0;
 function draw3DVol(fn,a,b){
-  const w=220,h=220;cx3.fillStyle='rgba(0,0,0,0.85)';cx3.fillRect(0,0,w,h);
-  const cx0=w/2,cy0=h/2,s3=25,tilt=0.35;
+  const w=280,h=280;cx3.fillStyle='rgba(5,5,20,0.95)';cx3.fillRect(0,0,w,h);
+  const cx0=w/2,cy0=h/2,s3=30,tilt=0.4;
   const cosT=Math.cos(tilt),sinT=Math.sin(tilt);
-  rot3d+=0.02;const cosR=Math.cos(rot3d),sinR=Math.sin(rot3d);
+  rot3d+=0.015;const cosR=Math.cos(rot3d),sinR=Math.sin(rot3d);
   function p3(x,y,z){
     const x1=x*cosR-z*sinR,z1=x*sinR+z*cosR;
-    const y1=y*cosT-z1*sinT;
-    return[cx0+x1*s3,cy0-y1*s3];
+    const y1=y*cosT-z1*sinT,z2=z1*cosT+y*sinT;
+    return{x:cx0+x1*s3,y:cy0-y1*s3,z:z2};
   }
-  /* Draw axis */
-  cx3.strokeStyle='rgba(255,255,255,0.15)';cx3.lineWidth=1;
-  const[ax1,ay1]=p3(-4,0,0),[ax2,ay2]=p3(4,0,0);cx3.beginPath();cx3.moveTo(ax1,ay1);cx3.lineTo(ax2,ay2);cx3.stroke();
-  const[yy1,yy2p]=p3(0,-3,0),[yy3,yy4]=p3(0,3,0);cx3.beginPath();cx3.moveTo(yy1,yy2p);cx3.lineTo(yy3,yy4);cx3.stroke();
+  /* Draw axes */
+  cx3.strokeStyle='rgba(255,255,255,0.2)';cx3.lineWidth=1;
+  let p=p3(-4.5,0,0),q=p3(4.5,0,0);cx3.beginPath();cx3.moveTo(p.x,p.y);cx3.lineTo(q.x,q.y);cx3.stroke();
+  p=p3(0,-3.5,0);q=p3(0,3.5,0);cx3.beginPath();cx3.moveTo(p.x,p.y);cx3.lineTo(q.x,q.y);cx3.stroke();
+  p=p3(0,0,-3);q=p3(0,0,3);cx3.beginPath();cx3.moveTo(p.x,p.y);cx3.lineTo(q.x,q.y);cx3.stroke();
+  /* Axis labels */
+  cx3.fillStyle='rgba(255,255,255,0.3)';cx3.font='10px system-ui';
+  let lp=p3(4.8,0,0);cx3.fillText('x',lp.x,lp.y);lp=p3(0,3.8,0);cx3.fillText('y',lp.x,lp.y);
 
-  /* Draw revolution surface as rings */
-  const rings=30,segs=24;
-  for(let i=0;i<=rings;i++){
+  /* Build surface quads for painter's algorithm */
+  const rings=40,segs=28;
+  const quads=[];
+  for(let i=0;i<rings;i++){
+    const x0=a+(b-a)*i/rings,x1=a+(b-a)*(i+1)/rings;
+    const r0=fn(x0),r1=fn(x1);
+    if(!isFinite(r0)||!isFinite(r1))continue;
+    const ar0=Math.abs(r0),ar1=Math.abs(r1);
+    for(let j=0;j<segs;j++){
+      const a0=2*PI*j/segs,a1=2*PI*(j+1)/segs;
+      const p00=p3(x0,ar0*Math.cos(a0),ar0*Math.sin(a0));
+      const p01=p3(x0,ar0*Math.cos(a1),ar0*Math.sin(a1));
+      const p10=p3(x1,ar1*Math.cos(a0),ar1*Math.sin(a0));
+      const p11=p3(x1,ar1*Math.cos(a1),ar1*Math.sin(a1));
+      const avgZ=(p00.z+p01.z+p10.z+p11.z)/4;
+      /* Normal for lighting */
+      const nx=Math.cos((a0+a1)/2)*Math.cos(rot3d),ny=Math.cos((a0+a1)/2),nz=Math.sin((a0+a1)/2);
+      const light=0.3+0.7*Math.abs(0.3*nx+0.6*ny+0.5*nz)/Math.sqrt(0.7);
+      quads.push({pts:[p00,p01,p11,p10],z:avgZ,light:Math.min(1,light)});
+    }
+  }
+  /* Sort back to front */
+  quads.sort((a,b)=>a.z-b.z);
+  /* Draw filled quads */
+  quads.forEach(q=>{
+    const br=Math.floor(q.light*255);
+    const r=Math.floor(90+q.light*77),g=Math.floor(50+q.light*89),bl=Math.floor(140+q.light*110);
+    cx3.beginPath();
+    cx3.moveTo(q.pts[0].x,q.pts[0].y);
+    cx3.lineTo(q.pts[1].x,q.pts[1].y);
+    cx3.lineTo(q.pts[2].x,q.pts[2].y);
+    cx3.lineTo(q.pts[3].x,q.pts[3].y);
+    cx3.closePath();
+    cx3.fillStyle='rgba('+r+','+g+','+bl+',0.55)';cx3.fill();
+    cx3.strokeStyle='rgba('+Math.min(r+40,255)+','+Math.min(g+40,255)+','+Math.min(bl+30,255)+',0.3)';cx3.lineWidth=0.5;cx3.stroke();
+  });
+
+  /* Ring outlines for extra definition — every 4th ring */
+  for(let i=0;i<=rings;i+=4){
     const x=a+(b-a)*i/rings;const r=fn(x);if(!isFinite(r))continue;
     const absR=Math.abs(r);
-    cx3.beginPath();cx3.strokeStyle='rgba(167,139,250,'+(0.15+0.2*Math.abs(Math.sin(PI*i/rings)))+')';cx3.lineWidth=1.2;
+    cx3.beginPath();cx3.strokeStyle='rgba(200,180,255,0.5)';cx3.lineWidth=1.2;
     for(let j=0;j<=segs;j++){
       const ang=2*PI*j/segs;
-      const py=absR*Math.cos(ang),pz=absR*Math.sin(ang);
-      const[sx,sy]=p3(x,py,pz);
-      j===0?cx3.moveTo(sx,sy):cx3.lineTo(sx,sy);
+      const pt=p3(x,absR*Math.cos(ang),absR*Math.sin(ang));
+      j===0?cx3.moveTo(pt.x,pt.y):cx3.lineTo(pt.x,pt.y);
     }
     cx3.stroke();
   }
-  /* Longitudinal lines */
-  for(let j=0;j<segs;j+=3){
-    const ang=2*PI*j/segs;
-    cx3.beginPath();cx3.strokeStyle='rgba(167,139,250,0.08)';cx3.lineWidth=0.8;
-    let first=true;
-    for(let i=0;i<=rings;i++){
-      const x=a+(b-a)*i/rings;const r=fn(x);if(!isFinite(r)){first=true;continue;}
-      const absR=Math.abs(r);
-      const py=absR*Math.cos(ang),pz=absR*Math.sin(ang);
-      const[sx,sy]=p3(x,py,pz);
-      first?(cx3.moveTo(sx,sy),first=false):cx3.lineTo(sx,sy);
-    }
-    cx3.stroke();
-  }
-  /* Profile line */
-  cx3.beginPath();cx3.strokeStyle='#a78bfa';cx3.lineWidth=2;
+
+  /* Profile curve on top */
+  cx3.beginPath();cx3.strokeStyle='#c4b5fd';cx3.lineWidth=2.5;cx3.shadowColor='#a78bfa';cx3.shadowBlur=6;
   let first=true;
   for(let i=0;i<=rings;i++){
     const x=a+(b-a)*i/rings;const r=fn(x);if(!isFinite(r)){first=true;continue;}
-    const[sx,sy]=p3(x,r,0);
-    first?(cx3.moveTo(sx,sy),first=false):cx3.lineTo(sx,sy);
+    const pt=p3(x,r,0);first?(cx3.moveTo(pt.x,pt.y),first=false):cx3.lineTo(pt.x,pt.y);
   }
   cx3.stroke();
+  /* Mirror profile */
+  cx3.beginPath();cx3.strokeStyle='rgba(196,181,253,0.4)';cx3.lineWidth=1.5;
+  first=true;
+  for(let i=0;i<=rings;i++){
+    const x=a+(b-a)*i/rings;const r=fn(x);if(!isFinite(r)){first=true;continue;}
+    const pt=p3(x,-Math.abs(r),0);first?(cx3.moveTo(pt.x,pt.y),first=false):cx3.lineTo(pt.x,pt.y);
+  }
+  cx3.stroke();cx3.shadowBlur=0;
+
+  /* End caps — filled circles at a and b */
+  [a,b].forEach(xv=>{
+    const r=fn(xv);if(!isFinite(r))return;
+    const absR=Math.abs(r);
+    cx3.beginPath();cx3.fillStyle='rgba(167,139,250,0.2)';cx3.strokeStyle='rgba(200,180,255,0.6)';cx3.lineWidth=1.5;
+    for(let j=0;j<=segs;j++){
+      const ang=2*PI*j/segs;
+      const pt=p3(xv,absR*Math.cos(ang),absR*Math.sin(ang));
+      j===0?cx3.moveTo(pt.x,pt.y):cx3.lineTo(pt.x,pt.y);
+    }
+    cx3.closePath();cx3.fill();cx3.stroke();
+  });
+
   if(showVol)requestAnimationFrame(()=>draw3DVol(fn,a,b));
 }
 
@@ -1002,23 +1049,62 @@ function drawVolRotation(){
   const a=parseFloat(document.getElementById('inp-a').value)||-2;
   const b=parseFloat(document.getElementById('inp-b').value)||2;
   const pxA=oX+a*sc,pxB=oX+b*sc;
-  cx.globalAlpha=0.07;
-  for(let px=Math.min(pxA,pxB);px<=Math.max(pxA,pxB);px+=3){
-    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y))continue;
-    const r=Math.abs(y)*sc;
-    cx.beginPath();cx.ellipse(px,oY,3,r,0,0,PI*2);
-    cx.strokeStyle='#a78bfa';cx.lineWidth=1.2;cx.stroke();
-  }
-  cx.globalAlpha=1;
-  /* Also draw the reflected curve */
-  cx.beginPath();cx.strokeStyle='rgba(167,139,250,0.25)';cx.lineWidth=1.5;cx.setLineDash([4,4]);
+  const lo=Math.min(pxA,pxB),hi=Math.max(pxA,pxB);
+
+  /* Gradient filled region between curve and reflected curve */
+  cx.save();
+  cx.beginPath();
   let first=true;
-  for(let px=Math.min(pxA,pxB);px<=Math.max(pxA,pxB);px++){
-    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y)){first=true;continue;}
-    const py=oY+y*sc;
+  for(let px=lo;px<=hi;px++){
+    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y))continue;
+    const py=oY-Math.abs(y)*sc;
     first?(cx.moveTo(px,py),first=false):cx.lineTo(px,py);
   }
-  cx.stroke();cx.setLineDash([]);
+  for(let px=hi;px>=lo;px--){
+    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y))continue;
+    cx.lineTo(px,oY+Math.abs(y)*sc);
+  }
+  cx.closePath();
+  const grd=cx.createLinearGradient(0,oY-120*sc/60,0,oY+120*sc/60);
+  grd.addColorStop(0,'rgba(167,139,250,0.03)');
+  grd.addColorStop(0.3,'rgba(139,92,246,0.15)');
+  grd.addColorStop(0.5,'rgba(167,139,250,0.22)');
+  grd.addColorStop(0.7,'rgba(139,92,246,0.15)');
+  grd.addColorStop(1,'rgba(167,139,250,0.03)');
+  cx.fillStyle=grd;cx.fill();
+  cx.restore();
+
+  /* Cross-section ellipses — thicker, more opaque, with gradient fill */
+  const step=Math.max(4,Math.floor((hi-lo)/50));
+  for(let px=lo;px<=hi;px+=step){
+    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y))continue;
+    const r=Math.abs(y)*sc;if(r<2)continue;
+    /* Filled ellipse with radial gradient */
+    const eg=cx.createRadialGradient(px,oY,0,px,oY,r);
+    eg.addColorStop(0,'rgba(167,139,250,0.12)');
+    eg.addColorStop(0.7,'rgba(139,92,246,0.06)');
+    eg.addColorStop(1,'rgba(167,139,250,0.02)');
+    cx.beginPath();cx.ellipse(px,oY,4,r,0,0,PI*2);
+    cx.fillStyle=eg;cx.fill();
+    cx.strokeStyle='rgba(167,139,250,0.45)';cx.lineWidth=1.5;cx.stroke();
+  }
+
+  /* Reflected curve — solid, visible */
+  cx.beginPath();cx.strokeStyle='rgba(167,139,250,0.55)';cx.lineWidth=2.5;
+  cx.shadowColor='rgba(139,92,246,0.3)';cx.shadowBlur=6;
+  first=true;
+  for(let px=lo;px<=hi;px++){
+    const x=(px-oX)/sc;const y=fn(x);if(!isFinite(y)){first=true;continue;}
+    const py=oY+Math.abs(y)*sc;
+    first?(cx.moveTo(px,py),first=false):cx.lineTo(px,py);
+  }
+  cx.stroke();cx.shadowBlur=0;
+
+  /* Bound lines */
+  cx.setLineDash([5,5]);cx.strokeStyle='rgba(167,139,250,0.5)';cx.lineWidth=1.5;
+  cx.beginPath();cx.moveTo(pxA,0);cx.lineTo(pxA,H);cx.stroke();
+  cx.beginPath();cx.moveTo(pxB,0);cx.lineTo(pxB,H);cx.stroke();
+  cx.setLineDash([]);
 }
 
 /* ── Tangent line drawing ── */
