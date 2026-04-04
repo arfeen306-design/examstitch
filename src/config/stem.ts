@@ -1583,7 +1583,7 @@ let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();a
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 c.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -1678,7 +1678,7 @@ let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();a
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 c.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -1939,7 +1939,7 @@ const cv=document.getElementById('cv'),cx=cv.getContext('2d');
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 cv.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-cv.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+cv.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 cv.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 cv.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -2088,7 +2088,7 @@ resize();addEventListener('resize',resize);
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 c.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -2267,7 +2267,7 @@ resize();addEventListener('resize',resize);
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 c.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -2401,7 +2401,7 @@ resize();addEventListener('resize',resize);
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 c.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-c.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+c.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 c.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 c.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -2549,7 +2549,7 @@ resize();window.onresize=resize;
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -2715,7 +2715,7 @@ resize();window.onresize=resize;
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -2901,7 +2901,7 @@ resize();window.onresize=resize;
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -3081,7 +3081,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -3296,7 +3296,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -3461,7 +3461,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -3660,7 +3660,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -3813,7 +3813,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -3962,7 +3962,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -4121,7 +4121,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -4289,7 +4289,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -4481,7 +4481,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -4676,7 +4676,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -4848,7 +4848,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -5016,7 +5016,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -5307,9 +5307,9 @@ let colorBy='category',selected=null,searchTerm='';
 // Pan & zoom
 let panX=0,panY=0,zoom=1,isPanning=false,panSX=0,panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=zoom;zoom=Math.max(0.3,Math.min(4,zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;panX=mx-(mx-panX)*zoom/z;panY=my-(my-panY)*zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2||ev.button===1){isPanning=true;panSX=ev.clientX-panX;panSY=ev.clientY-panY;C.classList.add('panning');ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2||ev.button===1){isPanning=true;panSX=ev.clientX-panX;panSY=ev.clientY-panY;C.classList.add('panning');ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(isPanning){panX=ev.clientX-panSX;panY=ev.clientY-panSY}});
-C.addEventListener('mouseup',ev=>{if(ev.button===2||ev.button===1){isPanning=false;C.classList.remove('panning')}});
+C.addEventListener('mouseup',ev=>{isPanning=false;C.classList.remove('panning')});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
 document.getElementById('bCat').onclick=()=>{colorBy='category';setBtn('bCat');updateLegend()};
 document.getElementById('bState').onclick=()=>{colorBy='state';setBtn('bState');updateLegend()};
@@ -5475,7 +5475,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -5632,7 +5632,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -5777,7 +5777,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -5936,7 +5936,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -6123,7 +6123,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -6310,7 +6310,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -6473,7 +6473,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -6639,7 +6639,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -6783,7 +6783,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -6954,7 +6954,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -7126,7 +7126,7 @@ let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize
 // Pan & zoom (infinite canvas)
 let _panX=0,_panY=0,_zoom=1,_isPanning=false,_panSX=0,_panSY=0;
 C.addEventListener('wheel',ev=>{ev.preventDefault();const z=_zoom;_zoom=Math.max(0.2,Math.min(5,_zoom*(ev.deltaY>0?0.92:1.08)));const mx=ev.offsetX,my=ev.offsetY;_panX=mx-(mx-_panX)*_zoom/z;_panY=my-(my-_panY)*_zoom/z},{passive:false});
-C.addEventListener('mousedown',ev=>{if(ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
+C.addEventListener('mousedown',ev=>{if(ev.button===0||ev.button===2){_isPanning=true;_panSX=ev.clientX-_panX;_panSY=ev.clientY-_panY;ev.preventDefault()}});
 C.addEventListener('mousemove',ev=>{if(_isPanning){_panX=ev.clientX-_panSX;_panY=ev.clientY-_panSY}});
 addEventListener('mouseup',()=>{_isPanning=false});
 C.addEventListener('contextmenu',ev=>ev.preventDefault());
@@ -7590,7 +7590,7 @@ C.addEventListener('pointerdown',e=>{
   const w=s2w(sx,sy),ws={x:snap(w.x),y:snap(w.y)};
   lastPtr={x:e.clientX,y:e.clientY};ptrDown=true;
   // Right click = pan
-  if(e.button===2){isPanning=true;panStart={x:e.clientX,y:e.clientY};camStart={x:cam.x,y:cam.y};C.style.cursor='grabbing';return}
+  if(e.button===0||e.button===2){isPanning=true;panStart={x:e.clientX,y:e.clientY};camStart={x:cam.x,y:cam.y};C.style.cursor='grabbing';return}
   if(tool==='draw'){
     if(drawPts.length>=3){
       const fp=w2s(drawPts[0].x,drawPts[0].y);
