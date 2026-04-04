@@ -16,12 +16,14 @@ import {
   Home,
   FlaskConical,
   Pi,
+  Eye,
+  Pentagon,
 } from 'lucide-react';
 import type { StemCategory, Simulation } from '@/config/stem';
 
 // ── Icon resolver ────────────────────────────────────────────────────────────
 const ICON_MAP: Record<string, React.ElementType> = {
-  Box, Move3D, TrendingUp, Atom, Activity, Hexagon, FlaskConical, Pi, Sparkles,
+  Box, Move3D, TrendingUp, Atom, Activity, Hexagon, FlaskConical, Pi, Sparkles, Eye, Pentagon,
 };
 function resolveIcon(name: string): React.ElementType {
   return ICON_MAP[name] || Sparkles;

@@ -157,22 +157,32 @@ export default function SimulationViewer({
   }, []);
 
   // ── Resize doodle canvas to match container ─────────────────────────
+  const strokesRef = useRef<Stroke[]>([]);
+  strokesRef.current = strokes;
+
   useEffect(() => {
     const canvas = doodleCanvasRef.current;
     if (!canvas) return;
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      redrawDoodle(strokes);
+      redrawDoodle(strokesRef.current);
     };
     resize();
     window.addEventListener('resize', resize);
     return () => window.removeEventListener('resize', resize);
+  }, [redrawDoodle]);
+
+  // Redraw when strokes change (without resizing canvas)
+  useEffect(() => {
+    redrawDoodle(strokes);
   }, [strokes, redrawDoodle]);
 
   // ── Doodle pointer handlers ─────────────────────────────────────────
   const getPos = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = doodleCanvasRef.current!.getBoundingClientRect();
+    const canvas = doodleCanvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }, []);
 
@@ -189,17 +199,18 @@ export default function SimulationViewer({
     e.preventDefault();
     const pos = getPos(e);
     currentStrokeRef.current.points.push(pos);
-    redrawDoodle([...strokes, currentStrokeRef.current]);
-  }, [isDrawing, strokes, getPos, redrawDoodle]);
+    redrawDoodle([...strokesRef.current, currentStrokeRef.current]);
+  }, [isDrawing, getPos, redrawDoodle]);
 
   const onPointerUp = useCallback(() => {
     if (!isDrawing || !currentStrokeRef.current) return;
     setIsDrawing(false);
-    if (currentStrokeRef.current.points.length >= 2) {
-      setStrokes((prev) => [...prev, currentStrokeRef.current!]);
+    const finishedStroke = currentStrokeRef.current;
+    currentStrokeRef.current = null;
+    if (finishedStroke.points.length >= 2) {
+      setStrokes((prev) => [...prev, finishedStroke]);
       setRedoStack([]);
     }
-    currentStrokeRef.current = null;
   }, [isDrawing]);
 
   // ── Undo / Redo / Clear ─────────────────────────────────────────────
