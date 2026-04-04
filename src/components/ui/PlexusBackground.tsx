@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTheme, type Theme } from '@/components/ui/ThemeProvider';
 
 // ── Theme color palettes ────────────────────────────────────────────────────
@@ -26,6 +27,8 @@ interface Particle {
   vy: number;
 }
 
+const HIDDEN_PATHS = ['/digital-skills'];
+
 export default function PlexusBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
@@ -34,6 +37,8 @@ export default function PlexusBackground() {
   const sizeRef = useRef({ w: 0, h: 0 });
   const colorsRef = useRef(THEME_COLORS.beach);
   const { theme } = useTheme();
+  const pathname = usePathname();
+  const hidden = HIDDEN_PATHS.some((p) => pathname.startsWith(p));
 
   // Update colors when theme changes — no re-init needed
   useEffect(() => {
@@ -55,6 +60,7 @@ export default function PlexusBackground() {
   }, []);
 
   useEffect(() => {
+    if (hidden) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: true });
@@ -189,7 +195,9 @@ export default function PlexusBackground() {
       window.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseleave', onMouseLeave);
     };
-  }, [initParticles]);
+  }, [initParticles, hidden]);
+
+  if (hidden) return null;
 
   return (
     <canvas
