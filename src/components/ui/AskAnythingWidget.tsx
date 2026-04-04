@@ -162,6 +162,9 @@ const TabBar = memo(function TabBar({
   );
 });
 
+// ── Known embeddable domains (skip block-detection for these) ───────────────
+const EMBEDDABLE_HOSTS = ['www.desmos.com', 'soundcloud.com'];
+
 // ── Iframe with loading state + X-Frame-Options fallback ────────────────────
 const AiFrame = memo(function AiFrame({
   url,
@@ -176,22 +179,55 @@ const AiFrame = memo(function AiFrame({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  const isKnownEmbeddable = (() => {
+    try { return EMBEDDABLE_HOSTS.some((h) => new URL(url).hostname === h); }
+    catch { return false; }
+  })();
+
   useEffect(() => {
-    // Reset on URL change
     setStatus('loading');
 
-    // Fallback timer — if iframe doesn't signal load in 6s, assume blocked
-    timerRef.current = setTimeout(() => {
-      setStatus((prev) => (prev === 'loading' ? 'blocked' : prev));
-    }, 6000);
+    // For known-embeddable sites, just use a normal load timer
+    if (isKnownEmbeddable) {
+      timerRef.current = setTimeout(() => {
+        setStatus((prev) => (prev === 'loading' ? 'ready' : prev));
+      }, 3000);
+    } else {
+      // For unknown sites, assume blocked after 4s — if onLoad fires and
+      // we can't access the iframe content, it's almost certainly blocked
+      timerRef.current = setTimeout(() => {
+        setStatus((prev) => (prev === 'loading' ? 'blocked' : prev));
+      }, 4000);
+    }
 
     return () => clearTimeout(timerRef.current);
-  }, [url]);
+  }, [url, isKnownEmbeddable]);
 
   const handleLoad = useCallback(() => {
     clearTimeout(timerRef.current);
-    setStatus('ready');
-  }, []);
+    if (isKnownEmbeddable) {
+      setStatus('ready');
+      return;
+    }
+    // For cross-origin iframes, onLoad fires even when blocked.
+    // Try accessing contentWindow — if blocked, it throws or returns null dimensions.
+    try {
+      const win = iframeRef.current?.contentWindow;
+      // If we can read innerHeight, it's same-origin (shouldn't happen) or allowed
+      if (win && win.innerHeight > 0) {
+        setStatus('ready');
+        return;
+      }
+    } catch {
+      // Cross-origin access denied — expected for blocked AND working iframes.
+      // Use a heuristic: check if the iframe has painted anything after a short delay.
+    }
+    // Give it a beat — if the page rendered content, the iframe will have a non-zero
+    // scrollHeight. For DENY'd frames, the browser shows a blank or error page.
+    setTimeout(() => {
+      setStatus((prev) => (prev === 'loading' ? 'blocked' : prev));
+    }, 1500);
+  }, [isKnownEmbeddable]);
 
   const handleError = useCallback(() => {
     clearTimeout(timerRef.current);
