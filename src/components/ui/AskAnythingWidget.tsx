@@ -94,15 +94,28 @@ function CalcIcon({ className = '' }: { className?: string }) {
 }
 
 // ── FAB Button ──────────────────────────────────────────────────────────────
-const Fab = memo(function Fab({ onClick }: { onClick: () => void }) {
+const Fab = memo(function Fab({
+  onClick,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: {
+  onClick: () => void;
+  onDragStart: (e: React.PointerEvent) => void;
+  onDragMove: (e: React.PointerEvent) => void;
+  onDragEnd: (e: React.PointerEvent) => void;
+}) {
   return (
     <motion.button
       onClick={onClick}
+      onPointerDown={onDragStart}
+      onPointerMove={onDragMove}
+      onPointerUp={onDragEnd}
       className="group relative w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center
                  bg-gradient-to-br from-[#1e1e2e] via-[#181825] to-[#11111b]
                  hover:from-[#2a2a3e] hover:via-[#1e1e30] hover:to-[#161625]
                  transition-shadow duration-300 hover:shadow-[0_8px_40px_rgba(137,220,235,0.25)]
-                 border border-[#313244]/60"
+                 border border-[#313244]/60 cursor-grab active:cursor-grabbing touch-none"
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
       aria-label="Ask Anything — Open Tools"
@@ -283,7 +296,36 @@ export default function AskAnythingWidget() {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ProviderId>('desmos');
 
-  // ── Dragging state ──────────────────────────────────────────────────────
+  // ── FAB drag state ──────────────────────────────────────────────────────
+  const fabRef = useRef<HTMLDivElement>(null);
+  const fabDrag = useRef({ active: false, dx: 0, dy: 0, moved: false });
+
+  const onFabDragStart = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const fab = fabRef.current;
+    if (!fab) return;
+    const r = fab.getBoundingClientRect();
+    fabDrag.current = { active: true, dx: e.clientX - r.left, dy: e.clientY - r.top, moved: false };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const onFabDragMove = useCallback((e: React.PointerEvent) => {
+    if (!fabDrag.current.active || !fabRef.current) return;
+    fabDrag.current.moved = true;
+    const fab = fabRef.current;
+    fab.style.right = 'auto';
+    fab.style.bottom = 'auto';
+    fab.style.left = `${Math.max(0, Math.min(window.innerWidth - 60, e.clientX - fabDrag.current.dx))}px`;
+    fab.style.top = `${Math.max(0, Math.min(window.innerHeight - 60, e.clientY - fabDrag.current.dy))}px`;
+  }, []);
+
+  const onFabDragEnd = useCallback(() => {
+    const wasDrag = fabDrag.current.moved;
+    fabDrag.current.active = false;
+    if (!wasDrag) setOpen(true);
+  }, []);
+
+  // ── Panel dragging state ──────────────────────────────────────────────────────
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
   const dragging = useRef(false);
@@ -360,8 +402,8 @@ export default function AskAnythingWidget() {
 
   return (
     <>
-      {/* ── FAB ── */}
-      <div className="fixed bottom-24 right-6 z-[9998]">
+      {/* ── FAB (draggable) ── */}
+      <div ref={fabRef} className="fixed bottom-24 right-6 z-[9998]">
         <AnimatePresence>
           {!open && (
             <motion.div
@@ -370,7 +412,12 @@ export default function AskAnythingWidget() {
               exit={{ scale: 0, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 500, damping: 28 }}
             >
-              <Fab onClick={() => setOpen(true)} />
+              <Fab
+                onClick={() => {/* handled by onFabDragEnd */}}
+                onDragStart={onFabDragStart}
+                onDragMove={onFabDragMove}
+                onDragEnd={onFabDragEnd}
+              />
             </motion.div>
           )}
         </AnimatePresence>

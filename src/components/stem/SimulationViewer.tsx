@@ -142,13 +142,6 @@ export default function SimulationViewer({
   const [iframeKey, setIframeKey] = useState(0);
   const [canvasLocked, setCanvasLocked] = useState(false);
 
-  // ── Desmos calculator ─────────────────────────────────────────────
-  const [desmosOpen, setDesmosOpen] = useState(false);
-  const desmosRef = useRef<HTMLDivElement>(null);
-  const desmosBtnRef = useRef<HTMLButtonElement>(null);
-  const desmosDrag = useRef({ active: false, dx: 0, dy: 0 });
-  const desmosBtnDrag = useRef({ active: false, dx: 0, dy: 0, moved: false });
-
   // ── Auto-hide HUD top bar ──────────────────────────────────────────
   useEffect(() => {
     const startHideTimer = () => {
@@ -677,97 +670,6 @@ export default function SimulationViewer({
         hudColors={hudColors}
       />
 
-      {/* ── Desmos Calculator Button (draggable) ────────────────────────── */}
-      <button
-        ref={desmosBtnRef}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          const btn = desmosBtnRef.current;
-          if (!btn) return;
-          const r = btn.getBoundingClientRect();
-          desmosBtnDrag.current = { active: true, dx: e.clientX - r.left, dy: e.clientY - r.top, moved: false };
-          btn.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!desmosBtnDrag.current.active || !desmosBtnRef.current) return;
-          desmosBtnDrag.current.moved = true;
-          const btn = desmosBtnRef.current;
-          btn.style.right = 'auto';
-          btn.style.bottom = 'auto';
-          btn.style.left = `${Math.max(0, Math.min(window.innerWidth - 56, e.clientX - desmosBtnDrag.current.dx))}px`;
-          btn.style.top = `${Math.max(0, Math.min(window.innerHeight - 56, e.clientY - desmosBtnDrag.current.dy))}px`;
-        }}
-        onPointerUp={() => {
-          const wasDrag = desmosBtnDrag.current.moved;
-          desmosBtnDrag.current.active = false;
-          if (!wasDrag) setDesmosOpen((p) => !p);
-        }}
-        className="fixed z-50 w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 flex items-center justify-center hover:scale-110 transition-transform cursor-grab active:cursor-grabbing"
-        style={{ bottom: 24, right: 24 }}
-        title="Desmos Calculator"
-      >
-        <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="4" y="2" width="16" height="20" rx="2" />
-          <line x1="8" y1="6" x2="16" y2="6" />
-          <line x1="8" y1="10" x2="10" y2="10" />
-          <line x1="12" y1="10" x2="16" y2="10" />
-          <line x1="8" y1="14" x2="10" y2="14" />
-          <line x1="12" y1="14" x2="16" y2="14" />
-          <line x1="8" y1="18" x2="16" y2="18" />
-        </svg>
-      </button>
-
-      {/* ── Desmos Calculator Panel (draggable) ─────────────────────────── */}
-      <AnimatePresence>
-        {desmosOpen && (
-          <motion.div
-            ref={desmosRef}
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.25 }}
-            className="fixed z-50 rounded-2xl overflow-hidden shadow-2xl border border-white/[0.1] bg-[#0a0a1a]"
-            style={{ bottom: 80, right: 24, width: 420, height: 520 }}
-          >
-            {/* Drag header */}
-            <div
-              className="flex items-center justify-between h-9 px-3 bg-gradient-to-r from-green-600/80 to-emerald-600/80 cursor-grab active:cursor-grabbing select-none"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                const panel = desmosRef.current;
-                if (!panel) return;
-                const r = panel.getBoundingClientRect();
-                desmosDrag.current = { active: true, dx: e.clientX - r.left, dy: e.clientY - r.top };
-                (e.target as HTMLElement).setPointerCapture(e.pointerId);
-              }}
-              onPointerMove={(e) => {
-                if (!desmosDrag.current.active || !desmosRef.current) return;
-                e.preventDefault();
-                const panel = desmosRef.current;
-                panel.style.right = 'auto';
-                panel.style.bottom = 'auto';
-                panel.style.left = `${Math.max(0, e.clientX - desmosDrag.current.dx)}px`;
-                panel.style.top = `${Math.max(0, e.clientY - desmosDrag.current.dy)}px`;
-              }}
-              onPointerUp={() => { desmosDrag.current.active = false; }}
-            >
-              <div className="flex items-center gap-2">
-                <GripVertical className="w-3.5 h-3.5 text-white/50" />
-                <span className="text-xs font-semibold text-white">Desmos Calculator</span>
-              </div>
-              <button onClick={() => setDesmosOpen(false)} className="text-white/60 hover:text-white transition-colors">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <iframe
-              src="https://www.desmos.com/calculator"
-              className="w-full border-0"
-              style={{ height: 'calc(100% - 36px)' }}
-              allow="clipboard-write"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
