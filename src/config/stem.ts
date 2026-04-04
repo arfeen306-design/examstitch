@@ -4863,6 +4863,585 @@ if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){time=0}
 });
 <\/script></body></html>`;
 
+// ── Periodic Table Explorer ─────────────────────────────────────────────────
+const PERIODIC_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block;cursor:pointer}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(59,130,246,0.25);border-color:rgba(59,130,246,0.5);color:#60a5fa}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#60a5fa;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Color By</div>
+<button id="bCat" class="active">Category</button>
+<button id="bState">State</button>
+<button id="bElecNeg">Electronegativity</button>
+</div>
+<div class="sec">
+<div class="sec-title">Selected Element</div>
+<div class="info" id="info">Click an element on the table</div>
+</div>
+<div class="sec">
+<div class="sec-title">Legend</div>
+<div class="info" id="legend"></div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+const E=[
+{z:1,s:'H',n:'Hydrogen',m:1.008,cat:'nonmetal',st:'gas',en:2.2,g:1,p:1},
+{z:2,s:'He',n:'Helium',m:4.003,cat:'noble',st:'gas',en:0,g:18,p:1},
+{z:3,s:'Li',n:'Lithium',m:6.941,cat:'alkali',st:'solid',en:0.98,g:1,p:2},
+{z:4,s:'Be',n:'Beryllium',m:9.012,cat:'alkaline',st:'solid',en:1.57,g:2,p:2},
+{z:5,s:'B',n:'Boron',m:10.81,cat:'metalloid',st:'solid',en:2.04,g:13,p:2},
+{z:6,s:'C',n:'Carbon',m:12.01,cat:'nonmetal',st:'solid',en:2.55,g:14,p:2},
+{z:7,s:'N',n:'Nitrogen',m:14.01,cat:'nonmetal',st:'gas',en:3.04,g:15,p:2},
+{z:8,s:'O',n:'Oxygen',m:16.00,cat:'nonmetal',st:'gas',en:3.44,g:16,p:2},
+{z:9,s:'F',n:'Fluorine',m:19.00,cat:'halogen',st:'gas',en:3.98,g:17,p:2},
+{z:10,s:'Ne',n:'Neon',m:20.18,cat:'noble',st:'gas',en:0,g:18,p:2},
+{z:11,s:'Na',n:'Sodium',m:22.99,cat:'alkali',st:'solid',en:0.93,g:1,p:3},
+{z:12,s:'Mg',n:'Magnesium',m:24.31,cat:'alkaline',st:'solid',en:1.31,g:2,p:3},
+{z:13,s:'Al',n:'Aluminium',m:26.98,cat:'metal',st:'solid',en:1.61,g:13,p:3},
+{z:14,s:'Si',n:'Silicon',m:28.09,cat:'metalloid',st:'solid',en:1.90,g:14,p:3},
+{z:15,s:'P',n:'Phosphorus',m:30.97,cat:'nonmetal',st:'solid',en:2.19,g:15,p:3},
+{z:16,s:'S',n:'Sulphur',m:32.07,cat:'nonmetal',st:'solid',en:2.58,g:16,p:3},
+{z:17,s:'Cl',n:'Chlorine',m:35.45,cat:'halogen',st:'gas',en:3.16,g:17,p:3},
+{z:18,s:'Ar',n:'Argon',m:39.95,cat:'noble',st:'gas',en:0,g:18,p:3},
+{z:19,s:'K',n:'Potassium',m:39.10,cat:'alkali',st:'solid',en:0.82,g:1,p:4},
+{z:20,s:'Ca',n:'Calcium',m:40.08,cat:'alkaline',st:'solid',en:1.00,g:2,p:4},
+{z:26,s:'Fe',n:'Iron',m:55.85,cat:'transition',st:'solid',en:1.83,g:8,p:4},
+{z:29,s:'Cu',n:'Copper',m:63.55,cat:'transition',st:'solid',en:1.90,g:11,p:4},
+{z:30,s:'Zn',n:'Zinc',m:65.38,cat:'transition',st:'solid',en:1.65,g:12,p:4},
+{z:35,s:'Br',n:'Bromine',m:79.90,cat:'halogen',st:'liquid',en:2.96,g:17,p:4},
+{z:36,s:'Kr',n:'Krypton',m:83.80,cat:'noble',st:'gas',en:3.00,g:18,p:4},
+{z:47,s:'Ag',n:'Silver',m:107.87,cat:'transition',st:'solid',en:1.93,g:11,p:5},
+{z:79,s:'Au',n:'Gold',m:196.97,cat:'transition',st:'solid',en:2.54,g:11,p:6},
+{z:82,s:'Pb',n:'Lead',m:207.2,cat:'metal',st:'solid',en:2.33,g:14,p:6},
+];
+const catColors={alkali:'#ef4444',alkaline:'#f97316',transition:'#f59e0b',metal:'#84cc16',metalloid:'#10b981',nonmetal:'#06b6d4',halogen:'#8b5cf6',noble:'#ec4899'};
+const stateColors={solid:'#3b82f6',liquid:'#10b981',gas:'#ef4444'};
+let colorBy='category',selected=null;
+document.getElementById('bCat').onclick=()=>{colorBy='category';setBtn('bCat');updateLegend()};
+document.getElementById('bState').onclick=()=>{colorBy='state';setBtn('bState');updateLegend()};
+document.getElementById('bElecNeg').onclick=()=>{colorBy='en';setBtn('bElecNeg');updateLegend()};
+function setBtn(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function updateLegend(){
+let html='';
+if(colorBy==='category'){Object.entries(catColors).forEach(([k,v])=>{html+='<span style="color:'+v+'">■</span> '+k+'<br>'})}
+else if(colorBy==='state'){Object.entries(stateColors).forEach(([k,v])=>{html+='<span style="color:'+v+'">■</span> '+k+'<br>'})}
+else{html='Low (blue) → High (red)'}
+document.getElementById('legend').innerHTML=html;
+}
+updateLegend();
+function getColor(el){
+if(colorBy==='category')return catColors[el.cat]||'#666';
+if(colorBy==='state')return stateColors[el.st]||'#666';
+const n=el.en/4;return 'rgb('+(50+n*200)+','+(50+100*(1-n))+','+(200-n*150)+')';
+}
+function draw(){
+X.clearRect(0,0,W,H);
+const cellW=Math.min((W-40)/18,45),cellH=cellW*1.1;
+const ox=(W-18*cellW)/2,oy=20;
+E.forEach(el=>{
+const col=el.g-1,row=el.p-1;
+const ex=ox+col*cellW,ey=oy+row*cellH;
+const color=getColor(el);
+const isSelected=selected&&selected.z===el.z;
+X.fillStyle=isSelected?color+'':color+'40';
+X.strokeStyle=color;X.lineWidth=isSelected?2:1;
+X.fillRect(ex+1,ey+1,cellW-2,cellH-2);X.strokeRect(ex+1,ey+1,cellW-2,cellH-2);
+X.fillStyle=isSelected?'#fff':'rgba(255,255,255,0.7)';X.font='bold '+(cellW*0.35)+'px system-ui';X.textAlign='center';
+X.fillText(el.s,ex+cellW/2,ey+cellH*0.55);
+X.fillStyle='rgba(255,255,255,0.35)';X.font=(cellW*0.2)+'px system-ui';
+X.fillText(el.z,ex+cellW/2,ey+cellH*0.22);
+X.fillText(el.m.toFixed(1),ex+cellW/2,ey+cellH*0.82);
+});
+X.textAlign='left';
+// group/period labels
+X.fillStyle='rgba(255,255,255,0.2)';X.font='9px system-ui';
+for(let g=1;g<=18;g++){X.textAlign='center';X.fillText(g,ox+(g-0.5)*cellW,oy-5)}
+for(let p=1;p<=7;p++){X.textAlign='right';X.fillText(p,ox-5,oy+p*cellH-cellH*0.4)}
+X.textAlign='left';
+}
+C.onclick=e=>{
+const cellW=Math.min((W-40)/18,45),cellH=cellW*1.1;
+const ox=(W-18*cellW)/2,oy=20;
+const mx=e.offsetX,my=e.offsetY;
+selected=null;
+E.forEach(el=>{
+const col=el.g-1,row=el.p-1;
+const ex=ox+col*cellW,ey=oy+row*cellH;
+if(mx>ex&&mx<ex+cellW&&my>ey&&my<ey+cellH)selected=el;
+});
+if(selected){
+document.getElementById('info').innerHTML=
+'<b style="font-size:16px">'+selected.s+'</b> — '+selected.n+'<br><br>'+
+'Atomic number: <span class="val">'+selected.z+'</span><br>'+
+'Mass: <span class="val">'+selected.m+'</span> u<br>'+
+'Category: <span class="val">'+selected.cat+'</span><br>'+
+'State (25°C): <span class="val">'+selected.st+'</span><br>'+
+'Electronegativity: <span class="val">'+(selected.en||'N/A')+'</span><br>'+
+'Group: <span class="val">'+selected.g+'</span> | Period: <span class="val">'+selected.p+'</span>';
+}
+};
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){selected=null;colorBy='category';updateLegend()}
+});
+<\/script></body></html>`;
+
+// ── Electrolysis ───────────────────────────────────────────────────────────
+const ELECTROLYSIS_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#f59e0b}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(245,158,11,0.25);border-color:rgba(245,158,11,0.5);color:#f59e0b}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#f59e0b;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Electrolyte</div>
+<button id="bWater" class="active">Water (H₂O)</button>
+<button id="bBrine">Brine (NaCl)</button>
+<button id="bCuSO4">CuSO₄ solution</button>
+</div>
+<div class="sec">
+<div class="sec-title">Controls</div>
+<label>Voltage <span id="vV">6</span> V</label>
+<input type="range" id="sV" min="1" max="12" value="6" step="1">
+<button id="bToggle">Start</button>
+</div>
+<div class="sec">
+<div class="sec-title">Products</div>
+<div class="info" id="products">Select electrolyte and start</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Electrolysis</b> uses electricity to decompose a compound.<br><br>
+<b>Cathode (−):</b> reduction (gain electrons)<br>
+<b>Anode (+):</b> oxidation (lose electrons)<br><br>
+<b>Water:</b> 2H₂O → 2H₂ + O₂<br>
+<b>Brine:</b> 2NaCl → 2Na + Cl₂<br>
+<b>CuSO₄:</b> Cu²⁺ + 2e⁻ → Cu
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let electrolyte='water',voltage=6,running=false,time=0,bubbles=[],ions=[];
+const sV=document.getElementById('sV');
+sV.oninput=()=>{voltage=+sV.value;document.getElementById('vV').textContent=voltage};
+document.getElementById('bWater').onclick=()=>{electrolyte='water';setBtn('bWater');initIons()};
+document.getElementById('bBrine').onclick=()=>{electrolyte='brine';setBtn('bBrine');initIons()};
+document.getElementById('bCuSO4').onclick=()=>{electrolyte='cuso4';setBtn('bCuSO4');initIons()};
+document.getElementById('bToggle').onclick=()=>{running=!running;document.getElementById('bToggle').textContent=running?'Stop':'Start'};
+function setBtn(id){document.querySelectorAll('.sec:first-child button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function initIons(){
+ions=[];
+const cx=W*0.4,tankW=W*0.55,tankH=H*0.5,tx=cx-tankW/2,ty=H*0.25;
+for(let i=0;i<30;i++){
+const isPos=i%2===0;
+ions.push({x:tx+20+Math.random()*(tankW-40),y:ty+20+Math.random()*(tankH-40),
+charge:isPos?1:-1,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,
+label:electrolyte==='water'?(isPos?'H⁺':'OH⁻'):electrolyte==='brine'?(isPos?'Na⁺':'Cl⁻'):(isPos?'Cu²⁺':'SO₄²⁻'),
+color:isPos?'rgba(239,68,68,0.7)':'rgba(59,130,246,0.7)'});
+}
+}
+initIons();
+function draw(){
+X.clearRect(0,0,W,H);
+const cx=W*0.4,tankW=W*0.55,tankH=H*0.5,tx=cx-tankW/2,ty=H*0.25;
+// tank
+X.fillStyle='rgba(59,130,246,0.06)';X.fillRect(tx,ty,tankW,tankH);
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=2;X.strokeRect(tx,ty,tankW,tankH);
+// electrodes
+const cathX=tx+tankW*0.25,anodeX=tx+tankW*0.75;
+X.fillStyle='rgba(100,100,100,0.6)';X.fillRect(cathX-6,ty-20,12,tankH+20);X.fillRect(anodeX-6,ty-20,12,tankH+20);
+X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=1;X.strokeRect(cathX-6,ty-20,12,tankH+20);X.strokeRect(anodeX-6,ty-20,12,tankH+20);
+// labels
+X.fillStyle='#3b82f6';X.font='bold 12px system-ui';X.textAlign='center';X.fillText('− Cathode',cathX,ty-28);
+X.fillStyle='#ef4444';X.fillText('+ Anode',anodeX,ty-28);
+// wire
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=2;
+X.beginPath();X.moveTo(cathX,ty-20);X.lineTo(cathX,ty-50);X.lineTo(anodeX,ty-50);X.lineTo(anodeX,ty-20);X.stroke();
+// battery
+X.fillStyle='rgba(245,158,11,0.3)';X.fillRect(cx-20,ty-60,40,20);X.strokeStyle='rgba(245,158,11,0.6)';X.strokeRect(cx-20,ty-60,40,20);
+X.fillStyle='#f59e0b';X.font='9px system-ui';X.fillText(voltage+'V',cx,ty-47);
+// ions
+if(running){
+ions.forEach(ion=>{
+// move toward electrode
+const targetX=ion.charge>0?cathX:anodeX;
+ion.vx+=(targetX-ion.x)*0.0003*voltage;
+ion.vy+=(Math.random()-0.5)*0.1;
+ion.vx*=0.99;ion.vy*=0.99;
+ion.x+=ion.vx;ion.y+=ion.vy;
+ion.x=Math.max(tx+10,Math.min(tx+tankW-10,ion.x));
+ion.y=Math.max(ty+10,Math.min(ty+tankH-10,ion.y));
+// generate bubble at electrode
+if(Math.abs(ion.x-targetX)<20&&Math.random()<0.02*voltage){
+bubbles.push({x:targetX+(Math.random()-0.5)*10,y:ion.y,r:2+Math.random()*3,vy:-0.5-Math.random()});
+}
+});
+}
+ions.forEach(ion=>{
+X.beginPath();X.arc(ion.x,ion.y,8,0,Math.PI*2);X.fillStyle=ion.color;X.fill();
+X.fillStyle='#fff';X.font='bold 7px system-ui';X.fillText(ion.label,ion.x,ion.y+3);
+});
+// bubbles
+bubbles.forEach(b=>{
+b.y+=b.vy;b.r*=0.999;
+X.beginPath();X.arc(b.x,b.y,b.r,0,Math.PI*2);X.fillStyle='rgba(255,255,255,0.2)';X.fill();
+});
+bubbles=bubbles.filter(b=>b.y>ty&&b.r>0.5);
+X.textAlign='left';
+// products info
+const products={
+water:{cathode:'H₂ gas (bubbles)',anode:'O₂ gas (bubbles)',eq:'2H₂O → 2H₂↑ + O₂↑'},
+brine:{cathode:'H₂ gas',anode:'Cl₂ gas',eq:'2NaCl(aq) → 2Na⁺ + Cl₂↑ + H₂↑'},
+cuso4:{cathode:'Cu metal (deposited)',anode:'O₂ gas',eq:'Cu²⁺ + 2e⁻ → Cu'}
+}[electrolyte];
+document.getElementById('products').innerHTML=
+'At cathode: <span class="val">'+products.cathode+'</span><br>'+
+'At anode: <span class="val">'+products.anode+'</span><br><br>'+
+'Equation:<br>'+products.eq;
+}
+function loop(){requestAnimationFrame(loop);if(running)time+=1/60;draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){running=false;time=0;bubbles=[];initIons();document.getElementById('bToggle').textContent='Start'}
+});
+<\/script></body></html>`;
+
+// ── Acids & Bases ──────────────────────────────────────────────────────────
+const ACIDS_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#10b981}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+button.active{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.5);color:#10b981}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#10b981;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">pH Scale</div>
+<label>pH Value <span id="vPH">7</span></label>
+<input type="range" id="sPH" min="0" max="14" value="7" step="0.1">
+</div>
+<div class="sec">
+<div class="sec-title">Common Substances</div>
+<button id="s0">Battery acid (pH 1)</button>
+<button id="s1">Lemon juice (pH 2)</button>
+<button id="s2">Vinegar (pH 3)</button>
+<button id="s3">Pure water (pH 7)</button>
+<button id="s4">Baking soda (pH 9)</button>
+<button id="s5">Bleach (pH 13)</button>
+</div>
+<div class="sec">
+<div class="sec-title">Info</div>
+<div class="info" id="info">Adjust pH or select a substance</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>pH = −log₁₀[H⁺]</b><br><br>
+pH < 7: <span style="color:#ef4444">Acid</span> (excess H⁺)<br>
+pH = 7: Neutral<br>
+pH > 7: <span style="color:#3b82f6">Alkali</span> (excess OH⁻)<br><br>
+<b>Indicators:</b><br>
+Litmus: red in acid, blue in alkali<br>
+Universal indicator: full colour range<br><br>
+<b>Neutralisation:</b><br>
+Acid + Base → Salt + Water
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let pH=7;
+const sPH=document.getElementById('sPH');
+sPH.oninput=()=>{pH=+sPH.value;document.getElementById('vPH').textContent=pH.toFixed(1);update()};
+const presets=[1,2,3,7,9,13];
+presets.forEach((p,i)=>{
+document.getElementById('s'+i).onclick=()=>{pH=p;sPH.value=p;document.getElementById('vPH').textContent=p;update()};
+});
+function phColor(ph){
+if(ph<1)return'rgb(255,0,0)';if(ph<3)return'rgb(255,80,0)';if(ph<5)return'rgb(255,160,0)';
+if(ph<6)return'rgb(200,200,0)';if(ph<7)return'rgb(100,200,50)';if(ph<8)return'rgb(0,180,0)';
+if(ph<9)return'rgb(0,150,100)';if(ph<11)return'rgb(0,100,200)';if(ph<13)return'rgb(50,0,200)';
+return'rgb(100,0,150)';
+}
+function update(){
+const hConc=Math.pow(10,-pH);
+const ohConc=Math.pow(10,-(14-pH));
+const type=pH<6.5?'Acid':pH>7.5?'Alkali':'Neutral';
+document.getElementById('info').innerHTML=
+'Type: <span class="val">'+type+'</span><br>'+
+'[H⁺]: <span class="val">'+hConc.toExponential(2)+'</span> mol/L<br>'+
+'[OH⁻]: <span class="val">'+ohConc.toExponential(2)+'</span> mol/L<br>'+
+'Strength: <span class="val">'+(pH<3||pH>11?'Strong':pH<5||pH>9?'Weak':'Very weak/Neutral')+'</span>';
+}
+update();
+function draw(){
+X.clearRect(0,0,W,H);
+const barX=40,barY=40,barW=W*0.7-80,barH=50;
+// pH scale bar
+for(let i=0;i<=14;i++){
+const x=barX+(i/14)*barW;
+X.fillStyle=phColor(i);
+X.fillRect(x,barY,barW/14+1,barH);
+}
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=1;X.strokeRect(barX,barY,barW,barH);
+// numbers
+for(let i=0;i<=14;i++){
+const x=barX+(i/14)*barW+barW/28;
+X.fillStyle='rgba(255,255,255,0.7)';X.font='bold 10px system-ui';X.textAlign='center';
+X.fillText(i,x,barY+barH+14);
+}
+// pointer
+const ptrX=barX+(pH/14)*barW;
+X.beginPath();X.moveTo(ptrX,barY-5);X.lineTo(ptrX-8,barY-18);X.lineTo(ptrX+8,barY-18);X.closePath();
+X.fillStyle='#fff';X.fill();
+X.fillStyle='#fff';X.font='bold 12px system-ui';X.fillText('pH '+pH.toFixed(1),ptrX,barY-24);
+// labels
+X.fillStyle='rgba(239,68,68,0.6)';X.font='11px system-ui';X.fillText('← ACID',barX+20,barY+barH+35);
+X.fillStyle='rgba(255,255,255,0.4)';X.fillText('NEUTRAL',barX+barW/2,barY+barH+35);
+X.fillStyle='rgba(59,130,246,0.6)';X.fillText('ALKALI →',barX+barW-40,barY+barH+35);
+// beaker
+const bx=W*0.35,by=H*0.45,bw=120,bh=160;
+X.strokeStyle='rgba(255,255,255,0.3)';X.lineWidth=2;
+X.beginPath();X.moveTo(bx,by);X.lineTo(bx,by+bh);X.lineTo(bx+bw,by+bh);X.lineTo(bx+bw,by);X.stroke();
+// liquid
+const col=phColor(pH);
+X.fillStyle=col+'40';X.fillRect(bx+2,by+30,bw-4,bh-32);
+X.fillStyle=col;X.font='bold 14px system-ui';X.fillText('pH '+pH.toFixed(1),bx+bw/2,by+bh/2);
+// H+ and OH- particles
+const nH=Math.max(1,Math.round((14-pH)*2));
+const nOH=Math.max(1,Math.round(pH*2));
+for(let i=0;i<nH;i++){
+const px=bx+10+Math.random()*(bw-20),py=by+40+Math.random()*(bh-50);
+X.beginPath();X.arc(px,py,3,0,Math.PI*2);X.fillStyle='rgba(239,68,68,0.5)';X.fill();
+}
+for(let i=0;i<nOH;i++){
+const px=bx+10+Math.random()*(bw-20),py=by+40+Math.random()*(bh-50);
+X.beginPath();X.arc(px,py,3,0,Math.PI*2);X.fillStyle='rgba(59,130,246,0.5)';X.fill();
+}
+X.fillStyle='rgba(239,68,68,0.6)';X.font='9px system-ui';X.textAlign='left';X.fillText('● H⁺ ions',bx+bw+15,by+bh/2-10);
+X.fillStyle='rgba(59,130,246,0.6)';X.fillText('● OH⁻ ions',bx+bw+15,by+bh/2+10);
+X.textAlign='left';
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){pH=7;sPH.value=7;document.getElementById('vPH').textContent='7';update()}
+});
+<\/script></body></html>`;
+
+// ── States of Matter ───────────────────────────────────────────────────────
+const STATES_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;user-select:none}
+canvas{display:block}
+#right-panel{position:fixed;top:0;right:0;bottom:0;width:220px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.95);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:12px}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.sec{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sec-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.35);font-weight:700;margin-bottom:8px}
+label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+label span{color:#fff;font-weight:600}
+input[type=range]{width:100%;margin:2px 0 8px;accent-color:#ef4444}
+button{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;margin-bottom:6px}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
+.info{font-size:10px;color:rgba(255,255,255,0.5);line-height:1.6;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.val{color:#ef4444;font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="right-panel">
+<div class="sec">
+<div class="sec-title">Temperature</div>
+<label>Temp <span id="vT">25</span> °C</label>
+<input type="range" id="sT" min="-50" max="200" value="25" step="1">
+<label>Substance</label>
+<button id="bWater">Water (mp:0 bp:100)</button>
+<button id="bIron">Iron (mp:1538 bp:2862)</button>
+</div>
+<div class="sec">
+<div class="sec-title">Add / Remove Heat</div>
+<button id="bHeat">🔥 Heat (+10°C)</button>
+<button id="bCool">❄️ Cool (−10°C)</button>
+</div>
+<div class="sec">
+<div class="sec-title">Current State</div>
+<div class="info" id="info">Liquid</div>
+</div>
+<div class="sec">
+<div class="sec-title">Theory</div>
+<div class="info">
+<b>Solid:</b> Fixed shape, fixed volume. Particles vibrate in place.<br><br>
+<b>Liquid:</b> No fixed shape, fixed volume. Particles slide past each other.<br><br>
+<b>Gas:</b> No fixed shape or volume. Particles move freely and fast.<br><br>
+Melting → Liquid → Boiling → Gas<br>
+Condensation ← Liquid ← Freezing
+</div>
+</div>
+</div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+let W,H;function resize(){W=C.width=innerWidth-220;H=C.height=innerHeight}resize();window.onresize=resize;
+let temp=25,mp=0,bp=100,substance='water',particles=[];
+const sT=document.getElementById('sT');
+sT.oninput=()=>{temp=+sT.value;document.getElementById('vT').textContent=temp;update()};
+document.getElementById('bWater').onclick=()=>{substance='water';mp=0;bp=100;sT.min=-50;sT.max=200;update()};
+document.getElementById('bIron').onclick=()=>{substance='iron';mp=1538;bp=2862;sT.min=1000;sT.max=3200;temp=1500;sT.value=1500;update()};
+document.getElementById('bHeat').onclick=()=>{temp=Math.min(+sT.max,temp+10);sT.value=temp;document.getElementById('vT').textContent=temp;update()};
+document.getElementById('bCool').onclick=()=>{temp=Math.max(+sT.min,temp-10);sT.value=temp;document.getElementById('vT').textContent=temp;update()};
+function initParticles(){
+particles=[];
+for(let i=0;i<50;i++){
+particles.push({x:W*0.2+Math.random()*W*0.35,y:H*0.3+Math.random()*H*0.4,vx:0,vy:0,homeX:0,homeY:0});
+}
+// set home positions in grid
+const cols=10,rows=5,sp=20;
+const ox=W*0.25,oy=H*0.4;
+particles.forEach((p,i)=>{
+p.homeX=ox+(i%cols)*sp;p.homeY=oy+Math.floor(i/cols)*sp;
+});
+}
+initParticles();
+function getState(){return temp<mp?'solid':temp<bp?'liquid':'gas'}
+function update(){
+const state=getState();
+const color=state==='solid'?'#3b82f6':state==='liquid'?'#10b981':'#ef4444';
+document.getElementById('info').innerHTML=
+'<span style="color:'+color+';font-size:14px;font-weight:700">'+state.toUpperCase()+'</span><br><br>'+
+'Temperature: <span class="val">'+temp+'</span> °C<br>'+
+'Melting point: '+mp+' °C<br>'+
+'Boiling point: '+bp+' °C<br>'+
+'Particle energy: <span class="val">'+(state==='solid'?'Low':state==='liquid'?'Medium':'High')+'</span>';
+}
+update();
+function draw(){
+X.clearRect(0,0,W,H);
+const state=getState();
+const cx=W*0.35,cy=H*0.5;
+// container
+X.strokeStyle='rgba(255,255,255,0.2)';X.lineWidth=2;
+const cw=W*0.4,ch=H*0.5,cx0=cx-cw/2,cy0=cy-ch/2;
+X.strokeRect(cx0,cy0,cw,ch);
+// state label
+const color=state==='solid'?'#3b82f6':state==='liquid'?'#10b981':'#ef4444';
+X.fillStyle=color;X.font='bold 16px system-ui';X.textAlign='center';
+X.fillText(state.toUpperCase(),cx,cy0-15);X.textAlign='left';
+const speed=state==='solid'?0.3:state==='liquid'?1.5:4;
+const spread=state==='solid'?0:state==='liquid'?0.5:1;
+particles.forEach(p=>{
+if(state==='solid'){
+// vibrate around home
+p.x=p.homeX+Math.sin(Date.now()*0.005+p.homeX)*speed*3;
+p.y=p.homeY+Math.cos(Date.now()*0.004+p.homeY)*speed*3;
+}else{
+p.vx+=(Math.random()-0.5)*speed*0.3;
+p.vy+=(Math.random()-0.5)*speed*0.3;
+if(state==='liquid')p.vy+=0.05;// gravity for liquid
+p.vx*=0.98;p.vy*=0.98;
+p.x+=p.vx;p.y+=p.vy;
+// bounce
+if(p.x<cx0+5){p.x=cx0+5;p.vx*=-0.8}
+if(p.x>cx0+cw-5){p.x=cx0+cw-5;p.vx*=-0.8}
+if(p.y<cy0+5){p.y=cy0+5;p.vy*=-0.8}
+if(p.y>cy0+ch-5){p.y=cy0+ch-5;p.vy*=-0.8}
+}
+X.beginPath();X.arc(p.x,p.y,5,0,Math.PI*2);X.fillStyle=color+'90';X.fill();
+});
+// bonds for solid
+if(state==='solid'){
+for(let i=0;i<particles.length;i++){
+for(let j=i+1;j<particles.length;j++){
+const d=Math.hypot(particles[i].x-particles[j].x,particles[i].y-particles[j].y);
+if(d<25){
+X.beginPath();X.moveTo(particles[i].x,particles[i].y);X.lineTo(particles[j].x,particles[j].y);
+X.strokeStyle='rgba(59,130,246,0.2)';X.lineWidth=1;X.stroke();
+}
+}
+}
+}
+// heating curve graph
+const gx=20,gy=H-140,gw=W*0.35,gh=110;
+X.fillStyle='rgba(0,0,0,0.3)';X.fillRect(gx,gy,gw,gh);
+X.strokeStyle='rgba(255,255,255,0.1)';X.lineWidth=1;X.strokeRect(gx,gy,gw,gh);
+X.fillStyle='rgba(255,255,255,0.3)';X.font='9px system-ui';X.fillText('Heating Curve',gx+4,gy+12);
+// draw curve
+X.beginPath();
+const minT=+sT.min,maxT=+sT.max,range=maxT-minT;
+for(let i=0;i<=gw;i++){
+const t=minT+(i/gw)*range;
+let tDisp;
+if(t<mp)tDisp=t;
+else if(t<mp+5)tDisp=mp;// plateau at melting
+else if(t<bp)tDisp=mp+(t-mp-5)*(bp-mp)/(range*0.5);
+else if(t<bp+5)tDisp=bp;// plateau at boiling
+else tDisp=bp+(t-bp-5);
+const py=gy+gh-10-((tDisp-minT)/range)*(gh-20);
+i===0?X.moveTo(gx+i,py):X.lineTo(gx+i,py);
+}
+X.strokeStyle='rgba(239,68,68,0.6)';X.lineWidth=2;X.stroke();
+// current temp marker
+const tempPx=gx+((temp-minT)/range)*gw;
+X.beginPath();X.arc(tempPx,gy+gh/2,4,0,Math.PI*2);X.fillStyle='#fff';X.fill();
+}
+function loop(){requestAnimationFrame(loop);draw()}
+loop();
+window.addEventListener('message',e=>{
+if(!e.data||typeof e.data!=='object')return;
+if(e.data.type==='resetCanvas'||e.data.type==='resetGraph'){temp=25;sT.value=25;document.getElementById('vT').textContent=25;update()}
+});
+<\/script></body></html>`;
+
 // ── 2D Shapes Lab ───────────────────────────────────────────────────────────
 const SHAPES_2D_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -5751,6 +6330,54 @@ export const STEM_CATEGORIES: StemCategory[] = [
         tags: ['Lever', 'Pulley', 'Gears', 'Mechanical Advantage'],
         instructions: "Switch between Lever, Pulley, and Gears. Adjust effort force, load, and ratio. For levers, see if moments balance. For pulleys, see how more pulleys reduce effort. For gears, watch how the gear ratio affects speed and torque.",
         html_code: MACHINES_HTML,
+      },
+      {
+        id: 'periodic-table',
+        title: 'Periodic Table Explorer',
+        description: 'Interactive periodic table — click elements to see atomic data, colour by category, state, or electronegativity.',
+        icon: 'Hexagon',
+        gradient: 'from-blue-500 to-cyan-500',
+        glowColor: 'rgba(59,130,246,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Elements', 'Periodic Table', 'Atomic Number', 'Groups'],
+        instructions: "Click any element on the table to see its name, atomic number, mass, category, state, and electronegativity. Use the right panel to switch colour modes: by category (metal, nonmetal, etc.), by state at 25°C, or by electronegativity gradient.",
+        html_code: PERIODIC_HTML,
+      },
+      {
+        id: 'electrolysis',
+        title: 'Electrolysis',
+        description: 'Pass electricity through water, brine, or CuSO₄ — watch ions migrate and products form at the electrodes.',
+        icon: 'Zap',
+        gradient: 'from-amber-500 to-yellow-500',
+        glowColor: 'rgba(245,158,11,0.35)',
+        difficulty: 'Intermediate',
+        tags: ['Electrolysis', 'Ions', 'Cathode', 'Anode'],
+        instructions: "Select an electrolyte (water, brine, or CuSO₄). Adjust voltage and click Start. Watch positive ions migrate to the cathode and negative ions to the anode. Bubbles form at the electrodes showing gas production.",
+        html_code: ELECTROLYSIS_HTML,
+      },
+      {
+        id: 'acids-bases',
+        title: 'Acids & Bases',
+        description: 'Explore the pH scale from 0 to 14 — see H⁺/OH⁻ ion concentrations, indicator colours, and common substances.',
+        icon: 'FlaskConical',
+        gradient: 'from-emerald-500 to-green-500',
+        glowColor: 'rgba(16,185,129,0.35)',
+        difficulty: 'Beginner',
+        tags: ['pH', 'Acids', 'Alkalis', 'Indicators'],
+        instructions: "Drag the pH slider or click preset substances (battery acid, lemon juice, water, bleach). Watch the beaker colour change with the universal indicator. The right panel shows H⁺ and OH⁻ concentrations calculated from pH.",
+        html_code: ACIDS_HTML,
+      },
+      {
+        id: 'states-of-matter',
+        title: 'States of Matter',
+        description: 'Heat and cool particles to see solid, liquid, and gas states — watch bonds break and particles speed up with a live heating curve.',
+        icon: 'Atom',
+        gradient: 'from-red-500 to-orange-500',
+        glowColor: 'rgba(239,68,68,0.35)',
+        difficulty: 'Beginner',
+        tags: ['Solid', 'Liquid', 'Gas', 'Particles', 'Heating Curve'],
+        instructions: "Adjust temperature with the slider or use Heat/Cool buttons. Watch particles: solids vibrate in fixed positions with bonds, liquids flow with moderate energy, gases bounce rapidly with maximum energy. Switch substances to see different melting/boiling points.",
+        html_code: STATES_HTML,
       },
     ],
   },
