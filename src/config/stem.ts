@@ -1926,6 +1926,18 @@ canvas{display:block}
 .tf-btn.red:hover{background:rgba(239,68,68,0.35)}
 .tf-btn.green{background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.4);color:#6ee7b7}
 .tf-btn.green:hover{background:rgba(16,185,129,0.35)}
+#floating-toolbar{position:fixed;z-index:30;display:flex;gap:3px;padding:6px 8px;background:rgba(15,15,35,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:12px;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);cursor:default}
+#floating-toolbar .ft-grip{width:6px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:grab;padding:0 3px 0 0;margin-right:2px}
+#floating-toolbar .ft-grip span{display:block;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.2)}
+#floating-toolbar .ft-grip:active{cursor:grabbing}
+#floating-toolbar .ft-btn{padding:7px 12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;transition:all .2s;white-space:nowrap}
+#floating-toolbar .ft-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+#floating-toolbar .ft-btn.active{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd;box-shadow:0 0 10px rgba(59,130,246,0.15)}
+#floating-toolbar .ft-sep{width:1px;background:rgba(255,255,255,0.08);margin:2px 3px}
+#floating-toolbar .ft-btn.red{color:rgba(255,140,140,0.7)}
+#floating-toolbar .ft-btn.red:hover{background:rgba(239,68,68,0.2);color:#fca5a5}
+#floating-toolbar .ft-btn.green{color:rgba(130,230,180,0.7)}
+#floating-toolbar .ft-btn.green:hover{background:rgba(16,185,129,0.2);color:#6ee7b7}
 #info-bar{position:fixed;bottom:0;left:220px;right:0;height:32px;background:rgba(15,15,35,0.9);border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;padding:0 12px;gap:16px;font-size:10px;color:rgba(255,255,255,0.4);z-index:20;backdrop-filter:blur(8px)}
 #info-bar span.val{color:rgba(255,255,255,0.7);font-weight:600}
 #canvas-wrap{position:fixed;top:48px;left:220px;right:0;bottom:32px}
@@ -1939,16 +1951,17 @@ canvas{display:block}
   .bank-item canvas{width:36px;height:36px}
 }
 </style></head><body>
+<!-- Floating toolbar on canvas -->
+<div id="floating-toolbar">
+  <div class="ft-grip" id="ft-grip"><span></span><span></span><span></span></div>
+  <div class="ft-btn active" data-tool="select" onclick="setTool('select')">Select</div>
+  <div class="ft-btn" data-tool="draw" onclick="setTool('draw')">Draw</div>
+  <div class="ft-btn" data-tool="vertex" onclick="setTool('vertex')">Vertex</div>
+  <div class="ft-sep"></div>
+  <div class="ft-btn green" onclick="duplicateSelected()">Duplicate</div>
+  <div class="ft-btn red" onclick="deleteSelected()">Delete</div>
+</div>
 <div id="ui">
-  <!-- Tools -->
-  <div class="panel">
-    <div class="panel-title">Tools</div>
-    <div class="tools" id="tools">
-      <div class="tool-btn active" data-tool="select" onclick="setTool('select')">Select</div>
-      <div class="tool-btn" data-tool="draw" onclick="setTool('draw')">Draw</div>
-      <div class="tool-btn" data-tool="vertex" onclick="setTool('vertex')">Vertex</div>
-    </div>
-  </div>
   <!-- Colors -->
   <div class="panel">
     <div class="panel-title">Fill Color</div>
@@ -2006,10 +2019,6 @@ canvas{display:block}
       <div class="tf-row"><label>k</label><input type="number" id="enl-k" value="2" step="0.5" min="-5" max="5"></div>
       <div class="tf-row"><label>cx</label><input type="number" id="enl-cx" value="0" step="1"><label>cy</label><input type="number" id="enl-cy" value="0" step="1"></div>
       <div class="tf-btn" onclick="applyEnlarge()">Enlarge</div>
-    </div>
-    <div style="display:flex;gap:4px;margin-top:6px">
-      <div class="tf-btn red" onclick="deleteSelected()">Delete</div>
-      <div class="tf-btn" onclick="duplicateSelected()">Duplicate</div>
     </div>
   </div>
 </div>
@@ -2118,7 +2127,19 @@ function placeShapeAtCenter(pts){
 
 // Tool management
 function setTool(t){tool=t;drawPts=[];updateToolUI();draw()}
-function updateToolUI(){document.querySelectorAll('#tools .tool-btn').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool))}
+function updateToolUI(){document.querySelectorAll('#floating-toolbar .ft-btn[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool))}
+
+// Floating toolbar drag
+(function(){
+  const tb=document.getElementById('floating-toolbar'),grip=document.getElementById('ft-grip');
+  let dx=0,dy=0,isDrag=false;
+  // Initial position: top-center of canvas area
+  function positionDefault(){tb.style.top='60px';tb.style.left='calc(220px + (100% - 220px)/2 - '+tb.offsetWidth/2+'px)'}
+  setTimeout(positionDefault,0);
+  grip.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();isDrag=true;const r=tb.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;grip.setPointerCapture(e.pointerId)});
+  grip.addEventListener('pointermove',e=>{if(!isDrag)return;e.preventDefault();tb.style.left=Math.max(0,e.clientX-dx)+'px';tb.style.top=Math.max(48,e.clientY-dy)+'px'});
+  grip.addEventListener('pointerup',()=>{isDrag=false});
+})();
 
 // Drawing
 function draw(){
