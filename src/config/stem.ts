@@ -40,16 +40,25 @@ canvas.doodling{cursor:crosshair}
 #top-bar>*{pointer-events:auto}
 #shape-name{color:#fff;font-size:16px;font-weight:700;letter-spacing:0.5px}
 #measurements{color:rgba(255,255,255,0.55);font-size:11px;line-height:1.6}
-#controls{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:20;flex-wrap:wrap;justify-content:center;max-width:95vw}
-.cat-group{display:flex;gap:4px;padding:5px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px}
-.cat-label{position:absolute;top:-14px;left:8px;font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;font-weight:700}
-.cat-wrap{position:relative;padding-top:10px}
+#right-panel{position:fixed;top:48px;right:0;bottom:0;width:200px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.92);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.rp{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.rp-title{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px}
+.rp .sg{display:flex;gap:3px;flex-wrap:wrap}
+.rp .sg button{padding:5px 9px;font-size:9.5px}
 button{padding:7px 13px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;white-space:nowrap}
-button:hover{background:rgba(255,255,255,0.14);color:#fff;transform:translateY(-1px)}
+button:hover{background:rgba(255,255,255,0.14);color:#fff}
 button.active{background:rgba(59,130,246,0.35);border-color:rgba(59,130,246,0.6);color:#93c5fd;box-shadow:0 0 12px rgba(59,130,246,0.2)}
 button.tool-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,0.5);color:#6ee7b7;box-shadow:0 0 12px rgba(16,185,129,0.2)}
+#ft{position:fixed;z-index:25;display:flex;gap:3px;padding:6px 8px;background:rgba(15,15,35,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:12px;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+#ft .fg{width:6px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:grab;padding:0 3px 0 0;margin-right:2px}
+#ft .fg span{display:block;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.2)}
+#ft .fg:active{cursor:grabbing}
+#ft button{padding:6px 10px;font-size:9.5px;border-radius:7px}
+#ft .sep{width:1px;background:rgba(255,255,255,0.08);margin:2px 3px}
 #pause-badge{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.12);font-size:16px;pointer-events:none;transition:opacity .3s;z-index:5;background:rgba(255,255,255,0.05);padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);opacity:0}
 #draw-hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.15);font-size:14px;pointer-events:none;transition:opacity .3s;z-index:5}
+@media(max-width:700px){#right-panel{width:160px}}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="top-bar">
@@ -57,12 +66,26 @@ button.tool-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,
     <div id="shape-name">Cube</div>
     <div id="measurements"></div>
   </div>
-  <div id="draw-status" style="font-size:11px;color:rgba(255,255,255,0.4)">Click to pause · Drag to rotate · Scroll to zoom</div>
+  <div id="draw-status" style="font-size:11px;color:rgba(255,255,255,0.4)">Click to pause &middot; Drag to rotate &middot; Scroll to zoom</div>
 </div>
 <div id="draw-hint"></div>
-<div id="pause-badge">PAUSED — click to resume</div>
-<div id="controls">
-  <div class="cat-wrap"><span class="cat-label">Basic</span><div class="cat-group">
+<div id="pause-badge">PAUSED &mdash; click to resume</div>
+<!-- Floating toolbar -->
+<div id="ft">
+  <div class="fg" id="ft-grip"><span></span><span></span><span></span></div>
+  <button onclick="toggleWire()" id="b-wire">Wireframe</button>
+  <button onclick="toggleDraw()" id="b-draw">Draw Lines</button>
+  <button onclick="toggleDoodle()" id="b-doodle">Doodle</button>
+  <div class="sep"></div>
+  <button onclick="undoAction()" id="b-undo" style="color:rgba(255,255,255,0.35)">Undo</button>
+  <button onclick="redoAction()" id="b-redo" style="color:rgba(255,255,255,0.35)">Redo</button>
+  <button onclick="clearAll()" id="b-clear">Clear</button>
+  <div class="sep"></div>
+  <button onclick="resetView()" style="color:#fca5a5;border-color:rgba(239,68,68,0.35)">Reset</button>
+</div>
+<!-- Right panel with shapes -->
+<div id="right-panel">
+  <div class="rp"><div class="rp-title">Basic Shapes</div><div class="sg">
     <button onclick="set('cube')" id="b-cube" class="active">Cube</button>
     <button onclick="set('cuboid')" id="b-cuboid">Cuboid</button>
     <button onclick="set('sphere')" id="b-sphere">Sphere</button>
@@ -72,22 +95,16 @@ button.tool-active{background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,
     <button onclick="set('torus')" id="b-torus">Torus</button>
     <button onclick="set('hemisphere')" id="b-hemisphere">Hemisphere</button>
   </div></div>
-  <div class="cat-wrap"><span class="cat-label">Compound</span><div class="cat-group">
+  <div class="rp"><div class="rp-title">Compound</div><div class="sg">
     <button onclick="set('pyr_cube')" id="b-pyr_cube">Pyramid+Cube</button>
     <button onclick="set('cone_cyl')" id="b-cone_cyl">Cone+Cylinder</button>
     <button onclick="set('cyl_hemi')" id="b-cyl_hemi">Cylinder+Hemi</button>
   </div></div>
-  <div class="cat-wrap"><span class="cat-label">Nets</span><div class="cat-group">
+  <div class="rp"><div class="rp-title">Nets</div><div class="sg">
     <button onclick="set('net_cube')" id="b-net_cube">Cube Net</button>
     <button onclick="set('net_cyl')" id="b-net_cyl">Cylinder Net</button>
     <button onclick="set('net_cone')" id="b-net_cone">Cone Net</button>
     <button onclick="set('net_pyr')" id="b-net_pyr">Pyramid Net</button>
-  </div></div>
-  <div class="cat-wrap"><span class="cat-label">Tools</span><div class="cat-group">
-    <button onclick="toggleWire()" id="b-wire">Wireframe</button>
-    <button onclick="toggleDraw()" id="b-draw">Draw Lines</button>
-    <button onclick="toggleDoodle()" id="b-doodle">Doodle</button>
-    <button onclick="clearAll()" id="b-clear">Clear All</button>
   </div></div>
 </div>
 <script>
@@ -237,7 +254,42 @@ document.getElementById('b-draw').classList.remove('tool-active');
 document.getElementById('draw-hint').textContent=doodleMode?'Draw freely — hold mouse/pen and drag':'';
 document.getElementById('draw-hint').style.opacity=doodleMode?'1':'0';
 selectedDot=-1;updateStatus();}
-function clearAll(){userLines=[];selectedDot=-1;doodleStrokes=[];currentStroke=null;}
+function clearAll(){userLines=[];selectedDot=-1;doodleStrokes=[];currentStroke=null;undoStack=[];redoStack=[];updateUndoUI();}
+
+/* Undo / Redo */
+let undoStack=[],redoStack=[];
+function pushUndo(type,data){undoStack.push({type,data});redoStack=[];updateUndoUI();}
+function undoAction(){
+  if(undoStack.length===0)return;
+  const act=undoStack.pop();
+  if(act.type==='line'){userLines.pop();redoStack.push(act);}
+  else if(act.type==='doodle'){const s=doodleStrokes.pop();redoStack.push({type:'doodle',data:s});}
+  updateUndoUI();
+}
+function redoAction(){
+  if(redoStack.length===0)return;
+  const act=redoStack.pop();
+  if(act.type==='line'){userLines.push(act.data);undoStack.push(act);}
+  else if(act.type==='doodle'){doodleStrokes.push(act.data);undoStack.push(act);}
+  updateUndoUI();
+}
+function updateUndoUI(){
+  document.getElementById('b-undo').style.color=undoStack.length?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.25)';
+  document.getElementById('b-redo').style.color=redoStack.length?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.25)';
+}
+
+/* Reset view */
+function resetView(){rotX=0.4;rotY=0.6;zoom=220;paused=false;updateStatus();}
+
+/* Floating toolbar drag */
+(function(){
+  const tb=document.getElementById('ft'),grip=document.getElementById('ft-grip');
+  let dx=0,dy=0,isDrag=false;
+  tb.style.top='56px';tb.style.left='50%';tb.style.transform='translateX(-50%)';
+  grip.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();isDrag=true;const r=tb.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;tb.style.transform='none';grip.setPointerCapture(e.pointerId)});
+  grip.addEventListener('pointermove',e=>{if(!isDrag)return;e.preventDefault();tb.style.left=Math.max(0,e.clientX-dx)+'px';tb.style.top=Math.max(48,e.clientY-dy)+'px'});
+  grip.addEventListener('pointerup',()=>{isDrag=false});
+})();
 
 let projVerts=[];
 function findClosestDot(mx,my,threshold){
@@ -367,7 +419,7 @@ c.addEventListener('mousedown',e=>{
     const dot=findClosestDot(e.clientX,e.clientY,25);
     if(dot>=0){
       if(selectedDot>=0&&selectedDot!==dot){
-        userLines.push([selectedDot,dot]);selectedDot=-1;
+        const line=[selectedDot,dot];userLines.push(line);pushUndo('line',line);selectedDot=-1;
         document.getElementById('draw-hint').style.opacity='0';
       }else{selectedDot=dot;document.getElementById('draw-hint').textContent='Now click another dot';}
     }else{selectedDot=-1;document.getElementById('draw-hint').textContent='Click any vertex dot to connect';}
@@ -377,7 +429,7 @@ c.addEventListener('mousedown',e=>{
 });
 addEventListener('mouseup',e=>{
   if(doodleMode&&currentStroke){
-    if(currentStroke.pts.length>1)doodleStrokes.push(currentStroke);
+    if(currentStroke.pts.length>1){doodleStrokes.push(currentStroke);pushUndo('doodle',currentStroke);}
     currentStroke=null;return;
   }
   if(!didDrag&&!drawMode&&!doodleMode&&e.target===c){
@@ -406,13 +458,13 @@ c.addEventListener('touchstart',e=>{
   }
   if(drawMode&&e.touches.length===1){
     const t=e.touches[0];const dot=findClosestDot(t.clientX,t.clientY,30);
-    if(dot>=0){if(selectedDot>=0&&selectedDot!==dot){userLines.push([selectedDot,dot]);selectedDot=-1;}else{selectedDot=dot;}}
+    if(dot>=0){if(selectedDot>=0&&selectedDot!==dot){const line=[selectedDot,dot];userLines.push(line);pushUndo('line',line);selectedDot=-1;}else{selectedDot=dot;}}
     return;
   }
   if(e.touches.length===1){drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
 },{passive:true});
 addEventListener('touchend',()=>{
-  if(doodleMode&&currentStroke){if(currentStroke.pts.length>1)doodleStrokes.push(currentStroke);currentStroke=null;return;}
+  if(doodleMode&&currentStroke){if(currentStroke.pts.length>1){doodleStrokes.push(currentStroke);pushUndo('doodle',currentStroke);}currentStroke=null;return;}
   if(!didDrag&&!drawMode&&!doodleMode&&(Date.now()-touchStartTime)<300){
     if(!isNet()){paused=!paused;updateStatus();}
   }
@@ -550,22 +602,26 @@ canvas:active{cursor:grabbing}
 #fn-label{font-size:15px;font-weight:700;letter-spacing:.3px}
 #fn-eq{font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;font-family:'Courier New',monospace}
 #coord-badge{position:fixed;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);font-size:12px;font-family:'Courier New',monospace;pointer-events:none;z-index:30;display:none;backdrop-filter:blur(6px);white-space:nowrap}
-#right-panel{position:fixed;top:50px;right:10px;z-index:20;display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 220px);overflow-y:auto;scrollbar-width:none}
-#right-panel::-webkit-scrollbar{display:none}
-.panel{background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:10px;line-height:1.7;backdrop-filter:blur(8px);min-width:175px;max-width:200px}
+#right-panel{position:fixed;top:48px;right:0;bottom:0;width:210px;z-index:20;display:flex;flex-direction:column;background:rgba(15,15,35,0.92);border-left:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
+#right-panel::-webkit-scrollbar{width:4px}#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.panel{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:10px;line-height:1.7;min-width:0;max-width:none}
 .panel .lbl{color:rgba(255,255,255,0.4);font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:2px}
 .panel .val{color:#a78bfa;font-weight:700;font-family:'Courier New',monospace;font-size:11px}
 .panel input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;margin:2px 0}
 .panel input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid rgba(255,255,255,0.3)}
 .panel input[type=number]{width:46px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px}
 .panel select{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:4px;padding:2px 4px;font-size:10px}
-#hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.08);font-size:14px;pointer-events:none;z-index:5}
-#controls-wrap{position:fixed;bottom:0;left:0;right:0;z-index:20;max-height:40vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;background:linear-gradient(0deg,rgba(10,10,26,0.95) 60%,transparent);padding:12px 6px calc(12px + env(safe-area-inset-bottom,0px)) 6px}
-#controls-wrap::-webkit-scrollbar{display:none}
-#controls{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:98vw;margin:0 auto}
-.cg{display:flex;gap:2px;padding:3px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;flex-wrap:wrap;justify-content:center}
-.cw{position:relative;padding-top:10px}
-.cl{position:absolute;top:-13px;left:6px;font-size:7px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+#hint{position:fixed;top:50%;left:calc((100% - 210px)/2);transform:translate(-50%,-50%);color:rgba(255,255,255,0.08);font-size:14px;pointer-events:none;z-index:5}
+.rp-title{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);font-weight:700;margin-bottom:6px}
+.rp-graphs{display:flex;gap:3px;flex-wrap:wrap}
+.rp-graphs button{padding:4px 7px;font-size:9px}
+#calc-ft{position:fixed;z-index:25;display:flex;gap:3px;padding:6px 8px;background:rgba(15,15,35,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:12px;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+#calc-ft .fg{width:6px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:grab;padding:0 3px 0 0;margin-right:2px}
+#calc-ft .fg span{display:block;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.2)}
+#calc-ft .fg:active{cursor:grabbing}
+#calc-ft button{padding:6px 10px;font-size:9.5px;border-radius:7px}
+#calc-ft .sep{width:1px;background:rgba(255,255,255,0.08);margin:2px 3px}
+@media(max-width:700px){#right-panel{width:170px}}
 button{padding:4px 8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.65);border-radius:6px;cursor:pointer;font-size:9px;font-weight:600;transition:all .2s;white-space:nowrap}
 button:hover{background:rgba(255,255,255,0.12);color:#fff}
 button.on{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#93c5fd;box-shadow:0 0 8px rgba(59,130,246,0.15)}
@@ -595,7 +651,68 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
     <button onclick="vol3dReset()">Reset</button>
   </div>
 </div>
+<!-- Floating toolbar -->
+<div id="calc-ft">
+  <div class="fg" id="cft-grip"><span></span><span></span><span></span></div>
+  <button onclick="togDeriv()" id="b-deriv">f&prime;(x)</button>
+  <button onclick="togInteg()" id="b-integ">&int; dx</button>
+  <button onclick="togVol()" id="b-vol">Volume</button>
+  <button onclick="togTangent()" id="b-tang">Tangent</button>
+  <div class="sep"></div>
+  <button onclick="togDoodle()" id="b-doodle">Doodle</button>
+  <button onclick="togPoints()" id="b-pts">Points</button>
+  <div class="sep"></div>
+  <button onclick="calcUndo()" id="b-cundo" style="color:rgba(255,255,255,0.35)">Undo</button>
+  <button onclick="calcRedo()" id="b-credo" style="color:rgba(255,255,255,0.35)">Redo</button>
+  <button onclick="clearAll()">Clear</button>
+  <div class="sep"></div>
+  <button onclick="resetView()" style="color:#fca5a5;border-color:rgba(239,68,68,0.35)">Reset</button>
+</div>
 <div id="right-panel">
+  <!-- Graph categories -->
+  <div class="panel"><div class="rp-title">Linear &amp; Quadratic</div><div class="rp-graphs">
+    <button onclick="pick('linear')" id="b-linear">y = mx+c</button>
+    <button onclick="pick('quadratic')" id="b-quadratic" class="on">y = x&sup2;</button>
+    <button onclick="pick('quad2')" id="b-quad2">x&sup2;&minus;4</button>
+    <button onclick="pick('reciprocal')" id="b-reciprocal">1/x</button>
+    <button onclick="pick('sqrt')" id="b-sqrt">&radic;x</button>
+    <button onclick="pick('abs')" id="b-abs">|x|</button>
+  </div></div>
+  <div class="panel"><div class="rp-title">Cubic</div><div class="rp-graphs">
+    <button onclick="pick('cubic')" id="b-cubic">x&sup3;</button>
+    <button onclick="pick('cubic2')" id="b-cubic2">x&sup3;&minus;3x</button>
+    <button onclick="pick('cubic3')" id="b-cubic3">x&sup3;&minus;x</button>
+    <button onclick="pick('cubic4')" id="b-cubic4">(x&minus;1)(x&minus;2)(x&minus;3)</button>
+    <button onclick="pick('cubic5')" id="b-cubic5">x&sup3;+x</button>
+    <button onclick="pick('cubic6')" id="b-cubic6">&minus;x&sup3;</button>
+    <button onclick="pick('x4')" id="b-x4">x&#8308;</button>
+  </div></div>
+  <div class="panel"><div class="rp-title">Trigonometric</div><div class="rp-graphs">
+    <button onclick="pick('sin')" id="b-sin">sin</button>
+    <button onclick="pick('cos')" id="b-cos">cos</button>
+    <button onclick="pick('tan')" id="b-tan">tan</button>
+    <button onclick="pick('csc')" id="b-csc">csc</button>
+    <button onclick="pick('sec')" id="b-sec">sec</button>
+    <button onclick="pick('cot')" id="b-cot">cot</button>
+  </div></div>
+  <div class="panel"><div class="rp-title">Inverse Trig</div><div class="rp-graphs">
+    <button onclick="pick('asin')" id="b-asin">sin<sup>&minus;1</sup></button>
+    <button onclick="pick('acos')" id="b-acos">cos<sup>&minus;1</sup></button>
+    <button onclick="pick('atan')" id="b-atan">tan<sup>&minus;1</sup></button>
+  </div></div>
+  <div class="panel"><div class="rp-title">Exp &amp; Log</div><div class="rp-graphs">
+    <button onclick="pick('exp')" id="b-exp">e<sup>x</sup></button>
+    <button onclick="pick('ln')" id="b-ln">ln(x)</button>
+    <button onclick="pick('sinc')" id="b-sinc">sinc</button>
+    <button onclick="pick('gauss')" id="b-gauss">Gauss</button>
+  </div></div>
+  <div class="panel"><div class="rp-title">Parametric</div><div class="rp-graphs">
+    <button onclick="pick('circle')" id="b-circle">Circle</button>
+    <button onclick="pick('parabola')" id="b-parabola">x=y&sup2;</button>
+    <button onclick="pick('hyperbola')" id="b-hyperbola">Hyperbola</button>
+    <button onclick="pick('ellipse')" id="b-ellipse">Ellipse</button>
+  </div></div>
+  <!-- Transform/settings panels -->
   <div class="panel" id="p-transform">
     <div class="lbl" style="color:#f472b6">&#9645; Reflection</div>
     <div style="display:flex;gap:4px;margin:4px 0 6px">
@@ -639,62 +756,6 @@ button.rst{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);color
   </div>
 </div>
 <div id="hint"></div>
-<div id="controls-wrap">
-<div id="controls">
-  <div class="cw"><span class="cl">Linear &amp; Quadratic</span><div class="cg">
-    <button onclick="pick('linear')" id="b-linear">y = mx + c</button>
-    <button onclick="pick('quadratic')" id="b-quadratic" class="on">y = x&sup2;</button>
-    <button onclick="pick('quad2')" id="b-quad2">y = x&sup2;&minus;4</button>
-    <button onclick="pick('reciprocal')" id="b-reciprocal">y = 1/x</button>
-    <button onclick="pick('sqrt')" id="b-sqrt">y = &radic;x</button>
-    <button onclick="pick('abs')" id="b-abs">y = |x|</button>
-  </div></div>
-  <div class="cw"><span class="cl">Cubic</span><div class="cg">
-    <button onclick="pick('cubic')" id="b-cubic">y = x&sup3;</button>
-    <button onclick="pick('cubic2')" id="b-cubic2">y = x&sup3;&minus;3x</button>
-    <button onclick="pick('cubic3')" id="b-cubic3">y = x&sup3;&minus;x</button>
-    <button onclick="pick('cubic4')" id="b-cubic4">(x&minus;1)(x&minus;2)(x&minus;3)</button>
-    <button onclick="pick('cubic5')" id="b-cubic5">y = x&sup3;+x</button>
-    <button onclick="pick('cubic6')" id="b-cubic6">y = &minus;x&sup3;</button>
-    <button onclick="pick('x4')" id="b-x4">y = x&#8308;</button>
-  </div></div>
-  <div class="cw"><span class="cl">Trigonometric</span><div class="cg">
-    <button onclick="pick('sin')" id="b-sin">sin x</button>
-    <button onclick="pick('cos')" id="b-cos">cos x</button>
-    <button onclick="pick('tan')" id="b-tan">tan x</button>
-    <button onclick="pick('csc')" id="b-csc">csc x</button>
-    <button onclick="pick('sec')" id="b-sec">sec x</button>
-    <button onclick="pick('cot')" id="b-cot">cot x</button>
-  </div></div>
-  <div class="cw"><span class="cl">Inverse Trig</span><div class="cg">
-    <button onclick="pick('asin')" id="b-asin">sin<sup>&minus;1</sup>(x)</button>
-    <button onclick="pick('acos')" id="b-acos">cos<sup>&minus;1</sup>(x)</button>
-    <button onclick="pick('atan')" id="b-atan">tan<sup>&minus;1</sup>(x)</button>
-  </div></div>
-  <div class="cw"><span class="cl">Exponential &amp; Log</span><div class="cg">
-    <button onclick="pick('exp')" id="b-exp">y = e<sup>x</sup></button>
-    <button onclick="pick('ln')" id="b-ln">y = ln(x)</button>
-    <button onclick="pick('sinc')" id="b-sinc">y = sin(x)/x</button>
-    <button onclick="pick('gauss')" id="b-gauss">y = e<sup>&minus;x&sup2;</sup></button>
-  </div></div>
-  <div class="cw"><span class="cl">Parametric Curves</span><div class="cg">
-    <button onclick="pick('circle')" id="b-circle">Circle</button>
-    <button onclick="pick('parabola')" id="b-parabola">x = y&sup2;</button>
-    <button onclick="pick('hyperbola')" id="b-hyperbola">Hyperbola</button>
-    <button onclick="pick('ellipse')" id="b-ellipse">Ellipse</button>
-  </div></div>
-  <div class="cw"><span class="cl">Tools</span><div class="cg">
-    <button onclick="togDeriv()" id="b-deriv">f&prime;(x)</button>
-    <button onclick="togInteg()" id="b-integ">&int; dx</button>
-    <button onclick="togVol()" id="b-vol">Volume</button>
-    <button onclick="togTangent()" id="b-tang">Tangent</button>
-    <button onclick="togDoodle()" id="b-doodle">Doodle</button>
-    <button onclick="togPoints()" id="b-pts">Points</button>
-    <button onclick="resetView()" class="rst">Reset</button>
-    <button onclick="clearAll()">Clear</button>
-  </div></div>
-</div>
-</div>
 <script>
 const cv=document.getElementById('c'),cx=cv.getContext('2d');
 const c3d=document.getElementById('c3d'),cx3=c3d.getContext('2d');
@@ -711,7 +772,7 @@ let trX=0,trY=0,stX=1,stY=1;
 const PI=Math.PI;
 const DEG=PI/180;
 
-function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;if(oX===undefined){oX=W/2;oY=H/2;}}
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;if(oX===undefined){oX=W/2;oY=H/2;sc=Math.min(W,H)/40;}}
 resize();addEventListener('resize',()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;});
 
 /* ── Angle conversion ── */
@@ -858,7 +919,7 @@ function updateDomainInfo(){
 }
 
 function pick(k){curFn=k;tangentX=null;
-  document.querySelectorAll('#controls button').forEach(b=>{if(!b.classList.contains('rst'))b.classList.remove('on');});
+  document.querySelectorAll('#right-panel .rp-graphs button').forEach(b=>b.classList.remove('on'));
   const el=document.getElementById('b-'+k);if(el)el.classList.add('on');
   reapplyToolClasses();
   const g=G[k];
@@ -895,16 +956,48 @@ function togPoints(){pointMode=!pointMode;if(pointMode)doodleMode=false;
   cv.classList.remove('doodling');
   document.getElementById('hint').textContent=pointMode?'Click to place points':'';
 }
-function clearAll(){doodleStrokes=[];curStroke=null;userPts=[];selectedPt=-1;tangentX=null;document.getElementById('tang-dot').style.display='none';}
+function clearAll(){doodleStrokes=[];curStroke=null;userPts=[];selectedPt=-1;tangentX=null;calcUndoStack=[];calcRedoStack=[];updateCalcUndoUI();document.getElementById('tang-dot').style.display='none';}
+
+/* Undo / Redo for doodle and points */
+let calcUndoStack=[],calcRedoStack=[];
+function calcPushUndo(type,data){calcUndoStack.push({type,data});calcRedoStack=[];updateCalcUndoUI();}
+function calcUndo(){
+  if(calcUndoStack.length===0)return;
+  const a=calcUndoStack.pop();
+  if(a.type==='doodle'){doodleStrokes.pop();calcRedoStack.push(a);}
+  else if(a.type==='point'){userPts.pop();calcRedoStack.push(a);}
+  updateCalcUndoUI();
+}
+function calcRedo(){
+  if(calcRedoStack.length===0)return;
+  const a=calcRedoStack.pop();
+  if(a.type==='doodle'){doodleStrokes.push(a.data);calcUndoStack.push(a);}
+  else if(a.type==='point'){userPts.push(a.data);calcUndoStack.push(a);}
+  updateCalcUndoUI();
+}
+function updateCalcUndoUI(){
+  document.getElementById('b-cundo').style.color=calcUndoStack.length?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.25)';
+  document.getElementById('b-credo').style.color=calcRedoStack.length?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.25)';
+}
 
 function resetView(){
-  oX=W/2;oY=H/2;sc=60;
+  sc=Math.min(W,H)/40;oX=W/2;oY=H/2;
   resetSliders();tangentX=null;
   document.getElementById('tang-dot').style.display='none';
   const g=G[curFn];
   document.getElementById('fn-eq').textContent=g.param?g.eq:g.eq;
   calcVol();
 }
+
+/* Floating toolbar drag */
+(function(){
+  const tb=document.getElementById('calc-ft'),grip=document.getElementById('cft-grip');
+  let dx=0,dy=0,isDrag=false;
+  tb.style.top='56px';tb.style.left='50%';tb.style.transform='translateX(-50%)';
+  grip.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();isDrag=true;const r=tb.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;tb.style.transform='none';grip.setPointerCapture(e.pointerId)});
+  grip.addEventListener('pointermove',e=>{if(!isDrag)return;e.preventDefault();tb.style.left=Math.max(0,e.clientX-dx)+'px';tb.style.top=Math.max(48,e.clientY-dy)+'px'});
+  grip.addEventListener('pointerup',()=>{isDrag=false});
+})();
 
 /* ── Volume of revolution ── */
 function calcVol(){
@@ -1376,12 +1469,12 @@ cv.addEventListener('mousedown',e=>{
   if(doodleMode){curStroke={pts:[[e.clientX,e.clientY]]};return;}
   if(pointMode){
     for(let i=0;i<userPts.length;i++){const[px,py]=toScreen(userPts[i][0],userPts[i][1]);if(Math.hypot(e.clientX-px,e.clientY-py)<15){selectedPt=i;showPtCoord(i);return;}}
-    const[mx,my]=toMath(e.clientX,e.clientY);userPts.push([mx,my]);selectedPt=userPts.length-1;showPtCoord(selectedPt);return;
+    const[mx,my]=toMath(e.clientX,e.clientY);userPts.push([mx,my]);calcPushUndo('point',[mx,my]);selectedPt=userPts.length-1;showPtCoord(selectedPt);return;
   }
   dragging=true;lx=e.clientX;ly=e.clientY;
 });
 addEventListener('mouseup',e=>{
-  if(doodleMode&&curStroke){if(curStroke.pts.length>1)doodleStrokes.push(curStroke);curStroke=null;return;}
+  if(doodleMode&&curStroke){if(curStroke.pts.length>1){doodleStrokes.push(curStroke);calcPushUndo('doodle',curStroke);}curStroke=null;return;}
   dragging=false;
   if(!didDrag&&!doodleMode&&!pointMode&&e.target===cv){
     const g=G[curFn];
@@ -1415,10 +1508,10 @@ cv.addEventListener('wheel',e=>{e.preventDefault();
 let touchT=0;
 cv.addEventListener('touchstart',e=>{touchT=Date.now();didDrag=false;
   if(doodleMode&&e.touches.length===1){const t=e.touches[0];curStroke={pts:[[t.clientX,t.clientY]]};return;}
-  if(pointMode&&e.touches.length===1){const t=e.touches[0];const[mx,my]=toMath(t.clientX,t.clientY);userPts.push([mx,my]);selectedPt=userPts.length-1;showPtCoord(selectedPt);return;}
+  if(pointMode&&e.touches.length===1){const t=e.touches[0];const[mx,my]=toMath(t.clientX,t.clientY);userPts.push([mx,my]);calcPushUndo('point',[mx,my]);selectedPt=userPts.length-1;showPtCoord(selectedPt);return;}
   if(e.touches.length===1){dragging=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
 },{passive:true});
-addEventListener('touchend',()=>{if(doodleMode&&curStroke){if(curStroke.pts.length>1)doodleStrokes.push(curStroke);curStroke=null;}dragging=false;});
+addEventListener('touchend',()=>{if(doodleMode&&curStroke){if(curStroke.pts.length>1){doodleStrokes.push(curStroke);calcPushUndo('doodle',curStroke);}curStroke=null;}dragging=false;});
 addEventListener('touchmove',e=>{
   if(doodleMode&&curStroke&&e.touches.length===1){const t=e.touches[0];curStroke.pts.push([t.clientX,t.clientY]);return;}
   if(!dragging||e.touches.length!==1)return;
