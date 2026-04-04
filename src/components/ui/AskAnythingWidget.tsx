@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, GripVertical, ExternalLink, Loader2, BotMessageSquare } from 'lucide-react';
+import { X, GripVertical, ExternalLink, Loader2 } from 'lucide-react';
 
 // ── AI Provider Config ──────────────────────────────────────────────────────
 const PROVIDERS = [
@@ -40,6 +40,51 @@ const MIN_H = 420;
 const DEFAULT_W = 440;
 const DEFAULT_H = 560;
 
+// ── Animated Robot Icon ──────────────────────────────────────────────────────
+function RobotIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <style>{`
+        @keyframes wave { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-20deg)} 50%{transform:rotate(12deg)} 75%{transform:rotate(-10deg)} }
+        @keyframes think { 0%,100%{opacity:0.4;r:1.8} 50%{opacity:1;r:2.5} }
+        .robot-wave { animation: wave 1.8s ease-in-out infinite; transform-origin: 28px 16px; }
+        .robot-think { animation: think 2s ease-in-out infinite; }
+        .robot-think2 { animation: think 2s ease-in-out infinite 0.4s; }
+      `}</style>
+      {/* Antenna */}
+      <line x1="18" y1="4" x2="18" y2="8" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      <circle className="robot-think" cx="18" cy="3" r="1.8" fill="white" />
+      {/* Thought bubbles */}
+      <circle className="robot-think2" cx="23" cy="5" r="1.2" fill="white" opacity="0.5" />
+      <circle className="robot-think" cx="26" cy="3.5" r="0.8" fill="white" opacity="0.35" />
+      {/* Head */}
+      <rect x="9" y="8" width="18" height="14" rx="4" fill="white" />
+      {/* Eyes — happy curves */}
+      <path d="M14 14.5c0-1.2 0.8-2 1.8-2s1.8 0.8 1.8 2" stroke="#4D6BFE" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M20.4 14.5c0-1.2 0.8-2 1.8-2s1.8 0.8 1.8 2" stroke="#4D6BFE" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      {/* Smile */}
+      <path d="M14.5 17.5 Q18 20.5 21.5 17.5" stroke="#4D6BFE" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+      {/* Cheek blush */}
+      <circle cx="13" cy="17" r="1.2" fill="white" opacity="0.5" />
+      <circle cx="23" cy="17" r="1.2" fill="white" opacity="0.5" />
+      {/* Body */}
+      <rect x="12" y="23" width="12" height="7" rx="2.5" fill="white" opacity="0.85" />
+      {/* Left arm */}
+      <rect x="7" y="24" width="4" height="5" rx="2" fill="white" opacity="0.7" />
+      {/* Right arm — waving! */}
+      <g className="robot-wave">
+        <rect x="25" y="23" width="4" height="6" rx="2" fill="white" opacity="0.8" />
+        {/* Little hand wave lines */}
+        <line x1="30" y1="22" x2="31.5" y2="20.5" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+        <line x1="31" y1="23" x2="33" y2="22" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+      </g>
+      {/* Feet */}
+      <rect x="13.5" y="30.5" width="3.5" height="2" rx="1" fill="white" opacity="0.6" />
+      <rect x="19" y="30.5" width="3.5" height="2" rx="1" fill="white" opacity="0.6" />
+    </svg>
+  );
+}
+
 // ── FAB Button ──────────────────────────────────────────────────────────────
 const Fab = memo(function Fab({ onClick }: { onClick: () => void }) {
   return (
@@ -57,7 +102,7 @@ const Fab = memo(function Fab({ onClick }: { onClick: () => void }) {
       <span className="absolute inset-0 rounded-2xl ring-2 ring-[#4D6BFE]/25 group-hover:ring-[#4D6BFE]/45 transition-all" />
       {/* Pulse ring */}
       <span className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-[#4D6BFE]" style={{ animationDuration: '2.5s' }} />
-      <BotMessageSquare className="w-6 h-6 text-white drop-shadow-lg relative z-10" />
+      <RobotIcon className="w-8 h-8 drop-shadow-lg relative z-10" />
     </motion.button>
   );
 });
@@ -320,7 +365,7 @@ export default function AskAnythingWidget() {
                 <GripVertical className="w-3.5 h-3.5 text-white/20" />
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${activeProvider.accent} flex items-center justify-center shadow-lg`}>
-                    <BotMessageSquare className="w-3 h-3 text-white" />
+                    <RobotIcon className="w-4 h-4" />
                   </div>
                   <span className="text-[13px] font-semibold text-white/80 tracking-tight">
                     Ask Anything
