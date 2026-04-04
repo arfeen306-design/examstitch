@@ -127,6 +127,8 @@ export default function SimulationViewer({
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [hudVisible, setHudVisible] = useState(true);
+  const hudTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -139,6 +141,28 @@ export default function SimulationViewer({
   const currentStrokeRef = useRef<Stroke | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
   const [canvasLocked, setCanvasLocked] = useState(false);
+
+  // ── Auto-hide HUD top bar ──────────────────────────────────────────
+  useEffect(() => {
+    const startHideTimer = () => {
+      if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+      hudTimerRef.current = setTimeout(() => setHudVisible(false), 2000);
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (e.clientY < 60) {
+        setHudVisible(true);
+        if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+      } else {
+        if (!showInstructions) startHideTimer();
+      }
+    };
+    startHideTimer();
+    window.addEventListener('mousemove', onMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+    };
+  }, [showInstructions]);
 
   // ── Floating toolbar drag ───────────────────────────────────────────
   const ftRef = useRef<HTMLDivElement>(null);
@@ -432,11 +456,13 @@ export default function SimulationViewer({
         )}
       </AnimatePresence>
 
-      {/* ── HUD Top Bar ─────────────────────────────────────────────────── */}
+      {/* ── HUD Top Bar (auto-hide) ──────────────────────────────────── */}
       <motion.div
         initial={{ y: -60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.4, ease: 'easeOut' }}
+        animate={{ y: hudVisible ? 0 : -60, opacity: hudVisible ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        onMouseEnter={() => { setHudVisible(true); if (hudTimerRef.current) clearTimeout(hudTimerRef.current); }}
+        onMouseLeave={() => { if (!showInstructions) { if (hudTimerRef.current) clearTimeout(hudTimerRef.current); hudTimerRef.current = setTimeout(() => setHudVisible(false), 1500); } }}
         className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-2xl ${hudColors.bg} ${hudColors.border} border-b`}
       >
         <div className="flex items-center justify-between h-12 px-3 sm:px-5">
