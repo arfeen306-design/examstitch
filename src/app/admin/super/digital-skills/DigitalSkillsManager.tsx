@@ -143,7 +143,7 @@ function UploadableField({
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`flex-1 px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 ${ringColor} outline-none`}
+          className={`flex-1 px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 ${ringColor} outline-none`}
         />
         <label className={`shrink-0 px-3 py-2.5 rounded-xl border border-[var(--border-color)] cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
@@ -573,7 +573,7 @@ export default function DigitalSkillsManager({
                 value={skillForm.name}
                 onChange={e => setSkillForm(f => ({ ...f, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
                 placeholder="Skill name (e.g. Web Development)"
-                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none"
               />
               <input
                 value={skillForm.slug}
@@ -585,12 +585,12 @@ export default function DigitalSkillsManager({
                 value={skillForm.tagline}
                 onChange={e => setSkillForm(f => ({ ...f, tagline: e.target.value }))}
                 placeholder="Tagline (e.g. Build the future)"
-                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none"
               />
               <select
                 value={skillForm.icon}
                 onChange={e => setSkillForm(f => ({ ...f, icon: e.target.value }))}
-                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none"
               >
                 {ICON_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
@@ -717,8 +717,8 @@ export default function DigitalSkillsManager({
                 {isEditingThis && (
                   <div className="border-t border-violet-100 bg-violet-50/50 px-5 py-4 space-y-3">
                     <div className="grid sm:grid-cols-2 gap-3">
-                      <input value={editSkillForm.name} onChange={e => setEditSkillForm(f => ({ ...f, name: e.target.value }))} placeholder="Name" className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none" />
-                      <input value={editSkillForm.tagline} onChange={e => setEditSkillForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Tagline" className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none" />
+                      <input value={editSkillForm.name} onChange={e => setEditSkillForm(f => ({ ...f, name: e.target.value }))} placeholder="Name" className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none" />
+                      <input value={editSkillForm.tagline} onChange={e => setEditSkillForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Tagline" className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none" />
                       <select value={editSkillForm.icon} onChange={e => setEditSkillForm(f => ({ ...f, icon: e.target.value }))} className="px-3 py-2 text-sm border border-violet-200 rounded-lg outline-none">
                         {ICON_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
                       </select>
@@ -759,14 +759,14 @@ export default function DigitalSkillsManager({
                           value={playlistForm.title}
                           onChange={e => setPlaylistForm(f => ({ ...f, title: e.target.value }))}
                           placeholder="Playlist title (e.g. Getting Started)"
-                          className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                          className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-blue-400 outline-none"
                           autoFocus
                         />
                         <input
                           value={playlistForm.description}
                           onChange={e => setPlaylistForm(f => ({ ...f, description: e.target.value }))}
                           placeholder="Description (optional)"
-                          className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                          className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-blue-400 outline-none"
                         />
                         <div className="flex gap-2">
                           <button
@@ -954,7 +954,7 @@ export default function DigitalSkillsManager({
                     value={lessonForm.title}
                     onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="e.g. Color Theory Essentials"
-                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
                     autoFocus
                   />
                 </div>
@@ -964,7 +964,7 @@ export default function DigitalSkillsManager({
                     value={lessonForm.duration}
                     onChange={e => setLessonForm(f => ({ ...f, duration: e.target.value }))}
                     placeholder="e.g. 12:30"
-                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
                   />
                 </div>
               </div>
@@ -978,7 +978,7 @@ export default function DigitalSkillsManager({
                   value={lessonForm.video_url}
                   onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none"
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none"
                 />
                 {ytPreviewId && (
                   <div className="mt-2 rounded-xl overflow-hidden border border-[var(--border-color)] bg-black aspect-video max-w-xs">
@@ -996,24 +996,24 @@ export default function DigitalSkillsManager({
                 <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">Lesson Resources</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <UploadableField
-                    label="Lesson Notes (PDF)"
+                    label="Lesson Notes (PDF/Image)"
                     icon={<FileDown className="w-3.5 h-3.5 text-blue-500" />}
                     value={lessonForm.notes_url}
                     onChange={(v) => setLessonForm(f => ({ ...f, notes_url: v }))}
                     placeholder="https://drive.google.com/..."
                     ringColor="focus:ring-blue-300"
                     folder="notes"
-                    accept="application/pdf"
+                    accept="application/pdf,image/*"
                   />
                   <UploadableField
-                    label="Practice Exercises (PDF)"
+                    label="Practice Exercises (PDF/Image)"
                     icon={<PenLine className="w-3.5 h-3.5 text-amber-500" />}
                     value={lessonForm.exercises_url}
                     onChange={(v) => setLessonForm(f => ({ ...f, exercises_url: v }))}
                     placeholder="https://drive.google.com/..."
                     ringColor="focus:ring-amber-300"
                     folder="exercises"
-                    accept="application/pdf"
+                    accept="application/pdf,image/*"
                   />
                   <UploadableField
                     label="Cheat Sheet (Image/PDF)"
@@ -1033,7 +1033,7 @@ export default function DigitalSkillsManager({
                       value={lessonForm.quiz_url}
                       onChange={e => setLessonForm(f => ({ ...f, quiz_url: e.target.value }))}
                       placeholder="https://quiz.examstitch.com/..."
-                      className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-emerald-300 outline-none"
+                      className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-emerald-300 outline-none"
                     />
                   </div>
                 </div>
@@ -1048,7 +1048,7 @@ export default function DigitalSkillsManager({
                   value={lessonForm.resource_url}
                   onChange={e => setLessonForm(f => ({ ...f, resource_url: e.target.value }))}
                   placeholder="Any additional resource link"
-                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-green-300 outline-none"
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-green-300 outline-none"
                 />
               </div>
 
@@ -1058,7 +1058,7 @@ export default function DigitalSkillsManager({
                   type="checkbox"
                   checked={lessonForm.is_free}
                   onChange={e => setLessonForm(f => ({ ...f, is_free: e.target.checked }))}
-                  className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  className="rounded border-[var(--border-color)] bg-[var(--bg-surface)] text-emerald-600 focus:ring-emerald-500"
                 />
                 <span className="font-medium">Free Preview</span>
                 <span className="text-xs text-[var(--text-muted)]">— available without enrollment</span>
@@ -1069,7 +1069,7 @@ export default function DigitalSkillsManager({
             <div className="sticky bottom-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
               <button
                 onClick={closeLessonModal}
-                className="px-5 py-2.5 text-sm font-medium text-[var(--text-muted)] bg-[var(--bg-elevated)] hover:bg-gray-200 rounded-xl transition"
+                className="px-5 py-2.5 text-sm font-medium text-[var(--text-muted)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)] rounded-xl transition"
               >
                 Cancel
               </button>

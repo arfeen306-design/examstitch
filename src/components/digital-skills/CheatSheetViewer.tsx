@@ -31,8 +31,24 @@ function getFileType(url: string): 'image' | 'pdf' | 'unknown' {
   // Supabase storage URLs often lack extensions — check path hints
   if (clean.includes('/pdf') || clean.includes('document')) return 'pdf';
   if (clean.includes('/image') || clean.includes('/img')) return 'image';
-  // Default: try to render as image (browsers handle gracefully)
+  // Google Drive links without extension — default to image for viewer
+  // (PDFs from Drive are handled separately via Google Docs viewer)
   return 'image';
+}
+
+/** Convert Google Drive sharing URL to a direct-access URL */
+function toDriveDirectUrl(url: string): string {
+  // Match: drive.google.com/file/d/FILE_ID/...
+  const fileIdMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileIdMatch) {
+    return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+  }
+  // Match: drive.google.com/open?id=FILE_ID
+  const openMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (openMatch) {
+    return `https://drive.google.com/uc?export=view&id=${openMatch[1]}`;
+  }
+  return url;
 }
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -44,6 +60,8 @@ export default function CheatSheetViewer({
   accentGradient = 'from-purple-500 to-purple-600',
 }: CheatSheetViewerProps) {
   const fileType = getFileType(url);
+  // Convert Google Drive sharing URLs to direct-access URLs
+  const resolvedUrl = url.includes('drive.google.com') ? toDriveDirectUrl(url) : url;
   const [zoomIdx, setZoomIdx] = useState(2); // Start at 1x
   const zoom = ZOOM_LEVELS[zoomIdx];
 
@@ -139,7 +157,7 @@ export default function CheatSheetViewer({
 
               {/* Open in new tab */}
               <a
-                href={url}
+                href={resolvedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors"
@@ -150,7 +168,7 @@ export default function CheatSheetViewer({
 
               {/* Download */}
               <a
-                href={url}
+                href={resolvedUrl}
                 download
                 target="_blank"
                 rel="noopener noreferrer"
@@ -173,9 +191,9 @@ export default function CheatSheetViewer({
           {/* ── Content area ───────────────────────────────────────── */}
           <div className="flex-1 overflow-auto relative">
             {fileType === 'pdf' ? (
-              <PdfContent url={url} />
+              <PdfContent url={resolvedUrl} />
             ) : (
-              <ImageContent url={url} zoom={zoom} title={title} />
+              <ImageContent url={resolvedUrl} zoom={zoom} title={title} />
             )}
           </div>
         </motion.div>
