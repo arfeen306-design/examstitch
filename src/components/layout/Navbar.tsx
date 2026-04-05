@@ -191,8 +191,9 @@ export default function Navbar() {
             <ThemeToggle />
           </div>
 
-          {/* Mobile: search icon + hamburger */}
-          <div className="lg:hidden flex items-center gap-1">
+          {/* Mobile: theme + search + hamburger */}
+          <div className="lg:hidden flex items-center gap-0.5">
+            <ThemeToggle />
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className="p-2 text-white/70 hover:text-white"

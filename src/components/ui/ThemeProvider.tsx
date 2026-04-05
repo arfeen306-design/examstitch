@@ -17,12 +17,12 @@ interface ThemeCtx {
 }
 
 const ThemeContext = createContext<ThemeCtx>({
-  theme: 'beach',
+  theme: 'default',
   setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('beach');
+  const [theme, setThemeState] = useState<Theme>('default');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -32,8 +32,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setThemeState(saved);
       document.documentElement.setAttribute('data-theme', saved);
     } else {
-      // No saved preference — apply Beach as default
-      document.documentElement.setAttribute('data-theme', 'beach');
+      // No saved preference — apply Navy as default
+      document.documentElement.setAttribute('data-theme', 'default');
     }
     setMounted(true);
   }, []);

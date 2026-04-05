@@ -23,12 +23,12 @@ const PROVIDERS = [
     ring: 'ring-emerald-400/30',
   },
   {
-    id: 'symbolab',
-    label: 'Solver',
-    url: 'https://www.symbolab.com/solver',
-    icon: '🔣',
-    accent: 'from-violet-500 to-fuchsia-400',
-    ring: 'ring-fuchsia-400/30',
+    id: 'gemini',
+    label: 'AI Solver',
+    url: 'https://gemini.google.com/',
+    icon: '✨',
+    accent: 'from-blue-500 to-indigo-400',
+    ring: 'ring-indigo-400/30',
   },
 ] as const;
 
