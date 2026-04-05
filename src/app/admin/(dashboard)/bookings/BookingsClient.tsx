@@ -159,7 +159,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
             Demo Bookings
             {newCount > 0 && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-orange-500 text-white">
@@ -167,25 +167,25 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
               </span>
             )}
           </h2>
-          <p className="text-sm text-white/40">Submitted via the public /demo booking form.</p>
+          <p className="text-sm text-[var(--text-muted)]">Submitted via the public /demo booking form.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => downloadCSV(filtered)}
-            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-white/[0.08] text-white/50 hover:bg-white/[0.03] transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV {hasFilter && `(${filtered.length})`}
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-white/[0.08] text-white/50 hover:bg-white/[0.03] transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] transition-colors"
           >
             <Printer className="w-3.5 h-3.5" />
             Print {hasFilter && `(${filtered.length})`}
           </button>
           <a href="/demo" target="_blank" rel="noopener noreferrer"
-            className="text-xs font-semibold px-4 py-2 rounded-lg border border-white/[0.08] text-white/50 hover:bg-white/[0.03] transition-colors"
+            className="text-xs font-semibold px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] transition-colors"
           >
             View Public Form ↗
           </a>
@@ -195,7 +195,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total',   value: total,    color: 'text-white/60',   bg: 'bg-white/[0.03]'   },
+          { label: 'Total',   value: total,    color: 'text-[var(--text-secondary)]',   bg: 'bg-[var(--bg-surface)]'   },
           { label: 'New',     value: newCount, color: 'text-orange-600', bg: 'bg-orange-50' },
           { label: 'Pending', value: pending,  color: 'text-amber-600',  bg: 'bg-amber-50'  },
           { label: 'Booked',  value: booked,   color: 'text-green-600',  bg: 'bg-green-50'  },
@@ -208,23 +208,23 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
       </div>
 
       {/* Filters */}
-      <div className="bg-white/[0.04] rounded-2xl border border-white/[0.08] px-5 py-4">
+      <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] px-5 py-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Filter:</span>
+          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Filter:</span>
 
           {/* Status */}
           <div className="relative">
             <select
               value={filterStatus}
               onChange={e => setFStatus(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-[var(--border-color)] text-sm text-[var(--text-secondary)] bg-[var(--bg-card)] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Statuses</option>
               {ALL_STATUSES.map(s => (
                 <option key={s} value={s}>{STATUS_STYLE[s].label}</option>
               ))}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
           </div>
 
           {/* Level */}
@@ -232,12 +232,12 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
             <select
               value={filterLevel}
               onChange={e => setFLevel(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-[var(--border-color)] text-sm text-[var(--text-secondary)] bg-[var(--bg-card)] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Levels</option>
               {levels.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
           </div>
 
           {/* Subject */}
@@ -245,12 +245,12 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
             <select
               value={filterSubject}
               onChange={e => setFSubject(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-[var(--border-color)] text-sm text-[var(--text-secondary)] bg-[var(--bg-card)] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Subjects</option>
               {subjects.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
           </div>
 
           {/* Month */}
@@ -258,7 +258,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
             <select
               value={filterMonth}
               onChange={e => setFMonth(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-white/[0.08] text-sm text-white/60 bg-white/[0.04] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-[var(--border-color)] text-sm text-[var(--text-secondary)] bg-[var(--bg-card)] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none cursor-pointer"
             >
               <option value="">All Months</option>
               {months.map(m => {
@@ -267,21 +267,21 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
                 return <option key={m} value={m}>{label}</option>;
               })}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
           </div>
 
           {hasFilter && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-white/[0.06] text-white/50 hover:bg-white/[0.08] transition-colors"
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-colors"
             >
               <X className="w-3.5 h-3.5" /> Clear
             </button>
           )}
 
           {hasFilter && (
-            <span className="text-xs text-white/40 ml-auto">
-              Showing <strong className="text-white/60">{filtered.length}</strong> of {total}
+            <span className="text-xs text-[var(--text-muted)] ml-auto">
+              Showing <strong className="text-[var(--text-secondary)]">{filtered.length}</strong> of {total}
             </span>
           )}
         </div>
@@ -294,15 +294,15 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
       )}
 
       {/* Table */}
-      <div className="bg-white/[0.04] rounded-2xl shadow-sm border border-white/[0.06] overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-base font-semibold text-white">
+      <div className="bg-[var(--bg-card)] rounded-2xl shadow-sm border border-[var(--border-subtle)] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[var(--border-subtle)]">
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">
             {hasFilter ? `Filtered Bookings (${filtered.length})` : `All Bookings (${total})`}
           </h3>
         </div>
         <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
           <table className="w-full text-sm text-left">
-            <thead className="text-xs uppercase bg-white/[0.03] text-white/40 sticky top-0 z-10">
+            <thead className="text-xs uppercase bg-[var(--bg-surface)] text-[var(--text-muted)] sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3">Ref</th>
                 <th className="px-4 py-3">Name</th>
@@ -315,25 +315,25 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
                 <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
+            <tbody className="divide-y divide-[var(--border-subtle)]">
               {filtered.map(b => {
                 const st = STATUS_STYLE[b.status];
                 const busy = actionLoading === b.id;
                 return (
-                  <tr key={b.id} className={`hover:bg-white/[0.06] transition-colors ${busy ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-white/50 whitespace-nowrap">
+                  <tr key={b.id} className={`hover:bg-[var(--bg-elevated)] transition-colors ${busy ? 'opacity-50' : ''}`}>
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-[var(--text-muted)] whitespace-nowrap">
                       {b.booking_ref}
                       {isNew(b.created_at) && (
                         <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-orange-100 text-orange-600">New</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-medium text-white whitespace-nowrap">{b.name}</td>
-                    <td className="px-4 py-3 text-white/40 text-xs">{b.email ?? '—'}</td>
-                    <td className="px-4 py-3 text-white/50 font-mono text-xs whitespace-nowrap">{b.whatsapp}</td>
+                    <td className="px-4 py-3 font-medium text-[var(--text-primary)] whitespace-nowrap">{b.name}</td>
+                    <td className="px-4 py-3 text-[var(--text-muted)] text-xs">{b.email ?? '—'}</td>
+                    <td className="px-4 py-3 text-[var(--text-muted)] font-mono text-xs whitespace-nowrap">{b.whatsapp}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="bg-white/[0.06] text-white/60 px-2 py-0.5 rounded-full text-xs font-semibold">{b.level}</span>
+                      <span className="bg-[var(--bg-elevated)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full text-xs font-semibold">{b.level}</span>
                     </td>
-                    <td className="px-4 py-3 text-white/60">{b.subject}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">{b.subject}</td>
 
                     {/* Editable status dropdown */}
                     <td className="px-4 py-3 text-center">
@@ -352,7 +352,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-white/40 text-right whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-[var(--text-muted)] text-right whitespace-nowrap">
                       {new Date(b.created_at).toLocaleString('en-GB', {
                         day: '2-digit', month: 'short', year: 'numeric',
                         hour: '2-digit', minute: '2-digit',
@@ -375,7 +375,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-white/40">
+                  <td colSpan={9} className="px-4 py-12 text-center text-[var(--text-muted)]">
                     {hasFilter ? 'No bookings match the selected filters.' : 'No demo bookings yet.'}
                   </td>
                 </tr>

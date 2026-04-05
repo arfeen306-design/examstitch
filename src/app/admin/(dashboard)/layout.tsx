@@ -81,7 +81,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[#0B1120] flex">
+      <div className="min-h-screen bg-[var(--bg-primary)] flex">
         {/* ── Sidebar ── */}
         <aside className="w-[260px] flex flex-col shrink-0 relative overflow-hidden"
           style={{
@@ -212,9 +212,9 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
         <main className="flex-1 flex flex-col overflow-hidden">
           <header className="h-14 shrink-0 flex items-center justify-between px-6 relative z-[100]"
             style={{
-              background: 'linear-gradient(90deg, rgba(11,17,32,0.8) 0%, rgba(11,17,32,0.6) 100%)',
+              background: 'color-mix(in srgb, var(--bg-elevated) 80%, transparent)',
               backdropFilter: 'blur(20px)',
-              borderBottom: '1px solid rgba(251,146,60,0.06)',
+              borderBottom: '1px solid var(--border-subtle)',
             }}
           >
             {/* Bottom accent line */}
@@ -223,7 +223,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             />
             <div className="flex items-center gap-2.5">
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40 animate-pulse" />
-              <h1 className="text-sm font-semibold text-white/70">Dashboard</h1>
+              <h1 className="text-sm font-semibold text-[var(--text-primary)]">Dashboard</h1>
             </div>
             {isSuperAdmin && <SubjectSwitcher />}
           </header>

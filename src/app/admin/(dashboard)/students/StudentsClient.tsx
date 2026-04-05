@@ -116,8 +116,8 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Student Accounts</h2>
-          <p className="text-sm text-white/40">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Student Accounts</h2>
+          <p className="text-sm text-[var(--text-muted)]">
             Create and manage login credentials for students.
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total', value: rows.length, color: 'text-white/60', bg: 'bg-white/[0.03]' },
+          { label: 'Total', value: rows.length, color: 'text-[var(--text-secondary)]', bg: 'bg-[var(--bg-surface)]' },
           { label: 'Active', value: active, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Disabled', value: inactive, color: 'text-red-600', bg: 'bg-red-50' },
         ].map(s => (
@@ -151,7 +151,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
           <p className="text-sm font-semibold text-green-800 mb-2">
             ✅ Credentials for {createdName}:
           </p>
-          <div className="flex items-center gap-3 bg-white/[0.04] border border-green-200 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-3 bg-[var(--bg-card)] border border-green-200 rounded-xl px-4 py-3">
             <code className="text-sm font-mono text-green-800 flex-1">
               Password: <strong>{createdPassword}</strong>
             </code>
@@ -171,37 +171,37 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
 
       {/* Create Form */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white/[0.04] rounded-2xl border border-white/[0.08] p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-white">New Student Account</h3>
-          <p className="text-sm text-white/40">A random password will be generated automatically.</p>
+        <form onSubmit={handleCreate} className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">New Student Account</h3>
+          <p className="text-sm text-[var(--text-muted)]">A random password will be generated automatically.</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium text-white/60 block mb-1">Full Name</label>
+              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Full Name</label>
               <input
                 type="text"
                 value={form.full_name}
                 onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))}
                 placeholder="e.g. Ahmed Khan"
-                className="w-full px-4 py-2.5 rounded-xl text-sm border border-white/[0.08] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                className="w-full px-4 py-2.5 rounded-xl text-sm border border-[var(--border-color)] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-white/60 block mb-1">Email</label>
+              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Email</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                 placeholder="student@example.com"
-                className="w-full px-4 py-2.5 rounded-xl text-sm border border-white/[0.08] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                className="w-full px-4 py-2.5 rounded-xl text-sm border border-[var(--border-color)] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-white/60 block mb-1">Level</label>
+              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Level</label>
               <select
                 value={form.level}
                 onChange={e => setForm(p => ({ ...p, level: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl text-sm border border-white/[0.08] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
+                className="w-full px-4 py-2.5 rounded-xl text-sm border border-[var(--border-color)] focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
               >
                 <option value="">Select level…</option>
                 {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
@@ -225,7 +225,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-5 py-2.5 rounded-lg text-sm font-medium border border-white/[0.08] text-white/50 hover:bg-white/[0.03] transition-colors"
+              className="px-5 py-2.5 rounded-lg text-sm font-medium border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] transition-colors"
             >
               Cancel
             </button>
@@ -241,11 +241,11 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
       )}
 
       {/* Students table */}
-      <div className="bg-white/[0.04] p-6 rounded-2xl shadow-sm border border-white/[0.06]">
-        <h3 className="text-lg font-semibold text-white mb-4">All Students ({rows.length})</h3>
+      <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-[var(--border-subtle)]">
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">All Students ({rows.length})</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left border border-white/[0.06] rounded-lg">
-            <thead className="text-xs uppercase bg-white/[0.03] text-white/40 sticky top-0">
+          <table className="w-full text-sm text-left border border-[var(--border-subtle)] rounded-lg">
+            <thead className="text-xs uppercase bg-[var(--bg-surface)] text-[var(--text-muted)] sticky top-0">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Email</th>
@@ -256,13 +256,13 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
                 <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06] bg-white/[0.04]">
+            <tbody className="divide-y divide-[var(--border-subtle)] bg-[var(--bg-card)]">
               {rows.map(s => (
-                <tr key={s.id} className="hover:bg-white/[0.06] transition-colors">
-                  <td className="px-4 py-3 font-medium text-white">{s.full_name}</td>
-                  <td className="px-4 py-3 text-white/50 text-xs">{s.email}</td>
+                <tr key={s.id} className="hover:bg-[var(--bg-elevated)] transition-colors">
+                  <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{s.full_name}</td>
+                  <td className="px-4 py-3 text-[var(--text-muted)] text-xs">{s.email}</td>
                   <td className="px-4 py-3">
-                    <span className="bg-white/[0.06] text-white/60 px-2 py-0.5 rounded-full text-xs font-semibold">
+                    <span className="bg-[var(--bg-elevated)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full text-xs font-semibold">
                       {s.level}
                     </span>
                   </td>
@@ -271,12 +271,12 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
                       {s.is_active ? 'Active' : 'Disabled'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-white/40">
+                  <td className="px-4 py-3 text-xs text-[var(--text-muted)]">
                     {s.last_login
                       ? new Date(s.last_login).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
                       : 'Never'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-white/40">
+                  <td className="px-4 py-3 text-xs text-[var(--text-muted)]">
                     {new Date(s.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3">
@@ -314,7 +314,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-white/40">
+                  <td colSpan={7} className="px-4 py-10 text-center text-[var(--text-muted)]">
                     No student accounts yet. Click &quot;Add Student&quot; to create one.
                   </td>
                 </tr>

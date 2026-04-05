@@ -357,7 +357,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         <tr
           key={r.id}
           className={`transition-colors group
-            ${editingId === r.id ? 'bg-gold-500/10' : isSub ? 'bg-blue-500/10 hover:bg-blue-500/15' : 'hover:bg-white/[0.06] dark:hover:bg-white/5'}
+            ${editingId === r.id ? 'bg-gold-500/10' : isSub ? 'bg-blue-500/10 hover:bg-blue-500/15' : 'hover:bg-[var(--bg-elevated)] dark:hover:bg-[var(--bg-elevated)]'}
             ${isSub ? 'border-l-4 border-blue-500/30' : ''}`}
         >
           {/* # Order column */}
@@ -405,7 +405,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                       </span>
                     )}
                     {totalParts > 1 && !isSub && (
-                      <span className="text-[10px] text-white/40">{totalParts} parts</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">{totalParts} parts</span>
                     )}
                   </div>
                 </div>
@@ -442,7 +442,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           <td className="w-24 px-3 py-2.5">
             {editingId === r.id ? (
               <select value={editState.contentType} onChange={e => setEditState(s => ({ ...s, contentType: e.target.value }))}
-                className="px-2 py-1 text-xs border border-white/[0.08] rounded-md">
+                className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md">
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="worksheet">Worksheet</option>
@@ -503,7 +503,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               {editingId === r.id ? (
                 <>
                   <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-400 hover:text-green-300 p-1 rounded hover:bg-green-500/10 transition" title="Save"><Check className="w-4 h-4" /></button>
-                  <button onClick={cancelEdit} className="text-[var(--text-muted)] hover:text-white/70 p-1 rounded hover:bg-white/[0.06] transition" title="Cancel"><X className="w-4 h-4" /></button>
+                  <button onClick={cancelEdit} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded hover:bg-[var(--bg-elevated)] transition" title="Cancel"><X className="w-4 h-4" /></button>
                 </>
               ) : (
                 <>
@@ -524,7 +524,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
             <td colSpan={9} className="px-4 py-3">
               <div className="flex flex-wrap gap-2 items-end">
                 <div className="flex flex-col gap-1 min-w-[160px]">
-                  <label className="text-xs font-semibold text-white/40">Sub-topic Title</label>
+                  <label className="text-xs font-semibold text-[var(--text-muted)]">Sub-topic Title</label>
                   <input value={subtopicState.title} onChange={e => setSubtopicState(s => ({ ...s, title: e.target.value }))}
                     className="px-2 py-1 text-sm border border-blue-500/30 rounded-md focus:ring-1 focus:ring-blue-400 outline-none"
                     placeholder="Differentiation Part 2" />
@@ -547,7 +547,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                     <Check className="w-3.5 h-3.5" /> Add
                   </button>
                   <button onClick={cancelSubtopic}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/50 bg-white/[0.04] hover:bg-white/[0.06] rounded-lg border border-white/[0.08] transition">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] bg-[var(--bg-card)] hover:bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-color)] transition">
                     <X className="w-3.5 h-3.5" /> Cancel
                   </button>
                 </div>
@@ -577,7 +577,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                 </div>
 
                 {mappingDraft.map((q: any, qi: number) => (
-                  <div key={qi} className="flex flex-col gap-2 p-2 bg-white/[0.04] rounded-lg border border-purple-500/20">
+                  <div key={qi} className="flex flex-col gap-2 p-2 bg-[var(--bg-card)] rounded-lg border border-purple-500/20">
                     <div className="flex items-center gap-2 flex-wrap">
                       <input
                         value={q.label}
@@ -589,7 +589,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                         className="w-16 px-2 py-1 text-xs font-bold border border-purple-500/30 rounded-md text-center"
                         placeholder="Q1"
                       />
-                      <span className="text-xs text-white/40">@</span>
+                      <span className="text-xs text-[var(--text-muted)]">@</span>
                       <input
                         type="text"
                         value={(() => { const m = Math.floor(q.start_time / 60); const s = q.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
@@ -675,7 +675,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                     <Check className="w-3.5 h-3.5" /> Save Timestamps
                   </button>
                   <button onClick={cancelTimestampEditor}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/50 bg-white/[0.04] hover:bg-white/[0.06] rounded-lg border border-white/[0.08] transition">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] bg-[var(--bg-card)] hover:bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-color)] transition">
                     <X className="w-3.5 h-3.5" /> Cancel
                   </button>
                 </div>
@@ -695,12 +695,12 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       <div className="flex items-center justify-between pb-2 flex-wrap gap-3">
         <div className="flex items-center gap-4 flex-wrap">
           <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
-            className="border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white/60 focus:ring-1 focus:ring-orange-500/50 outline-none">
+            className="border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] focus:ring-1 focus:ring-orange-500/50 outline-none">
             <option value="all">All Syllabi</option>
             <option value="mathematics-4024">O-Level / IGCSE (4024)</option>
             <option value="mathematics-9709">A-Level (9709)</option>
           </select>
-          <div className="flex rounded-lg border border-white/[0.08] overflow-hidden">
+          <div className="flex rounded-lg border border-[var(--border-color)] overflow-hidden">
             {[
               { value: 'all', label: 'All Types' },
               { value: 'video_topical', label: 'Video Topical' },
@@ -712,14 +712,14 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                 className={`px-3 py-2 text-xs font-medium transition-colors ${
                   filterModuleType === opt.value
                     ? 'bg-[#FF6B35] text-white'
-                    : 'text-white/50 hover:bg-white/[0.06]'
+                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'
                 }`}
               >
                 {opt.label}
               </button>
             ))}
           </div>
-          <span className="text-sm text-white/40">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
+          <span className="text-sm text-[var(--text-muted)]">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
         </div>
         <button onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 bg-[#FF6B35] hover:bg-[#e55a2b] text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
@@ -750,7 +750,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                  className="divide-y divide-[var(--border-subtle)]" >
             {paperGroups.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-white/40 text-sm">No resources found.</td>
+                <td colSpan={9} className="py-12 text-center text-[var(--text-muted)] text-sm">No resources found.</td>
               </tr>
             ) : (
               paperGroups.map(paper => (

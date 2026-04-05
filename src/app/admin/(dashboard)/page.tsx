@@ -90,10 +90,10 @@ export default async function AdminOverview() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           {isSuperAdmin ? 'System Overview' : 'Dashboard'}
         </h2>
-        <p className="text-sm text-white/40 mt-1">
+        <p className="text-sm text-[var(--text-muted)] mt-1">
           {isSuperAdmin
             ? 'Global platform statistics across all subjects.'
             : `Showing stats for your managed subjects.`}
@@ -108,13 +108,13 @@ export default async function AdminOverview() {
             <div
               key={stat.label}
               className="relative overflow-hidden rounded-2xl p-5
-                         bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]
+                         bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]
                          hover:border-white/[0.12] transition-all"
             >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">{stat.label}</p>
-                  <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
+                  <p className="text-3xl font-bold text-[var(--text-primary)] mt-1">{stat.value}</p>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">{stat.sub}</p>
                 </div>
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
@@ -127,8 +127,8 @@ export default async function AdminOverview() {
       </div>
 
       {/* Quick Actions */}
-      <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
-        <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4">Quick Actions</h3>
+      <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
+        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -137,11 +137,11 @@ export default async function AdminOverview() {
                 key={action.href}
                 href={action.href}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl
-                           bg-white/[0.04] border border-white/[0.06]
+                           bg-[var(--bg-card)] border border-[var(--border-subtle)]
                            hover:bg-white/[0.08] hover:border-white/[0.12] transition-all group"
               >
-                <Icon className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
-                <span className="text-sm font-medium text-white/50 group-hover:text-white/80 transition-colors flex-1">
+                <Icon className="w-4 h-4 text-[var(--text-muted)] group-hover:text-white/70 transition-colors" />
+                <span className="text-sm font-medium text-[var(--text-muted)] group-hover:text-white/80 transition-colors flex-1">
                   {action.label}
                 </span>
                 <ArrowUpRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
@@ -152,12 +152,12 @@ export default async function AdminOverview() {
       </div>
 
       {/* Recent Activity placeholder */}
-      <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
+      <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
         <div className="flex items-center gap-2 mb-4">
-          <Clock className="w-4 h-4 text-white/30" />
-          <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Recent Activity</h3>
+          <Clock className="w-4 h-4 text-[var(--text-muted)]" />
+          <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Recent Activity</h3>
         </div>
-        <p className="text-sm text-white/30">
+        <p className="text-sm text-[var(--text-muted)]">
           Resource uploads, category changes, and user activity will appear here.
         </p>
       </div>

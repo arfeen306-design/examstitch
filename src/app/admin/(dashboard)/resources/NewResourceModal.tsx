@@ -246,10 +246,10 @@ export default function NewResourceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-[#131B2E] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 border border-white/[0.08]">
-        <div className="flex items-center justify-between p-6 border-b border-white/[0.06] bg-white/[0.02] sticky top-0 z-10">
-          <h2 className="text-xl font-semibold text-white">Link Teaching Materials</h2>
-          <button onClick={onClose} className="text-white/30 hover:text-white/70 transition">
+      <div className="bg-[#131B2E] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 border border-[var(--border-color)]">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] sticky top-0 z-10">
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Link Teaching Materials</h2>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -265,7 +265,7 @@ export default function NewResourceModal({
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                   moduleType === 'video_topical'
                     ? 'border-red-500/50 bg-red-500/10 text-red-300'
-                    : 'border-white/[0.08] text-white/40 hover:border-white/[0.15]'
+                    : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--border-color)]'
                 }`}
               >
                 <PlayCircle className="w-5 h-5" />
@@ -280,7 +280,7 @@ export default function NewResourceModal({
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                   moduleType === 'solved_past_paper'
                     ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
-                    : 'border-white/[0.08] text-white/40 hover:border-white/[0.15]'
+                    : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--border-color)]'
                 }`}
               >
                 <FileText className="w-5 h-5" />
@@ -296,13 +296,13 @@ export default function NewResourceModal({
             {/* ── Title section: Topic Name for videos, Session/Year/Variant for past papers ── */}
             {moduleType === 'video_topical' ? (
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-white/60 mb-1">Topic Name</label>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Topic Name</label>
                 <input
                   ref={titleRef}
                   required
                   value={formData.title}
                   onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
+                  className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
                   placeholder="e.g. Differentiation Rules"
                 />
               </div>
@@ -311,11 +311,11 @@ export default function NewResourceModal({
                 <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Paper Identity</label>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Session</label>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Session</label>
                     <select
                       value={formData.session}
                       onChange={e => setFormData({ ...formData, session: e.target.value })}
-                      className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
+                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
                     >
                       {SESSION_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -323,36 +323,36 @@ export default function NewResourceModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Year</label>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Year</label>
                     <input
                       ref={titleRef}
                       required
                       value={formData.year}
                       onChange={e => setFormData({ ...formData, year: e.target.value })}
-                      className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
+                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
                       placeholder="e.g. 2024"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white/60 mb-1">Paper Variant</label>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Paper Variant</label>
                     <input
                       required
                       value={formData.variant}
                       onChange={e => setFormData({ ...formData, variant: e.target.value })}
-                      className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white"
+                      className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
                       placeholder="e.g. 12, 22"
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-white/30 mt-1.5">
-                  Preview: <span className="font-semibold text-white/70">{generateDisplayTitle(formData.session, formData.year, formData.variant) || '—'}</span>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
+                  Preview: <span className="font-semibold text-[var(--text-secondary)]">{generateDisplayTitle(formData.session, formData.year, formData.variant) || '—'}</span>
                 </p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-white/60 mb-1">Subject</label>
-              <select value={formData.subject_id} onChange={e => setFormData({ ...formData, subject_id: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white">
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Subject</label>
+              <select value={formData.subject_id} onChange={e => setFormData({ ...formData, subject_id: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]">
                 <option value="" disabled>Select subject…</option>
                 {subjects.map(s => (
                   <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
@@ -361,9 +361,9 @@ export default function NewResourceModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white/60 mb-1">Target Module</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Target Module</label>
               {categoriesLoading ? (
-                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/30 border border-white/[0.08] rounded-lg bg-white/[0.02]">
+                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-muted)] border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading modules…
                 </div>
@@ -373,7 +373,7 @@ export default function NewResourceModal({
                   <span>No modules found for this subject. Create one in Taxonomy Manager.</span>
                 </div>
               ) : (
-                <select required value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-white/[0.04] text-white">
+                <select required value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]">
                   <option value="" disabled>Select mapping...</option>
                   {activeCategories.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
@@ -383,7 +383,7 @@ export default function NewResourceModal({
             </div>
 
             {/* Dynamic Link Inputs */}
-            <div className="col-span-2 pt-2 border-t border-white/[0.06]">
+            <div className="col-span-2 pt-2 border-t border-[var(--border-subtle)]">
               <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
                 {moduleType === 'video_topical' ? 'Resource Links' : 'PDF Solution Link'}
               </label>
@@ -393,23 +393,23 @@ export default function NewResourceModal({
                   <>
                     <div>
                       <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Link *</label>
-                      <input required value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
+                      <input required value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-green-600 mb-1">Worksheet Drive Link (Optional)</label>
-                      <input value={formData.worksheet_url} onChange={e => setFormData({ ...formData, worksheet_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-emerald-500/50 focus:border-emerald-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
+                      <input value={formData.worksheet_url} onChange={e => setFormData({ ...formData, worksheet_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-emerald-500/50 focus:border-emerald-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
                     </div>
                   </>
                 ) : (
                   <>
                     <div>
                       <label className="block text-xs font-medium text-blue-600 mb-1">PDF Solution Link *</label>
-                      <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
+                      <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-blue-500/50 focus:border-blue-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Walkthrough (Optional)</label>
-                      <input value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-white/[0.08] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-white/[0.04] text-white font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
-                      <p className="text-[10px] text-white/30 mt-1">Adding a video enables the Interactive Solver (split-screen PDF + Video)</p>
+                      <input value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
+                      <p className="text-[10px] text-[var(--text-muted)] mt-1">Adding a video enables the Interactive Solver (split-screen PDF + Video)</p>
                     </div>
                   </>
                 )}
@@ -417,8 +417,8 @@ export default function NewResourceModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-white/[0.06] mt-6 sticky bottom-0 bg-[#131B2E]">
-            <label className="flex items-center gap-2 text-sm text-white/40 cursor-pointer select-none">
+          <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)] mt-6 sticky bottom-0 bg-[#131B2E]">
+            <label className="flex items-center gap-2 text-sm text-[var(--text-muted)] cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={keepOpen}
@@ -429,7 +429,7 @@ export default function NewResourceModal({
               Keep open after save
             </label>
             <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.04] rounded-lg transition">Cancel</button>
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-card)] rounded-lg transition">Cancel</button>
               <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700">
                 {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === 'video_topical' ? 'Link Video + Topical' : 'Link Past Paper'}
               </button>
