@@ -24,30 +24,33 @@ interface CheatSheetViewerProps {
   accentGradient?: string;
 }
 
-function getFileType(url: string): 'image' | 'pdf' | 'unknown' {
+function getFileType(url: string): 'image' | 'pdf' | 'drive' | 'unknown' {
+  // Google Drive URLs get their own type — we embed them via iframe
+  if (url.includes('drive.google.com')) return 'drive';
   const clean = url.split('?')[0].split('#')[0].toLowerCase();
   if (/\.(png|jpe?g|gif|webp|svg|bmp|avif)$/.test(clean)) return 'image';
   if (/\.pdf$/.test(clean)) return 'pdf';
   // Supabase storage URLs often lack extensions — check path hints
   if (clean.includes('/pdf') || clean.includes('document')) return 'pdf';
   if (clean.includes('/image') || clean.includes('/img')) return 'image';
-  // Google Drive links without extension — default to image for viewer
-  // (PDFs from Drive are handled separately via Google Docs viewer)
   return 'image';
 }
 
-/** Convert Google Drive sharing URL to a direct-access URL */
-function toDriveDirectUrl(url: string): string {
-  // Match: drive.google.com/file/d/FILE_ID/...
-  const fileIdMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch) {
-    return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
-  }
-  // Match: drive.google.com/open?id=FILE_ID
+/** Extract Google Drive file ID from various URL formats */
+function extractDriveFileId(url: string): string | null {
+  const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileMatch) return fileMatch[1];
   const openMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (openMatch) {
-    return `https://drive.google.com/uc?export=view&id=${openMatch[1]}`;
-  }
+  if (openMatch) return openMatch[1];
+  const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (idMatch) return idMatch[1];
+  return null;
+}
+
+/** Get Google Drive preview (embed) URL */
+function toDrivePreviewUrl(url: string): string {
+  const fileId = extractDriveFileId(url);
+  if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
   return url;
 }
 
@@ -60,8 +63,7 @@ export default function CheatSheetViewer({
   accentGradient = 'from-purple-500 to-purple-600',
 }: CheatSheetViewerProps) {
   const fileType = getFileType(url);
-  // Convert Google Drive sharing URLs to direct-access URLs
-  const resolvedUrl = url.includes('drive.google.com') ? toDriveDirectUrl(url) : url;
+  const resolvedUrl = fileType === 'drive' ? toDrivePreviewUrl(url) : url;
   const [zoomIdx, setZoomIdx] = useState(2); // Start at 1x
   const zoom = ZOOM_LEVELS[zoomIdx];
 
@@ -106,7 +108,7 @@ export default function CheatSheetViewer({
               <div
                 className={`w-8 h-8 rounded-lg bg-gradient-to-br ${accentGradient} flex items-center justify-center`}
               >
-                {fileType === 'pdf' ? (
+                {fileType === 'pdf' || fileType === 'drive' ? (
                   <FileText className="w-4 h-4 text-white" />
                 ) : (
                   <ImageIcon className="w-4 h-4 text-white" />
@@ -117,7 +119,7 @@ export default function CheatSheetViewer({
                   {title}
                 </p>
                 <p className="text-white/40 text-xs">
-                  {fileType === 'pdf' ? 'PDF Document' : 'Image'} •{' '}
+                  {fileType === 'pdf' ? 'PDF Document' : fileType === 'drive' ? 'Google Drive' : 'Image'} •{' '}
                   {Math.round(zoom * 100)}%
                 </p>
               </div>
@@ -157,7 +159,7 @@ export default function CheatSheetViewer({
 
               {/* Open in new tab */}
               <a
-                href={resolvedUrl}
+                href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors"
@@ -168,7 +170,7 @@ export default function CheatSheetViewer({
 
               {/* Download */}
               <a
-                href={resolvedUrl}
+                href={url}
                 download
                 target="_blank"
                 rel="noopener noreferrer"
@@ -192,6 +194,8 @@ export default function CheatSheetViewer({
           <div className="flex-1 overflow-auto relative">
             {fileType === 'pdf' ? (
               <PdfContent url={resolvedUrl} />
+            ) : fileType === 'drive' ? (
+              <DriveContent url={resolvedUrl} title={title} />
             ) : (
               <ImageContent url={resolvedUrl} zoom={zoom} title={title} />
             )}
@@ -217,6 +221,22 @@ function PdfContent({ url }: { url: string }) {
         title="Cheat Sheet PDF"
         className="w-full h-full min-h-[70vh] border-0"
         style={{ backgroundColor: '#f5f0e8' }}
+      />
+    </div>
+  );
+}
+
+/* ── Google Drive sub-component (iframe embed) ─────────────────────────── */
+
+function DriveContent({ url, title }: { url: string; title: string }) {
+  return (
+    <div className="w-full h-full min-h-[70vh]">
+      <iframe
+        src={url}
+        title={title}
+        className="w-full h-full min-h-[70vh] border-0"
+        allow="autoplay"
+        sandbox="allow-same-origin allow-scripts allow-popups"
       />
     </div>
   );
