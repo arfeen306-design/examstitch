@@ -85,48 +85,50 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
         {/* ── Sidebar ── */}
         <aside className="w-[260px] flex flex-col shrink-0 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, #0d1526 0%, #0B1120 40%, #0f0e1a 100%)',
-            borderRight: '1px solid rgba(251,146,60,0.08)',
+            background: 'linear-gradient(180deg, var(--hero-from) 0%, var(--hero-via) 40%, var(--hero-from) 100%)',
+            borderRight: '1px solid rgba(255,255,255,0.08)',
           }}
         >
           {/* Ambient glow top */}
           <div className="absolute top-0 left-0 right-0 h-40 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse at 50% -20%, rgba(251,146,60,0.07) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(ellipse at 50% -20%, var(--accent), transparent 70%)', opacity: 0.07 }}
           />
 
           {/* Brand */}
           <div className="relative p-5 pb-4">
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shadow-lg"
+                style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))', boxShadow: '0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent)' }}>
                 <Zap className="w-3.5 h-3.5 text-white" />
               </div>
               <h2 className="text-lg font-bold text-white tracking-tight">ExamStitch</h2>
             </div>
-            <p className="text-[11px] text-orange-300/40 font-medium pl-[38px]">Admin Control Panel</p>
+            <p className="text-[11px] text-white/30 font-medium pl-[38px]">Admin Control Panel</p>
           </div>
 
           {/* Accent line */}
           <div className="mx-4 h-px mb-4"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(251,146,60,0.3), rgba(245,158,11,0.15), transparent)' }}
+            style={{ background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 40%, transparent), color-mix(in srgb, var(--accent) 15%, transparent), transparent)' }}
           />
 
           {/* Admin profile badge */}
           <div className="relative mx-4 mb-4 p-3 rounded-xl overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(251,146,60,0.08) 0%, rgba(245,158,11,0.04) 100%)',
-              border: '1px solid rgba(251,146,60,0.15)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent) 0%, color-mix(in srgb, var(--accent) 5%, transparent) 100%)',
+              border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
             }}
           >
             <div className="absolute inset-0 opacity-30"
-              style={{ background: 'radial-gradient(circle at 80% 20%, rgba(251,146,60,0.12) 0%, transparent 60%)' }}
+              style={{ background: 'radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent) 15%, transparent) 0%, transparent 60%)' }}
             />
             <div className="relative flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/25 ring-2 ring-orange-500/20">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
+                style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))', boxShadow: '0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent)' }}>
                 <span className="text-sm font-bold text-white drop-shadow-sm">{adminName.charAt(0).toUpperCase()}</span>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-orange-100 truncate">{adminName}</p>
-                <p className="text-[10px] font-medium text-orange-400/60">
+                <p className="text-sm font-semibold text-white truncate">{adminName}</p>
+                <p className="text-[10px] font-medium text-white/40">
                   {isSuperAdmin ? 'Super Admin' : 'Subject Admin'}
                 </p>
               </div>
@@ -154,7 +156,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           <nav className="flex-1 px-3 space-y-5 overflow-y-auto relative">
             {navSections.map((section) => (
               <div key={section.label}>
-                <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-orange-400/30">
+                <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white/20">
                   {section.label}
                 </p>
                 <div className="space-y-0.5">
@@ -165,18 +167,19 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
                         key={item.href}
                         href={item.href}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
-                                   text-[var(--text-muted)] hover:text-orange-100 transition-all group"
+                                   text-white/50 hover:text-white transition-all group"
                         style={{
                           // Hover handled by Tailwind classes below
                         }}
                       >
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.03] group-hover:bg-orange-500/10 transition-colors">
-                          <Icon className="w-4 h-4 shrink-0 group-hover:text-orange-400 transition-colors" />
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.05] group-hover:bg-white/[0.1] transition-colors">
+                          <Icon className="w-4 h-4 shrink-0 group-hover:text-white transition-colors" />
                         </div>
                         <span className="flex-1">{item.label}</span>
                         {'badge' in item && item.badge !== undefined && (
                           <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full
-                                           text-[10px] font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white leading-none shadow-md shadow-orange-500/30">
+                                           text-[10px] font-bold text-white leading-none shadow-md"
+                                           style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))', boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent)' }}>
                             {item.badge}
                           </span>
                         )}
@@ -191,15 +194,15 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           {/* Theme & Sign out */}
           <div className="p-4 mt-auto space-y-2">
             <div className="h-px mb-2"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(251,146,60,0.15), transparent)' }}
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
             />
             <AdminThemeButton />
             <form action={handleLogout}>
               <button
                 type="submit"
                 className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                           text-[var(--text-muted)] hover:text-orange-300 transition-all rounded-xl
-                           border border-white/[0.06] hover:border-orange-500/20 hover:bg-orange-500/5"
+                           text-white/40 hover:text-white/70 transition-all rounded-xl
+                           border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.05]"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
@@ -219,7 +222,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           >
             {/* Bottom accent line */}
             <div className="absolute bottom-0 left-0 right-0 h-px"
-              style={{ background: 'linear-gradient(90deg, rgba(251,146,60,0.2), rgba(245,158,11,0.1), transparent 60%)' }}
+              style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--accent) 25%, transparent), color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%)' }}
             />
             <div className="flex items-center gap-2.5">
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40 animate-pulse" />
