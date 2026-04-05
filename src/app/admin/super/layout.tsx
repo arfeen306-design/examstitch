@@ -89,12 +89,12 @@ export default async function SuperAdminLayout({ children }: { children: React.R
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[#0B1120] flex">
+      <div className="min-h-screen bg-[var(--bg-primary)] flex">
         {/* ── Sidebar ── */}
         <aside className="w-[260px] flex flex-col shrink-0 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, #110d20 0%, #0B1120 35%, #0e0c1c 100%)',
-            borderRight: '1px solid rgba(139,92,246,0.1)',
+            background: 'linear-gradient(180deg, var(--hero-from) 0%, var(--hero-via) 40%, var(--hero-from) 100%)',
+            borderRight: '1px solid rgba(255,255,255,0.08)',
           }}
         >
           {/* Ambient glow top-right */}
@@ -166,7 +166,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
                                    text-[var(--text-muted)] hover:text-violet-100 transition-all group"
                       >
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.03] group-hover:bg-violet-500/10 transition-colors">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.05] group-hover:bg-violet-500/10 transition-colors">
                           <Icon className="w-4 h-4 shrink-0 group-hover:text-violet-400 transition-colors" />
                         </div>
                         <span className="flex-1">{item.label}</span>
@@ -208,9 +208,9 @@ export default async function SuperAdminLayout({ children }: { children: React.R
         <main className="flex-1 flex flex-col overflow-hidden">
           <header className="h-14 shrink-0 flex items-center justify-between px-6 relative z-[100]"
             style={{
-              background: 'linear-gradient(90deg, rgba(11,17,32,0.8) 0%, rgba(11,17,32,0.6) 100%)',
+              background: 'color-mix(in srgb, var(--bg-elevated) 80%, transparent)',
               backdropFilter: 'blur(20px)',
-              borderBottom: '1px solid rgba(139,92,246,0.08)',
+              borderBottom: '1px solid var(--border-subtle)',
             }}
           >
             {/* Bottom accent line */}

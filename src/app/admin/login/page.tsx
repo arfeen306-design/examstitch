@@ -40,23 +40,23 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B1120] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center flex-col items-center">
-          <div className="w-16 h-16 bg-white/[0.06] rounded-2xl flex items-center justify-center mb-4 shadow-xl backdrop-blur-xl border border-white/[0.08]">
+          <div className="w-16 h-16 bg-[var(--bg-elevated)] rounded-2xl flex items-center justify-center mb-4 shadow-xl backdrop-blur-xl border border-[var(--border-color)]">
             <ShieldCheck className="w-8 h-8 text-orange-500" />
           </div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-white tracking-tight">
+          <h2 className="mt-2 text-center text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
             ExamStitch Admin
           </h2>
-          <p className="mt-2 text-center text-sm text-white/40">
+          <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
             Secure access to the platform dashboard
           </p>
         </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white/[0.04] backdrop-blur-xl py-8 px-4 shadow-xl border border-white/[0.08] sm:rounded-2xl sm:px-10">
+        <div className="bg-[var(--bg-card)] backdrop-blur-xl py-8 px-4 shadow-xl border border-[var(--border-color)] sm:rounded-2xl sm:px-10">
           {error && (
             <div className="mb-6 flex items-start gap-3 rounded-xl bg-red-500/10 border border-red-500/20 p-4">
               <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white/50">
+              <label htmlFor="email" className="block text-sm font-medium text-[var(--text-muted)]">
                 Email Address
               </label>
               <div className="mt-1">
@@ -79,8 +79,8 @@ export default function AdminLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
-                  className="appearance-none block w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.08]
-                             rounded-xl shadow-sm placeholder-white/20 text-white
+                  className="appearance-none block w-full px-3 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)]
+                             rounded-xl shadow-sm placeholder-[var(--text-muted)] text-[var(--text-primary)]
                              focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50
                              sm:text-sm transition-all"
                   placeholder="admin@examstitch.com"
@@ -89,7 +89,7 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-white/50">
+              <label htmlFor="password" className="block text-sm font-medium text-[var(--text-muted)]">
                 Password
               </label>
               <div className="mt-1 relative">
@@ -102,13 +102,13 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="appearance-none block w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.08]
-                             rounded-xl shadow-sm placeholder-white/20 text-white
+                  className="appearance-none block w-full px-3 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)]
+                             rounded-xl shadow-sm placeholder-[var(--text-muted)] text-[var(--text-primary)]
                              focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50
                              sm:text-sm transition-all"
                   placeholder="••••••••"
                 />
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
               </div>
             </div>
 
@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
                            text-sm font-semibold text-white
                            bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700
                            disabled:opacity-60 disabled:cursor-not-allowed transition-all
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0B1120] focus:ring-orange-500"
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] focus:ring-orange-500"
               >
                 {loading ? (
                   <>

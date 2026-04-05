@@ -40,8 +40,8 @@ export default function SubjectSwitcher() {
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium
-                   text-white/50 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06]
-                   rounded-lg transition-all"
+                   text-[var(--text-muted)] bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)]
+                   border border-[var(--border-subtle)] rounded-lg transition-all"
       >
         <Globe className="w-3.5 h-3.5" />
         Switch Panel
@@ -50,11 +50,11 @@ export default function SubjectSwitcher() {
 
       {open && (
         <div className="absolute right-0 mt-2 w-56 rounded-xl shadow-2xl z-[9999] overflow-hidden
-                        bg-[#131B2E] border border-white/[0.08]">
+                        bg-[var(--bg-elevated)] border border-[var(--border-color)]">
           {sections.map((section, si) => (
             <div key={section}>
-              {si > 0 && <div className="border-t border-white/[0.06]" />}
-              <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/20">
+              {si > 0 && <div className="border-t border-[var(--border-subtle)]" />}
+              <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
                 {section}
               </p>
               {LINKS.filter(l => l.section === section).map(link => {
@@ -67,7 +67,7 @@ export default function SubjectSwitcher() {
                       setOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm
-                               text-white/50 hover:text-white hover:bg-white/[0.06] transition-all"
+                               text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all"
                   >
                     <div className={`w-6 h-6 rounded-md bg-gradient-to-br ${link.gradient} flex items-center justify-center shrink-0`}>
                       <Icon className="w-3.5 h-3.5 text-white" />

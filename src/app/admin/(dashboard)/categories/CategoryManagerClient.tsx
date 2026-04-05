@@ -92,7 +92,7 @@ export default function CategoryManagerClient({ subjects }: { subjects: Subject[
         <button 
           type="submit" 
           disabled={isPending}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-navy-900 hover:bg-navy-800 text-white px-6 py-2.5 shadow-sm shadow-navy-900/20 rounded-xl text-sm font-medium transition-all disabled:opacity-50 hover:shadow-md active:scale-95 border border-navy-700/50"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-navy-900 hover:bg-navy-800 text-[var(--text-primary)] px-6 py-2.5 shadow-sm shadow-navy-900/20 rounded-xl text-sm font-medium transition-all disabled:opacity-50 hover:shadow-md active:scale-95 border border-navy-700/50"
         >
           {isPending ? 'Saving...' : <><Plus className="w-4 h-4" /> Add Topic</>}
         </button>

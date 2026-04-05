@@ -53,17 +53,17 @@ export default function SuperAdminClient({
   ];
 
   return (
-    <div className="bg-white/[0.04] rounded-2xl shadow-sm border border-white/[0.06] overflow-visible">
+    <div className="bg-[var(--bg-card)] rounded-2xl shadow-sm border border-[var(--border-subtle)] overflow-visible">
       {/* Tabs — sticky at top */}
-      <div className="border-b border-white/[0.06] flex sticky top-0 z-10 bg-[#0d1526] rounded-t-2xl">
+      <div className="border-b border-[var(--border-subtle)] flex sticky top-0 z-10 bg-[var(--bg-elevated)] rounded-t-2xl">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex-1 px-4 py-3.5 text-sm font-medium transition-all relative ${
               tab === t.id
-                ? 'text-white bg-white/[0.06]'
-                : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
+                ? 'text-[var(--text-primary)] bg-[var(--bg-elevated)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
             }`}
           >
             <span className="mr-1.5">{t.icon}</span>
@@ -130,8 +130,8 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-white">Active Subjects</h4>
-          <p className="text-xs text-white/40 mt-0.5">{subjects.length} configured</p>
+          <h4 className="font-semibold text-[var(--text-primary)]">Active Subjects</h4>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">{subjects.length} configured</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -144,14 +144,14 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
 
       <div className="space-y-2">
         {subjects.map(s => (
-          <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+          <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
             <div>
-              <p className="text-sm font-medium text-white">{s.name}</p>
-              <p className="text-xs text-white/30 font-mono">/{s.slug}</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">{s.name}</p>
+              <p className="text-xs text-[var(--text-muted)] font-mono">/{s.slug}</p>
             </div>
             <div className="flex gap-1.5">
               {s.levels?.map(l => (
-                <span key={l} className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-white/[0.04] border border-white/[0.08] text-white/50">
+                <span key={l} className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">
                   {l}
                 </span>
               ))}
@@ -164,29 +164,29 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
         <form onSubmit={handleSubmit} className="p-4 border-2 border-dashed border-violet-500/20 rounded-xl space-y-3 bg-violet-500/[0.03]">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-1">Subject Name *</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Subject Name *</label>
               <input
                 required
                 value={form.name}
                 onChange={e => handleAutoSlug(e.target.value)}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-violet-500 focus:border-violet-500/40"
                 placeholder="e.g. Physics"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-1">URL Slug</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">URL Slug</label>
               <input
                 required
                 value={form.slug}
                 onChange={e => setForm({ ...form, slug: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm font-mono bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-violet-500 focus:border-violet-500/40"
                 placeholder="physics"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/60 mb-2">Levels *</label>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">Levels *</label>
             <div className="flex flex-wrap gap-2">
               {LEVEL_OPTIONS.map(level => (
                 <button
@@ -196,7 +196,7 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
                     form.levels.includes(level)
                       ? 'bg-violet-600 text-white border-violet-600'
-                      : 'bg-white/[0.04] text-white/50 border-white/[0.08] hover:border-violet-400/40'
+                      : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-violet-400/40'
                   }`}
                 >
                   {level}
@@ -206,7 +206,7 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs font-medium text-white/50 hover:bg-white/[0.08] rounded-lg transition">
+            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition">
               Cancel
             </button>
             <button
@@ -237,17 +237,17 @@ function CategorizedSubjectPicker({
 
   return (
     <div>
-      <label className="block text-xs font-medium text-white/60 mb-2">Assign Subjects *</label>
+      <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">Assign Subjects *</label>
 
       {/* O-Level / A-Level toggle */}
-      <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] w-fit">
+      <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit">
         <button
           type="button"
           onClick={() => setLevel('olevel')}
           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
             level === 'olevel'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-              : 'text-white/40 hover:text-white/60'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
           }`}
         >
           O-Level / IGCSE
@@ -258,7 +258,7 @@ function CategorizedSubjectPicker({
           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
             level === 'alevel'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-              : 'text-white/40 hover:text-white/60'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
           }`}
         >
           A-Level
@@ -277,16 +277,16 @@ function CategorizedSubjectPicker({
               className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border transition-all text-left ${
                 isSelected
                   ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500/40 ring-1 ring-indigo-500/20'
-                  : 'bg-white/[0.03] text-white/50 border-white/[0.06] hover:border-indigo-400/30 hover:bg-white/[0.05]'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-indigo-400/30 hover:bg-[var(--bg-surface)]'
               }`}
             >
               <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                isSelected ? 'bg-indigo-500 text-white' : 'bg-white/[0.06] text-white/30'
+                isSelected ? 'bg-indigo-500 text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
               }`}>
                 {isSelected ? '✓' : s.name.charAt(0)}
               </span>
               <span className="flex-1 truncate">{s.name}</span>
-              <span className="text-[10px] text-white/30 font-mono shrink-0">{s.code}</span>
+              <span className="text-[10px] text-[var(--text-muted)] font-mono shrink-0">{s.code}</span>
             </button>
           );
         })}
@@ -294,8 +294,8 @@ function CategorizedSubjectPicker({
 
       {/* Selected summary */}
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-white/[0.06]">
-          <span className="text-[10px] text-white/30 font-medium self-center mr-1">{selected.length} selected:</span>
+        <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-[var(--border-subtle)]">
+          <span className="text-[10px] text-[var(--text-muted)] font-medium self-center mr-1">{selected.length} selected:</span>
           {selected.map(sid => {
             const subj = [...O_LEVEL_SUBJECTS, ...A_LEVEL_SUBJECTS].find(s => s.id === sid);
             return (
@@ -313,7 +313,7 @@ function CategorizedSubjectPicker({
         </div>
       )}
 
-      <p className="text-[10px] text-white/25 mt-2">Admin can only manage resources for assigned subjects. O-Level and A-Level subjects have separate IDs.</p>
+      <p className="text-[10px] text-[var(--text-muted)] mt-2">Admin can only manage resources for assigned subjects. O-Level and A-Level subjects have separate IDs.</p>
     </div>
   );
 }
@@ -339,12 +339,12 @@ function CategorizedAssignDropdown({
   return (
     <div className="space-y-2">
       {/* Level tabs */}
-      <div className="flex gap-1 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] w-fit">
+      <div className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit">
         <button
           type="button"
           onClick={() => { setLevel('olevel'); setSelectedSubject(''); }}
           className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
-            level === 'olevel' ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white/60'
+            level === 'olevel' ? 'bg-indigo-600 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
           }`}
         >
           O-Level
@@ -353,7 +353,7 @@ function CategorizedAssignDropdown({
           type="button"
           onClick={() => { setLevel('alevel'); setSelectedSubject(''); }}
           className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
-            level === 'alevel' ? 'bg-purple-600 text-white' : 'text-white/40 hover:text-white/60'
+            level === 'alevel' ? 'bg-purple-600 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
           }`}
         >
           A-Level
@@ -364,7 +364,7 @@ function CategorizedAssignDropdown({
         <select
           value={selectedSubject}
           onChange={e => { setSelectedSubject(e.target.value); onSelect(e.target.value); }}
-          className="flex-1 px-2 py-1.5 text-xs border border-white/[0.08] rounded-lg bg-white/[0.04] text-white focus:ring-indigo-500"
+          className="flex-1 px-2 py-1.5 text-xs border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-indigo-500"
         >
           <option value="" disabled>
             {available.length === 0 ? `All ${level === 'olevel' ? 'O-Level' : 'A-Level'} assigned` : 'Choose subject…'}
@@ -488,8 +488,8 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-white">Admin Users</h4>
-          <p className="text-xs text-white/40 mt-0.5">{admins.length} admin{admins.length !== 1 ? 's' : ''} · Manage access &amp; subject assignments</p>
+          <h4 className="font-semibold text-[var(--text-primary)]">Admin Users</h4>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">{admins.length} admin{admins.length !== 1 ? 's' : ''} · Manage access &amp; subject assignments</p>
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -503,40 +503,40 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
       {/* Create Admin Form */}
       {showCreateForm && (
         <form onSubmit={handleCreateAdmin} className="p-5 border-2 border-dashed border-indigo-500/20 rounded-xl space-y-4 bg-indigo-500/[0.03]">
-          <p className="text-sm font-semibold text-white">New Admin Account</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">New Admin Account</p>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-1">Full Name *</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Full Name *</label>
               <input
                 required
                 value={newAdmin.full_name}
                 onChange={e => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-indigo-500 focus:border-indigo-500/40"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-indigo-500 focus:border-indigo-500/40"
                 placeholder="e.g. Sarah Khan"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-1">Email *</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Email *</label>
               <input
                 required
                 type="email"
                 value={newAdmin.email}
                 onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-indigo-500 focus:border-indigo-500/40"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-indigo-500 focus:border-indigo-500/40"
                 placeholder="teacher@school.edu"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/60 mb-1">Temporary Password *</label>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Temporary Password *</label>
             <input
               required
               type="text"
               value={newAdmin.password}
               onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
-              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-indigo-500 focus:border-indigo-500/40"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm font-mono bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-indigo-500 focus:border-indigo-500/40"
               placeholder="Min 6 characters — share with the teacher securely"
               minLength={6}
             />
@@ -549,18 +549,18 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
           />
 
           {/* Super Admin Toggle */}
-          <label className="flex items-center gap-2 text-xs text-white/60">
+          <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <input
               type="checkbox"
               checked={newAdmin.is_super_admin}
               onChange={e => setNewAdmin({ ...newAdmin, is_super_admin: e.target.checked })}
-              className="rounded border-white/20 bg-white/[0.06] text-indigo-600 focus:ring-indigo-500"
+              className="rounded border-[var(--border-color)] bg-[var(--bg-elevated)] text-indigo-600 focus:ring-indigo-500"
             />
-            <span>Grant Super Admin access <span className="text-white/30">(full platform control)</span></span>
+            <span>Grant Super Admin access <span className="text-[var(--text-muted)]">(full platform control)</span></span>
           </label>
 
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={() => setShowCreateForm(false)} className="px-3 py-1.5 text-xs font-medium text-white/50 hover:bg-white/[0.08] rounded-lg transition">
+            <button type="button" onClick={() => setShowCreateForm(false)} className="px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition">
               Cancel
             </button>
             <button
@@ -577,7 +577,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
       {/* Admin List — scrollable container */}
       <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1 scrollbar-thin">
         {admins.map(admin => (
-          <div key={admin.id} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.03]">
+          <div key={admin.id} className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
             {/* Admin Header */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
@@ -587,7 +587,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                   {admin.full_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
                     {admin.full_name}
                     {admin.is_super_admin && (
                       <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-400">
@@ -595,7 +595,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-white/40">{admin.email}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{admin.email}</p>
                 </div>
               </div>
 
@@ -615,7 +615,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
                   className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg transition ${
                     admin.is_super_admin
                       ? 'text-amber-400 hover:bg-amber-500/10'
-                      : 'text-white/40 hover:bg-white/[0.08]'
+                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'
                   }`}
                   title={admin.is_super_admin ? 'Demote from Super Admin' : 'Promote to Super Admin'}
                 >
@@ -662,7 +662,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
 
             {/* Categorized Assign Dropdown with O-Level / A-Level tabs */}
             {assignTarget === admin.id && (
-              <div className="mt-3 pt-3 border-t border-white/[0.08]">
+              <div className="mt-3 pt-3 border-t border-[var(--border-color)]">
                 <CategorizedAssignDropdown
                   excludeIds={admin.managed_subjects}
                   onSelect={setSelectedSubject}
@@ -675,7 +675,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
         ))}
 
         {admins.length === 0 && (
-          <p className="text-sm text-white/40 py-8 text-center">No admin accounts found. Create one above.</p>
+          <p className="text-sm text-[var(--text-muted)] py-8 text-center">No admin accounts found. Create one above.</p>
         )}
       </div>
     </div>
@@ -758,8 +758,8 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-white">Media Widgets</h4>
-          <p className="text-xs text-white/40 mt-0.5">YouTube videos &amp; PDF viewers on public pages</p>
+          <h4 className="font-semibold text-[var(--text-primary)]">Media Widgets</h4>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">YouTube videos &amp; PDF viewers on public pages</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -774,11 +774,11 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
         <form onSubmit={handleSubmit} className="p-4 border-2 border-dashed border-violet-500/20 rounded-xl space-y-3 bg-violet-500/[0.03]">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-1">Page Target *</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Page Target *</label>
               <select
                 value={form.page_slug}
                 onChange={e => setForm({ ...form, page_slug: e.target.value })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white focus:ring-violet-500 focus:border-violet-500/40"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-violet-500 focus:border-violet-500/40"
               >
                 {PAGE_OPTIONS.map(p => (
                   <option key={p.value} value={p.value}>{p.label}</option>
@@ -786,11 +786,11 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-1">Media Type *</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Media Type *</label>
               <select
                 value={form.media_type}
                 onChange={e => setForm({ ...form, media_type: e.target.value as 'youtube' | 'pdf' })}
-                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white focus:ring-violet-500 focus:border-violet-500/40"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-violet-500 focus:border-violet-500/40"
               >
                 <option value="youtube">YouTube Video</option>
                 <option value="pdf">PDF Document</option>
@@ -799,46 +799,46 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/60 mb-1">Title *</label>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Title *</label>
             <input
               required
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
-              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-violet-500 focus:border-violet-500/40"
               placeholder={form.media_type === 'youtube' ? 'e.g. O-Level Paper 1 Walkthrough' : 'e.g. 2024 Specimen Paper'}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/60 mb-1">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
               {form.media_type === 'youtube' ? 'YouTube URL or Video ID *' : 'PDF URL (Supabase Storage) *'}
             </label>
             <input
               required
               value={form.url}
               onChange={e => setForm({ ...form, url: e.target.value })}
-              className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm font-mono bg-white/[0.04] text-white placeholder:text-white/30 focus:ring-violet-500 focus:border-violet-500/40"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm font-mono bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-violet-500 focus:border-violet-500/40"
               placeholder={form.media_type === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://...supabase.co/storage/v1/...'}
             />
           </div>
 
           {form.media_type === 'pdf' && (
             <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 text-xs text-white/60">
+              <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                 <input
                   type="checkbox"
                   checked={form.allow_download}
                   onChange={e => setForm({ ...form, allow_download: e.target.checked })}
-                  className="rounded border-white/20 bg-white/[0.06] text-violet-600 focus:ring-violet-500"
+                  className="rounded border-[var(--border-color)] bg-[var(--bg-elevated)] text-violet-600 focus:ring-violet-500"
                 />
                 Allow Download
               </label>
-              <label className="flex items-center gap-2 text-xs text-white/60">
+              <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                 <input
                   type="checkbox"
                   checked={form.allow_print}
                   onChange={e => setForm({ ...form, allow_print: e.target.checked })}
-                  className="rounded border-white/20 bg-white/[0.06] text-violet-600 focus:ring-violet-500"
+                  className="rounded border-[var(--border-color)] bg-[var(--bg-elevated)] text-violet-600 focus:ring-violet-500"
                 />
                 Allow Print
               </label>
@@ -846,7 +846,7 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
           )}
 
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs font-medium text-white/50 hover:bg-white/[0.08] rounded-lg transition">
+            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition">
               Cancel
             </button>
             <button
@@ -862,13 +862,13 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
 
       {grouped.map(group => (
         <div key={group.value}>
-          <h5 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">{group.label}</h5>
+          <h5 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">{group.label}</h5>
           {group.widgets.length === 0 ? (
-            <p className="text-xs text-white/40 italic py-2">No media widgets</p>
+            <p className="text-xs text-[var(--text-muted)] italic py-2">No media widgets</p>
           ) : (
             <div className="space-y-2">
               {group.widgets.map(w => (
-                <div key={w.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                <div key={w.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                   <div className="flex items-center gap-3 min-w-0">
                     {w.media_type === 'youtube' ? (
                       <Video className="w-4 h-4 text-red-500 shrink-0" />
@@ -876,24 +876,24 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
                       <FileText className="w-4 h-4 text-blue-500 shrink-0" />
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{w.title}</p>
-                      <p className="text-[11px] text-white/40 font-mono truncate">{w.url}</p>
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">{w.title}</p>
+                      <p className="text-[11px] text-[var(--text-muted)] font-mono truncate">{w.url}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[11px] font-medium text-white/40 px-1.5 py-0.5 rounded bg-white/[0.06]">
+                    <span className="text-[11px] font-medium text-[var(--text-muted)] px-1.5 py-0.5 rounded bg-[var(--bg-elevated)]">
                       {w.view_count} views
                     </span>
                     <button
                       onClick={() => handleToggle(w.id, w.is_active)}
                       disabled={isPending}
-                      className="p-1.5 rounded-lg hover:bg-white/[0.08] transition"
+                      className="p-1.5 rounded-lg hover:bg-[var(--bg-elevated)] transition"
                       title={w.is_active ? 'Hide' : 'Show'}
                     >
                       {w.is_active ? (
                         <Eye className="w-3.5 h-3.5 text-green-500" />
                       ) : (
-                        <EyeOff className="w-3.5 h-3.5 text-white/30" />
+                        <EyeOff className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                       )}
                     </button>
                     <button

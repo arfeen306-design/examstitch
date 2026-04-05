@@ -117,8 +117,8 @@ export default async function SuperAdminPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Super Admin Control Center</h2>
-        <p className="text-sm text-white/40 mt-1">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Super Admin Control Center</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
           Welcome back, {session.email}. Global platform management.
         </p>
       </div>
@@ -129,16 +129,16 @@ export default async function SuperAdminPage() {
           const Icon = stat.icon;
           return (
             <div key={stat.label} className="relative overflow-hidden rounded-xl p-4
-                                             bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]
+                                             bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]
                                              hover:border-white/[0.12] transition-all">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">{stat.label}</p>
-                  <p className="text-2xl font-bold text-white mt-0.5">{stat.value}</p>
+                  <p className="text-2xl font-bold text-[var(--text-primary)] mt-0.5">{stat.value}</p>
                   <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{stat.sub}</p>
                 </div>
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
-                  <Icon className="w-4 h-4 text-white" />
+                  <Icon className="w-4 h-4 text-[var(--text-primary)]" />
                 </div>
               </div>
             </div>
@@ -173,10 +173,10 @@ export default async function SuperAdminPage() {
       {/* ═══ Status & Analytics (secondary — below management) ═══ */}
 
       {/* ── Global Status Card ── */}
-      <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
+      <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
         <div className="flex items-center gap-2 mb-5">
           <Globe className="w-5 h-5 text-violet-400" />
-          <h3 className="text-base font-semibold text-white">Global Status</h3>
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">Global Status</h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -204,11 +204,11 @@ export default async function SuperAdminPage() {
             <div className="space-y-2">
               {emptySubjects.map(s => (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3 rounded-xl
-                                           bg-white/[0.03] border border-white/[0.06]">
+                                           bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                   <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white/70">{s.name}</p>
-                    <p className="text-xs text-white/30">{s.levels?.join(' · ') || 'No levels'}</p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)]">{s.name}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{s.levels?.join(' · ') || 'No levels'}</p>
                   </div>
                   <span className="text-xs text-amber-400/60 font-medium">0 resources</span>
                 </div>
@@ -224,15 +224,15 @@ export default async function SuperAdminPage() {
             <div className="space-y-2">
               {perSubject.filter(s => s.resourceCount > 0).map(s => (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3 rounded-xl
-                                           bg-white/[0.03] border border-white/[0.06]">
+                                           bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white/70">{s.name}</p>
-                    <p className="text-xs text-white/30">{s.levels?.join(' · ') || 'No levels'}</p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)]">{s.name}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{s.levels?.join(' · ') || 'No levels'}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-white/70">{s.resourceCount}</p>
-                    <p className="text-[10px] text-white/30">{s.publishedCount} published</p>
+                    <p className="text-sm font-semibold text-[var(--text-secondary)]">{s.resourceCount}</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">{s.publishedCount} published</p>
                   </div>
                 </div>
               ))}
@@ -243,10 +243,10 @@ export default async function SuperAdminPage() {
 
       {/* Top Performing Content */}
       {mediaList.length > 0 && (
-        <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
+        <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-rose-400" />
-            <h3 className="text-base font-semibold text-white">Top Performing Content</h3>
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">Top Performing Content</h3>
           </div>
           <div className="space-y-2">
             {[...mediaList]
@@ -260,8 +260,8 @@ export default async function SuperAdminPage() {
                 );
                 return (
                   <div key={w.id} className="flex items-center gap-3 p-3 rounded-xl
-                                             bg-white/[0.03] border border-white/[0.06]">
-                    <span className="text-xs font-bold text-white/20 w-5 text-right shrink-0">
+                                             bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                    <span className="text-xs font-bold text-[var(--text-muted)] w-5 text-right shrink-0">
                       {i + 1}
                     </span>
                     {(w.media_type as string) === 'youtube' ? (
@@ -270,8 +270,8 @@ export default async function SuperAdminPage() {
                       <FileText className="w-4 h-4 text-blue-400 shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white/70 truncate">{w.title}</p>
-                      <div className="mt-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                      <p className="text-sm font-medium text-[var(--text-secondary)] truncate">{w.title}</p>
+                      <div className="mt-1 h-1.5 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-rose-400 to-rose-600 transition-all"
                           style={{ width: `${maxViews > 0 ? (views / maxViews) * 100 : 0}%` }}
@@ -279,16 +279,16 @@ export default async function SuperAdminPage() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-semibold text-white/70">
+                      <p className="text-sm font-semibold text-[var(--text-secondary)]">
                         {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
                       </p>
-                      <p className="text-[10px] text-white/30">views</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">views</p>
                     </div>
                   </div>
                 );
               })}
             {mediaList.every(m => ((m as Record<string, unknown>).view_count as number ?? 0) === 0) && (
-              <p className="text-sm text-white/30 py-4 text-center">No views recorded yet.</p>
+              <p className="text-sm text-[var(--text-muted)] py-4 text-center">No views recorded yet.</p>
             )}
           </div>
         </div>

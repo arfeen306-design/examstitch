@@ -432,13 +432,13 @@ export default function SubjectResourceManager({
         <tr
           key={r.id}
           className={`transition-colors group
-            ${editingId === r.id ? 'bg-gold-500/10' : isSub ? 'bg-blue-500/10 hover:bg-blue-500/15' : 'hover:bg-white/[0.06]'}
+            ${editingId === r.id ? 'bg-gold-500/10' : isSub ? 'bg-blue-500/10 hover:bg-blue-500/15' : 'hover:bg-[var(--bg-elevated)]'}
             ${isSub ? 'border-l-4 border-blue-500/30' : ''}`}
         >
           {/* # */}
           <td className="w-12 px-3 py-2.5 text-center">
             <span className={`inline-block text-xs font-bold tabular-nums rounded px-1.5 py-0.5
-              ${isSub ? 'text-blue-400 bg-blue-500/20' : 'text-white/40 bg-white/[0.06]'}`}>
+              ${isSub ? 'text-blue-400 bg-blue-500/20' : 'text-[var(--text-muted)] bg-[var(--bg-elevated)]'}`}>
               {label}
             </span>
           </td>
@@ -459,7 +459,7 @@ export default function SubjectResourceManager({
                     : <FileText className="w-3.5 h-3.5 shrink-0 text-green-500 mt-0.5" />
                 )}
                 <div className="min-w-0">
-                  <span className="truncate block text-sm text-white" title={r.title}>
+                  <span className="truncate block text-sm text-[var(--text-primary)]" title={r.title}>
                     {subLabel}
                     {isSub && partSuffix && (
                       <span className="text-[10px] font-normal text-blue-400 ml-1.5">— {partSuffix}</span>
@@ -474,7 +474,7 @@ export default function SubjectResourceManager({
                       </span>
                     )}
                     {totalParts > 1 && !isSub && (
-                      <span className="text-[10px] text-white/40">{totalParts} parts</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">{totalParts} parts</span>
                     )}
                   </div>
                 </div>
@@ -508,13 +508,13 @@ export default function SubjectResourceManager({
           <td className="w-24 px-3 py-2.5">
             {editingId === r.id ? (
               <select value={editState.contentType} onChange={e => setEditState(s => ({ ...s, contentType: e.target.value }))}
-                className="px-2 py-1 text-xs border border-white/[0.08] rounded-md">
+                className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md">
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="worksheet">Worksheet</option>
               </select>
             ) : (
-              <span className="px-2 py-0.5 rounded-full text-xs font-mono uppercase bg-white/[0.06] text-white/50">
+              <span className="px-2 py-0.5 rounded-full text-xs font-mono uppercase bg-[var(--bg-elevated)] text-[var(--text-muted)]">
                 {r.content_type}
               </span>
             )}
@@ -568,7 +568,7 @@ export default function SubjectResourceManager({
               {editingId === r.id ? (
                 <>
                   <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-400 hover:text-green-300 p-1 rounded hover:bg-green-500/10 transition" title="Save"><Check className="w-4 h-4" /></button>
-                  <button onClick={cancelEdit} className="text-[var(--text-muted)] hover:text-white/70 p-1 rounded hover:bg-white/[0.06] transition" title="Cancel"><X className="w-4 h-4" /></button>
+                  <button onClick={cancelEdit} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded hover:bg-[var(--bg-elevated)] transition" title="Cancel"><X className="w-4 h-4" /></button>
                 </>
               ) : (
                 <>
@@ -589,7 +589,7 @@ export default function SubjectResourceManager({
             <td colSpan={9} className="px-4 py-3">
               <div className="flex flex-wrap gap-2 items-end">
                 <div className="flex flex-col gap-1 min-w-[160px]">
-                  <label className="text-xs font-semibold text-white/40">Sub-topic Title</label>
+                  <label className="text-xs font-semibold text-[var(--text-muted)]">Sub-topic Title</label>
                   <input value={subtopicState.title} onChange={e => setSubtopicState(s => ({ ...s, title: e.target.value }))}
                     className="px-2 py-1 text-sm border border-blue-500/30 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" placeholder="Part 2" />
                 </div>
@@ -605,12 +605,12 @@ export default function SubjectResourceManager({
                 </div>
                 <div className="flex gap-2 pb-0.5">
                   <button onClick={() => saveSubtopic(r)} disabled={isPending}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white rounded-lg transition disabled:opacity-50"
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] rounded-lg transition disabled:opacity-50"
                     style={{ backgroundColor: accentColor }}>
                     <Check className="w-3.5 h-3.5" /> Add
                   </button>
                   <button onClick={cancelSubtopic}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/50 bg-white/[0.04] hover:bg-white/[0.06] rounded-lg border border-white/[0.08] transition">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] bg-[var(--bg-card)] hover:bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-color)] transition">
                     <X className="w-3.5 h-3.5" /> Cancel
                   </button>
                 </div>
@@ -638,12 +638,12 @@ export default function SubjectResourceManager({
                 </div>
 
                 {mappingDraft.map((q: any, qi: number) => (
-                  <div key={qi} className="flex flex-col gap-2 p-2 bg-white/[0.04] rounded-lg border border-purple-500/20">
+                  <div key={qi} className="flex flex-col gap-2 p-2 bg-[var(--bg-card)] rounded-lg border border-purple-500/20">
                     <div className="flex items-center gap-2 flex-wrap">
                       <input value={q.label}
                         onChange={e => { const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], label: e.target.value }; setMappingDraft(copy); }}
                         className="w-16 px-2 py-1 text-xs font-bold border border-purple-500/30 rounded-md text-center" placeholder="Q1" />
-                      <span className="text-xs text-white/40">@</span>
+                      <span className="text-xs text-[var(--text-muted)]">@</span>
                       <input type="text"
                         value={(() => { const m = Math.floor(q.start_time / 60); const s = q.start_time % 60; return `${m}:${s.toString().padStart(2, '0')}`; })()}
                         onChange={e => { const [mm, ss] = e.target.value.split(':').map(Number); const copy = [...mappingDraft]; copy[qi] = { ...copy[qi], start_time: (mm || 0) * 60 + (ss || 0) }; setMappingDraft(copy); }}
@@ -680,11 +680,11 @@ export default function SubjectResourceManager({
 
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => saveTimestamps(r.id)} disabled={isPending}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition disabled:opacity-50">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] bg-purple-600 hover:bg-purple-500 rounded-lg transition disabled:opacity-50">
                     <Check className="w-3.5 h-3.5" /> Save Timestamps
                   </button>
                   <button onClick={cancelTimestampEditor}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white/50 bg-white/[0.04] hover:bg-white/[0.06] rounded-lg border border-white/[0.08] transition">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] bg-[var(--bg-card)] hover:bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-color)] transition">
                     <X className="w-3.5 h-3.5" /> Cancel
                   </button>
                 </div>
@@ -707,24 +707,24 @@ export default function SubjectResourceManager({
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search…"
-              className="pl-10 pr-8 py-2 border border-white/[0.08] rounded-lg text-sm focus:ring-2 outline-none w-52"
+              className="pl-10 pr-8 py-2 border border-[var(--border-color)] rounded-lg text-sm focus:ring-2 outline-none w-52"
               style={{ '--tw-ring-color': accentColor } as React.CSSProperties}
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="w-4 h-4 text-[var(--text-muted)] hover:text-white/60" />
+                <X className="w-4 h-4 text-[var(--text-muted)] hover:text-[var(--text-secondary)]" />
               </button>
             )}
           </div>
 
           {showModuleTypeFilter && (
-            <div className="flex rounded-lg border border-white/[0.08] overflow-hidden">
+            <div className="flex rounded-lg border border-[var(--border-color)] overflow-hidden">
               {[
                 { value: 'all', label: 'All Types' },
                 { value: 'video_topical', label: 'Video Topical' },
@@ -736,7 +736,7 @@ export default function SubjectResourceManager({
                   className={`px-3 py-2 text-xs font-medium transition-colors ${
                     filterModuleType === opt.value
                       ? 'text-white'
-                      : 'text-white/50 hover:bg-white/[0.06]'
+                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'
                   }`}
                   style={filterModuleType === opt.value ? { backgroundColor: accentColor } : undefined}
                 >
@@ -746,7 +746,7 @@ export default function SubjectResourceManager({
             </div>
           )}
 
-          <span className="text-sm text-white/40">
+          <span className="text-sm text-[var(--text-muted)]">
             {filtered.length} resource{filtered.length !== 1 ? 's' : ''} · {paperGroups.length} group{paperGroups.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -754,7 +754,7 @@ export default function SubjectResourceManager({
         {renderAddButton ? renderAddButton(() => setShowNewResource(true)) : (
           <button
             onClick={() => setShowNewResource(!showNewResource)}
-            className="flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition shadow-sm hover:opacity-90"
+            className="flex items-center gap-2 px-4 py-2 text-[var(--text-primary)] text-sm font-medium rounded-lg transition shadow-sm hover:opacity-90"
             style={{ backgroundColor: accentColor }}
           >
             <Plus className="w-4 h-4" /> Add Resource
@@ -764,13 +764,13 @@ export default function SubjectResourceManager({
 
       {/* ── Inline New Resource Form ─────────────────────────────────────── */}
       {showNewResource && (
-        <div className="border rounded-xl p-5 space-y-3 bg-white/[0.03] mb-4" style={{ borderColor: accentColor + '40' }}>
+        <div className="border rounded-xl p-5 space-y-3 bg-[var(--bg-surface)] mb-4" style={{ borderColor: accentColor + '40' }}>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+            <h4 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
               <Upload className="w-4 h-4" style={{ color: accentColor }} />
               New Resource
             </h4>
-            <button onClick={() => setShowNewResource(false)} className="text-[var(--text-muted)] hover:text-white/60">
+            <button onClick={() => setShowNewResource(false)} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -779,13 +779,13 @@ export default function SubjectResourceManager({
               value={newRes.title}
               onChange={e => setNewRes(s => ({ ...s, title: e.target.value }))}
               placeholder="Title (e.g. Binary Search — Part 1)"
-              className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
               style={{ '--tw-ring-color': accentColor } as any}
             />
             <select
               value={newRes.content_type}
               onChange={e => setNewRes(s => ({ ...s, content_type: e.target.value as any }))}
-              className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
             >
               <option value="video">Video</option>
               <option value="pdf">PDF</option>
@@ -795,16 +795,16 @@ export default function SubjectResourceManager({
               value={newRes.source_url}
               onChange={e => setNewRes(s => ({ ...s, source_url: e.target.value }))}
               placeholder="YouTube or Google Drive URL"
-              className="px-3 py-2 text-sm font-mono border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
             />
             <input
               value={newRes.worksheet_url}
               onChange={e => setNewRes(s => ({ ...s, worksheet_url: e.target.value }))}
               placeholder="Worksheet / PDF URL (optional)"
-              className="px-3 py-2 text-sm font-mono border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
             />
             {categoriesLoading ? (
-              <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/30 border border-white/[0.08] rounded-lg bg-white/[0.03]">
+              <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-muted)] border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Loading…
               </div>
@@ -817,7 +817,7 @@ export default function SubjectResourceManager({
               <select
                 value={newRes.category_id}
                 onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
-                className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
               >
                 <option value="">Category (optional)</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -827,7 +827,7 @@ export default function SubjectResourceManager({
               <select
                 value={newRes.module_type}
                 onChange={e => setNewRes(s => ({ ...s, module_type: e.target.value as any }))}
-                className="px-3 py-2 text-sm border border-white/[0.08] rounded-lg focus:ring-2 outline-none"
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
               >
                 <option value="">Module type (optional)</option>
                 <option value="video_topical">Video Topical</option>
@@ -839,14 +839,14 @@ export default function SubjectResourceManager({
             <button
               onClick={handleAddResource}
               disabled={isPending || !newRes.title.trim() || !newRes.source_url.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 hover:opacity-90"
+              className="flex items-center gap-1.5 px-4 py-2 text-[var(--text-primary)] text-sm font-semibold rounded-lg transition disabled:opacity-50 hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >
               <Check className="w-4 h-4" /> {isPending ? 'Adding…' : 'Add Resource'}
             </button>
             <button
               onClick={() => setShowNewResource(false)}
-              className="px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-white/50 text-sm font-medium rounded-lg hover:bg-white/[0.06] transition"
+              className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] text-sm font-medium rounded-lg hover:bg-[var(--bg-elevated)] transition"
             >
               Cancel
             </button>
@@ -855,9 +855,9 @@ export default function SubjectResourceManager({
       )}
 
       {/* Hierarchical table */}
-      <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm border border-white/[0.08]">
+      <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm border border-[var(--border-color)]">
         <table className="w-full text-sm text-left">
-          <thead className="text-[10px] uppercase tracking-wider sticky top-0 z-10 bg-gray-800 text-white"
+          <thead className="text-[10px] uppercase tracking-wider sticky top-0 z-10 bg-gray-800 text-[var(--text-primary)]"
                  style={{ borderBottom: '2px solid var(--border-color, #e5e7eb)' }}>
             <tr>
               <th className="w-12 px-3 py-3 text-center whitespace-nowrap">#</th>
@@ -871,23 +871,23 @@ export default function SubjectResourceManager({
               <th className="w-32 px-3 py-3 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white/[0.04] divide-y divide-white/[0.06]">
+          <tbody className="bg-[var(--bg-card)] divide-y divide-white/[0.06]">
             {paperGroups.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-white/40 text-sm">No resources found.</td>
+                <td colSpan={9} className="py-12 text-center text-[var(--text-muted)] text-sm">No resources found.</td>
               </tr>
             ) : (
               paperGroups.map(paper => (
                 <>
                   {/* Paper group header */}
-                  <tr key={`header-${paper.categoryId}`} className="bg-white/[0.03] border-t border-b border-white/[0.08]">
+                  <tr key={`header-${paper.categoryId}`} className="bg-[var(--bg-surface)] border-t border-b border-[var(--border-color)]">
                     <td colSpan={9} className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <FolderOpen className="w-4 h-4" style={{ color: accentColor }} />
-                        <span className="text-xs font-bold uppercase tracking-widest text-white/50">
+                        <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
                           {paper.categoryName}
                         </span>
-                        <span className="text-xs text-white/40">
+                        <span className="text-xs text-[var(--text-muted)]">
                           · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
                         </span>
                       </div>

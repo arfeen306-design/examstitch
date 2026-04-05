@@ -14,7 +14,7 @@ export default async function CSAnalyticsPage() {
 
   if (!subject) {
     return (
-      <div className="text-center py-20 text-white/40">
+      <div className="text-center py-20 text-[var(--text-muted)]">
         <p className="text-lg font-medium">Computer Science subject not configured.</p>
       </div>
     );
@@ -72,11 +72,11 @@ export default async function CSAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-indigo-600" />
           CS Analytics
         </h2>
-        <p className="text-sm text-white/40 mt-1">
+        <p className="text-sm text-[var(--text-muted)] mt-1">
           Content overview for Computer Science · {subject.levels?.join(', ')}
         </p>
       </div>
@@ -86,14 +86,14 @@ export default async function CSAnalyticsPage() {
         {statCards.map(s => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 shadow-sm">
+            <div key={s.label} className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-5 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
                 <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center`}>
                   <Icon className={`w-5 h-5 ${s.color}`} />
                 </div>
-                <p className="text-xs font-medium text-white/40 uppercase tracking-wide">{s.label}</p>
+                <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">{s.label}</p>
               </div>
-              <p className="text-3xl font-bold text-white">{s.value}</p>
+              <p className="text-3xl font-bold text-[var(--text-primary)]">{s.value}</p>
             </div>
           );
         })}
@@ -101,25 +101,25 @@ export default async function CSAnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upload Timeline */}
-        <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-white mb-4">Uploads (Last 6 Months)</h3>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Uploads (Last 6 Months)</h3>
           <div className="flex items-end gap-2 h-32">
             {months.map(m => (
               <div key={m.label} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-medium text-white/40">{m.count}</span>
+                <span className="text-[10px] font-medium text-[var(--text-muted)]">{m.count}</span>
                 <div
                   className="w-full bg-indigo-500 rounded-t-md transition-all"
                   style={{ height: `${Math.max((m.count / maxMonthCount) * 100, 4)}%` }}
                 />
-                <span className="text-[10px] text-white/30">{m.label}</span>
+                <span className="text-[10px] text-[var(--text-muted)]">{m.label}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Content Type Pie */}
-        <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-white mb-4">Content Breakdown</h3>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Content Breakdown</h3>
           <div className="space-y-3">
             {[
               { label: 'PDFs', count: pdfCount, color: 'bg-emerald-500' },
@@ -129,22 +129,22 @@ export default async function CSAnalyticsPage() {
             ].map(item => (
               <div key={item.label} className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${item.color} shrink-0`} />
-                <span className="text-sm text-white/50 flex-1">{item.label}</span>
-                <span className="text-sm font-semibold text-white">{item.count}</span>
-                <span className="text-xs text-white/30 w-12 text-right">
+                <span className="text-sm text-[var(--text-muted)] flex-1">{item.label}</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{item.count}</span>
+                <span className="text-xs text-[var(--text-muted)] w-12 text-right">
                   {total > 0 ? Math.round((item.count / total) * 100) : 0}%
                 </span>
               </div>
             ))}
           </div>
           {total === 0 && (
-            <p className="text-xs text-white/30 text-center mt-4">No resources yet. Upload your first CS resource!</p>
+            <p className="text-xs text-[var(--text-muted)] text-center mt-4">No resources yet. Upload your first CS resource!</p>
           )}
         </div>
 
         {/* Top Categories */}
-        <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <FolderOpen className="w-4 h-4 text-indigo-500" />
             Top Categories
           </h3>
@@ -154,10 +154,10 @@ export default async function CSAnalyticsPage() {
                 <div key={name} className="flex items-center gap-3">
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-white/60">{name}</span>
-                      <span className="text-xs text-white/30">{count}</span>
+                      <span className="text-xs font-medium text-[var(--text-secondary)]">{name}</span>
+                      <span className="text-xs text-[var(--text-muted)]">{count}</span>
                     </div>
-                    <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-indigo-500 rounded-full"
                         style={{ width: `${Math.max((count / total) * 100, 5)}%` }}
@@ -168,13 +168,13 @@ export default async function CSAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-white/30 text-center py-4">No categories with resources yet.</p>
+            <p className="text-xs text-[var(--text-muted)] text-center py-4">No categories with resources yet.</p>
           )}
         </div>
 
         {/* Recent Uploads */}
-        <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-white mb-4">Recent Uploads</h3>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Recent Uploads</h3>
           {recentUploads.length > 0 ? (
             <div className="space-y-3">
               {recentUploads.map(r => (
@@ -189,8 +189,8 @@ export default async function CSAnalyticsPage() {
                      <BookOpen className="w-4 h-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white/80 truncate">{r.title}</p>
-                    <p className="text-[10px] text-white/30">
+                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">{r.title}</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">
                       {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
@@ -198,7 +198,7 @@ export default async function CSAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-white/30 text-center py-4">No uploads yet.</p>
+            <p className="text-xs text-[var(--text-muted)] text-center py-4">No uploads yet.</p>
           )}
         </div>
       </div>

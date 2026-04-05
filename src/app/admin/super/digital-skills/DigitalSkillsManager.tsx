@@ -135,7 +135,7 @@ function UploadableField({
 
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-xs font-semibold text-white/60 mb-1">
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] mb-1">
         {icon} {label}
       </label>
       <div className="flex gap-1.5">
@@ -143,9 +143,9 @@ function UploadableField({
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`flex-1 px-3 py-2.5 text-sm font-mono border border-white/[0.08] rounded-xl focus:ring-2 ${ringColor} outline-none`}
+          className={`flex-1 px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 ${ringColor} outline-none`}
         />
-        <label className={`shrink-0 px-3 py-2.5 rounded-xl border border-white/[0.08] cursor-pointer hover:bg-white/[0.06] transition-colors flex items-center gap-1.5 text-xs font-semibold text-white/50 ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+        <label className={`shrink-0 px-3 py-2.5 rounded-xl border border-[var(--border-color)] cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
           {uploading ? 'Uploading…' : 'Upload'}
           <input type="file" accept={accept} onChange={handleFile} className="hidden" disabled={uploading} />
@@ -541,13 +541,13 @@ export default function DigitalSkillsManager({
             { label: 'Lessons', value: totalLessons, icon: ListVideo, color: 'text-emerald-600', bg: 'bg-emerald-50' },
             { label: 'Enrolled', value: Object.values(skillAccessCounts).reduce((a, b) => a + b, 0), icon: Users, color: 'text-amber-400', bg: 'bg-amber-500/15' },
           ].map(s => (
-            <div key={s.label} className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-5 flex items-center gap-4">
+            <div key={s.label} className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-5 flex items-center gap-4">
               <div className={`w-11 h-11 ${s.bg} rounded-xl flex items-center justify-center`}>
                 <s.icon className={`w-5 h-5 ${s.color}`} />
               </div>
               <div>
-                <p className="text-xs font-medium text-white/40">{s.label}</p>
-                <p className="text-xl font-bold text-white">{s.value}</p>
+                <p className="text-xs font-medium text-[var(--text-muted)]">{s.label}</p>
+                <p className="text-xl font-bold text-[var(--text-primary)]">{s.value}</p>
               </div>
             </div>
           ))}
@@ -555,10 +555,10 @@ export default function DigitalSkillsManager({
 
         {/* New Skill Button */}
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">Skill Tracks</h3>
+          <h3 className="text-lg font-bold text-[var(--text-primary)]">Skill Tracks</h3>
           <button
             onClick={() => setShowNewSkill(!showNewSkill)}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-medium transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-[var(--text-primary)] rounded-lg text-sm font-medium transition shadow-sm"
           >
             <Plus className="w-4 h-4" /> New Skill
           </button>
@@ -613,13 +613,13 @@ export default function DigitalSkillsManager({
               <button
                 onClick={handleCreateSkill}
                 disabled={isPending || !skillForm.name.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-[var(--text-primary)] text-sm font-semibold rounded-lg transition disabled:opacity-50"
               >
                 <Check className="w-4 h-4" /> Create
               </button>
               <button
                 onClick={() => setShowNewSkill(false)}
-                className="px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-white/50 text-sm font-medium rounded-lg hover:bg-white/[0.06] transition"
+                className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] text-sm font-medium rounded-lg hover:bg-[var(--bg-elevated)] transition"
               >
                 Cancel
               </button>
@@ -630,7 +630,7 @@ export default function DigitalSkillsManager({
         {/* Skills List */}
         <div className="space-y-3">
           {skills.length === 0 && (
-            <div className="text-center py-16 text-white/40 text-sm bg-white/[0.04] rounded-2xl border border-white/[0.06]">
+            <div className="text-center py-16 text-[var(--text-muted)] text-sm bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)]">
               No skills created yet. Click &ldquo;New Skill&rdquo; to get started.
             </div>
           )}
@@ -645,35 +645,35 @@ export default function DigitalSkillsManager({
             const isEditingThis = editingSkillId === skill.id;
 
             return (
-              <div key={skill.id} className="bg-white/[0.04] border border-white/[0.06] rounded-2xl overflow-hidden shadow-sm">
+              <div key={skill.id} className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm">
                 {/* Skill Header */}
                 <div
-                  className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-white/[0.06]/50 transition-colors"
+                  className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-[var(--bg-elevated)]/50 transition-colors"
                   onClick={() => !isEditingThis && setExpandedSkill(isExpanded ? null : skill.id)}
                 >
-                  <button className="text-white/30">
+                  <button className="text-[var(--text-muted)]">
                     {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${skill.gradient} flex items-center justify-center shrink-0 shadow-md`}>
-                    <BookOpen className="w-5 h-5 text-white" />
+                    <BookOpen className="w-5 h-5 text-[var(--text-primary)]" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-white">{skill.name}</h4>
-                      <span className="text-[10px] font-mono text-white/40 bg-white/[0.06] px-1.5 py-0.5 rounded">{skill.slug}</span>
+                      <h4 className="font-bold text-[var(--text-primary)]">{skill.name}</h4>
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded">{skill.slug}</span>
                       {!skill.is_active && (
                         <span className="text-[10px] font-bold text-red-400 bg-red-500/15 px-1.5 py-0.5 rounded">HIDDEN</span>
                       )}
                     </div>
                     {skill.tagline && <p className="text-xs text-violet-500 italic mt-0.5">{skill.tagline}</p>}
-                    <p className="text-xs text-white/40 mt-0.5 truncate">{skill.description || 'No description'}</p>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{skill.description || 'No description'}</p>
                   </div>
 
-                  <div className="flex items-center gap-6 text-xs text-white/40 shrink-0">
-                    <div className="text-center"><p className="text-sm font-bold text-white">{skillPlaylists.length}</p><p>playlists</p></div>
-                    <div className="text-center"><p className="text-sm font-bold text-white">{skillLessonCount}</p><p>lessons</p></div>
-                    <div className="text-center"><p className="text-sm font-bold text-white">{enrolledCount}</p><p>students</p></div>
+                  <div className="flex items-center gap-6 text-xs text-[var(--text-muted)] shrink-0">
+                    <div className="text-center"><p className="text-sm font-bold text-[var(--text-primary)]">{skillPlaylists.length}</p><p>playlists</p></div>
+                    <div className="text-center"><p className="text-sm font-bold text-[var(--text-primary)]">{skillLessonCount}</p><p>lessons</p></div>
+                    <div className="text-center"><p className="text-sm font-bold text-[var(--text-primary)]">{enrolledCount}</p><p>students</p></div>
                   </div>
 
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -692,7 +692,7 @@ export default function DigitalSkillsManager({
                           });
                         }
                       }}
-                      className="p-1.5 rounded-lg text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition"
+                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-blue-400 hover:bg-blue-500/10 transition"
                       title="Edit skill"
                     >
                       <Pencil className="w-4 h-4" />
@@ -700,13 +700,13 @@ export default function DigitalSkillsManager({
                     <button
                       onClick={() => handleToggleSkillActive(skill)}
                       title={skill.is_active ? 'Active — click to hide' : 'Hidden — click to activate'}
-                      className={`p-1.5 rounded-lg transition ${skill.is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-white/30 hover:bg-white/[0.08]'}`}
+                      className={`p-1.5 rounded-lg transition ${skill.is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'}`}
                     >
                       {skill.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                     <button
                       onClick={() => handleDeleteSkill(skill)}
-                      className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition"
+                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -731,16 +731,16 @@ export default function DigitalSkillsManager({
                       <button onClick={() => handleSaveSkillEdit(skill)} disabled={isPending} className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-500 transition disabled:opacity-50">
                         <Save className="w-4 h-4" /> Save
                       </button>
-                      <button onClick={() => setEditingSkillId(null)} className="px-4 py-2 text-sm text-white/50 hover:bg-white/[0.08] rounded-lg transition">Cancel</button>
+                      <button onClick={() => setEditingSkillId(null)} className="px-4 py-2 text-sm text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition">Cancel</button>
                     </div>
                   </div>
                 )}
 
                 {/* Expanded: Playlists + Lessons */}
                 {isExpanded && (
-                  <div className="border-t border-white/[0.06] bg-white/[0.02] px-5 py-4 space-y-3">
+                  <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] px-5 py-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Playlists</p>
+                      <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Playlists</p>
                       <button
                         onClick={() => {
                           setNewPlaylistSkillId(newPlaylistSkillId === skill.id ? null : skill.id);
@@ -772,17 +772,17 @@ export default function DigitalSkillsManager({
                           <button
                             onClick={() => handleCreatePlaylist(skill.id)}
                             disabled={isPending || !playlistForm.title.trim()}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-[var(--text-primary)] text-xs font-semibold rounded-lg transition disabled:opacity-50"
                           >
                             <Check className="w-3.5 h-3.5" /> Create
                           </button>
-                          <button onClick={() => setNewPlaylistSkillId(null)} className="px-3 py-1.5 text-xs text-white/50 hover:bg-white/[0.08] rounded-lg transition">Cancel</button>
+                          <button onClick={() => setNewPlaylistSkillId(null)} className="px-3 py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition">Cancel</button>
                         </div>
                       </div>
                     )}
 
                     {skillPlaylists.length === 0 && newPlaylistSkillId !== skill.id && (
-                      <p className="text-xs text-white/40 py-4 text-center">No playlists yet.</p>
+                      <p className="text-xs text-[var(--text-muted)] py-4 text-center">No playlists yet.</p>
                     )}
 
                     {skillPlaylists.map((playlist, pi) => {
@@ -791,28 +791,28 @@ export default function DigitalSkillsManager({
                       const isEditingPl = editingPlaylistId === playlist.id;
 
                       return (
-                        <div key={playlist.id} className="bg-white/[0.04] border border-white/[0.08] rounded-xl overflow-hidden">
+                        <div key={playlist.id} className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden">
                           {/* Playlist header */}
                           <div
-                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.06]/50 transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[var(--bg-elevated)]/50 transition-colors"
                             onClick={() => !isEditingPl && setExpandedPlaylist(isPlaylistExpanded ? null : playlist.id)}
                           >
-                            <button className="text-white/30">
+                            <button className="text-[var(--text-muted)]">
                               {isPlaylistExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                             </button>
                             <Layers className="w-4 h-4 text-blue-500 shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-white">{playlist.title}</p>
-                              {playlist.description && <p className="text-xs text-white/40 truncate">{playlist.description}</p>}
+                              <p className="text-sm font-semibold text-[var(--text-primary)]">{playlist.title}</p>
+                              {playlist.description && <p className="text-xs text-[var(--text-muted)] truncate">{playlist.description}</p>}
                             </div>
-                            <span className="text-xs text-white/40 font-mono">{playlistLessons.length} lessons</span>
+                            <span className="text-xs text-[var(--text-muted)] font-mono">{playlistLessons.length} lessons</span>
 
                             {/* Playlist actions */}
                             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                              <button onClick={() => movePlaylist(skill.id, playlist.id, -1)} disabled={pi === 0} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move up">
+                              <button onClick={() => movePlaylist(skill.id, playlist.id, -1)} disabled={pi === 0} className="p-1 rounded text-[var(--text-muted)] hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move up">
                                 <ArrowUp className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => movePlaylist(skill.id, playlist.id, 1)} disabled={pi === skillPlaylists.length - 1} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move down">
+                              <button onClick={() => movePlaylist(skill.id, playlist.id, 1)} disabled={pi === skillPlaylists.length - 1} className="p-1 rounded text-[var(--text-muted)] hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move down">
                                 <ArrowDown className="w-3.5 h-3.5" />
                               </button>
                               <button
@@ -820,11 +820,11 @@ export default function DigitalSkillsManager({
                                   if (isEditingPl) { setEditingPlaylistId(null); }
                                   else { setEditingPlaylistId(playlist.id); setEditPlaylistForm({ title: playlist.title, description: playlist.description || '' }); }
                                 }}
-                                className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition"
+                                className="p-1 rounded text-[var(--text-muted)] hover:text-blue-400 hover:bg-blue-500/10 transition"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => handleDeletePlaylist(playlist)} className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition">
+                              <button onClick={() => handleDeletePlaylist(playlist)} className="p-1 rounded text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -836,17 +836,17 @@ export default function DigitalSkillsManager({
                               <input value={editPlaylistForm.title} onChange={e => setEditPlaylistForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg outline-none" />
                               <input value={editPlaylistForm.description} onChange={e => setEditPlaylistForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg outline-none" />
                               <div className="flex gap-2">
-                                <button onClick={() => handleSavePlaylistEdit(playlist)} disabled={isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"><Save className="w-3.5 h-3.5" /> Save</button>
-                                <button onClick={() => setEditingPlaylistId(null)} className="px-3 py-1.5 text-xs text-white/50 hover:bg-white/[0.08] rounded-lg transition">Cancel</button>
+                                <button onClick={() => handleSavePlaylistEdit(playlist)} disabled={isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-[var(--text-primary)] text-xs font-semibold rounded-lg transition disabled:opacity-50"><Save className="w-3.5 h-3.5" /> Save</button>
+                                <button onClick={() => setEditingPlaylistId(null)} className="px-3 py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition">Cancel</button>
                               </div>
                             </div>
                           )}
 
                           {/* Lessons */}
                           {isPlaylistExpanded && (
-                            <div className="border-t border-white/[0.06] bg-white/[0.03] px-4 py-3 space-y-2">
+                            <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Lessons</p>
+                                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Lessons</p>
                                 <button
                                   onClick={() => openCreateLessonModal(playlist.id)}
                                   className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 transition"
@@ -856,16 +856,16 @@ export default function DigitalSkillsManager({
                               </div>
 
                               {playlistLessons.length === 0 && (
-                                <p className="text-xs text-white/40 py-3 text-center">No lessons yet.</p>
+                                <p className="text-xs text-[var(--text-muted)] py-3 text-center">No lessons yet.</p>
                               )}
 
                               {playlistLessons.map((lesson, li) => (
                                 <div
                                   key={lesson.id}
-                                  className="flex items-center gap-3 px-3 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-lg group hover:border-white/[0.08] transition"
+                                  className="flex items-center gap-3 px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg group hover:border-[var(--border-color)] transition"
                                 >
                                   {/* Order number */}
-                                  <span className="text-xs font-bold text-white/40 w-5 text-right tabular-nums">{li + 1}</span>
+                                  <span className="text-xs font-bold text-[var(--text-muted)] w-5 text-right tabular-nums">{li + 1}</span>
 
                                   {lesson.video_url ? (
                                     <Video className="w-3.5 h-3.5 text-red-400 shrink-0" />
@@ -874,9 +874,9 @@ export default function DigitalSkillsManager({
                                   )}
 
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-white truncate">{lesson.title}</p>
+                                    <p className="text-sm text-[var(--text-primary)] truncate">{lesson.title}</p>
                                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                      {lesson.duration && <span className="text-[10px] text-white/40">{lesson.duration}</span>}
+                                      {lesson.duration && <span className="text-[10px] text-[var(--text-muted)]">{lesson.duration}</span>}
                                       {lesson.is_free && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">FREE</span>}
                                       {resourceBadges(lesson).map(b => (
                                         <span key={b.label} className={`text-[10px] font-semibold px-1 py-0.5 rounded ${b.color}`}>{b.label}</span>
@@ -886,25 +886,25 @@ export default function DigitalSkillsManager({
 
                                   {/* Lesson actions */}
                                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => moveLesson(playlist.id, lesson.id, -1)} disabled={li === 0} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move up">
+                                    <button onClick={() => moveLesson(playlist.id, lesson.id, -1)} disabled={li === 0} className="p-1 rounded text-[var(--text-muted)] hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move up">
                                       <ArrowUp className="w-3 h-3" />
                                     </button>
-                                    <button onClick={() => moveLesson(playlist.id, lesson.id, 1)} disabled={li === playlistLessons.length - 1} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move down">
+                                    <button onClick={() => moveLesson(playlist.id, lesson.id, 1)} disabled={li === playlistLessons.length - 1} className="p-1 rounded text-[var(--text-muted)] hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-30" title="Move down">
                                       <ArrowDown className="w-3 h-3" />
                                     </button>
-                                    <button onClick={() => openEditLessonModal(lesson)} className="p-1 rounded text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition" title="Edit">
+                                    <button onClick={() => openEditLessonModal(lesson)} className="p-1 rounded text-[var(--text-muted)] hover:text-blue-400 hover:bg-blue-500/10 transition" title="Edit">
                                       <Pencil className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                       onClick={() => handleToggleLessonFree(lesson)}
                                       title={lesson.is_free ? 'Free — click to lock' : 'Locked — click to make free'}
-                                      className={`p-1 rounded transition ${lesson.is_free ? 'text-emerald-600 hover:bg-emerald-50' : 'text-white/30 hover:bg-white/[0.08]'}`}
+                                      className={`p-1 rounded transition ${lesson.is_free ? 'text-emerald-600 hover:bg-emerald-50' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'}`}
                                     >
                                       {lesson.is_free ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                     </button>
                                     <button
                                       onClick={() => handleDeleteLesson(lesson)}
-                                      className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition"
+                                      className="p-1 rounded text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
@@ -931,16 +931,16 @@ export default function DigitalSkillsManager({
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeLessonModal} />
 
           {/* Modal */}
-          <div className="relative bg-white/[0.04] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/[0.08]">
+          <div className="relative bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[var(--border-color)]">
             {/* Header */}
-            <div className="sticky top-0 bg-white/[0.04] border-b border-white/[0.06] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+            <div className="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
               <div>
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">
                   {lessonModal.mode === 'create' ? 'Add New Lesson' : 'Edit Lesson'}
                 </h3>
-                <p className="text-xs text-white/40 mt-0.5">Fill in the fields that match your content tabs.</p>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">Fill in the fields that match your content tabs.</p>
               </div>
-              <button onClick={closeLessonModal} className="p-2 rounded-lg text-white/30 hover:bg-white/[0.08] transition">
+              <button onClick={closeLessonModal} className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -949,39 +949,39 @@ export default function DigitalSkillsManager({
               {/* Title + Duration */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-white/60 mb-1">Lesson Title *</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Lesson Title *</label>
                   <input
                     value={lessonForm.title}
                     onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="e.g. Color Theory Essentials"
-                    className="w-full px-3 py-2.5 text-sm border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-white/60 mb-1">Duration</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Duration</label>
                   <input
                     value={lessonForm.duration}
                     onChange={e => setLessonForm(f => ({ ...f, duration: e.target.value }))}
                     placeholder="e.g. 12:30"
-                    className="w-full px-3 py-2.5 text-sm border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
                   />
                 </div>
               </div>
 
               {/* Video URL with preview */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-white/60 mb-1">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   <Play className="w-3.5 h-3.5 text-red-500" /> Video URL (YouTube)
                 </label>
                 <input
                   value={lessonForm.video_url}
                   onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="w-full px-3 py-2.5 text-sm font-mono border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none"
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none"
                 />
                 {ytPreviewId && (
-                  <div className="mt-2 rounded-xl overflow-hidden border border-white/[0.08] bg-black aspect-video max-w-xs">
+                  <div className="mt-2 rounded-xl overflow-hidden border border-[var(--border-color)] bg-black aspect-video max-w-xs">
                     <img
                       src={`https://img.youtube.com/vi/${ytPreviewId}/mqdefault.jpg`}
                       alt="Video thumbnail"
@@ -992,8 +992,8 @@ export default function DigitalSkillsManager({
               </div>
 
               {/* Resource files — 2-column grid */}
-              <div className="border-t border-white/[0.06] pt-4">
-                <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-3">Lesson Resources</p>
+              <div className="border-t border-[var(--border-subtle)] pt-4">
+                <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">Lesson Resources</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <UploadableField
                     label="Lesson Notes (PDF)"
@@ -1026,14 +1026,14 @@ export default function DigitalSkillsManager({
                     accept="image/*,application/pdf"
                   />
                   <div>
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-white/60 mb-1">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       <BrainCircuit className="w-3.5 h-3.5 text-emerald-500" /> Interactive Quiz (Link)
                     </label>
                     <input
                       value={lessonForm.quiz_url}
                       onChange={e => setLessonForm(f => ({ ...f, quiz_url: e.target.value }))}
                       placeholder="https://quiz.examstitch.com/..."
-                      className="w-full px-3 py-2.5 text-sm font-mono border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-emerald-300 outline-none"
+                      className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-emerald-300 outline-none"
                     />
                   </div>
                 </div>
@@ -1041,19 +1041,19 @@ export default function DigitalSkillsManager({
 
               {/* Legacy resource_url */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-white/60 mb-1">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   <ExternalLink className="w-3.5 h-3.5 text-green-500" /> General Resource URL (optional)
                 </label>
                 <input
                   value={lessonForm.resource_url}
                   onChange={e => setLessonForm(f => ({ ...f, resource_url: e.target.value }))}
                   placeholder="Any additional resource link"
-                  className="w-full px-3 py-2.5 text-sm font-mono border border-white/[0.08] rounded-xl focus:ring-2 focus:ring-green-300 outline-none"
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl focus:ring-2 focus:ring-green-300 outline-none"
                 />
               </div>
 
               {/* Free preview toggle */}
-              <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={lessonForm.is_free}
@@ -1061,15 +1061,15 @@ export default function DigitalSkillsManager({
                   className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <span className="font-medium">Free Preview</span>
-                <span className="text-xs text-white/40">— available without enrollment</span>
+                <span className="text-xs text-[var(--text-muted)]">— available without enrollment</span>
               </label>
             </div>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-white/[0.04] border-t border-white/[0.06] px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+            <div className="sticky bottom-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
               <button
                 onClick={closeLessonModal}
-                className="px-5 py-2.5 text-sm font-medium text-white/50 bg-white/[0.06] hover:bg-gray-200 rounded-xl transition"
+                className="px-5 py-2.5 text-sm font-medium text-[var(--text-muted)] bg-[var(--bg-elevated)] hover:bg-gray-200 rounded-xl transition"
               >
                 Cancel
               </button>

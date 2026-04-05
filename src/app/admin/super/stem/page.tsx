@@ -20,8 +20,8 @@ export default async function STEMManagerPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">STEM Manager</h2>
-        <p className="text-sm text-white/40 mt-1">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">STEM Manager</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
           Create and manage interactive STEM simulations. Paste HTML/Canvas code and publish live.
         </p>
       </div>

@@ -50,23 +50,23 @@ export default async function AdminResourcesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Resource Management</h2>
-        <p className="text-sm text-white/40 mt-1">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Resource Management</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
           {isSuperAdmin
             ? 'Manage all resources across all subjects.'
             : 'Manage resources for your assigned subjects.'}
         </p>
       </div>
 
-      <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
-        <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4">Bulk JSON Upload</h3>
+      <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
+        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Bulk JSON Upload</h3>
         <BulkUploadPreview />
       </div>
 
-      <div className="rounded-2xl p-6 bg-white/[0.04] backdrop-blur-xl border border-white/[0.06]">
-        <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4">
+      <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
+        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4">
           Live Database Records
-          <span className="ml-2 text-xs font-normal text-white/40">({(resources || []).length} total)</span>
+          <span className="ml-2 text-xs font-normal text-[var(--text-muted)]">({(resources || []).length} total)</span>
         </h3>
         <ResourceGridClient initialResources={resources || []} />
       </div>

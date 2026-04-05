@@ -17,7 +17,7 @@ export default async function CSAdminPage() {
 
   if (!subject) {
     return (
-      <div className="text-center py-20 text-white/40">
+      <div className="text-center py-20 text-[var(--text-muted)]">
         <p className="text-lg font-medium">Computer Science subject not configured.</p>
         <p className="text-sm mt-2">Run the database migration to set up the subjects table.</p>
       </div>
@@ -50,8 +50,8 @@ export default async function CSAdminPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Computer Science Dashboard</h2>
-        <p className="text-sm text-white/40 mt-1">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Computer Science Dashboard</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
           Manage resources for {subject.levels?.join(', ')} levels.
         </p>
       </div>
@@ -61,13 +61,13 @@ export default async function CSAdminPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-6 shadow-sm flex items-center gap-4">
+            <div key={stat.label} className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm flex items-center gap-4">
               <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center shrink-0`}>
                 <Icon className={`w-6 h-6 ${stat.color}`} />
               </div>
               <div>
-                <p className="text-sm font-medium text-white/40">{stat.label}</p>
-                <p className="text-2xl font-semibold text-white">{stat.value}</p>
+                <p className="text-sm font-medium text-[var(--text-muted)]">{stat.label}</p>
+                <p className="text-2xl font-semibold text-[var(--text-primary)]">{stat.value}</p>
               </div>
             </div>
           );
@@ -75,8 +75,8 @@ export default async function CSAdminPage() {
       </div>
 
       {/* Resource Manager — same component used by Maths */}
-      <div className="bg-white/[0.04] p-6 rounded-2xl shadow-sm border border-white/[0.06]">
-        <h3 className="text-lg font-semibold text-white mb-4">CS Resource Manager</h3>
+      <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-[var(--border-subtle)]">
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">CS Resource Manager</h3>
         <SubjectResourceManager
           initialResources={csResources}
           subjectId={subject.id}

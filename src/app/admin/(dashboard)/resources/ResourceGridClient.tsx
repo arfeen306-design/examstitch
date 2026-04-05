@@ -543,7 +543,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                 </div>
                 <div className="flex gap-2 pb-0.5">
                   <button onClick={() => saveSubtopic(r)} disabled={isPending}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition disabled:opacity-50">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] bg-blue-600 hover:bg-blue-500 rounded-lg transition disabled:opacity-50">
                     <Check className="w-3.5 h-3.5" /> Add
                   </button>
                   <button onClick={cancelSubtopic}
@@ -671,7 +671,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
 
                 <div className="flex gap-2 pt-1">
                   <button onClick={() => saveTimestamps(r.id)} disabled={isPending}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition disabled:opacity-50">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] bg-purple-600 hover:bg-purple-500 rounded-lg transition disabled:opacity-50">
                     <Check className="w-3.5 h-3.5" /> Save Timestamps
                   </button>
                   <button onClick={cancelTimestampEditor}
@@ -711,7 +711,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                 onClick={() => setFilterModuleType(opt.value)}
                 className={`px-3 py-2 text-xs font-medium transition-colors ${
                   filterModuleType === opt.value
-                    ? 'bg-[#FF6B35] text-white'
+                    ? 'bg-[#FF6B35] text-[var(--text-primary)]'
                     : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'
                 }`}
               >
@@ -722,7 +722,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           <span className="text-sm text-[var(--text-muted)]">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
         </div>
         <button onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-[#FF6B35] hover:bg-[#e55a2b] text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+          className="flex items-center gap-2 bg-[#FF6B35] hover:bg-[#e55a2b] text-[var(--text-primary)] px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
           <Plus className="w-4 h-4" /> New Resource
         </button>
       </div>

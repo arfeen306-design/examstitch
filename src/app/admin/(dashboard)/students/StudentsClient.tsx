@@ -123,7 +123,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
         </div>
         <button
           onClick={() => { setShowForm(!showForm); setCreatedPassword(''); }}
-          className="flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-lg text-white transition-colors"
+          className="flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-lg text-[var(--text-primary)] transition-colors"
           style={{ backgroundColor: '#FF6B35' }}
         >
           <Plus className="w-4 h-4" />
@@ -217,7 +217,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-60 transition-colors"
+              className="px-5 py-2.5 rounded-lg text-sm font-bold text-[var(--text-primary)] disabled:opacity-60 transition-colors"
               style={{ backgroundColor: '#FF6B35' }}
             >
               {loading ? 'Creating…' : 'Create Account & Generate Password'}

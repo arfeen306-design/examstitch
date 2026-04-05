@@ -246,7 +246,7 @@ export default function NewResourceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-[#131B2E] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 border border-[var(--border-color)]">
+      <div className="bg-[var(--bg-elevated)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 border border-[var(--border-color)]">
         <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] sticky top-0 z-10">
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">Link Teaching Materials</h2>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition">
@@ -417,7 +417,7 @@ export default function NewResourceModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)] mt-6 sticky bottom-0 bg-[#131B2E]">
+          <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)] mt-6 sticky bottom-0 bg-[var(--bg-elevated)]">
             <label className="flex items-center gap-2 text-sm text-[var(--text-muted)] cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -430,7 +430,7 @@ export default function NewResourceModal({
             </label>
             <div className="flex gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-card)] rounded-lg transition">Cancel</button>
-              <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700">
+              <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700">
                 {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === 'video_topical' ? 'Link Video + Topical' : 'Link Past Paper'}
               </button>
             </div>

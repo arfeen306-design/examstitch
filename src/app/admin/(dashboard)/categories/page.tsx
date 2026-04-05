@@ -19,8 +19,8 @@ export default async function AdminCategoriesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Category Taxonomy</h2>
-        <p className="text-sm text-white/40">Structural hierarchy for Mathematics routing.</p>
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Category Taxonomy</h2>
+        <p className="text-sm text-[var(--text-muted)]">Structural hierarchy for Mathematics routing.</p>
       </div>
 
       <CategoryManagerClient subjects={subjects || []} />

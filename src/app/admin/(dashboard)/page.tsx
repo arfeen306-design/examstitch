@@ -118,7 +118,7 @@ export default async function AdminOverview() {
                   <p className="text-xs text-[var(--text-secondary)] mt-1">{stat.sub}</p>
                 </div>
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
-                  <Icon className="w-5 h-5 text-white" />
+                  <Icon className="w-5 h-5 text-[var(--text-primary)]" />
                 </div>
               </div>
             </div>
@@ -138,13 +138,13 @@ export default async function AdminOverview() {
                 href={action.href}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl
                            bg-[var(--bg-card)] border border-[var(--border-subtle)]
-                           hover:bg-white/[0.08] hover:border-white/[0.12] transition-all group"
+                           hover:bg-[var(--bg-elevated)] hover:border-white/[0.12] transition-all group"
               >
-                <Icon className="w-4 h-4 text-[var(--text-muted)] group-hover:text-white/70 transition-colors" />
-                <span className="text-sm font-medium text-[var(--text-muted)] group-hover:text-white/80 transition-colors flex-1">
+                <Icon className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors" />
+                <span className="text-sm font-medium text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors flex-1">
                   {action.label}
                 </span>
-                <ArrowUpRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-muted)] transition-colors" />
               </Link>
             );
           })}
