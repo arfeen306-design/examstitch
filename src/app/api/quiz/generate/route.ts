@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { YoutubeTranscript } from 'youtube-transcript';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    POST /api/quiz/generate
    Body: { lessonId, difficulty?, questionCount?, regenerate? }
-   Returns cached quiz or generates one via Gemini + YouTube transcript.
+   Returns cached quiz or generates one via OpenAI + YouTube transcript.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+}
 
 interface QuizQuestion {
   question: string;
@@ -91,22 +93,14 @@ export async function POST(req: NextRequest) {
       transcript = transcript.slice(0, 8000) + '...';
     }
 
-    // ── 4. Generate quiz via Gemini ─────────────────────────────
-    if (!GEMINI_KEY) {
-      return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
+    // ── 4. Generate quiz via OpenAI ─────────────────────────────
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
 
-    const genAI = new GoogleGenerativeAI(GEMINI_KEY);
-    const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
-
-    const prompt = `You are an expert academic examiner. Based on the following lesson transcript, create exactly ${questionCount} high-quality multiple choice questions (MCQs).
+    const systemPrompt = `You are an expert academic examiner. Create exactly ${questionCount} high-quality multiple choice questions (MCQs) based on a lesson transcript.
 
 Difficulty level: ${difficulty}
-
-LESSON TITLE: "${lesson.title}"
-
-TRANSCRIPT:
-${transcript}
 
 RULES:
 - Each question must test genuine understanding, not just recall.
@@ -124,34 +118,45 @@ Return ONLY a valid JSON array with this exact structure — no markdown, no bac
   }
 ]`;
 
-    let text: string | null = null;
-    let lastModelErr: unknown = null;
-    for (const modelName of MODELS) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        text = result.response.text();
-        break; // success
-      } catch (modelErr: unknown) {
-        lastModelErr = modelErr;
-        const errMsg = modelErr instanceof Error ? modelErr.message : String(modelErr);
-        console.warn(`[quiz/generate] Model ${modelName} failed: ${errMsg.slice(0, 200)}`);
-        continue; // try next model regardless of error type
-      }
-    }
+    const userPrompt = `LESSON TITLE: "${lesson.title}"
 
-    if (!text) {
-      const errMsg = lastModelErr instanceof Error ? lastModelErr.message : '';
-      if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('Too Many Requests')) {
+TRANSCRIPT:
+${transcript}`;
+
+    let text: string | null = null;
+
+    try {
+      const completion = await getOpenAI().chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      });
+
+      text = completion.choices[0]?.message?.content ?? null;
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error('[quiz/generate] OpenAI error:', errMsg.slice(0, 300));
+
+      if (errMsg.includes('429') || errMsg.includes('rate') || errMsg.includes('quota')) {
         return NextResponse.json(
           { error: 'AI quota exceeded. Please try again in a few minutes.' },
           { status: 429 },
         );
       }
-      console.error('[quiz/generate] All models failed:', lastModelErr);
       return NextResponse.json(
         { error: 'AI service unavailable. Please try again later.' },
         { status: 503 },
+      );
+    }
+
+    if (!text) {
+      return NextResponse.json(
+        { error: 'AI returned empty response. Please try again.' },
+        { status: 502 },
       );
     }
 
