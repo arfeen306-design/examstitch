@@ -68,7 +68,7 @@ export default function CSResourceTable({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by title, category, or topic…"
-            className="w-full pl-10 pr-4 py-2 border border-[var(--border-color)] rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -109,7 +109,7 @@ export default function CSResourceTable({
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
+            <tbody className="divide-y divide-[var(--border-subtle)]">
               {filtered.map(r => {
                 const Icon = CONTENT_ICONS[r.content_type] || FileText;
                 return (
@@ -122,7 +122,7 @@ export default function CSResourceTable({
                       {r.topic && <div className="text-xs text-[var(--text-muted)]">{r.topic}</div>}
                     </td>
                     <td className="py-3 pr-4">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/15 text-indigo-400">
                         {r.category?.name || '—'}
                       </span>
                     </td>
@@ -255,7 +255,7 @@ function CSUploadModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-[var(--bg-card)] rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-indigo-50/50">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-indigo-500/10">
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">Add CS Resource</h2>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition">
             <X className="w-5 h-5" />
@@ -269,7 +269,7 @@ function CSUploadModal({
               required
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="e.g. Binary Search Algorithm"
             />
           </div>
@@ -280,7 +280,7 @@ function CSUploadModal({
               <select
                 value={form.content_type}
                 onChange={e => setForm({ ...form, content_type: e.target.value, source_type: e.target.value === 'video' ? 'youtube' : 'google_drive' })}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="pdf">PDF</option>
                 <option value="video">Video</option>
@@ -293,7 +293,7 @@ function CSUploadModal({
                 required
                 value={form.level}
                 onChange={e => setForm({ ...form, level: e.target.value })}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-indigo-500 focus:border-indigo-500"
               >
                 {allowedLevels.map(l => (
                   <option key={l} value={l}>{l}</option>
@@ -306,7 +306,7 @@ function CSUploadModal({
                 required
                 value={form.category_id}
                 onChange={e => setForm({ ...form, category_id: e.target.value })}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="" disabled>Select…</option>
                 {categories.map(c => (
@@ -322,7 +322,7 @@ function CSUploadModal({
               required
               value={form.source_url}
               onChange={e => setForm({ ...form, source_url: e.target.value })}
-              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg font-mono text-sm focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg font-mono text-sm bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-indigo-500 focus:border-indigo-500"
               placeholder={form.content_type === 'video' ? 'https://www.youtube.com/watch?v=...' : 'https://drive.google.com/file/d/...'}
             />
           </div>

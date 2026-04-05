@@ -146,26 +146,26 @@ function EditForm({ state, onChange }: { state: EditState; onChange: (s: EditSta
       <input
         value={state.title}
         onChange={e => onChange({ ...state, title: e.target.value })}
-        className="w-full px-2 py-1 text-sm border border-gold-500/30 rounded-md focus:ring-1 focus:ring-orange-500/50 outline-none"
+        className="w-full px-2 py-1 text-sm border border-gold-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-orange-500/50 outline-none"
         placeholder="Title"
       />
       <div className="relative">
         <span className="absolute left-2 top-1.5 text-[10px] font-bold text-red-500">YT</span>
         <input value={state.videoUrl} onChange={e => onChange({ ...state, videoUrl: e.target.value })}
-          className="w-full pl-7 pr-2 py-1 text-xs font-mono border border-red-500/30 rounded-md focus:ring-1 focus:ring-red-400 outline-none"
+          className="w-full pl-7 pr-2 py-1 text-xs font-mono border border-red-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-red-400 outline-none"
           placeholder="YouTube URL" />
       </div>
       <div className="relative">
         <span className="absolute left-2 top-1.5 text-[10px] font-bold text-green-600">PDF</span>
         <input value={state.worksheetUrl} onChange={e => onChange({ ...state, worksheetUrl: e.target.value })}
-          className="w-full pl-8 pr-2 py-1 text-xs font-mono border border-green-500/30 rounded-md focus:ring-1 focus:ring-green-400 outline-none"
+          className="w-full pl-8 pr-2 py-1 text-xs font-mono border border-green-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-green-400 outline-none"
           placeholder="Drive PDF URL (optional)" />
       </div>
       <div className="relative">
         <span className="absolute left-2 top-1.5 text-[10px] font-bold text-purple-400">#</span>
         <input type="number" min="0" value={state.sortOrder}
           onChange={e => onChange({ ...state, sortOrder: e.target.value })}
-          className="w-full pl-6 pr-2 py-1 text-xs border border-purple-500/30 rounded-md focus:ring-1 focus:ring-purple-400 outline-none"
+          className="w-full pl-6 pr-2 py-1 text-xs border border-purple-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-purple-400 outline-none"
           placeholder="Sort order (0 = first)" />
       </div>
     </div>
@@ -497,7 +497,7 @@ export default function SubjectResourceManager({
                     showToast({ message: 'Order saved', type: 'success' });
                   }
                 }}
-                className="w-14 text-center text-xs border border-purple-500/30 rounded-md px-1 py-1 focus:ring-1 focus:ring-purple-400 outline-none text-purple-400 hover:border-purple-500/40 transition"
+                className="w-14 text-center text-xs border border-purple-500/30 rounded-md px-1 py-1 bg-[var(--bg-card)] focus:ring-1 focus:ring-purple-400 outline-none text-purple-400 hover:border-purple-500/40 transition"
                 placeholder="—"
                 title="Sort order — lower = first"
               />
@@ -508,7 +508,7 @@ export default function SubjectResourceManager({
           <td className="w-24 px-3 py-2.5">
             {editingId === r.id ? (
               <select value={editState.contentType} onChange={e => setEditState(s => ({ ...s, contentType: e.target.value }))}
-                className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md">
+                className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md bg-[var(--bg-card)] text-[var(--text-primary)]">
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="worksheet">Worksheet</option>
@@ -591,17 +591,17 @@ export default function SubjectResourceManager({
                 <div className="flex flex-col gap-1 min-w-[160px]">
                   <label className="text-xs font-semibold text-[var(--text-muted)]">Sub-topic Title</label>
                   <input value={subtopicState.title} onChange={e => setSubtopicState(s => ({ ...s, title: e.target.value }))}
-                    className="px-2 py-1 text-sm border border-blue-500/30 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" placeholder="Part 2" />
+                    className="px-2 py-1 text-sm border border-blue-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-blue-400 outline-none" placeholder="Part 2" />
                 </div>
                 <div className="flex flex-col gap-1 flex-1 min-w-[175px]">
                   <label className="text-xs font-semibold text-red-500">YouTube URL</label>
                   <input value={subtopicState.videoUrl} onChange={e => setSubtopicState(s => ({ ...s, videoUrl: e.target.value }))}
-                    className="px-2 py-1 text-xs font-mono border border-red-500/30 rounded-md focus:ring-1 focus:ring-red-400 outline-none" placeholder="https://www.youtube.com/watch?v=..." />
+                    className="px-2 py-1 text-xs font-mono border border-red-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-red-400 outline-none" placeholder="https://www.youtube.com/watch?v=..." />
                 </div>
                 <div className="flex flex-col gap-1 flex-1 min-w-[175px]">
                   <label className="text-xs font-semibold text-green-600">Worksheet PDF (optional)</label>
                   <input value={subtopicState.worksheetUrl} onChange={e => setSubtopicState(s => ({ ...s, worksheetUrl: e.target.value }))}
-                    className="px-2 py-1 text-xs font-mono border border-green-500/30 rounded-md focus:ring-1 focus:ring-green-400 outline-none" placeholder="https://drive.google.com/..." />
+                    className="px-2 py-1 text-xs font-mono border border-green-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-green-400 outline-none" placeholder="https://drive.google.com/..." />
                 </div>
                 <div className="flex gap-2 pb-0.5">
                   <button onClick={() => saveSubtopic(r)} disabled={isPending}
@@ -713,7 +713,7 @@ export default function SubjectResourceManager({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search…"
-              className="pl-10 pr-8 py-2 border border-[var(--border-color)] rounded-lg text-sm focus:ring-2 outline-none w-52"
+              className="pl-10 pr-8 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 outline-none w-52"
               style={{ '--tw-ring-color': accentColor } as React.CSSProperties}
             />
             {searchQuery && (
@@ -779,13 +779,13 @@ export default function SubjectResourceManager({
               value={newRes.title}
               onChange={e => setNewRes(s => ({ ...s, title: e.target.value }))}
               placeholder="Title (e.g. Binary Search — Part 1)"
-              className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 outline-none"
               style={{ '--tw-ring-color': accentColor } as any}
             />
             <select
               value={newRes.content_type}
               onChange={e => setNewRes(s => ({ ...s, content_type: e.target.value as any }))}
-              className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
             >
               <option value="video">Video</option>
               <option value="pdf">PDF</option>
@@ -795,13 +795,13 @@ export default function SubjectResourceManager({
               value={newRes.source_url}
               onChange={e => setNewRes(s => ({ ...s, source_url: e.target.value }))}
               placeholder="YouTube or Google Drive URL"
-              className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 outline-none"
             />
             <input
               value={newRes.worksheet_url}
               onChange={e => setNewRes(s => ({ ...s, worksheet_url: e.target.value }))}
               placeholder="Worksheet / PDF URL (optional)"
-              className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
+              className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 outline-none"
             />
             {categoriesLoading ? (
               <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-muted)] border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
@@ -817,7 +817,7 @@ export default function SubjectResourceManager({
               <select
                 value={newRes.category_id}
                 onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
-                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
               >
                 <option value="">Category (optional)</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -827,7 +827,7 @@ export default function SubjectResourceManager({
               <select
                 value={newRes.module_type}
                 onChange={e => setNewRes(s => ({ ...s, module_type: e.target.value as any }))}
-                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:ring-2 outline-none"
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
               >
                 <option value="">Module type (optional)</option>
                 <option value="video_topical">Video Topical</option>
@@ -857,7 +857,7 @@ export default function SubjectResourceManager({
       {/* Hierarchical table */}
       <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm border border-[var(--border-color)]">
         <table className="w-full text-sm text-left">
-          <thead className="text-[10px] uppercase tracking-wider sticky top-0 z-10 bg-gray-800 text-[var(--text-primary)]"
+          <thead className="text-[10px] uppercase tracking-wider sticky top-0 z-10 bg-[var(--bg-elevated)] text-[var(--text-primary)]"
                  style={{ borderBottom: '2px solid var(--border-color, #e5e7eb)' }}>
             <tr>
               <th className="w-12 px-3 py-3 text-center whitespace-nowrap">#</th>
@@ -871,7 +871,7 @@ export default function SubjectResourceManager({
               <th className="w-32 px-3 py-3 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-[var(--bg-card)] divide-y divide-white/[0.06]">
+          <tbody className="bg-[var(--bg-card)] divide-y divide-[var(--border-subtle)]">
             {paperGroups.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-12 text-center text-[var(--text-muted)] text-sm">No resources found.</td>

@@ -40,10 +40,10 @@ export default async function CSAdminPage() {
   const worksheetCount = csResources.filter(r => r.content_type === 'worksheet').length;
 
   const stats = [
-    { label: 'Total CS Resources', value: totalCount.toString(), icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Total CS Resources', value: totalCount.toString(), icon: BookOpen, color: 'text-indigo-400', bg: 'bg-indigo-500/15' },
     { label: 'Videos', value: videoCount.toString(), icon: Video, color: 'text-blue-400', bg: 'bg-blue-500/15' },
-    { label: 'PDFs', value: pdfCount.toString(), icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Worksheets', value: worksheetCount.toString(), icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
+    { label: 'PDFs', value: pdfCount.toString(), icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-500/15' },
+    { label: 'Worksheets', value: worksheetCount.toString(), icon: TrendingUp, color: 'text-violet-400', bg: 'bg-violet-500/15' },
   ];
 
   return (
