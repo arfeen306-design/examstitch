@@ -133,9 +133,9 @@ export default async function SuperAdminPage() {
                                              hover:border-white/[0.12] transition-all">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">{stat.label}</p>
                   <p className="text-2xl font-bold text-white mt-0.5">{stat.value}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{stat.sub}</p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{stat.sub}</p>
                 </div>
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
                   <Icon className="w-4 h-4 text-white" />
@@ -200,7 +200,7 @@ export default async function SuperAdminPage() {
         {/* Empty subjects list */}
         {emptySubjects.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Subjects Needing Content</p>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Subjects Needing Content</p>
             <div className="space-y-2">
               {emptySubjects.map(s => (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3 rounded-xl
@@ -220,7 +220,7 @@ export default async function SuperAdminPage() {
         {/* Subjects with content */}
         {perSubject.filter(s => s.resourceCount > 0).length > 0 && (
           <div className={emptySubjects.length > 0 ? 'mt-5' : ''}>
-            <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Active Subjects</p>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Active Subjects</p>
             <div className="space-y-2">
               {perSubject.filter(s => s.resourceCount > 0).map(s => (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3 rounded-xl

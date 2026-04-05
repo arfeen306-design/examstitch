@@ -164,7 +164,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
                         key={item.href}
                         href={item.href}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
-                                   text-slate-400 hover:text-violet-100 transition-all group"
+                                   text-[var(--text-muted)] hover:text-violet-100 transition-all group"
                       >
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.03] group-hover:bg-violet-500/10 transition-colors">
                           <Icon className="w-4 h-4 shrink-0 group-hover:text-violet-400 transition-colors" />
@@ -194,7 +194,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
               <button
                 type="submit"
                 className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                           text-slate-500 hover:text-violet-300 transition-all rounded-xl
+                           text-[var(--text-muted)] hover:text-violet-300 transition-all rounded-xl
                            border border-white/[0.06] hover:border-violet-500/20 hover:bg-violet-500/5"
               >
                 <LogOut className="w-4 h-4" />

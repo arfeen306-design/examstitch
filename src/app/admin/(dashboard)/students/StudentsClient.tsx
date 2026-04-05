@@ -139,7 +139,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
           { label: 'Disabled', value: inactive, color: 'text-red-600', bg: 'bg-red-50' },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-5`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">{s.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-1">{s.label}</p>
             <p className={`text-3xl font-extrabold tabular-nums ${s.color}`}>{s.value}</p>
           </div>
         ))}

@@ -201,7 +201,7 @@ export default function BookingsClient({ rows: initial, error }: { rows: DemoBoo
           { label: 'Booked',  value: booked,   color: 'text-green-600',  bg: 'bg-green-50'  },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-2xl p-5`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">{s.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-1">{s.label}</p>
             <p className={`text-3xl font-extrabold tabular-nums ${s.color}`}>{s.value}</p>
           </div>
         ))}

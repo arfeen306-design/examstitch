@@ -66,7 +66,7 @@ export default function AdminThemeButton() {
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                   text-slate-500 hover:text-violet-300 transition-all rounded-xl
+                   text-[var(--text-muted)] hover:text-violet-300 transition-all rounded-xl
                    border border-white/[0.06] hover:border-violet-500/20 hover:bg-violet-500/5"
       >
         <Palette className="w-4 h-4" />

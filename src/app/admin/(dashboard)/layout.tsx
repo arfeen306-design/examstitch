@@ -165,7 +165,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
                         key={item.href}
                         href={item.href}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
-                                   text-slate-400 hover:text-orange-100 transition-all group"
+                                   text-[var(--text-muted)] hover:text-orange-100 transition-all group"
                         style={{
                           // Hover handled by Tailwind classes below
                         }}
@@ -198,7 +198,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
               <button
                 type="submit"
                 className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                           text-slate-500 hover:text-orange-300 transition-all rounded-xl
+                           text-[var(--text-muted)] hover:text-orange-300 transition-all rounded-xl
                            border border-white/[0.06] hover:border-orange-500/20 hover:bg-orange-500/5"
               >
                 <LogOut className="w-4 h-4" />

@@ -257,7 +257,7 @@ export default function NewResourceModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Module Type Radio Toggle */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Content Type</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Content Type</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -308,7 +308,7 @@ export default function NewResourceModal({
               </div>
             ) : (
               <div className="col-span-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Paper Identity</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Paper Identity</label>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-white/60 mb-1">Session</label>
@@ -384,7 +384,7 @@ export default function NewResourceModal({
 
             {/* Dynamic Link Inputs */}
             <div className="col-span-2 pt-2 border-t border-white/[0.06]">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
                 {moduleType === 'video_topical' ? 'Resource Links' : 'PDF Solution Link'}
               </label>
               

@@ -9,7 +9,7 @@ export default function ForbiddenPage() {
           <ShieldX className="w-10 h-10 text-red-400" />
         </div>
         <h1 className="text-3xl font-bold text-white mb-2">Access Denied</h1>
-        <p className="text-slate-400 mb-8">
+        <p className="text-[var(--text-muted)] mb-8">
           You don&apos;t have permission to view this page. Your account is restricted to specific subject areas.
         </p>
         <div className="flex items-center justify-center gap-4">
@@ -21,7 +21,7 @@ export default function ForbiddenPage() {
             Back to Login
           </Link>
         </div>
-        <p className="text-xs text-slate-500 mt-6">
+        <p className="text-xs text-[var(--text-muted)] mt-6">
           Error 403 — Contact your administrator if you believe this is a mistake.
         </p>
       </div>

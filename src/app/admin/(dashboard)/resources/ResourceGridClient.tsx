@@ -503,15 +503,15 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               {editingId === r.id ? (
                 <>
                   <button onClick={() => saveEdit(r.id)} disabled={isPending} className="text-green-400 hover:text-green-300 p-1 rounded hover:bg-green-500/10 transition" title="Save"><Check className="w-4 h-4" /></button>
-                  <button onClick={cancelEdit} className="text-slate-400 hover:text-white/70 p-1 rounded hover:bg-white/[0.06] transition" title="Cancel"><X className="w-4 h-4" /></button>
+                  <button onClick={cancelEdit} className="text-[var(--text-muted)] hover:text-white/70 p-1 rounded hover:bg-white/[0.06] transition" title="Cancel"><X className="w-4 h-4" /></button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => startEdit(r)} className="text-slate-400 hover:text-gold-400 p-1 rounded hover:bg-gold-500/10 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => openTimestampEditor(r)} className="text-slate-400 hover:text-purple-400 p-1 rounded hover:bg-purple-500/10 transition" title="Timestamps"><Clock className="w-4 h-4" /></button>
-                  <button onClick={() => openSubtopic(r)} className="text-slate-400 hover:text-blue-400 p-1 rounded hover:bg-blue-500/10 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
-                  <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-gold-400 p-1 rounded hover:bg-gold-500/10 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
-                  <button onClick={() => handleDelete(r.id, r.title)} className="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => startEdit(r)} className="text-[var(--text-muted)] hover:text-gold-400 p-1 rounded hover:bg-gold-500/10 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => openTimestampEditor(r)} className="text-[var(--text-muted)] hover:text-purple-400 p-1 rounded hover:bg-purple-500/10 transition" title="Timestamps"><Clock className="w-4 h-4" /></button>
+                  <button onClick={() => openSubtopic(r)} className="text-[var(--text-muted)] hover:text-blue-400 p-1 rounded hover:bg-blue-500/10 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
+                  <a href={`/view/${r.id}`} target="_blank" rel="noreferrer" className="text-[var(--text-muted)] hover:text-gold-400 p-1 rounded hover:bg-gold-500/10 transition" title="Preview"><ExternalLink className="w-4 h-4" /></a>
+                  <button onClick={() => handleDelete(r.id, r.title)} className="text-[var(--text-muted)] hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
                 </>
               )}
             </div>
