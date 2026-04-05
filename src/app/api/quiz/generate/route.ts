@@ -139,16 +139,29 @@ ${transcript}`;
       text = completion.choices[0]?.message?.content ?? null;
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.error('[quiz/generate] OpenAI error:', errMsg.slice(0, 300));
+      const statusCode = (err as any)?.status || (err as any)?.statusCode;
+      console.error('[quiz/generate] OpenAI error:', JSON.stringify({ status: statusCode, message: errMsg.slice(0, 500) }));
 
-      if (errMsg.includes('429') || errMsg.includes('rate') || errMsg.includes('quota')) {
+      if (statusCode === 401 || errMsg.includes('Incorrect API key') || errMsg.includes('invalid_api_key')) {
+        return NextResponse.json(
+          { error: 'OpenAI API key is invalid. Check OPENAI_API_KEY in Vercel env vars.' },
+          { status: 500 },
+        );
+      }
+      if (statusCode === 429) {
         return NextResponse.json(
           { error: 'AI quota exceeded. Please try again in a few minutes.' },
           { status: 429 },
         );
       }
+      if (statusCode === 402 || errMsg.includes('billing') || errMsg.includes('insufficient_quota')) {
+        return NextResponse.json(
+          { error: 'OpenAI account has no credits. Add billing at platform.openai.com.' },
+          { status: 402 },
+        );
+      }
       return NextResponse.json(
-        { error: 'AI service unavailable. Please try again later.' },
+        { error: `AI error: ${errMsg.slice(0, 200)}` },
         { status: 503 },
       );
     }
