@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, memo } from 'react';
+import { useState, useTransition, memo, Suspense, useDeferredValue } from 'react';
 import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Shield } from 'lucide-react';
 import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
@@ -35,6 +35,20 @@ interface MediaWidgetItem {
   created_at: string;
 }
 
+// ── Tab loading skeleton ─────────────────────────────────────────────────────
+function TabSkeleton() {
+  return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-10 bg-[var(--bg-surface)] rounded-xl w-1/3" />
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-16 bg-[var(--bg-surface)] rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SuperAdminClient({
   subjects: initialSubjects,
   admins: initialAdmins,
@@ -45,6 +59,7 @@ export default function SuperAdminClient({
   mediaWidgets: MediaWidgetItem[];
 }) {
   const [tab, setTab] = useState<'subjects' | 'admins' | 'media'>('subjects');
+  const deferredTab = useDeferredValue(tab);
 
   const tabs = [
     { id: 'subjects' as const, label: 'Subject Factory', icon: '🏭' },
@@ -76,13 +91,15 @@ export default function SuperAdminClient({
       </div>
 
       <div className="p-6">
-        {tab === 'subjects' ? (
-          <SubjectFactory subjects={initialSubjects} />
-        ) : tab === 'admins' ? (
-          <AdminManager admins={initialAdmins} subjects={initialSubjects} />
-        ) : (
-          <MediaManager widgets={initialMedia} />
-        )}
+        <Suspense fallback={<TabSkeleton />}>
+          {deferredTab === 'subjects' ? (
+            <SubjectFactory subjects={initialSubjects} />
+          ) : deferredTab === 'admins' ? (
+            <AdminManager admins={initialAdmins} subjects={initialSubjects} />
+          ) : (
+            <MediaManager widgets={initialMedia} />
+          )}
+        </Suspense>
       </div>
     </div>
   );

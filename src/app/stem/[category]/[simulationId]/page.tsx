@@ -79,7 +79,12 @@ export default async function SimulationPage({
   const cat = getCategoryBySlug(category);
 
   if (dbSim && cat) {
-    return <SimulationViewer simulation={dbSim} category={cat} />;
+    // Merge static_path from static config if available
+    const staticSim = getSimulation(category, simulationId);
+    const mergedSim = staticSim?.static_path
+      ? { ...dbSim, static_path: staticSim.static_path }
+      : dbSim;
+    return <SimulationViewer simulation={mergedSim} category={cat} />;
   }
 
   // Fall back to static config

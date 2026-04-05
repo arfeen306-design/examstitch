@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -141,6 +141,22 @@ export default function SimulationViewer({
   const currentStrokeRef = useRef<Stroke | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
   const [canvasLocked, setCanvasLocked] = useState(false);
+
+  // ── Ensure iframe gets correct dimensions after layout ─────────────
+  useLayoutEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    // Trigger a resize event inside the iframe after layout settles
+    // so the simulation canvas picks up the correct dimensions
+    const timer = setTimeout(() => {
+      try {
+        iframe.contentWindow?.dispatchEvent(new Event('resize'));
+      } catch {
+        // cross-origin restriction — safe to ignore
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [iframeKey]);
 
   // ── Auto-hide HUD top bar ──────────────────────────────────────────
   useEffect(() => {
@@ -392,7 +408,7 @@ export default function SimulationViewer({
     return () => window.removeEventListener('keydown', handler);
   }, [exitLab, toggleFullscreen, doodleActive, undoDoodle, redoDoodle]);
 
-  const hasCode = !!simulation.html_code;
+  const hasCode = !!simulation.html_code || !!simulation.static_path;
 
   return (
     <div
@@ -404,7 +420,10 @@ export default function SimulationViewer({
         <iframe
           key={iframeKey}
           ref={iframeRef}
-          srcDoc={simulation.html_code!}
+          {...(simulation.static_path
+            ? { src: simulation.static_path }
+            : { srcDoc: simulation.html_code! }
+          )}
           sandbox="allow-scripts allow-same-origin"
           className="absolute inset-0 w-full h-full border-0"
           title={simulation.title}
