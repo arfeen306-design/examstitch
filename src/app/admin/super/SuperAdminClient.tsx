@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, memo } from 'react';
 import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Shield } from 'lucide-react';
 import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
@@ -44,7 +44,7 @@ export default function SuperAdminClient({
   admins: Admin[];
   mediaWidgets: MediaWidgetItem[];
 }) {
-  const [tab, setTab] = useState<'subjects' | 'admins' | 'media'>('admins');
+  const [tab, setTab] = useState<'subjects' | 'admins' | 'media'>('subjects');
 
   const tabs = [
     { id: 'subjects' as const, label: 'Subject Factory', icon: '🏭' },
@@ -60,7 +60,7 @@ export default function SuperAdminClient({
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 px-4 py-3.5 text-sm font-medium transition-all relative ${
+            className={`flex-1 px-4 py-3.5 text-sm font-medium transition-all duration-100 relative ${
               tab === t.id
                 ? 'text-[var(--text-primary)] bg-[var(--bg-elevated)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
@@ -92,7 +92,7 @@ export default function SuperAdminClient({
 
 const LEVEL_OPTIONS = ['Pre-O', 'O Level', 'A Level', 'AS Level', 'A2 Level'] as const;
 
-function SubjectFactory({ subjects }: { subjects: Subject[] }) {
+const SubjectFactory = memo(function SubjectFactory({ subjects }: { subjects: Subject[] }) {
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
@@ -221,7 +221,7 @@ function SubjectFactory({ subjects }: { subjects: Subject[] }) {
       )}
     </div>
   );
-}
+});
 
 // ── Categorized Subject Picker (O-Level / A-Level tabs) ─────────────────────
 
@@ -388,7 +388,7 @@ function CategorizedAssignDropdown({
 
 // ── Admin Manager ───────────────────────────────────────────────────────────
 
-function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject[] }) {
+const AdminManager = memo(function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject[] }) {
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [assignTarget, setAssignTarget] = useState<string | null>(null);
@@ -575,7 +575,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
       )}
 
       {/* Admin List — scrollable container */}
-      <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1 scrollbar-thin">
+      <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-1 scrollbar-thin">
         {admins.map(admin => (
           <div key={admin.id} className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
             {/* Admin Header */}
@@ -680,7 +680,7 @@ function AdminManager({ admins, subjects }: { admins: Admin[]; subjects: Subject
       </div>
     </div>
   );
-}
+});
 
 // ── Media Manager ───────────────────────────────────────────────────────────
 
@@ -690,7 +690,7 @@ const PAGE_OPTIONS = [
   { value: 'pre-o-level', label: 'Pre O-Level' },
 ] as const;
 
-function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
+const MediaManager = memo(function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
@@ -913,4 +913,4 @@ function MediaManager({ widgets }: { widgets: MediaWidgetItem[] }) {
       ))}
     </div>
   );
-}
+});

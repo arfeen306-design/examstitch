@@ -11,8 +11,8 @@
   /* ── Beach (Default for new visitors) ───────────────────────────────────── */
   :root,
   [data-theme="beach"] {
-    --bg-primary:    #FFF9F2;
-    --bg-surface:    #FFF3E6;
+    --bg-primary:    #FDF5E6;
+    --bg-surface:    #FFF8EE;
     --bg-card:       #FFFFFF;
     --bg-elevated:   #FFFFFF;
 
@@ -21,131 +21,131 @@
     --hero-to:       #0C4A6E;
     --navbar-bg:     rgba(12, 74, 110, 0.92);
 
-    --text-primary:  #0C4A6E;
-    --text-secondary:#0369A1;
-    --text-muted:    #0284C7;
+    --text-primary:  #1C1917;
+    --text-secondary:#44403C;
+    --text-muted:    #78716C;
     --text-on-dark:  #ffffff;
-    --text-on-accent:#0C4A6E;
+    --text-on-accent:#1C1917;
 
-    --accent:        #0EA5E9;
-    --accent-hover:  #38BDF8;
-    --accent-subtle: #E0F2FE;
-    --accent-text:   #0369A1;
+    --accent:        #F97316;
+    --accent-hover:  #FB923C;
+    --accent-subtle: #FFF7ED;
+    --accent-text:   #C2410C;
 
-    --border-color:  #BAE6FD;
-    --border-subtle: #E0F2FE;
+    --border-color:  #D6D3D1;
+    --border-subtle: #E7E5E4;
 
     --badge-bg:      #0C4A6E;
     --badge-text:    #ffffff;
 
-    --shadow-color:  rgba(12, 74, 110, 0.08);
+    --shadow-color:  rgba(28, 25, 23, 0.06);
 
-    --wave-fill:     #FFF9F2;
+    --wave-fill:     #FDF5E6;
     --cta-orange:    #FF6B35;
   }
 
   /* ── Dark ───────────────────────────────────────────────────────────────── */
   [data-theme="dark"] {
-    --bg-primary:    #0D0D14;
-    --bg-surface:    #16161F;
-    --bg-card:       #1A1A26;
-    --bg-elevated:   #22222F;
+    --bg-primary:    #050505;
+    --bg-surface:    #111111;
+    --bg-card:       #171717;
+    --bg-elevated:   #1F1F1F;
 
-    --hero-from:     #0D0D14;
-    --hero-via:      #16161F;
-    --hero-to:       #0D0D14;
-    --navbar-bg:     rgba(13, 13, 20, 0.92);
+    --hero-from:     #050505;
+    --hero-via:      #111111;
+    --hero-to:       #050505;
+    --navbar-bg:     rgba(5, 5, 5, 0.94);
 
-    --text-primary:  #EEEEF2;
-    --text-secondary:#A0A0B8;
-    --text-muted:    #6B6B82;
-    --text-on-dark:  #EEEEF2;
-    --text-on-accent:#0D0D14;
+    --text-primary:  #F0F0F0;
+    --text-secondary:#A0A0A0;
+    --text-muted:    #6B6B6B;
+    --text-on-dark:  #F0F0F0;
+    --text-on-accent:#050505;
 
-    --accent:        #A78BFA;
-    --accent-hover:  #C4B5FD;
-    --accent-subtle: rgba(167, 139, 250, 0.10);
-    --accent-text:   #C4B5FD;
+    --accent:        #22D3EE;
+    --accent-hover:  #67E8F9;
+    --accent-subtle: rgba(34, 211, 238, 0.08);
+    --accent-text:   #67E8F9;
 
-    --border-color:  #2A2A3A;
-    --border-subtle: #1E1E2A;
+    --border-color:  #2A2A2A;
+    --border-subtle: #1E1E1E;
 
-    --badge-bg:      #A78BFA;
-    --badge-text:    #0D0D14;
+    --badge-bg:      #22D3EE;
+    --badge-text:    #050505;
 
-    --shadow-color:  rgba(0, 0, 0, 0.3);
+    --shadow-color:  rgba(0, 0, 0, 0.5);
 
-    --wave-fill:     #0D0D14;
+    --wave-fill:     #050505;
     --cta-orange:    #FF6B35;
   }
 
-  /* ── Navy & Gold ─────────────────────────────────────────────────────── */
+  /* ── Navy (Slate-950 / Neon Blue) ──────────────────────────────────── */
   [data-theme="default"] {
-    --bg-primary:    #ffffff;
-    --bg-surface:    #F8F9FB;
-    --bg-card:       #ffffff;
-    --bg-elevated:   #ffffff;
+    --bg-primary:    #020617;
+    --bg-surface:    #0f172a;
+    --bg-card:       #1e293b;
+    --bg-elevated:   #1e293b;
 
-    --hero-from:     #1A2B56;
-    --hero-via:      #0F1A38;
-    --hero-to:       #1A2B56;
-    --navbar-bg:     rgba(26, 43, 86, 0.92);
+    --hero-from:     #020617;
+    --hero-via:      #0f172a;
+    --hero-to:       #020617;
+    --navbar-bg:     rgba(2, 6, 23, 0.94);
 
-    --text-primary:  #1A2B56;
-    --text-secondary:#3B4F80;
-    --text-muted:    #596993;
-    --text-on-dark:  #ffffff;
-    --text-on-accent:#1A2B56;
+    --text-primary:  #f1f5f9;
+    --text-secondary:#94a3b8;
+    --text-muted:    #64748b;
+    --text-on-dark:  #f1f5f9;
+    --text-on-accent:#020617;
 
-    --accent:        #D4AF37;
-    --accent-hover:  #E9B82E;
-    --accent-subtle: #FDF8EB;
-    --accent-text:   #9A7523;
+    --accent:        #3B82F6;
+    --accent-hover:  #60A5FA;
+    --accent-subtle: rgba(59, 130, 246, 0.1);
+    --accent-text:   #60A5FA;
 
-    --border-color:  #C5CAD8;
-    --border-subtle: #E8EAF0;
+    --border-color:  #334155;
+    --border-subtle: #1e293b;
 
-    --badge-bg:      #1A2B56;
+    --badge-bg:      #3B82F6;
     --badge-text:    #ffffff;
 
-    --shadow-color:  rgba(26, 43, 86, 0.08);
+    --shadow-color:  rgba(0, 0, 0, 0.4);
 
-    --wave-fill:     #ffffff;
+    --wave-fill:     #020617;
     --cta-orange:    #FF6B35;
   }
 
-  /* ── Forest (Dark) ───────────────────────────────────────────────────────── */
+  /* ── Forest Green (#062C22 / Gold-Mint) ─────────────────────────────── */
   [data-theme="forest"] {
-    --bg-primary:    #061a0e;
-    --bg-surface:    #0a2416;
-    --bg-card:       #0d2e1c;
-    --bg-elevated:   #113822;
+    --bg-primary:    #062C22;
+    --bg-surface:    #04231a;
+    --bg-card:       #022c1e;
+    --bg-elevated:   #0a3d2c;
 
-    --hero-from:     #052e16;
-    --hero-via:      #031a0d;
-    --hero-to:       #052e16;
-    --navbar-bg:     rgba(6, 26, 14, 0.94);
+    --hero-from:     #062C22;
+    --hero-via:      #04231a;
+    --hero-to:       #062C22;
+    --navbar-bg:     rgba(6, 44, 34, 0.94);
 
     --text-primary:  #ecfdf5;
     --text-secondary:#a7f3d0;
     --text-muted:    #6ee7b7;
     --text-on-dark:  #ecfdf5;
-    --text-on-accent:#052E16;
+    --text-on-accent:#062C22;
 
-    --accent:        #34d399;
-    --accent-hover:  #6ee7b7;
-    --accent-subtle: rgba(52, 211, 153, 0.12);
-    --accent-text:   #6ee7b7;
+    --accent:        #FBBF24;
+    --accent-hover:  #F59E0B;
+    --accent-subtle: rgba(251, 191, 36, 0.1);
+    --accent-text:   #FBBF24;
 
     --border-color:  rgba(52, 211, 153, 0.18);
     --border-subtle: rgba(52, 211, 153, 0.08);
 
-    --badge-bg:      #34d399;
-    --badge-text:    #052E16;
+    --badge-bg:      #FBBF24;
+    --badge-text:    #062C22;
 
     --shadow-color:  rgba(0, 0, 0, 0.35);
 
-    --wave-fill:     #061a0e;
+    --wave-fill:     #062C22;
     --cta-orange:    #FF6B35;
   }
 
@@ -265,131 +265,63 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ADMIN PANEL THEME OVERRIDES — applied via data-admin-theme attribute.
-   These override the hardcoded navy colors in admin layouts.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Navy (default) — no overrides needed, layouts use navy natively */
-
-/* Pure Dark */
-[data-admin-theme="dark"] .min-h-screen.bg-\[\#0B1120\] {
-  background-color: #09090b !important;
-}
-[data-admin-theme="dark"] aside {
-  background: linear-gradient(180deg, #0c0c0f 0%, #09090b 40%, #0e0e12 100%) !important;
-  border-right-color: rgba(113,113,122,0.1) !important;
-}
-[data-admin-theme="dark"] header {
-  background: linear-gradient(90deg, rgba(9,9,11,0.8) 0%, rgba(9,9,11,0.6) 100%) !important;
-  border-bottom-color: rgba(113,113,122,0.08) !important;
-}
-
-/* Beach */
-[data-admin-theme="beach"] .min-h-screen.bg-\[\#0B1120\] {
-  background-color: #FFF9F2 !important;
-}
-[data-admin-theme="beach"] aside {
-  background: linear-gradient(180deg, #0C4A6E 0%, #075985 40%, #0C4A6E 100%) !important;
-  border-right-color: rgba(14,165,233,0.15) !important;
-}
-[data-admin-theme="beach"] header {
-  background: linear-gradient(90deg, rgba(12,74,110,0.95) 0%, rgba(7,89,133,0.9) 100%) !important;
-  border-bottom-color: rgba(14,165,233,0.12) !important;
-}
-[data-admin-theme="beach"] main > div {
-  color: #0C4A6E;
-}
-[data-admin-theme="beach"] main .text-white {
-  color: #0C4A6E !important;
-}
-[data-admin-theme="beach"] main .text-white\/40,
-[data-admin-theme="beach"] main .text-white\/30 {
-  color: rgba(12,74,110,0.5) !important;
-}
-[data-admin-theme="beach"] main .text-white\/70,
-[data-admin-theme="beach"] main .text-white\/60,
-[data-admin-theme="beach"] main .text-white\/50 {
-  color: rgba(12,74,110,0.7) !important;
-}
-[data-admin-theme="beach"] main .bg-white\/\[0\.04\],
-[data-admin-theme="beach"] main .bg-white\/\[0\.03\] {
-  background-color: rgba(12,74,110,0.04) !important;
-}
-[data-admin-theme="beach"] main .border-white\/\[0\.06\] {
-  border-color: rgba(12,74,110,0.1) !important;
-}
-
-/* Forest Green */
-[data-admin-theme="forest"] .min-h-screen.bg-\[\#0B1120\] {
-  background-color: #061a0e !important;
-}
-[data-admin-theme="forest"] aside {
-  background: linear-gradient(180deg, #071f12 0%, #061a0e 40%, #0a2416 100%) !important;
-  border-right-color: rgba(52,211,153,0.12) !important;
-}
-[data-admin-theme="forest"] header {
-  background: linear-gradient(90deg, rgba(6,26,14,0.85) 0%, rgba(6,26,14,0.65) 100%) !important;
-  border-bottom-color: rgba(52,211,153,0.1) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
    FOREST THEME — Public site overrides for hardcoded colors.
    Transforms the entire site into a dark forest green aesthetic.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Page backgrounds — override hardcoded navy */
 html[data-theme="forest"] .bg-\[\#0B1120\] {
-  background-color: #061a0e !important;
+  background-color: #062C22 !important;
 }
 html[data-theme="forest"] .bg-\[\#0A0F1C\] {
-  background-color: #051710 !important;
+  background-color: #04231a !important;
 }
 html[data-theme="forest"] .bg-\[\#08080f\] {
-  background-color: #04120a !important;
+  background-color: #031a12 !important;
 }
 html[data-theme="forest"] .bg-\[\#0f0f2a\]\/80 {
-  background-color: rgba(6, 26, 14, 0.8) !important;
+  background-color: rgba(6, 44, 34, 0.8) !important;
 }
 html[data-theme="forest"] .bg-\[\#0d0d20\] {
-  background-color: #071a0e !important;
+  background-color: #04231a !important;
 }
 
 /* Navbar glass — forest tint */
 html[data-theme="forest"] .glass-navbar {
-  border-bottom: 1px solid rgba(52, 211, 153, 0.12) !important;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.12) !important;
 }
 
-/* Gold → Emerald accent swaps in navbar/footer */
+/* Gold accent kept for forest (already native gold) */
 html[data-theme="forest"] .text-gold-500 {
-  color: #34d399 !important;
+  color: #FBBF24 !important;
 }
 html[data-theme="forest"] .text-gold-400 {
-  color: #6ee7b7 !important;
+  color: #FCD34D !important;
 }
 html[data-theme="forest"] .text-gold-300 {
-  color: #a7f3d0 !important;
+  color: #FDE68A !important;
 }
 html[data-theme="forest"] .hover\:text-gold-500:hover {
-  color: #6ee7b7 !important;
+  color: #FCD34D !important;
 }
 html[data-theme="forest"] .hover\:text-gold-400:hover {
-  color: #a7f3d0 !important;
+  color: #FDE68A !important;
 }
 html[data-theme="forest"] .hover\:text-gold-300:hover {
-  color: #a7f3d0 !important;
+  color: #FDE68A !important;
 }
 
-/* Logo gradient → forest emerald */
+/* Logo gradient → forest gold/mint */
 html[data-theme="forest"] .gradient-gold {
-  background: linear-gradient(135deg, #059669 0%, #34d399 50%, #059669 100%) !important;
+  background: linear-gradient(135deg, #FBBF24 0%, #34d399 50%, #FBBF24 100%) !important;
 }
 
 /* Subject cards — dark forest glass */
 html[data-theme="forest"] .bg-slate-900\/40 {
-  background-color: rgba(6, 38, 20, 0.55) !important;
+  background-color: rgba(6, 44, 34, 0.55) !important;
 }
 html[data-theme="forest"] .hover\:bg-slate-900\/50:hover {
-  background-color: rgba(6, 38, 20, 0.7) !important;
+  background-color: rgba(6, 44, 34, 0.7) !important;
 }
 
 /* Card glass panels — white/alpha → green/alpha */
@@ -480,46 +412,46 @@ html[data-theme="forest"] .placeholder-white\/40::placeholder {
 /* Navy utility classes → forest */
 html[data-theme="forest"] .text-navy-900,
 html[data-theme="forest"] .text-navy-800 {
-  color: #052e16 !important;
+  color: #062C22 !important;
 }
 html[data-theme="forest"] .bg-navy-50 {
   background-color: rgba(52, 211, 153, 0.08) !important;
 }
 
-/* Gold utility classes → emerald for forest */
+/* Gold utility classes for forest */
 html[data-theme="forest"] .from-gold-500 {
-  --tw-gradient-from: #059669 !important;
+  --tw-gradient-from: #FBBF24 !important;
 }
 html[data-theme="forest"] .to-gold-700 {
-  --tw-gradient-to: #047857 !important;
+  --tw-gradient-to: #B45309 !important;
 }
 html[data-theme="forest"] .from-gold-400 {
-  --tw-gradient-from: #34d399 !important;
+  --tw-gradient-from: #FCD34D !important;
 }
 html[data-theme="forest"] .via-orange-400 {
-  --tw-gradient-via: #10b981 !important;
+  --tw-gradient-via: #34d399 !important;
 }
 html[data-theme="forest"] .bg-gold-500 {
-  background-color: #059669 !important;
+  background-color: #FBBF24 !important;
 }
 html[data-theme="forest"] .hover\:bg-gold-400:hover {
-  background-color: #10b981 !important;
+  background-color: #FCD34D !important;
 }
 
-/* Pulse animation — emerald instead of gold */
+/* Pulse animation — gold/mint */
 html[data-theme="forest"] .animate-pulse {
-  --tw-pulse-color: rgba(52, 211, 153, 0.4);
+  --tw-pulse-color: rgba(251, 191, 36, 0.4);
 }
 
 /* Selection highlight */
 html[data-theme="forest"] ::selection {
-  background: rgba(52, 211, 153, 0.25);
+  background: rgba(251, 191, 36, 0.25);
   color: #ecfdf5;
 }
 
 /* Loading skeleton pages */
 html[data-theme="forest"] .bg-gray-50 {
-  background-color: #061a0e !important;
+  background-color: #062C22 !important;
 }
 html[data-theme="forest"] .bg-gray-100 {
   background-color: rgba(52, 211, 153, 0.08) !important;
@@ -530,14 +462,14 @@ html[data-theme="forest"] ::-webkit-scrollbar {
   width: 8px;
 }
 html[data-theme="forest"] ::-webkit-scrollbar-track {
-  background: #061a0e;
+  background: #062C22;
 }
 html[data-theme="forest"] ::-webkit-scrollbar-thumb {
-  background: rgba(52, 211, 153, 0.2);
+  background: rgba(251, 191, 36, 0.2);
   border-radius: 4px;
 }
 html[data-theme="forest"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(52, 211, 153, 0.35);
+  background: rgba(251, 191, 36, 0.35);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
