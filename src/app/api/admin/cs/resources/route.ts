@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireSubjectAdmin } from '@/lib/supabase/guards';
+import { revalidateTag } from 'next/cache';
 
 /**
  * The Computer Science subject_id is resolved once at request time.
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create resource.' }, { status: 500 });
     }
 
+    revalidateTag('resources');
     return NextResponse.json({ resource }, { status: 201 });
   } catch (err) {
     console.error('[cs/resources] POST error:', err);
@@ -151,6 +153,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Failed to delete resource.' }, { status: 500 });
     }
 
+    revalidateTag('resources');
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('[cs/resources] DELETE error:', err);
