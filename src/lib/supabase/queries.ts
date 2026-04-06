@@ -129,7 +129,7 @@ export async function getCategoriesBySubjectSlug(subjectSlug: string): Promise<C
       return (data ?? []) as unknown as Category[];
     },
     [`categories-${subjectSlug}`],
-    { revalidate: CACHE_1H, tags: ['categories'] },
+    { revalidate: CACHE_5M, tags: ['categories'] },
   )();
 }
 
@@ -158,7 +158,7 @@ export async function getCategoryBySlug(
       return (data ?? null) as unknown as Category | null;
     },
     [`category-${subjectSlug}-${categorySlug}`],
-    { revalidate: CACHE_1H, tags: ['categories'] },
+    { revalidate: CACHE_5M, tags: ['categories'] },
   )();
 }
 
