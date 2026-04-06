@@ -1,7 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { FileText, Video, BookOpen, TrendingUp } from 'lucide-react';
-import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
-import type { Resource } from '@/components/admin/SubjectResourceManager';
 import CSResourceTable from './CSResourceTable';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +31,7 @@ export default async function CSAdminPage() {
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
-  const csResources = (resources ?? []) as Resource[];
+  const csResources = (resources ?? []) as any[];
   const totalCount = count ?? 0;
 
   const pdfCount = csResources.filter(r => r.content_type === 'pdf').length;
@@ -75,24 +73,12 @@ export default async function CSAdminPage() {
         })}
       </div>
 
-      {/* CS Resource Manager — with hierarchical O Level / A Level routing */}
+      {/* CS Resource Manager — single consolidated manager */}
       <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-[var(--border-subtle)]">
         <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">CS Resource Manager</h3>
         <CSResourceTable
-          initialResources={csResources as any}
-          subjectId={subject.id}
-        />
-      </div>
-
-      {/* Full Resource Manager — advanced editing, sort order, timestamps */}
-      <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-[var(--border-subtle)]">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Advanced Resource Editor</h3>
-        <SubjectResourceManager
           initialResources={csResources}
           subjectId={subject.id}
-          subjectSlug="computer-science"
-          accentColor="#6366f1"
-          showModuleTypeFilter={true}
         />
       </div>
     </div>

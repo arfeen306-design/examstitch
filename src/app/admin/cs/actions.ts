@@ -13,32 +13,45 @@ async function getCSSubjectId(): Promise<string | null> {
   return data?.id ?? null;
 }
 
-export async function deleteCSResource(resourceId: string) {
-  const csId = await getCSSubjectId();
-  if (!csId) return { success: false, error: 'CS subject not configured.' };
-
-  const supabase = createAdminClient();
-
-  // Verify ownership before deleting
-  const { data: resource } = await supabase
-    .from('resources')
-    .select('id, subject_id')
-    .eq('id', resourceId)
-    .single();
-
-  if (!resource) return { success: false, error: 'Resource not found.' };
-  if (resource.subject_id !== csId) return { success: false, error: 'Resource does not belong to CS.' };
-
-  const { error } = await supabase.from('resources').delete().eq('id', resourceId);
-  if (error) return { success: false, error: error.message };
-
+/** Revalidate all CS-related public + admin paths */
+function revalidateCSPaths() {
   revalidateTag('resources');
   revalidatePath('/admin/cs');
   revalidatePath('/olevel/[subject]/[grade]/video-lectures', 'page');
   revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
   revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
   revalidatePath('/alevel/[subject]/as-level/[paper]/video-lectures', 'page');
+  revalidatePath('/alevel/[subject]/as-level/[paper]/past-papers', 'page');
   revalidatePath('/alevel/[subject]/a2-level/[paper]/video-lectures', 'page');
+  revalidatePath('/alevel/[subject]/a2-level/[paper]/past-papers', 'page');
+}
+
+/** Verify a resource belongs to the CS subject before mutating */
+async function verifyCSOwnership(resourceId: string) {
+  const csId = await getCSSubjectId();
+  if (!csId) return { ok: false as const, error: 'CS subject not configured.' };
+
+  const supabase = createAdminClient();
+  const { data: resource } = await supabase
+    .from('resources')
+    .select('id, subject_id')
+    .eq('id', resourceId)
+    .single();
+
+  if (!resource) return { ok: false as const, error: 'Resource not found.' };
+  if (resource.subject_id !== csId) return { ok: false as const, error: 'Resource does not belong to CS.' };
+
+  return { ok: true as const, csId, supabase };
+}
+
+export async function deleteCSResource(resourceId: string) {
+  const check = await verifyCSOwnership(resourceId);
+  if (!check.ok) return { success: false, error: check.error };
+
+  const { error } = await check.supabase.from('resources').delete().eq('id', resourceId);
+  if (error) return { success: false, error: error.message };
+
+  revalidateCSPaths();
   return { success: true };
 }
 
@@ -62,7 +75,7 @@ export async function createCSResource(payload: {
 
   const supabase = createAdminClient();
 
-  const { error } = await supabase.from('resources').insert({
+  const { data, error } = await supabase.from('resources').insert({
     title: payload.title.trim(),
     content_type: payload.content_type,
     source_type: payload.source_type,
@@ -75,16 +88,47 @@ export async function createCSResource(payload: {
     is_published: true,
     is_locked: false,
     is_watermarked: false,
-  });
+  }).select('*, category:categories(id, name, slug)').single();
 
   if (error) return { success: false, error: error.message };
 
-  revalidateTag('resources');
-  revalidatePath('/admin/cs');
-  revalidatePath('/olevel/[subject]/[grade]/video-lectures', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
-  revalidatePath('/alevel/[subject]/as-level/[paper]/video-lectures', 'page');
-  revalidatePath('/alevel/[subject]/a2-level/[paper]/video-lectures', 'page');
+  revalidateCSPaths();
+  return { success: true, resource: data };
+}
+
+export async function toggleCSResourceFlag(
+  resourceId: string,
+  field: 'is_published' | 'is_locked' | 'is_watermarked',
+  value: boolean,
+) {
+  const check = await verifyCSOwnership(resourceId);
+  if (!check.ok) return { success: false, error: check.error };
+
+  const { error } = await check.supabase
+    .from('resources')
+    .update({ [field]: value })
+    .eq('id', resourceId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCSPaths();
+  return { success: true };
+}
+
+export async function updateCSResource(
+  resourceId: string,
+  updates: { title?: string; source_url?: string; worksheet_url?: string | null; sort_order?: number | null },
+) {
+  const check = await verifyCSOwnership(resourceId);
+  if (!check.ok) return { success: false, error: check.error };
+
+  const { error } = await check.supabase
+    .from('resources')
+    .update(updates)
+    .eq('id', resourceId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidateCSPaths();
   return { success: true };
 }

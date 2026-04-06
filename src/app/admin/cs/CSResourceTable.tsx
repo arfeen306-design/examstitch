@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useTransition, useMemo, useCallback } from 'react';
-import { Trash2, ExternalLink, Plus, FileText, Video, FileSpreadsheet, Search, X } from 'lucide-react';
-import { deleteCSResource, createCSResource } from './actions';
+import {
+  Trash2, ExternalLink, Plus, FileText, Video, FileSpreadsheet,
+  Search, X, Pencil, Check, Clock, Lock, Unlock, Shield,
+} from 'lucide-react';
+import { deleteCSResource, createCSResource, toggleCSResourceFlag, updateCSResource } from './actions';
 import { useToast } from '@/components/ui/Toast';
 import { MODULE_TYPES, getModuleTypeLabel } from '@/config/taxonomy';
 import HierarchyPicker, { type HierarchySelection } from '@/components/admin/HierarchyPicker';
@@ -15,9 +18,14 @@ interface Resource {
   content_type: string;
   source_type: string;
   source_url: string;
+  worksheet_url?: string | null;
   topic: string | null;
   module_type?: string;
+  sort_order?: number | null;
+  question_mapping?: any[] | null;
   is_published: boolean;
+  is_locked: boolean;
+  is_watermarked: boolean;
   created_at: string;
   category: { id: string; name: string; slug: string } | null;
 }
@@ -27,6 +35,39 @@ const CONTENT_ICONS: Record<string, typeof FileText> = {
   video: Video,
   worksheet: FileSpreadsheet,
 };
+
+// ── Toggle Switch ────────────────────────────────────────────────────────────
+
+function Toggle({
+  enabled,
+  onToggle,
+  title,
+  activeColor = 'bg-indigo-500',
+  disabled = false,
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+  title: string;
+  activeColor?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      disabled={disabled}
+      title={title}
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none disabled:opacity-50 ${
+        enabled ? activeColor : 'bg-[var(--text-muted)]/20'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+          enabled ? 'translate-x-4' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  );
+}
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -41,6 +82,9 @@ export default function CSResourceTable({
   const [search, setSearch] = useState('');
   const [filterModule, setFilterModule] = useState<string>('all');
   const [showUpload, setShowUpload] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
 
@@ -55,6 +99,7 @@ export default function CSResourceTable({
     );
   }), [resources, search, filterModule]);
 
+  // ── Delete ─────────────────────────────────────────────────────────────────
   function handleDelete(id: string, title: string) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     startTransition(async () => {
@@ -64,6 +109,59 @@ export default function CSResourceTable({
         showToast({ message: 'Resource deleted.', type: 'success' });
       } else {
         showToast({ message: result.error || 'Delete failed.', type: 'error' });
+      }
+    });
+  }
+
+  // ── Toggle flags ───────────────────────────────────────────────────────────
+  function handleToggle(id: string, field: 'is_published' | 'is_locked' | 'is_watermarked', current: boolean) {
+    // Optimistic update
+    setResources(prev => prev.map(r => r.id === id ? { ...r, [field]: !current } : r));
+    startTransition(async () => {
+      const result = await toggleCSResourceFlag(id, field, !current);
+      if (!result.success) {
+        // Revert on failure
+        setResources(prev => prev.map(r => r.id === id ? { ...r, [field]: current } : r));
+        showToast({ message: result.error || 'Toggle failed.', type: 'error' });
+      }
+    });
+  }
+
+  // ── Inline Edit ────────────────────────────────────────────────────────────
+  function startEdit(r: Resource) {
+    setEditingId(r.id);
+    setEditTitle(r.title);
+    setEditUrl(r.source_url || '');
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditTitle('');
+    setEditUrl('');
+  }
+
+  function saveEdit(id: string) {
+    if (!editTitle.trim()) return;
+    const updates: Record<string, string> = {};
+    const original = resources.find(r => r.id === id);
+    if (!original) return;
+
+    if (editTitle.trim() !== original.title) updates.title = editTitle.trim();
+    if (editUrl.trim() !== (original.source_url || '')) updates.source_url = editUrl.trim();
+    if (Object.keys(updates).length === 0) { cancelEdit(); return; }
+
+    // Optimistic update
+    setResources(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+    cancelEdit();
+
+    startTransition(async () => {
+      const result = await updateCSResource(id, updates);
+      if (!result.success) {
+        // Revert
+        setResources(prev => prev.map(r => r.id === id ? { ...r, title: original.title, source_url: original.source_url } : r));
+        showToast({ message: result.error || 'Update failed.', type: 'error' });
+      } else {
+        showToast({ message: 'Resource updated.', type: 'success' });
       }
     });
   }
@@ -126,11 +224,14 @@ export default function CSResourceTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-subtle)]">
-                <th className="pb-3 pr-4">Type</th>
-                <th className="pb-3 pr-4">Title</th>
-                <th className="pb-3 pr-4">Category</th>
-                <th className="pb-3 pr-4">Module</th>
-                <th className="pb-3 pr-4">Created</th>
+                <th className="pb-3 pr-3">Type</th>
+                <th className="pb-3 pr-3">Title</th>
+                <th className="pb-3 pr-3">Category</th>
+                <th className="pb-3 pr-3">Module</th>
+                <th className="pb-3 px-2 text-center" title="Published">Pub</th>
+                <th className="pb-3 px-2 text-center" title="Lock/Unlock">Lock</th>
+                <th className="pb-3 px-2 text-center" title="Watermark">WTMK</th>
+                <th className="pb-3 pr-3">Created</th>
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -138,21 +239,51 @@ export default function CSResourceTable({
               {filtered.map(r => {
                 const Icon = CONTENT_ICONS[r.content_type] || FileText;
                 const moduleLabel = getModuleTypeLabel(r.module_type || '');
+                const isEditing = editingId === r.id;
+
                 return (
-                  <tr key={r.id} className="hover:bg-[var(--bg-elevated)] transition-colors">
-                    <td className="py-3 pr-4">
+                  <tr key={r.id} className="hover:bg-[var(--bg-elevated)] transition-colors group">
+                    {/* Type icon */}
+                    <td className="py-3 pr-3">
                       <Icon className="w-4 h-4 text-indigo-500" />
                     </td>
-                    <td className="py-3 pr-4">
-                      <div className="font-medium text-[var(--text-primary)] truncate max-w-xs">{r.title}</div>
-                      {r.topic && <div className="text-xs text-[var(--text-muted)]">{r.topic}</div>}
+
+                    {/* Title (inline editable) */}
+                    <td className="py-3 pr-3 max-w-xs">
+                      {isEditing ? (
+                        <div className="space-y-1">
+                          <input
+                            value={editTitle}
+                            onChange={e => setEditTitle(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-indigo-500 rounded bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-1 focus:ring-indigo-500"
+                            autoFocus
+                            onKeyDown={e => { if (e.key === 'Enter') saveEdit(r.id); if (e.key === 'Escape') cancelEdit(); }}
+                          />
+                          <input
+                            value={editUrl}
+                            onChange={e => setEditUrl(e.target.value)}
+                            placeholder="Source URL"
+                            className="w-full px-2 py-1 text-xs border border-[var(--border-color)] rounded bg-[var(--bg-card)] text-[var(--text-muted)] font-mono"
+                            onKeyDown={e => { if (e.key === 'Enter') saveEdit(r.id); if (e.key === 'Escape') cancelEdit(); }}
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="font-medium text-[var(--text-primary)] truncate">{r.title}</div>
+                          {r.topic && <div className="text-xs text-[var(--text-muted)]">{r.topic}</div>}
+                        </>
+                      )}
                     </td>
-                    <td className="py-3 pr-4">
+
+                    {/* Category */}
+                    <td className="py-3 pr-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/15 text-indigo-400">
                         {r.category?.name || '—'}
                       </span>
                     </td>
-                    <td className="py-3 pr-4">
+
+                    {/* Module type */}
+                    <td className="py-3 pr-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         r.module_type === 'solved_past_paper'
                           ? 'bg-amber-500/15 text-amber-400'
@@ -161,28 +292,109 @@ export default function CSResourceTable({
                         {moduleLabel}
                       </span>
                     </td>
-                    <td className="py-3 pr-4 text-[var(--text-muted)] text-xs whitespace-nowrap">
+
+                    {/* Published toggle */}
+                    <td className="py-3 px-2 text-center">
+                      <Toggle
+                        enabled={r.is_published}
+                        onToggle={() => handleToggle(r.id, 'is_published', r.is_published)}
+                        title={r.is_published ? 'Published — click to unpublish' : 'Unpublished — click to publish'}
+                        activeColor="bg-emerald-500"
+                        disabled={isPending}
+                      />
+                    </td>
+
+                    {/* Lock toggle */}
+                    <td className="py-3 px-2 text-center">
+                      <Toggle
+                        enabled={r.is_locked}
+                        onToggle={() => handleToggle(r.id, 'is_locked', r.is_locked)}
+                        title={r.is_locked ? 'Locked — click to unlock' : 'Public — click to lock'}
+                        activeColor="bg-amber-500"
+                        disabled={isPending}
+                      />
+                    </td>
+
+                    {/* Watermark toggle */}
+                    <td className="py-3 px-2 text-center">
+                      <Toggle
+                        enabled={r.is_watermarked}
+                        onToggle={() => handleToggle(r.id, 'is_watermarked', r.is_watermarked)}
+                        title={r.is_watermarked ? 'Watermarked — click to remove' : 'No watermark — click to add'}
+                        activeColor="bg-violet-500"
+                        disabled={isPending}
+                      />
+                    </td>
+
+                    {/* Created */}
+                    <td className="py-3 pr-3 text-[var(--text-muted)] text-xs whitespace-nowrap">
                       {new Date(r.created_at).toLocaleDateString()}
                     </td>
+
+                    {/* Actions */}
                     <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <a
-                          href={r.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 text-[var(--text-muted)] hover:text-indigo-600 transition"
-                          title="Open source"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                        <button
-                          onClick={() => handleDelete(r.id, r.title)}
-                          disabled={isPending}
-                          className="p-1.5 text-[var(--text-muted)] hover:text-red-600 transition disabled:opacity-50"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className="flex items-center justify-end gap-1">
+                        {isEditing ? (
+                          <>
+                            <button
+                              onClick={() => saveEdit(r.id)}
+                              className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition"
+                              title="Save"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition"
+                              title="Cancel"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {/* Edit */}
+                            <button
+                              onClick={() => startEdit(r)}
+                              className="p-1.5 text-[var(--text-muted)] hover:text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition"
+                              title="Edit resource"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Video Mapping (timestamps) — only for videos */}
+                            {r.content_type === 'video' && (
+                              <button
+                                onClick={() => showToast({ message: 'Timestamp mapping — open Advanced Editor below for full control.', type: 'info' })}
+                                className="p-1.5 text-[var(--text-muted)] hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition"
+                                title="Video timestamps"
+                              >
+                                <Clock className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {/* Open source */}
+                            <a
+                              href={r.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-[var(--text-muted)] hover:text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition"
+                              title="Open source URL"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+
+                            {/* Delete */}
+                            <button
+                              onClick={() => handleDelete(r.id, r.title)}
+                              disabled={isPending}
+                              className="p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition disabled:opacity-50"
+                              title="Delete resource"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -260,7 +472,10 @@ function CSUploadModal({
         module_type: selection.moduleType,
       });
 
-      if (result.success) {
+      if (result.success && result.resource) {
+        showToast({ message: 'Resource created!', type: 'success' });
+        onSuccess(result.resource as Resource);
+      } else if (result.success) {
         showToast({ message: 'Resource created!', type: 'success' });
         onSuccess({
           id: crypto.randomUUID(),
@@ -271,6 +486,8 @@ function CSUploadModal({
           topic: topic.trim() || null,
           module_type: selection.moduleType,
           is_published: true,
+          is_locked: false,
+          is_watermarked: false,
           created_at: new Date().toISOString(),
           category: null,
         });
