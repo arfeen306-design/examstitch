@@ -172,6 +172,22 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
   const selectClass = "w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] text-sm focus:ring-2 focus:border-transparent";
   const labelClass = "block text-sm font-medium text-[var(--text-secondary)] mb-1";
 
+  // Lockdown: if allowedSubjectSlugs is set, verify this subject is permitted
+  const isLocked = useMemo(() => {
+    if (!allowedSubjectSlugs || allowedSubjectSlugs.length === 0) return false;
+    return !allowedSubjectSlugs.some(s => s === subjectSlug || subjectSlug.startsWith(s));
+  }, [allowedSubjectSlugs, subjectSlug]);
+
+  if (isLocked) {
+    return (
+      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+        <p className="text-sm text-red-400 font-medium">
+          You do not have permission to manage resources for this subject.
+        </p>
+      </div>
+    );
+  }
+
   if (!taxonomy) {
     return (
       <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center">

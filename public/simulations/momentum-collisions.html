@@ -489,4 +489,7 @@ if(e.data.type==='themeChange'&&e.data.theme){
 applyTheme(e.data.theme);
 }
 });
+
+/* Notify parent that simulation is ready for theme sync */
+try{parent.postMessage({type:'sim-ready'},'*')}catch(ignored){}
 </script></body></html>

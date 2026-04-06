@@ -19,7 +19,7 @@ export default function OLevelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1120]">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* ─── Toast ─── */}
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
+import { getRouteForSlug } from '@/config/admin-portals';
 
 export async function POST(request: Request) {
   try {
@@ -93,25 +94,11 @@ export async function POST(request: Request) {
       redirectTo = '/admin/super';
       landing = 'super';
     } else if (subjectSlugs.length > 0) {
-      // Map first subject slug to its admin portal route
-      const SLUG_TO_ROUTE: Record<string, string> = {
-        'computer-science': 'cs',
-        'mathematics': 'math',
-        'physics': 'physics',
-        'chemistry': 'chemistry',
-        'biology': 'biology',
-        'english': 'english',
-        'urdu': 'urdu',
-        'pakistan-studies': 'pakistan-studies',
-      };
-
       // Find the primary portal for the first managed subject
-      for (const [prefix, route] of Object.entries(SLUG_TO_ROUTE)) {
-        if (subjectSlugs[0].startsWith(prefix)) {
-          redirectTo = `/admin/${route}`;
-          landing = route;
-          break;
-        }
+      const route = getRouteForSlug(subjectSlugs[0]);
+      if (route) {
+        redirectTo = `/admin/${route}`;
+        landing = route;
       }
     }
 

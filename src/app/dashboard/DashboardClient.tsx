@@ -254,7 +254,7 @@ export default function DashboardClient({
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0A0F1C] relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] relative overflow-hidden">
       <FloatingParticles />
 
       {/* Gradient Orbs Background */}

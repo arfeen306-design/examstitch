@@ -44,7 +44,7 @@ export default function ALevelSubjectPage({ params }: { params: { subject: strin
   const papers = aLevelPapersBySubject[params.subject] ?? aLevelPapers;
 
   return (
-    <div className="min-h-screen bg-[#0B1120]">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       <div className="gradient-hero pt-32 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm mb-3">

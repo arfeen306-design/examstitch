@@ -269,23 +269,6 @@
    Transforms the entire site into a dark forest green aesthetic.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Page backgrounds — override hardcoded navy */
-html[data-theme="forest"] .bg-\[\#0B1120\] {
-  background-color: #062C22 !important;
-}
-html[data-theme="forest"] .bg-\[\#0A0F1C\] {
-  background-color: #04231a !important;
-}
-html[data-theme="forest"] .bg-\[\#08080f\] {
-  background-color: #031a12 !important;
-}
-html[data-theme="forest"] .bg-\[\#0f0f2a\]\/80 {
-  background-color: rgba(6, 44, 34, 0.8) !important;
-}
-html[data-theme="forest"] .bg-\[\#0d0d20\] {
-  background-color: #04231a !important;
-}
-
 /* Navbar glass — forest tint */
 html[data-theme="forest"] .glass-navbar {
   border-bottom: 1px solid rgba(251, 191, 36, 0.12) !important;
@@ -476,26 +459,6 @@ html[data-theme="forest"] ::-webkit-scrollbar-thumb:hover {
    BEACH THEME — Public site overrides for hardcoded dark-mode colours.
    Transforms dark navy backgrounds and white text into readable light mode.
    ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Page backgrounds — navy → cream */
-html[data-theme="beach"] .bg-\[\#0B1120\] {
-  background-color: #FDF5E6 !important;
-}
-html[data-theme="beach"] .bg-\[\#0A0F1C\] {
-  background-color: #FFF8EE !important;
-}
-html[data-theme="beach"] .bg-\[\#08080f\] {
-  background-color: #FDF5E6 !important;
-}
-html[data-theme="beach"] .bg-\[\#0f0f2a\]\/80 {
-  background-color: rgba(253, 245, 230, 0.9) !important;
-}
-html[data-theme="beach"] .bg-\[\#0d0d20\] {
-  background-color: #FFF8EE !important;
-}
-
-/* Loading skeletons — forest gray overrides are already in forest block,
-   beach uses CSS vars from the :root block, no extra overrides needed */
 
 /* Navbar glass — warm tint */
 html[data-theme="beach"] .glass-navbar {

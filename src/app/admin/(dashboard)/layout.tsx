@@ -10,6 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 import AdminThemeButton from '@/components/admin/AdminThemeButton';
+import { getPortalsForSubjects } from '@/config/admin-portals';
 
 async function getAdminProfile(userId: string) {
   const admin = createAdminClient();
@@ -23,26 +24,10 @@ async function getAdminProfile(userId: string) {
 
 /** Derive which subject portal links a non-super admin can see */
 function getSubjectPortalLinks(managedSubjects: string[]): { label: string; href: string }[] {
-  const SLUG_TO_PORTAL: Record<string, { label: string; href: string }> = {
-    'computer-science': { label: 'CS Resources', href: '/admin/cs' },
-    // Future portals: uncomment as they get their own /admin/<key>/ routes
-    // 'physics':          { label: 'Physics Resources', href: '/admin/physics' },
-    // 'chemistry':        { label: 'Chemistry Resources', href: '/admin/chemistry' },
-    // 'biology':          { label: 'Biology Resources', href: '/admin/biology' },
-  };
-
-  const links: { label: string; href: string }[] = [];
-  const seen = new Set<string>();
-
-  for (const slug of managedSubjects) {
-    for (const [prefix, portal] of Object.entries(SLUG_TO_PORTAL)) {
-      if (slug.startsWith(prefix) && !seen.has(prefix)) {
-        seen.add(prefix);
-        links.push(portal);
-      }
-    }
-  }
-  return links;
+  return getPortalsForSubjects(managedSubjects).map(p => ({
+    label: p.label,
+    href: `/admin/${p.routeSegment}`,
+  }));
 }
 
 async function getNewBookingsCount(): Promise<number> {

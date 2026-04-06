@@ -36,7 +36,7 @@ const HUD_THEME: Record<Theme, { text: string; muted: string; border: string; bg
 // ── Loading animation ────────────────────────────────────────────────────────
 function LoadingState({ gradient }: { gradient: string }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a1a] z-20">
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-primary)] z-20">
       {/* Pulsing glow */}
       <motion.div
         animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.7, 0.3] }}
@@ -158,20 +158,37 @@ export default function SimulationViewer({
     return () => clearTimeout(timer);
   }, [iframeKey]);
 
-  // ── Send theme to iframe on change ────────────────────────────────
+  // ── Send theme to iframe via handshake ─────────────────────────────
+  // The iframe sends { type: 'sim-ready' } when it's loaded and listening.
+  // We respond with the current theme. On subsequent theme changes, we send
+  // immediately since the iframe is already ready.
+  const iframeReady = useRef(false);
+
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe?.contentWindow) return;
-    const sendTheme = () => {
-      try {
-        iframe.contentWindow?.postMessage({ type: 'themeChange', theme }, window.location.origin);
-      } catch { /* cross-origin — safe to ignore */ }
-    };
-    // Send immediately and also after a short delay (iframe may still be loading)
-    sendTheme();
-    const timer = setTimeout(sendTheme, 300);
-    return () => clearTimeout(timer);
-  }, [theme, iframeKey]);
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === 'sim-ready') {
+        iframeReady.current = true;
+        try {
+          iframeRef.current?.contentWindow?.postMessage({ type: 'themeChange', theme }, window.location.origin);
+        } catch { /* cross-origin — safe to ignore */ }
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [theme]);
+
+  // Reset ready flag when iframe reloads
+  useEffect(() => {
+    iframeReady.current = false;
+  }, [iframeKey]);
+
+  // Send theme when it changes (if iframe is already ready)
+  useEffect(() => {
+    if (!iframeReady.current) return;
+    try {
+      iframeRef.current?.contentWindow?.postMessage({ type: 'themeChange', theme }, window.location.origin);
+    } catch { /* cross-origin — safe to ignore */ }
+  }, [theme]);
 
   // ── Auto-hide HUD top bar ──────────────────────────────────────────
   useEffect(() => {
@@ -358,15 +375,10 @@ export default function SimulationViewer({
     clearDoodle();
   }, [clearDoodle]);
 
-  // Track iframe load — also push current theme into the newly loaded iframe
+  // Track iframe load — theme sync is handled by the sim-ready handshake
   const handleIframeLoad = useCallback(() => {
-    setTimeout(() => {
-      setLoading(false);
-      try {
-        iframeRef.current?.contentWindow?.postMessage({ type: 'themeChange', theme }, window.location.origin);
-      } catch { /* cross-origin — safe to ignore */ }
-    }, 600);
-  }, [theme]);
+    setTimeout(() => setLoading(false), 600);
+  }, []);
 
   // Fullscreen toggle
   const toggleFullscreen = useCallback(async () => {
@@ -433,7 +445,7 @@ export default function SimulationViewer({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#0a0a1a] z-[80]"
+      className="fixed inset-0 w-screen h-screen overflow-hidden bg-[var(--bg-primary)] z-[80]"
     >
       {/* ── Sandbox iframe ──────────────────────────────────────────────── */}
       {hasCode && (
@@ -482,7 +494,7 @@ export default function SimulationViewer({
             {hasCode ? (
               <LoadingState gradient={simulation.gradient} />
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a1a] z-20">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-primary)] z-20">
                 <p className="text-white/50 text-sm">No simulation code available yet.</p>
                 <button
                   onClick={exitLab}

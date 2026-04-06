@@ -445,7 +445,7 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-[#08080f]"
+      className="min-h-screen bg-[var(--bg-primary)]"
     >
       {/* Top bar — breadcrumb navigation */}
       <div className="sticky top-0 z-30 bg-white/[0.04] backdrop-blur-2xl border-b border-white/[0.06]">
@@ -1072,7 +1072,7 @@ export default function DigitalSkillsClient({ dbSkills = [] }: { dbSkills?: DBSk
           </section>
 
           {/* ═══ FOOTER CTA ═══ */}
-          <section className="bg-[#0d0d20] py-20">
+          <section className="bg-[var(--bg-secondary)] py-20">
             <div className="max-w-3xl mx-auto px-6 text-center">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}

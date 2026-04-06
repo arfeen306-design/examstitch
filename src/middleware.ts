@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import {
+  PORTAL_ROUTE_SEGMENTS,
+  SHARED_ADMIN_ROUTES,
+  getAllowedRouteSegments,
+} from '@/config/admin-portals';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -111,45 +116,15 @@ export async function middleware(request: NextRequest) {
     if (landing !== 'super') {
       const subjectsCookie = request.cookies.get('admin_subjects')?.value ?? '';
       const assignedSlugs = subjectsCookie ? subjectsCookie.split(',') : [];
-
-      // Map slug prefixes to admin portal route segments
-      const SLUG_TO_ROUTE: Record<string, string> = {
-        'computer-science': 'cs',
-        'mathematics': 'math',
-        'physics': 'physics',
-        'chemistry': 'chemistry',
-        'biology': 'biology',
-        'english': 'english',
-        'urdu': 'urdu',
-        'pakistan-studies': 'pakistan-studies',
-      };
-
-      // Extract which admin portal routes this admin can access
-      const allowedRoutes = new Set<string>();
-      for (const slug of assignedSlugs) {
-        // slug is like "computer-science-0478" — extract base key
-        for (const [prefix, route] of Object.entries(SLUG_TO_ROUTE)) {
-          if (slug.startsWith(prefix)) {
-            allowedRoutes.add(route);
-          }
-        }
-      }
+      const allowedRoutes = getAllowedRouteSegments(assignedSlugs);
 
       // Check subject portal routes: /admin/cs, /admin/physics, etc.
-      // Allowed routes: /admin, /admin/login, /admin/forbidden, /admin/resources,
-      //   /admin/categories, /admin/blog, /admin/subscribers, /admin/bookings,
-      //   /admin/students — these are shared admin pages, not subject portals.
       const subjectPortalMatch = pathname.match(/^\/admin\/([a-z-]+)/);
       if (subjectPortalMatch) {
         const segment = subjectPortalMatch[1];
-        const subjectPortals = new Set(Object.values(SLUG_TO_ROUTE));
-        const sharedRoutes = new Set([
-          'login', 'forbidden', 'resources', 'categories', 'blog',
-          'subscribers', 'bookings', 'students', 'super',
-        ]);
 
         // If it's a subject portal and admin doesn't have access → block
-        if (subjectPortals.has(segment) && !sharedRoutes.has(segment) && !allowedRoutes.has(segment)) {
+        if (PORTAL_ROUTE_SEGMENTS.has(segment) && !SHARED_ADMIN_ROUTES.has(segment) && !allowedRoutes.has(segment)) {
           return NextResponse.redirect(new URL('/admin/forbidden', request.url));
         }
       }

@@ -193,7 +193,7 @@ function TrendingCard({
     >
       {/* Card background with gradient */}
       <div className={`absolute inset-0 bg-gradient-to-br ${item.skill_gradient} opacity-20`} />
-      <div className="absolute inset-0 bg-[#0f0f2a]/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-[var(--bg-primary)]/80 backdrop-blur-sm" />
 
       {/* Shimmer overlay */}
       <div className="absolute inset-0 trending-shimmer pointer-events-none" />
