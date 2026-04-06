@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useTransition, useMemo, useCallback } from 'react';
+import React, { useState, useTransition, useMemo, useCallback } from 'react';
 import {
   Trash2, ExternalLink, Plus, FileText, Video, FileSpreadsheet,
   Search, X, Pencil, Check, Clock, Lock, Unlock, Shield,
 } from 'lucide-react';
 import { deleteCSResource, createCSResource, toggleCSResourceFlag, updateCSResource } from './actions';
+import { updateResourceTimestamps } from '@/app/admin/shared/actions';
 import { useToast } from '@/components/ui/Toast';
 import { MODULE_TYPES, getModuleTypeLabel } from '@/config/taxonomy';
 import HierarchyPicker, { type HierarchySelection } from '@/components/admin/HierarchyPicker';
+import VideoMapperModal from '@/components/admin/VideoMapperModal';
 
 // ── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -85,6 +87,7 @@ export default function CSResourceTable({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editUrl, setEditUrl] = useState('');
+  const [mappingResourceId, setMappingResourceId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
 
@@ -242,7 +245,8 @@ export default function CSResourceTable({
                 const isEditing = editingId === r.id;
 
                 return (
-                  <tr key={r.id} className="hover:bg-[var(--bg-elevated)] transition-colors group">
+                  <React.Fragment key={r.id}>
+                  <tr className="hover:bg-[var(--bg-elevated)] transition-colors group">
                     {/* Type icon */}
                     <td className="py-3 pr-3">
                       <Icon className="w-4 h-4 text-indigo-500" />
@@ -365,8 +369,12 @@ export default function CSResourceTable({
                             {/* Video Mapping (timestamps) — only for videos */}
                             {r.content_type === 'video' && (
                               <button
-                                onClick={() => showToast({ message: 'Timestamp mapping — open Advanced Editor below for full control.', type: 'info' })}
-                                className="p-1.5 text-[var(--text-muted)] hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition"
+                                onClick={() => setMappingResourceId(mappingResourceId === r.id ? null : r.id)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  mappingResourceId === r.id
+                                    ? 'text-purple-400 bg-purple-500/15'
+                                    : 'text-[var(--text-muted)] hover:text-purple-500 hover:bg-purple-500/10'
+                                }`}
                                 title="Video timestamps"
                               >
                                 <Clock className="w-3.5 h-3.5" />
@@ -398,6 +406,29 @@ export default function CSResourceTable({
                       </div>
                     </td>
                   </tr>
+
+                  {/* Inline timestamp editor (shared component) */}
+                  {mappingResourceId === r.id && (
+                    <VideoMapperModal
+                      resourceId={r.id}
+                      resourceTitle={r.title}
+                      currentMapping={r.question_mapping ?? null}
+                      onSave={async (id, mapping) => {
+                        const result = await updateResourceTimestamps(id, mapping);
+                        if (result.success) {
+                          setResources(prev => prev.map(res =>
+                            res.id === id ? { ...res, question_mapping: mapping } : res
+                          ));
+                          showToast({ message: 'Timestamps saved!', type: 'success' });
+                        } else {
+                          showToast({ message: result.error || 'Failed to save timestamps.', type: 'error' });
+                        }
+                        return result;
+                      }}
+                      onClose={() => setMappingResourceId(null)}
+                    />
+                  )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
