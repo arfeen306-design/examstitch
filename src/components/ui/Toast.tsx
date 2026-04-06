@@ -64,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <p className="text-sm font-medium">{toast.message}</p>
             <button
               onClick={() => setToast(null)}
-              className="ml-4 text-gray-400 hover:text-gray-600 focus:outline-none shrink-0"
+              className="ml-4 text-[var(--text-muted)] hover:text-[var(--text-secondary)] focus:outline-none shrink-0"
             >
               <X className="w-4 h-4" />
             </button>

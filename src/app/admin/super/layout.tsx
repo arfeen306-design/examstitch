@@ -221,7 +221,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
               <div className="w-2 h-2 rounded-full bg-violet-400 shadow-lg shadow-violet-400/40 animate-pulse" />
               <h1 className="text-sm font-semibold text-white/70">Super Admin</h1>
             </div>
-            <SubjectSwitcher />
+            <SubjectSwitcher isSuperAdmin={true} />
           </header>
           <div className="flex-1 overflow-y-auto p-6">
             {children}

@@ -284,7 +284,7 @@ const AiFrame = memo(function AiFrame({
         onError={handleError}
         title={`${providerId} AI Assistant`}
         className="w-full h-full border-0 rounded-b-2xl bg-[#111]"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+        sandbox="allow-scripts allow-same-origin allow-forms"
         allow="clipboard-write"
       />
     </div>

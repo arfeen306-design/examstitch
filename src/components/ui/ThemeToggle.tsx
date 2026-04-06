@@ -25,18 +25,21 @@ export default function ThemeToggle() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const activeTheme = THEMES.find(t => t.id === theme) ?? THEMES[0];
+  const ActiveIcon = activeTheme.icon;
+
   return (
     <div ref={ref} className="relative">
-      {/* Trigger — transparent moon icon only */}
+      {/* Trigger — shows the active theme's icon in its accent color */}
       <button
         onClick={() => setOpen(o => !o)}
         title="Switch theme"
-        className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10
+        className="p-2 rounded-lg hover:bg-white/10
                    transition-all duration-150"
         aria-expanded={open}
         aria-haspopup="listbox"
       >
-        <Moon className="w-4 h-4" />
+        <ActiveIcon className="w-4 h-4" style={{ color: activeTheme.color }} />
       </button>
 
       {/* Dropdown */}
@@ -44,7 +47,7 @@ export default function ThemeToggle() {
         <div
           role="listbox"
           className="absolute right-0 top-full mt-2 w-36 rounded-xl overflow-hidden
-                     border border-[var(--border-color)] shadow-xl z-50
+                     border border-[var(--border-color)] shadow-xl z-[9999]
                      bg-[var(--bg-card)]"
         >
           {THEMES.map(t => {

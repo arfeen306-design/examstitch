@@ -79,19 +79,39 @@ export async function POST(request: Request) {
 
     const managedSubjects = (profile.managed_subjects as string[]) ?? [];
 
-    if (profile.is_super_admin) {
-      redirectTo = '/admin/super';
-      landing = 'super';
-    } else if (managedSubjects.length > 0) {
+    // Resolve managed subject IDs → slugs for middleware isolation
+    let subjectSlugs: string[] = [];
+    if (managedSubjects.length > 0) {
       const { data: subjectRows } = await adminSupabase
         .from('subjects')
         .select('slug')
         .in('id', managedSubjects);
-      const slugs = subjectRows?.map(s => s.slug) ?? [];
+      subjectSlugs = subjectRows?.map(s => s.slug) ?? [];
+    }
 
-      if (slugs.length === 1 && slugs[0] === 'computer-science') {
-        redirectTo = '/admin/cs';
-        landing = 'cs';
+    if (profile.is_super_admin) {
+      redirectTo = '/admin/super';
+      landing = 'super';
+    } else if (subjectSlugs.length > 0) {
+      // Map first subject slug to its admin portal route
+      const SLUG_TO_ROUTE: Record<string, string> = {
+        'computer-science': 'cs',
+        'mathematics': 'math',
+        'physics': 'physics',
+        'chemistry': 'chemistry',
+        'biology': 'biology',
+        'english': 'english',
+        'urdu': 'urdu',
+        'pakistan-studies': 'pakistan-studies',
+      };
+
+      // Find the primary portal for the first managed subject
+      for (const [prefix, route] of Object.entries(SLUG_TO_ROUTE)) {
+        if (subjectSlugs[0].startsWith(prefix)) {
+          redirectTo = `/admin/${route}`;
+          landing = route;
+          break;
+        }
       }
     }
 
@@ -113,6 +133,17 @@ export async function POST(request: Request) {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     });
+
+    // Store subject slugs for middleware subject isolation
+    if (subjectSlugs.length > 0) {
+      cookieStore.set('admin_subjects', subjectSlugs.join(','), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
 
     return NextResponse.json({ success: true, redirectTo });
   } catch (err) {

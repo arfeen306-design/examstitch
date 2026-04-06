@@ -293,11 +293,29 @@ export async function reorderLessons(ordered: { id: string; sort_order: number }
 // FILE UPLOAD (Supabase Storage)
 // ═══════════════════════════════════════════════════════════════════════════
 
+const ALLOWED_UPLOAD_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+];
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50 MB
+
 export async function uploadDigitalSkillAsset(formData: FormData) {
   const file = formData.get('file') as File | null;
   const folder = (formData.get('folder') as string) || 'cheatsheets';
 
   if (!file) return { success: false as const, error: 'No file provided' };
+
+  // ── Server-side validation ──────────────────────────────────────────────
+  if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+    return { success: false as const, error: `Invalid file type: ${file.type}. Allowed: PDF, JPEG, PNG, WebP, GIF, SVG.` };
+  }
+  if (file.size > MAX_UPLOAD_SIZE) {
+    return { success: false as const, error: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum: 50 MB.` };
+  }
 
   const supabase = createAdminClient();
 
@@ -321,6 +339,9 @@ export async function uploadDigitalSkillAsset(formData: FormData) {
     return { success: false as const, error: uploadError.message };
   }
 
+  // Use getPublicUrl for public buckets; if the bucket is private,
+  // the admin should configure it as public in Supabase dashboard
+  // or switch to createSignedUrl here.
   const { data: urlData } = supabase.storage
     .from('digital-skills-assets')
     .getPublicUrl(path);

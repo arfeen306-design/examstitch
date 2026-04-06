@@ -269,6 +269,7 @@ export default function FramedPDFViewer({
                 title={title}
                 className="w-full border-0"
                 style={{ minHeight, height: '100%' }}
+                sandbox="allow-same-origin allow-scripts"
                 referrerPolicy="no-referrer"
                 loading="lazy"
                 onLoad={handleIframeLoad}

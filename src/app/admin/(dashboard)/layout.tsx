@@ -21,6 +21,30 @@ async function getAdminProfile(userId: string) {
   return data;
 }
 
+/** Derive which subject portal links a non-super admin can see */
+function getSubjectPortalLinks(managedSubjects: string[]): { label: string; href: string }[] {
+  const SLUG_TO_PORTAL: Record<string, { label: string; href: string }> = {
+    'computer-science': { label: 'CS Resources', href: '/admin/cs' },
+    // Future portals: uncomment as they get their own /admin/<key>/ routes
+    // 'physics':          { label: 'Physics Resources', href: '/admin/physics' },
+    // 'chemistry':        { label: 'Chemistry Resources', href: '/admin/chemistry' },
+    // 'biology':          { label: 'Biology Resources', href: '/admin/biology' },
+  };
+
+  const links: { label: string; href: string }[] = [];
+  const seen = new Set<string>();
+
+  for (const slug of managedSubjects) {
+    for (const [prefix, portal] of Object.entries(SLUG_TO_PORTAL)) {
+      if (slug.startsWith(prefix) && !seen.has(prefix)) {
+        seen.add(prefix);
+        links.push(portal);
+      }
+    }
+  }
+  return links;
+}
+
 async function getNewBookingsCount(): Promise<number> {
   try {
     const supabase = createAdminClient();
@@ -52,6 +76,8 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const profile = adminCookie?.value ? await getAdminProfile(adminCookie.value) : null;
   const isSuperAdmin = profile?.is_super_admin ?? false;
   const adminName = profile?.full_name || profile?.email?.split('@')[0] || 'Admin';
+  const managedSubjects: string[] = (profile?.managed_subjects as string[]) ?? [];
+  const subjectPortals = isSuperAdmin ? [] : getSubjectPortalLinks(managedSubjects);
   const newBookings = await getNewBookingsCount();
 
   const navSections = [
@@ -152,6 +178,31 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             </Link>
           )}
 
+          {/* Subject portal links — only for non-super admins with assigned subjects */}
+          {!isSuperAdmin && subjectPortals.length > 0 && (
+            <div className="mx-3 mb-3 space-y-0.5">
+              <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white/20">
+                My Subjects
+              </p>
+              {subjectPortals.map(portal => (
+                <Link
+                  key={portal.href}
+                  href={portal.href}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
+                             text-indigo-300/80 hover:text-indigo-200"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(99,102,241,0.04) 100%)',
+                    border: '1px solid rgba(99,102,241,0.15)',
+                  }}
+                >
+                  <Database className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span className="flex-1">{portal.label}</span>
+                  <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              ))}
+            </div>
+          )}
+
           {/* Nav sections */}
           <nav className="flex-1 px-3 space-y-5 overflow-y-auto relative">
             {navSections.map((section) => (
@@ -228,7 +279,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40 animate-pulse" />
               <h1 className="text-sm font-semibold text-[var(--text-primary)]">Dashboard</h1>
             </div>
-            {isSuperAdmin && <SubjectSwitcher />}
+            <SubjectSwitcher isSuperAdmin={isSuperAdmin} managedSubjects={managedSubjects} />
           </header>
           <div className="flex-1 overflow-y-auto p-6">
             {children}

@@ -49,9 +49,16 @@ export async function createCSResource(payload: {
   source_url: string;
   topic?: string;
   category_id: string;
+  module_type?: 'video_topical' | 'solved_past_paper';
 }) {
   const csId = await getCSSubjectId();
   if (!csId) return { success: false, error: 'CS subject not configured.' };
+
+  // Validate module_type
+  const validModuleTypes = ['video_topical', 'solved_past_paper'] as const;
+  const moduleType = payload.module_type && validModuleTypes.includes(payload.module_type)
+    ? payload.module_type
+    : 'video_topical';
 
   const supabase = createAdminClient();
 
@@ -62,6 +69,7 @@ export async function createCSResource(payload: {
     source_url: payload.source_url.trim(),
     topic: payload.topic?.trim() || null,
     category_id: payload.category_id,
+    module_type: moduleType,
     subject: 'computer-science',
     subject_id: csId,
     is_published: true,

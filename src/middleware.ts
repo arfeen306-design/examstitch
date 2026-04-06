@@ -42,7 +42,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Admin mode sync: ensure admin_mode cookie exists when admin_session is set ─
-  // This retroactively grants the client-readable flag to existing admin sessions.
+  // httpOnly: false is intentional — this is a UI-only hint so client components
+  // can hide lock badges. It is NOT a security gate; actual auth is enforced
+  // server-side via the httpOnly admin_session cookie + Supabase JWT.
   const adminSessionCookie = request.cookies.get('admin_session');
   if (adminSessionCookie?.value && !request.cookies.get('admin_mode')?.value) {
     response.cookies.set('admin_mode', '1', {
@@ -90,26 +92,67 @@ export async function middleware(request: NextRequest) {
 
     // Auto-redirect bare /admin to the user's landing page
     if (pathname === '/admin' || pathname === '/admin/') {
-      if (landing === 'super') {
-        return NextResponse.redirect(new URL('/admin/super', request.url));
-      }
-      if (landing === 'cs') {
-        return NextResponse.redirect(new URL('/admin/cs', request.url));
+      if (landing !== 'default') {
+        return NextResponse.redirect(new URL(`/admin/${landing}`, request.url));
       }
       // 'default' stays at /admin (Maths dashboard)
-    }
-
-    // Subject isolation: CS-only admins cannot access Maths dashboard routes
-    if (landing === 'cs') {
-      const isCsRoute = pathname.startsWith('/admin/cs') || pathname === '/admin/login';
-      if (!isCsRoute) {
-        return NextResponse.redirect(new URL('/admin/forbidden', request.url));
-      }
     }
 
     // /admin/super is restricted to super admins
     if (pathname.startsWith('/admin/super') && landing !== 'super') {
       return NextResponse.redirect(new URL('/admin/forbidden', request.url));
+    }
+
+    // ── Generic subject isolation ──────────────────────────────────────────
+    // Non-super admins can only access their assigned subject portals.
+    // The admin_subjects cookie is a comma-separated list of subject slugs
+    // (e.g. "computer-science-0478,physics-5054"), set at login time.
+    // Subject portal routes follow the pattern /admin/<subject-key>/*.
+    if (landing !== 'super') {
+      const subjectsCookie = request.cookies.get('admin_subjects')?.value ?? '';
+      const assignedSlugs = subjectsCookie ? subjectsCookie.split(',') : [];
+
+      // Map slug prefixes to admin portal route segments
+      const SLUG_TO_ROUTE: Record<string, string> = {
+        'computer-science': 'cs',
+        'mathematics': 'math',
+        'physics': 'physics',
+        'chemistry': 'chemistry',
+        'biology': 'biology',
+        'english': 'english',
+        'urdu': 'urdu',
+        'pakistan-studies': 'pakistan-studies',
+      };
+
+      // Extract which admin portal routes this admin can access
+      const allowedRoutes = new Set<string>();
+      for (const slug of assignedSlugs) {
+        // slug is like "computer-science-0478" — extract base key
+        for (const [prefix, route] of Object.entries(SLUG_TO_ROUTE)) {
+          if (slug.startsWith(prefix)) {
+            allowedRoutes.add(route);
+          }
+        }
+      }
+
+      // Check subject portal routes: /admin/cs, /admin/physics, etc.
+      // Allowed routes: /admin, /admin/login, /admin/forbidden, /admin/resources,
+      //   /admin/categories, /admin/blog, /admin/subscribers, /admin/bookings,
+      //   /admin/students — these are shared admin pages, not subject portals.
+      const subjectPortalMatch = pathname.match(/^\/admin\/([a-z-]+)/);
+      if (subjectPortalMatch) {
+        const segment = subjectPortalMatch[1];
+        const subjectPortals = new Set(Object.values(SLUG_TO_ROUTE));
+        const sharedRoutes = new Set([
+          'login', 'forbidden', 'resources', 'categories', 'blog',
+          'subscribers', 'bookings', 'students', 'super',
+        ]);
+
+        // If it's a subject portal and admin doesn't have access → block
+        if (subjectPortals.has(segment) && !sharedRoutes.has(segment) && !allowedRoutes.has(segment)) {
+          return NextResponse.redirect(new URL('/admin/forbidden', request.url));
+        }
+      }
     }
   }
   // ─────────────────────────────────────────────────────────────────────────

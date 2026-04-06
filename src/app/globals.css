@@ -473,6 +473,57 @@ html[data-theme="forest"] ::-webkit-scrollbar-thumb:hover {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   BEACH THEME — Public site overrides for hardcoded dark-mode colours.
+   Transforms dark navy backgrounds and white text into readable light mode.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Page backgrounds — navy → cream */
+html[data-theme="beach"] .bg-\[\#0B1120\] {
+  background-color: #FDF5E6 !important;
+}
+html[data-theme="beach"] .bg-\[\#0A0F1C\] {
+  background-color: #FFF8EE !important;
+}
+html[data-theme="beach"] .bg-\[\#08080f\] {
+  background-color: #FDF5E6 !important;
+}
+html[data-theme="beach"] .bg-\[\#0f0f2a\]\/80 {
+  background-color: rgba(253, 245, 230, 0.9) !important;
+}
+html[data-theme="beach"] .bg-\[\#0d0d20\] {
+  background-color: #FFF8EE !important;
+}
+
+/* Loading skeletons — forest gray overrides are already in forest block,
+   beach uses CSS vars from the :root block, no extra overrides needed */
+
+/* Navbar glass — warm tint */
+html[data-theme="beach"] .glass-navbar {
+  border-bottom: 1px solid rgba(249, 115, 22, 0.15) !important;
+}
+
+/* Selection highlight */
+html[data-theme="beach"] ::selection {
+  background: rgba(249, 115, 22, 0.2);
+  color: #1C1917;
+}
+
+/* Scrollbar styling for beach */
+html[data-theme="beach"] ::-webkit-scrollbar {
+  width: 8px;
+}
+html[data-theme="beach"] ::-webkit-scrollbar-track {
+  background: #FDF5E6;
+}
+html[data-theme="beach"] ::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.25);
+  border-radius: 4px;
+}
+html[data-theme="beach"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(249, 115, 22, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ANIMATIONS — hero art overlays
    ═══════════════════════════════════════════════════════════════════════════ */
 

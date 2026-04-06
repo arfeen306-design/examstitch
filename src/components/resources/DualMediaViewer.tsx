@@ -166,7 +166,7 @@ export default function DualMediaViewer({
           <button
             onClick={() => setExpanded(expanded === 'video' ? null : 'video')}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
-              expanded === 'video' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+              expanded === 'video' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)]'
             }`}
           >
             {expanded === 'video' ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
@@ -175,7 +175,7 @@ export default function DualMediaViewer({
           <button
             onClick={() => setExpanded(expanded === 'pdf' ? null : 'pdf')}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
-              expanded === 'pdf' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+              expanded === 'pdf' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)]'
             }`}
           >
             {expanded === 'pdf' ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}

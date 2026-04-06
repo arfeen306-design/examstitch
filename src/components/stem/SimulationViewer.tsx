@@ -29,8 +29,8 @@ import type { Simulation, StemCategory } from '@/config/stem';
 const HUD_THEME: Record<Theme, { text: string; muted: string; border: string; bg: string }> = {
   default: { text: 'text-white',       muted: 'text-white/50',     border: 'border-white/[0.12]', bg: 'bg-white/[0.06]' },
   dark:    { text: 'text-white',       muted: 'text-white/50',     border: 'border-white/[0.12]', bg: 'bg-white/[0.06]' },
-  beach:   { text: 'text-slate-900',   muted: 'text-slate-600',    border: 'border-slate-300/40', bg: 'bg-white/[0.45]' },
-  forest:  { text: 'text-emerald-100', muted: 'text-emerald-300/60', border: 'border-emerald-400/[0.15]', bg: 'bg-white/[0.06]' },
+  beach:   { text: 'text-slate-800',   muted: 'text-slate-500',    border: 'border-slate-400/50', bg: 'bg-slate-100/80' },
+  forest:  { text: 'text-emerald-100', muted: 'text-emerald-300/60', border: 'border-emerald-400/[0.15]', bg: 'bg-emerald-950/60' },
 };
 
 // ── Loading animation ────────────────────────────────────────────────────────
@@ -158,6 +158,21 @@ export default function SimulationViewer({
     return () => clearTimeout(timer);
   }, [iframeKey]);
 
+  // ── Send theme to iframe on change ────────────────────────────────
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+    const sendTheme = () => {
+      try {
+        iframe.contentWindow?.postMessage({ type: 'themeChange', theme }, window.location.origin);
+      } catch { /* cross-origin — safe to ignore */ }
+    };
+    // Send immediately and also after a short delay (iframe may still be loading)
+    sendTheme();
+    const timer = setTimeout(sendTheme, 300);
+    return () => clearTimeout(timer);
+  }, [theme, iframeKey]);
+
   // ── Auto-hide HUD top bar ──────────────────────────────────────────
   useEffect(() => {
     const startHideTimer = () => {
@@ -210,7 +225,7 @@ export default function SimulationViewer({
   // ── Iframe messaging helpers ────────────────────────────────────────
   const postToIframe = useCallback((msg: Record<string, unknown>) => {
     if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(msg, '*');
+      iframeRef.current.contentWindow.postMessage(msg, window.location.origin);
     }
   }, []);
 
@@ -343,10 +358,15 @@ export default function SimulationViewer({
     clearDoodle();
   }, [clearDoodle]);
 
-  // Track iframe load
+  // Track iframe load — also push current theme into the newly loaded iframe
   const handleIframeLoad = useCallback(() => {
-    setTimeout(() => setLoading(false), 600);
-  }, []);
+    setTimeout(() => {
+      setLoading(false);
+      try {
+        iframeRef.current?.contentWindow?.postMessage({ type: 'themeChange', theme }, window.location.origin);
+      } catch { /* cross-origin — safe to ignore */ }
+    }, 600);
+  }, [theme]);
 
   // Fullscreen toggle
   const toggleFullscreen = useCallback(async () => {

@@ -58,13 +58,17 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
 
     const body = await request.json();
-    const { title, description, content_type, source_type, source_url, topic, category_id } = body;
+    const { title, description, content_type, source_type, source_url, topic, category_id, module_type } = body;
 
     if (!title?.trim()) return NextResponse.json({ error: 'Title is required.' }, { status: 400 });
     if (!content_type) return NextResponse.json({ error: 'Content type is required.' }, { status: 400 });
     if (!source_type) return NextResponse.json({ error: 'Source type is required.' }, { status: 400 });
     if (!source_url?.trim()) return NextResponse.json({ error: 'Source URL is required.' }, { status: 400 });
     if (!category_id) return NextResponse.json({ error: 'Category is required.' }, { status: 400 });
+
+    // Validate module_type
+    const validModuleTypes = ['video_topical', 'solved_past_paper'];
+    const safeModuleType = validModuleTypes.includes(module_type) ? module_type : 'video_topical';
 
     const supabase = createAdminClient();
 
@@ -89,6 +93,7 @@ export async function POST(request: Request) {
         source_url: source_url.trim(),
         topic: topic?.trim() || null,
         category_id,
+        module_type: safeModuleType,
         subject: SUBJECT_SLUG,
         subject_id: csId,     // Automatically attached — never trust client
         is_published: true,

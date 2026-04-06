@@ -24,15 +24,17 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
   const adminCookie = cookieStore.get('admin_session');
   let isSuperAdmin = false;
   let adminName = 'CS Admin';
+  let managedSubjects: string[] = [];
   if (adminCookie?.value) {
     const admin = createAdminClient();
     const { data: profile } = await admin
       .from('student_accounts')
-      .select('is_super_admin, full_name, email')
+      .select('is_super_admin, full_name, email, managed_subjects')
       .eq('id', adminCookie.value)
       .single();
     isSuperAdmin = profile?.is_super_admin ?? false;
     adminName = profile?.full_name || profile?.email?.split('@')[0] || 'CS Admin';
+    managedSubjects = (profile?.managed_subjects as string[]) ?? [];
   }
 
   const navItems = [
@@ -169,7 +171,7 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
               <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/40 animate-pulse" />
               <h1 className="text-sm font-semibold text-white/70">Computer Science</h1>
             </div>
-            {isSuperAdmin && <SubjectSwitcher />}
+            <SubjectSwitcher isSuperAdmin={isSuperAdmin} managedSubjects={managedSubjects} />
           </header>
           <div className="flex-1 overflow-y-auto p-6">
             {children}

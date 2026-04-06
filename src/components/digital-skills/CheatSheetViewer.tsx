@@ -209,18 +209,45 @@ export default function CheatSheetViewer({
 /* ── PDF sub-component ──────────────────────────────────────────────────── */
 
 function PdfContent({ url }: { url: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
   // Use Google Docs viewer as fallback for cross-origin PDFs
   const embedUrl = url.includes('drive.google.com')
     ? url
     : `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
 
   return (
-    <div className="w-full h-full min-h-[70vh]">
+    <div className="relative w-full h-full min-h-[70vh]">
+      {!loaded && !error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0F1A2B]">
+          <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin" />
+          <p className="text-sm text-white/40">Loading PDF...</p>
+        </div>
+      )}
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0F1A2B] px-6 text-center">
+          <FileText className="w-10 h-10 text-white/20" />
+          <p className="text-sm text-white/50">PDF preview unavailable.</p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 text-xs font-semibold text-white rounded-lg bg-indigo-500/20 border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors"
+          >
+            Open in New Tab
+          </a>
+        </div>
+      )}
       <iframe
         src={embedUrl}
         title="Cheat Sheet PDF"
-        className="w-full h-full min-h-[70vh] border-0"
+        className={`w-full h-full min-h-[70vh] border-0 ${error ? 'hidden' : ''}`}
         style={{ backgroundColor: '#f5f0e8' }}
+        sandbox="allow-scripts allow-same-origin"
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
       />
     </div>
   );
@@ -229,14 +256,40 @@ function PdfContent({ url }: { url: string }) {
 /* ── Google Drive sub-component (iframe embed) ─────────────────────────── */
 
 function DriveContent({ url, title }: { url: string; title: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
   return (
-    <div className="w-full h-full min-h-[70vh]">
+    <div className="relative w-full h-full min-h-[70vh]">
+      {!loaded && !error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0F1A2B]">
+          <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin" />
+          <p className="text-sm text-white/40">Loading document...</p>
+        </div>
+      )}
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0F1A2B] px-6 text-center">
+          <FileText className="w-10 h-10 text-white/20" />
+          <p className="text-sm text-white/50">Document preview unavailable.</p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 text-xs font-semibold text-white rounded-lg bg-indigo-500/20 border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors"
+          >
+            Open in New Tab
+          </a>
+        </div>
+      )}
       <iframe
         src={url}
         title={title}
-        className="w-full h-full min-h-[70vh] border-0"
+        className={`w-full h-full min-h-[70vh] border-0 ${error ? 'hidden' : ''}`}
         allow="autoplay"
-        sandbox="allow-same-origin allow-scripts allow-popups"
+        sandbox="allow-same-origin allow-scripts"
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
       />
     </div>
   );

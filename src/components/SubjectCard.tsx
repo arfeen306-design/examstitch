@@ -59,8 +59,8 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
         style={{ background: subject.colorScheme.glow }}
       />
 
-      <div className="relative bg-slate-900/40 backdrop-blur-xl border border-white/[0.1] rounded-2xl p-6 h-full
-                      hover:border-white/[0.2] hover:bg-slate-900/50 transition-all duration-300 overflow-hidden flex flex-col glass-gpu">
+      <div className="relative bg-[var(--bg-card)]/60 backdrop-blur-xl border border-[var(--border-subtle)] rounded-2xl p-6 h-full
+                      hover:border-[var(--border-color)] hover:bg-[var(--bg-elevated)] transition-all duration-300 overflow-hidden flex flex-col glass-gpu">
         {/* Gradient accent line */}
         <div className={`absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r ${subject.colorScheme.gradient} rounded-full opacity-60`} />
 
@@ -80,13 +80,13 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
           </motion.div>
         </div>
 
-        <h3 className="text-lg font-bold text-white mb-1 tracking-tight">{subject.name}</h3>
-        <p className="text-sm text-slate-300 mb-4 leading-relaxed flex-1">{subject.description}</p>
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1 tracking-tight">{subject.name}</h3>
+        <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed flex-1">{subject.description}</p>
 
         <div className="flex items-center justify-between mt-auto">
           {subject.active ? (
             <>
-              <span className="text-xs text-slate-400 font-medium tabular-nums">
+              <span className="text-xs text-[var(--text-muted)] font-medium tabular-nums">
                 {resourceCount !== undefined ? `${resourceCount} resources` : '...'}
               </span>
               <span className={`flex items-center gap-1 text-xs font-medium ${subject.colorScheme.accent} group-hover:brightness-125 transition-all`}>
@@ -94,7 +94,7 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
               </span>
             </>
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+            <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-medium">
               <Clock className="w-3 h-3" /> Coming Soon
             </span>
           )}

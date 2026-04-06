@@ -20,10 +20,10 @@ export default async function CSAnalyticsPage() {
     );
   }
 
-  // Fetch all CS resources
+  // Fetch all CS resources including module_type
   const { data: resources } = await supabase
     .from('resources')
-    .select('id, title, content_type, created_at, category:categories(id, name, slug)')
+    .select('id, title, content_type, module_type, created_at, category:categories(id, name, slug)')
     .eq('subject_id', subject.id)
     .order('created_at', { ascending: false });
 
@@ -35,6 +35,10 @@ export default async function CSAnalyticsPage() {
   const videoCount = csResources.filter(r => r.content_type === 'video').length;
   const worksheetCount = csResources.filter(r => r.content_type === 'worksheet').length;
   const otherCount = total - pdfCount - videoCount - worksheetCount;
+
+  // Module type breakdown
+  const videoLectureCount = csResources.filter(r => r.module_type === 'video_topical').length;
+  const solvedPaperCount = csResources.filter(r => r.module_type === 'solved_past_paper').length;
 
   // Category breakdown
   const categoryMap = new Map<string, number>();
@@ -64,9 +68,9 @@ export default async function CSAnalyticsPage() {
 
   const statCards = [
     { label: 'Total Resources', value: total, icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Video Lectures', value: videoLectureCount, icon: Video, color: 'text-blue-400', bg: 'bg-blue-500/15' },
+    { label: 'Solved Past Papers', value: solvedPaperCount, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-500/15' },
     { label: 'PDFs', value: pdfCount, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Videos', value: videoCount, icon: Video, color: 'text-blue-400', bg: 'bg-blue-500/15' },
-    { label: 'Worksheets', value: worksheetCount, icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
   ];
 
   return (

@@ -9,16 +9,25 @@ interface SubjectLink {
   href: string;
   icon: typeof Monitor;
   gradient: string;
-  section?: string;
+  section: string;
+  /** If set, only show this link when admin manages a subject starting with this prefix */
+  subjectPrefix?: string;
 }
 
-const LINKS: SubjectLink[] = [
+const ALL_LINKS: SubjectLink[] = [
   { name: 'Super Admin', href: '/admin/super', icon: Globe, gradient: 'from-violet-500 to-purple-600', section: 'Global' },
   { name: 'Main Dashboard', href: '/admin', icon: Calculator, gradient: 'from-blue-500 to-indigo-600', section: 'Dashboards' },
-  { name: 'CS Admin', href: '/admin/cs', icon: Monitor, gradient: 'from-emerald-500 to-teal-600', section: 'Subject Portals' },
+  { name: 'CS Admin', href: '/admin/cs', icon: Monitor, gradient: 'from-emerald-500 to-teal-600', section: 'Subject Portals', subjectPrefix: 'computer-science' },
 ];
 
-export default function SubjectSwitcher() {
+interface Props {
+  /** If true, show all links (super admin). If false, filter by managedSubjects. */
+  isSuperAdmin?: boolean;
+  /** Subject slugs the admin manages, e.g. ["computer-science-0478", "physics-5054"] */
+  managedSubjects?: string[];
+}
+
+export default function SubjectSwitcher({ isSuperAdmin = true, managedSubjects = [] }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -33,7 +42,23 @@ export default function SubjectSwitcher() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const sections = [...new Set(LINKS.map(l => l.section))];
+  // Filter links based on permissions
+  const visibleLinks = isSuperAdmin
+    ? ALL_LINKS
+    : ALL_LINKS.filter(link => {
+        // Always show non-subject links (Dashboard)
+        if (!link.subjectPrefix) {
+          // Hide "Super Admin" for non-super admins
+          return link.section !== 'Global';
+        }
+        // Show subject portal only if admin manages that subject
+        return managedSubjects.some(s => s.startsWith(link.subjectPrefix!));
+      });
+
+  const sections = [...new Set(visibleLinks.map(l => l.section))];
+
+  // Don't render if only 1 or fewer links (nothing to switch to)
+  if (visibleLinks.length <= 1) return null;
 
   return (
     <div ref={ref} className="relative">
@@ -57,7 +82,7 @@ export default function SubjectSwitcher() {
               <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
                 {section}
               </p>
-              {LINKS.filter(l => l.section === section).map(link => {
+              {visibleLinks.filter(l => l.section === section).map(link => {
                 const Icon = link.icon;
                 return (
                   <button

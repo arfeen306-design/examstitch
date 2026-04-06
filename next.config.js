@@ -38,9 +38,10 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=3600, stale-while-revalidate=86400' },
         ],
       },
-      // ── Page security headers (HTML pages only, not API binary responses) ──
-      // Use `has` to target only text/html responses, so binary endpoints like
-      // /api/pdf/* don't inherit CSP that could confuse browsers.
+      // ── Page security headers ─────────────────────────────────────────────
+      // Applies to all routes. Binary endpoints (e.g. /api/pdf/*) set their
+      // own Content-Security-Policy and X-Frame-Options in the route handler,
+      // which override these defaults.
       {
         source: '/(.*)',
         headers: [
@@ -55,10 +56,10 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://img.youtube.com https://drive.google.com https://lh3.googleusercontent.com https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com",
-              "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.supabase.co https://www.desmos.com https://www.symbolab.com",
+              "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.supabase.co https://www.desmos.com https://www.symbolab.com https://docs.google.com",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.youtube.com https://www.google-analytics.com https://www.googletagmanager.com",
               "media-src 'self' https://*.supabase.co",
-              "object-src 'self'",
+              "object-src 'self' https://docs.google.com",
               "frame-ancestors 'self'",
             ].join('; '),
           },

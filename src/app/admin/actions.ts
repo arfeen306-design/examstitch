@@ -1,8 +1,10 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getAdminSession } from '@/lib/supabase/guards';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
+import { isValidModuleType } from '@/config/taxonomy';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
@@ -84,6 +86,36 @@ export async function bulkInsertResources(resources: unknown[]) {
       success: false,
       error: `Validation failed on row — ${firstIssue.path.join('.')}: ${firstIssue.message}`,
     };
+  }
+
+  // ── Subject ownership guard ────────────────────────────────────────────
+  // Verify the calling admin has permission for every subject_id in the batch.
+  const session = await getAdminSession();
+  if (!session) {
+    return { success: false, error: 'Not authenticated.' };
+  }
+  if (!session.isSuperAdmin) {
+    const requestedSubjects = new Set(
+      parsed.data.map(r => r.subject_id).filter(Boolean) as string[],
+    );
+    for (const sid of requestedSubjects) {
+      if (!session.managedSubjects.includes(sid)) {
+        return {
+          success: false,
+          error: `Access denied: you do not manage subject ${sid}.`,
+        };
+      }
+    }
+  }
+
+  // ── Validate module_type values ────────────────────────────────────────
+  for (const res of parsed.data) {
+    if (res.module_type && !isValidModuleType(res.module_type)) {
+      return {
+        success: false,
+        error: `Invalid module_type "${res.module_type}". Must be "video_topical" or "solved_past_paper".`,
+      };
+    }
   }
 
   const supabase = createAdminClient();
