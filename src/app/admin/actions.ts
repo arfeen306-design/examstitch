@@ -5,6 +5,7 @@ import { getAdminSession } from '@/lib/supabase/guards';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { isValidModuleType } from '@/config/taxonomy';
+import { validateCategorySlug } from '@/lib/supabase/validate-category-slug';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
@@ -201,11 +202,40 @@ export async function updateResource(id: string, updates: { title?: string; sour
   return { success: true };
 }
 
-export async function createCategory(payload: { name: string; slug: string; subject_id: string }) {
+export async function createCategory(payload: {
+  name: string;
+  slug: string;
+  subject_id: string;
+  level?: 'olevel' | 'alevel';
+  parent_id?: string | null;
+}) {
+  // Validate slug format before inserting.
+  // Determine the slug type: if parent_id points to an A-Level section, it's a paper.
+  // If no level hint is provided, infer from the slug pattern.
+  const level = payload.level
+    ?? (payload.slug.startsWith('grade-') ? 'olevel' as const : 'alevel' as const);
+
+  const type = payload.parent_id ? 'paper' as const
+    : (payload.slug === 'as-level' || payload.slug === 'a2-level') ? 'section' as const
+    : undefined;
+
+  const validation = validateCategorySlug(payload.slug, level, type);
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: `Invalid slug format: ${validation.error}${validation.expected ? ` Expected: ${validation.expected}` : ''}`,
+    };
+  }
+
   const supabase = createAdminClient();
-  
-  // Create category, we can set sort_order automatically as 99 to put it at the end
-  const { error } = await supabase.from('categories').insert([{ ...payload, sort_order: 99 }]);
+
+  const { error } = await supabase.from('categories').insert([{
+    name: payload.name,
+    slug: payload.slug,
+    subject_id: payload.subject_id,
+    parent_id: payload.parent_id ?? null,
+    sort_order: 99,
+  }]);
 
   if (error) {
     console.error('Failed to create category', error);

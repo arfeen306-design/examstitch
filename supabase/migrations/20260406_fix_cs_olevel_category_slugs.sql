@@ -25,3 +25,10 @@ UPDATE categories
 SET slug = 'grade-11', name = 'Grade 11', parent_id = NULL, sort_order = 3
 WHERE id = 'f15bb472-35eb-4bf1-9613-4e9732a15404'
   AND slug = 'cs-olevel';
+
+-- Also fix the A-Level section parent: cs-alevel → as-level
+-- This was the last remaining cs-prefixed slug in the database.
+UPDATE categories
+SET slug = 'as-level', name = 'AS Level'
+WHERE id = '2fb8ce0f-058e-4e80-a967-c8f09230635b'
+  AND slug = 'cs-alevel';
