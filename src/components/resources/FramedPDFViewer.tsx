@@ -77,6 +77,7 @@ export default function FramedPDFViewer({
   // Adobe PDF Embed is unstable in side-by-side narrow columns (stuck spinner / partial viewport),
   // so we use iframe there and keep Adobe for full-width mode.
   const useAdobeEmbed = canUseAdobeEmbed && !useSizedContainer && !preferIframe;
+  const shouldFillContainer = useAdobeEmbed && useSizedContainer;
   const viewerMinHeight = useAdobeEmbed ? minHeight || '85vh' : minHeight;
   const adobeEmbedMode = useSizedContainer ? 'SIZED_CONTAINER' : 'FULL_WINDOW';
 
@@ -302,7 +303,7 @@ export default function FramedPDFViewer({
       role="region"
       aria-label={iframeAccessibleTitle}
       className={`flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-2xl w-full ${
-        useSizedContainer ? 'flex-1 min-h-0 h-full' : 'h-full'
+        shouldFillContainer ? 'flex-1 min-h-0 h-full' : 'h-full'
       }`}
       style={{
         borderRadius: '12px',
@@ -379,7 +380,7 @@ export default function FramedPDFViewer({
         className="relative flex-1 w-full min-h-0"
         style={{
           backgroundColor: '#525659',
-          ...(useAdobeEmbed && useSizedContainer
+          ...(shouldFillContainer
             ? {
                 flex: '1 1 0%',
                 minHeight: 0,
@@ -493,10 +494,10 @@ export default function FramedPDFViewer({
               <div
                 id={`adobe-dc-view-${resourceId}`}
                 className={`w-full min-h-0 bg-[#525659] ${
-                  useSizedContainer ? 'absolute inset-0 h-full' : ''
+                  shouldFillContainer ? 'absolute inset-0 h-full' : ''
                 }`}
                 style={
-                  useSizedContainer
+                  shouldFillContainer
                     ? { boxSizing: 'border-box' }
                     : {
                         width: '100%',
@@ -514,10 +515,10 @@ export default function FramedPDFViewer({
                 src={iframeSrc}
                 title={iframeAccessibleTitle}
                 className={`max-w-full border-0 ${
-                  useSizedContainer ? 'absolute inset-0 h-full w-full' : 'w-full'
+                  shouldFillContainer ? 'absolute inset-0 h-full w-full' : 'w-full'
                 }`}
                 style={
-                  useSizedContainer
+                  shouldFillContainer
                     ? { minHeight: 0 }
                     : { minHeight: viewerMinHeight, height: '100%', width: '100%' }
                 }

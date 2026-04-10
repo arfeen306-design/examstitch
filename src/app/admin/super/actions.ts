@@ -2,7 +2,6 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { ALL_SUBJECTS } from '@/config/subjects';
 
 export async function createSubject(payload: { name: string; slug: string; levels: string[] }) {
   const supabase = createAdminClient();
@@ -46,8 +45,14 @@ export async function assignSubjectToAdmin(userId: string, subjectId: string) {
 
   if (!user) return { success: false, error: 'User not found.' };
 
-  // Subject IDs come from the config (e.g. "physics-5054"), not the DB subjects table.
-  // No DB validation needed — the config is the source of truth.
+  // managed_subjects stores UUIDs from public.subjects.
+  const { data: subjectExists } = await supabase
+    .from('subjects')
+    .select('id')
+    .eq('id', subjectId)
+    .single();
+  if (!subjectExists) return { success: false, error: 'Invalid subject selected.' };
+
   const current: string[] = (user.managed_subjects as string[]) ?? [];
   if (current.includes(subjectId)) {
     return { success: false, error: 'Subject already assigned to this user.' };
@@ -214,9 +219,13 @@ export async function toggleSuperAdmin(userId: string, makeSuperAdmin: boolean) 
 
   const updateData: Record<string, unknown> = { is_super_admin: makeSuperAdmin };
 
-  // If promoting to super admin, give access to all subjects from config
+  // If promoting to super admin, give access to all DB subjects (UUIDs)
   if (makeSuperAdmin) {
-    updateData.managed_subjects = ALL_SUBJECTS.map(s => s.id);
+    const { data: subjects, error: subjectsError } = await supabase
+      .from('subjects')
+      .select('id');
+    if (subjectsError) return { success: false, error: subjectsError.message };
+    updateData.managed_subjects = (subjects ?? []).map((s) => s.id);
   }
 
   const { error } = await supabase

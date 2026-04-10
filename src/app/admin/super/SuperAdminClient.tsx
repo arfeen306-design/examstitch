@@ -5,7 +5,6 @@ import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Shield } from 
 import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
-import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS, ALL_SUBJECTS } from '@/config/subjects';
 
 interface Subject {
   id: string;
@@ -243,14 +242,20 @@ const SubjectFactory = memo(function SubjectFactory({ subjects }: { subjects: Su
 // ── Categorized Subject Picker (O-Level / A-Level tabs) ─────────────────────
 
 function CategorizedSubjectPicker({
+  subjects,
   selected,
   onToggle,
 }: {
+  subjects: Subject[];
   selected: string[];
   onToggle: (id: string) => void;
 }) {
   const [level, setLevel] = useState<'olevel' | 'alevel'>('olevel');
-  const subjects = level === 'olevel' ? O_LEVEL_SUBJECTS : A_LEVEL_SUBJECTS;
+  const availableSubjects = subjects.filter((s) => {
+    const levels = (s.levels || []).map((l) => l.toLowerCase());
+    if (level === 'olevel') return levels.some((l) => l.includes('o level') || l.includes('igcse'));
+    return levels.some((l) => l.includes('a level') || l.includes('as level') || l.includes('a2 level'));
+  });
 
   return (
     <div>
@@ -284,7 +289,7 @@ function CategorizedSubjectPicker({
 
       {/* Subjects grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {subjects.map(s => {
+        {availableSubjects.map(s => {
           const isSelected = selected.includes(s.id);
           return (
             <button
@@ -302,8 +307,7 @@ function CategorizedSubjectPicker({
               }`}>
                 {isSelected ? '✓' : s.name.charAt(0)}
               </span>
-              <span className="flex-1 truncate">{s.name}</span>
-              <span className="text-[10px] text-[var(--text-muted)] font-mono shrink-0">{s.code}</span>
+                  <span className="flex-1 truncate">{s.name}</span>
             </button>
           );
         })}
@@ -314,13 +318,13 @@ function CategorizedSubjectPicker({
         <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-[var(--border-subtle)]">
           <span className="text-[10px] text-[var(--text-muted)] font-medium self-center mr-1">{selected.length} selected:</span>
           {selected.map(sid => {
-            const subj = [...O_LEVEL_SUBJECTS, ...A_LEVEL_SUBJECTS].find(s => s.id === sid);
+            const subj = subjects.find(s => s.id === sid);
             return (
               <span
                 key={sid}
                 className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/25"
               >
-                {subj?.name || sid} ({subj?.code || '?'})
+                {subj?.name || sid}
                 <button type="button" onClick={() => onToggle(sid)} className="hover:text-red-400 transition">
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -338,11 +342,13 @@ function CategorizedSubjectPicker({
 // ── Categorized Assign Dropdown ─────────────────────────────────────────────
 
 function CategorizedAssignDropdown({
+  subjects,
   excludeIds,
   onSelect,
   isPending,
   onAssign,
 }: {
+  subjects: Subject[];
   excludeIds: string[];
   onSelect: (id: string) => void;
   isPending: boolean;
@@ -350,8 +356,12 @@ function CategorizedAssignDropdown({
 }) {
   const [level, setLevel] = useState<'olevel' | 'alevel'>('olevel');
   const [selectedSubject, setSelectedSubject] = useState('');
-  const subjects = level === 'olevel' ? O_LEVEL_SUBJECTS : A_LEVEL_SUBJECTS;
-  const available = subjects.filter(s => !excludeIds.includes(s.id));
+  const levelSubjects = subjects.filter((s) => {
+    const levels = (s.levels || []).map((l) => l.toLowerCase());
+    if (level === 'olevel') return levels.some((l) => l.includes('o level') || l.includes('igcse'));
+    return levels.some((l) => l.includes('a level') || l.includes('as level') || l.includes('a2 level'));
+  });
+  const available = levelSubjects.filter(s => !excludeIds.includes(s.id));
 
   return (
     <div className="space-y-2">
@@ -387,7 +397,7 @@ function CategorizedAssignDropdown({
             {available.length === 0 ? `All ${level === 'olevel' ? 'O-Level' : 'A-Level'} assigned` : 'Choose subject…'}
           </option>
           {available.map(s => (
-            <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+            <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
         <button
@@ -419,13 +429,9 @@ const AdminManager = memo(function AdminManager({ admins, subjects }: { admins: 
     is_super_admin: false,
   });
 
-  // Unified lookup: DB subjects (may have UUIDs) + config subjects (canonical IDs)
+  // DB subjects are source of truth for managed_subjects (UUIDs)
   const subjectMap = new Map<string, string>();
   for (const s of subjects) subjectMap.set(s.id, s.name);
-  for (const s of ALL_SUBJECTS) subjectMap.set(s.id, s.name);
-  // Also add full entries for display
-  const allSubjectsFull = [...O_LEVEL_SUBJECTS, ...A_LEVEL_SUBJECTS];
-  for (const s of allSubjectsFull) subjectMap.set(s.id, `${s.name} (${s.code})`);
 
   function handleAssign(userId: string) {
     if (!selectedSubject) return;
@@ -561,6 +567,7 @@ const AdminManager = memo(function AdminManager({ admins, subjects }: { admins: 
 
           {/* Categorized Subject Picker with O-Level / A-Level tabs */}
           <CategorizedSubjectPicker
+            subjects={subjects}
             selected={newAdmin.managed_subjects}
             onToggle={toggleNewAdminSubject}
           />
@@ -681,6 +688,7 @@ const AdminManager = memo(function AdminManager({ admins, subjects }: { admins: 
             {assignTarget === admin.id && (
               <div className="mt-3 pt-3 border-t border-[var(--border-color)]">
                 <CategorizedAssignDropdown
+                  subjects={subjects}
                   excludeIds={admin.managed_subjects}
                   onSelect={setSelectedSubject}
                   isPending={isPending}

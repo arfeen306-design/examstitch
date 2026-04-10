@@ -31,6 +31,7 @@ import {
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { MODULE_TYPES } from '@/lib/constants';
+import { getSubjectLabel } from '@/config/navigation';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -99,21 +100,51 @@ interface TopicGroup {
 }
 
 interface PaperGroup {
+  subjectKey: string;
+  subjectLabel: string;
   categoryId: string;
   categoryName: string;
   topicGroups: TopicGroup[];
 }
 
+const SUBJECT_ALIASES: Record<string, string> = {
+  maths: 'mathematics-4024',
+  mathematics: 'mathematics-4024',
+  math: 'mathematics-4024',
+  cs: 'computer-science-0478',
+};
+
+function normalizeSubjectSlug(raw: string): string {
+  const key = raw.trim().toLowerCase();
+  return SUBJECT_ALIASES[key] ?? key;
+}
+
+function resolveSubjectLabel(raw: string): string {
+  const normalized = normalizeSubjectSlug(raw);
+  return getSubjectLabel(normalized);
+}
+
 function buildHierarchy(resources: Resource[]): PaperGroup[] {
-  const paperMap = new Map<string, { name: string; resources: Resource[] }>();
+  const paperMap = new Map<string, { subjectKey: string; subjectLabel: string; categoryId: string; categoryName: string; resources: Resource[] }>();
   for (const r of resources) {
+    const subjectKey = normalizeSubjectSlug(r.subject || 'unknown-subject');
+    const subjectLabel = resolveSubjectLabel(r.subject || 'Unknown Subject');
     const catId = r.category?.id ?? '__none__';
     const catName = r.category?.name ?? 'Uncategorised';
-    if (!paperMap.has(catId)) paperMap.set(catId, { name: catName, resources: [] });
-    paperMap.get(catId)!.resources.push(r);
+    const groupKey = `${subjectKey}::${catId}`;
+    if (!paperMap.has(groupKey)) {
+      paperMap.set(groupKey, {
+        subjectKey,
+        subjectLabel,
+        categoryId: catId,
+        categoryName: catName,
+        resources: [],
+      });
+    }
+    paperMap.get(groupKey)!.resources.push(r);
   }
 
-  return Array.from(paperMap.entries()).map(([catId, { name, resources: catResources }]) => {
+  return Array.from(paperMap.values()).map(({ subjectKey, subjectLabel, categoryId, categoryName, resources: catResources }) => {
     const sorted = [...catResources].sort((a, b) => {
       const ao = a.sort_order ?? 9999;
       const bo = b.sort_order ?? 9999;
@@ -133,7 +164,7 @@ function buildHierarchy(resources: Resource[]): PaperGroup[] {
       parts,
     }));
 
-    return { categoryId: catId, categoryName: name, topicGroups };
+    return { subjectKey, subjectLabel, categoryId, categoryName, topicGroups };
   });
 }
 
@@ -886,7 +917,7 @@ export default function SubjectResourceManager({
                       <div className="flex items-center gap-2">
                         <FolderOpen className="w-4 h-4" style={{ color: accentColor }} />
                         <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                          {paper.categoryName}
+                          {paper.subjectLabel} → {paper.categoryName}
                         </span>
                         <span className="text-xs text-[var(--text-muted)]">
                           · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
