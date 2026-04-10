@@ -172,7 +172,7 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
   // ── Standard single-pane viewer ──────────────────────────────────────────
   const showWorksheet = isWorksheet && !!worksheetUrl;
   const sourceUrl = showWorksheet ? worksheetUrl : resource.source_url;
-  const contentType = showWorksheet ? 'pdf' : resource.content_type;
+  const contentType = showWorksheet ? 'worksheet' : resource.content_type;
   const title = showWorksheet ? `${resource.title} — Worksheet` : resource.title;
   const { href: backHref, label: backLabel } = buildBackPath(resource);
 

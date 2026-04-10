@@ -8,8 +8,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
-  /* ── Beach (Default for new visitors) ───────────────────────────────────── */
-  :root,
+  /* ── Beach ───────────────────────────────────────────────────────────────── */
   [data-theme="beach"] {
     --bg-primary:    #FDF5E6;
     --bg-surface:    #FFF8EE;
@@ -79,7 +78,8 @@
     --cta-orange:    #FF6B35;
   }
 
-  /* ── Navy (Slate-950 / Neon Blue) ──────────────────────────────────── */
+  /* ── Navy (Default) — Slate-950 / Neon Blue ─────────────────────────────── */
+  :root,
   [data-theme="default"] {
     --bg-primary:    #020617;
     --bg-surface:    #0f172a;

@@ -48,6 +48,39 @@ function toFilename(title: string): string {
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
+/** Adobe PDF Embed loads the PDF URL from *.adobe.com — Chrome blocks XFO / frame-ancestors 'self' only. */
+function isAllowedAdobeEmbedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'https:') return false;
+    return u.hostname === 'adobe.com' || u.hostname.endsWith('.adobe.com');
+  } catch {
+    return false;
+  }
+}
+
+/** Extra headers when ?inline=1 (viewer / Adobe Embed). Downloads stay locked down. */
+function inlinePdfFramingHeaders(): Record<string, string> {
+  return {
+    // Do not send X-Frame-Options — it cannot whitelist Adobe; CSP handles embedding.
+    'Content-Security-Policy':
+      "frame-ancestors 'self' https://documentcloud.adobe.com https://acrobatservices.adobe.com https://*.adobe.com",
+  };
+}
+
+function inlinePdfCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get('origin');
+  if (!isAllowedAdobeEmbedOrigin(origin)) return {};
+  return {
+    'Access-Control-Allow-Origin': origin!,
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': 'Range, Accept, Content-Type',
+    'Access-Control-Expose-Headers': 'Accept-Ranges, Content-Range, Content-Length, Content-Type',
+    'Vary': 'Origin',
+  };
+}
+
 /**
  * Load PDF bytes from Supabase Storage (service role) or via HTTP (Drive / signed URL fallback).
  * Private buckets fail plain `fetch(publicUrl)` — use storage.download / createSignedUrl first.
@@ -134,6 +167,27 @@ async function loadPdfBytes(
 }
 
 // ── Route Handler ──────────────────────────────────────────────────────────
+
+export async function OPTIONS(request: NextRequest) {
+  const { searchParams } = request.nextUrl;
+  if (searchParams.get('inline') !== '1') {
+    return new NextResponse(null, { status: 204 });
+  }
+  const origin = request.headers.get('origin');
+  if (!isAllowedAdobeEmbedOrigin(origin)) {
+    return new NextResponse(null, { status: 204 });
+  }
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': origin!,
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': 'Range, Accept, Content-Type',
+      'Access-Control-Max-Age': '86400',
+      Vary: 'Origin',
+    },
+  });
+}
 
 export async function GET(
   request: NextRequest,
@@ -230,13 +284,18 @@ export async function GET(
     'Content-Disposition': disposition,
     'Accept-Ranges': 'bytes',
     'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'SAMEORIGIN',
-    'Content-Security-Policy': "frame-ancestors 'self'",
     'Cache-Control': resource.is_locked
       ? 'private, no-store'
       : 'public, max-age=300, stale-while-revalidate=600',
     'X-Watermarked': String(resource.is_watermarked || resource.is_locked),
   };
+
+  if (inline) {
+    Object.assign(baseHeaders, inlinePdfFramingHeaders(), inlinePdfCorsHeaders(request));
+  } else {
+    baseHeaders['X-Frame-Options'] = 'SAMEORIGIN';
+    baseHeaders['Content-Security-Policy'] = "frame-ancestors 'self'";
+  }
 
   const rangeHeader = request.headers.get('range');
   if (rangeHeader) {

@@ -15,6 +15,15 @@ interface FramedPDFViewerProps {
   label?: string;
   minHeight?: string;
   resourceId?: string;
+  /**
+   * `column` — dual-pane / narrow layouts. Uses SIZED_CONTAINER + explicit height so Adobe
+   * fills the host div. `FULL_WINDOW` sizes from the viewport and collapses the doc area here.
+   */
+  embedLayout?: 'default' | 'column';
+  /** Pass through to `/api/pdf` — required for `?mode=worksheet` views so the API serves `worksheet_url`. */
+  pdfApiMode?: 'worksheet';
+  /** Force iframe mode (skip Adobe SDK) even when client id is available. */
+  preferIframe?: boolean;
 }
 
 type AdobeInitState = 'off' | 'loading' | 'ready' | 'error';
@@ -30,6 +39,9 @@ export default function FramedPDFViewer({
   label = 'Resource Document',
   minHeight = '80vh',
   resourceId,
+  embedLayout = 'default',
+  pdfApiMode,
+  preferIframe = false,
 }: FramedPDFViewerProps) {
   const [loadState, setLoadState] = useState<'idle' | 'checking' | 'ready' | 'error'>('idle');
   const [adobeState, setAdobeState] = useState<AdobeInitState>('off');
@@ -40,20 +52,33 @@ export default function FramedPDFViewer({
   const adobeEverMountedRef = useRef(false);
 
   const adobeClientId = process.env.NEXT_PUBLIC_ADOBE_CLIENT_ID;
-  const useAdobeEmbed = Boolean(adobeClientId && resourceId);
+  const canUseAdobeEmbed = Boolean(adobeClientId && resourceId);
 
-  const iframeSrc = resourceId
-    ? `/api/pdf/${resourceId}?inline=1`
-    : embedUrl;
+  const inlinePdfQuery = (() => {
+    if (!resourceId) return '';
+    const q = new URLSearchParams();
+    q.set('inline', '1');
+    if (pdfApiMode === 'worksheet') q.set('mode', 'worksheet');
+    return `?${q.toString()}`;
+  })();
+
+  const iframeSrc = resourceId ? `/api/pdf/${resourceId}${inlinePdfQuery}` : embedUrl;
 
   const resolvedDownloadUrl = resourceId
-    ? `/api/pdf/${resourceId}`
+    ? `/api/pdf/${resourceId}${pdfApiMode === 'worksheet' ? '?mode=worksheet' : ''}`
     : downloadUrl;
 
   const absolutePdfUrl =
     typeof window !== 'undefined' && resourceId
-      ? `${window.location.origin}/api/pdf/${resourceId}?inline=1`
+      ? `${window.location.origin}/api/pdf/${resourceId}${inlinePdfQuery}`
       : '';
+
+  const useSizedContainer = canUseAdobeEmbed && embedLayout === 'column';
+  // Adobe PDF Embed is unstable in side-by-side narrow columns (stuck spinner / partial viewport),
+  // so we use iframe there and keep Adobe for full-width mode.
+  const useAdobeEmbed = canUseAdobeEmbed && !useSizedContainer && !preferIframe;
+  const viewerMinHeight = useAdobeEmbed ? minHeight || '85vh' : minHeight;
+  const adobeEmbedMode = useSizedContainer ? 'SIZED_CONTAINER' : 'FULL_WINDOW';
 
   // Lazy: start work when the viewer scrolls into view (or is already visible, e.g. modal)
   useEffect(() => {
@@ -148,7 +173,7 @@ export default function FramedPDFViewer({
           divId,
         });
 
-        // Annotation / doodle tools are not surfaced in SIZED_CONTAINER; Adobe samples use default (full window) layout.
+        // FULL_WINDOW sizes from the viewport — in narrow dual-pane layouts the doc area collapses; use column + SIZED_CONTAINER there.
         const Enum = window.AdobeDC.View.Enum;
         if (Enum?.CallbackType?.SAVE_API != null && Enum.ApiResponseCode?.SUCCESS != null) {
           adobeDCView.registerCallback(
@@ -173,7 +198,7 @@ export default function FramedPDFViewer({
             },
           },
           {
-            embedMode: 'FULL_WINDOW',
+            embedMode: adobeEmbedMode,
             showDownloadPDF: true,
             showPrintPDF: true,
             showAnnotationTools: true,
@@ -197,7 +222,16 @@ export default function FramedPDFViewer({
     return () => {
       cancelled = true;
     };
-  }, [inView, useAdobeEmbed, loadState, resourceId, absolutePdfUrl, title, adobeClientId]);
+  }, [
+    inView,
+    useAdobeEmbed,
+    loadState,
+    resourceId,
+    absolutePdfUrl,
+    title,
+    adobeClientId,
+    adobeEmbedMode,
+  ]);
 
   useEffect(() => {
     const id = resourceId;
@@ -258,8 +292,6 @@ export default function FramedPDFViewer({
   const showAdobeSpinner =
     useAdobeEmbed && loadState === 'ready' && adobeState !== 'ready' && adobeState !== 'error';
 
-  const viewerMinHeight = useAdobeEmbed ? '85vh' : minHeight;
-
   const iframeAccessibleTitle = /^PDF\s+viewer\s+for\s+/i.test(title.trim())
     ? title.trim()
     : `PDF viewer for ${title}`;
@@ -269,18 +301,21 @@ export default function FramedPDFViewer({
       ref={rootRef}
       role="region"
       aria-label={iframeAccessibleTitle}
-      className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-2xl h-full"
+      className={`flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-2xl w-full ${
+        useSizedContainer ? 'flex-1 min-h-0 h-full' : 'h-full'
+      }`}
       style={{
         borderRadius: '12px',
         border: '2px solid rgba(99,102,241,0.15)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 12px 24px -8px rgba(0, 0, 0, 0.15)',
         backgroundColor: '#0d1526',
+        ...(useAdobeEmbed && useSizedContainer ? { minHeight: viewerMinHeight } : {}),
       }}
     >
       <div
         role="toolbar"
         aria-label="PDF document actions"
-        className="flex items-center justify-between px-4 py-2.5"
+        className="flex shrink-0 items-center justify-between px-4 py-2.5"
         style={{
           borderBottom: '1px solid rgba(99,102,241,0.12)',
           background: 'linear-gradient(135deg, #0f1729 0%, #111d35 100%)',
@@ -293,7 +328,9 @@ export default function FramedPDFViewer({
           <FileText className="w-4 h-4 shrink-0" style={{ color: '#6366f1' }} aria-hidden />
           {label}
           {useAdobeEmbed && adobeState === 'ready' && (
-            <span className="text-[10px] font-normal normal-case text-indigo-300/90">(annotation tools)</span>
+            <span className="text-[10px] font-normal normal-case" style={{ color: '#e2e8f0' }}>
+              (annotation tools)
+            </span>
           )}
         </span>
 
@@ -340,7 +377,21 @@ export default function FramedPDFViewer({
 
       <div
         className="relative flex-1 w-full min-h-0"
-        style={{ backgroundColor: '#525659', minHeight: viewerMinHeight }}
+        style={{
+          backgroundColor: '#525659',
+          ...(useAdobeEmbed && useSizedContainer
+            ? {
+                flex: '1 1 0%',
+                minHeight: 0,
+              }
+            : useAdobeEmbed
+              ? {
+                  minHeight: viewerMinHeight,
+                  height: viewerMinHeight,
+                  flex: '1 1 auto',
+                }
+              : { minHeight: viewerMinHeight }),
+        }}
       >
         {loadState === 'idle' && (
           <div
@@ -441,8 +492,19 @@ export default function FramedPDFViewer({
             {showAdobeContainer && (
               <div
                 id={`adobe-dc-view-${resourceId}`}
-                className="w-full h-full min-h-[85vh] bg-[#525659]"
-                style={{ minHeight: viewerMinHeight, width: '100%', height: '100%' }}
+                className={`w-full min-h-0 bg-[#525659] ${
+                  useSizedContainer ? 'absolute inset-0 h-full' : ''
+                }`}
+                style={
+                  useSizedContainer
+                    ? { boxSizing: 'border-box' }
+                    : {
+                        width: '100%',
+                        height: viewerMinHeight,
+                        minHeight: viewerMinHeight,
+                        boxSizing: 'border-box',
+                      }
+                }
               />
             )}
 
@@ -451,8 +513,14 @@ export default function FramedPDFViewer({
                 ref={iframeRef}
                 src={iframeSrc}
                 title={iframeAccessibleTitle}
-                className="w-full max-w-full border-0"
-                style={{ minHeight: viewerMinHeight, height: '100%', width: '100%' }}
+                className={`max-w-full border-0 ${
+                  useSizedContainer ? 'absolute inset-0 h-full w-full' : 'w-full'
+                }`}
+                style={
+                  useSizedContainer
+                    ? { minHeight: 0 }
+                    : { minHeight: viewerMinHeight, height: '100%', width: '100%' }
+                }
                 {...(resourceId
                   ? {}
                   : { sandbox: 'allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox' })}

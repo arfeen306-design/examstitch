@@ -9,6 +9,7 @@ import {
   Minimize2,
   Video,
   FileText,
+  ExternalLink,
 } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
 import { useViewTracking } from '@/hooks/useViewTracking';
@@ -166,6 +167,15 @@ export default function DualMediaViewer({
 
         {/* Expand controls */}
         <div className="flex items-center gap-1.5">
+          {resourceId && (
+            <Link
+              href={`/view/${resourceId}?mode=worksheet`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)]"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Open full viewer
+            </Link>
+          )}
           <button
             onClick={() => setExpanded(expanded === 'video' ? null : 'video')}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
@@ -194,26 +204,48 @@ export default function DualMediaViewer({
         {title}
       </h1>
 
-      {/* Dual pane layout: PDF 40% LEFT / Video 60% RIGHT — mobile: video top, PDF bottom */}
-      <div className={`flex gap-4 ${expanded ? '' : 'flex-col-reverse lg:flex-row lg:items-start'}`}>
-        {/* PDF pane — LEFT 40% (desktop) / BOTTOM (mobile) */}
+      {/* Dual pane: tall row + flex-1 PDF stack so Adobe SIZED_CONTAINER gets a real box (not toolbar+85vh overflow / thin doc strip). */}
+      <div
+        className={`flex gap-4 ${expanded ? '' : 'flex-col-reverse lg:flex-row lg:items-stretch'}`}
+        style={
+          expanded
+            ? undefined
+            : { minHeight: 'max(520px, min(78vh, 940px))' }
+        }
+      >
+        {/* PDF pane — LEFT (desktop) / BOTTOM (mobile) */}
         <div
-          className={`transition-all duration-300 ${
+          className={`transition-all duration-300 w-full flex flex-col min-h-0 min-w-0 ${
             expanded === 'video'
               ? 'hidden'
               : expanded === 'pdf'
                 ? 'w-full'
                 : 'w-full lg:w-[55%]'
           }`}
-          style={{ minHeight: expanded === 'pdf' ? '85vh' : undefined }}
+          style={
+            expanded === 'pdf'
+              ? { minHeight: '85vh' }
+              : expanded === 'video'
+                ? undefined
+                : { minHeight: 'max(480px, min(72vh, 900px))' }
+          }
         >
-          <FramedPDFViewer
-            embedUrl={pdfEmbed}
-            downloadUrl={pdfDownload}
-            title={`${title} — PDF`}
-            minHeight="max(650px, 85vh)"
-            resourceId={resourceId}
-          />
+          <div className="flex flex-1 min-h-0 flex-col w-full h-full">
+            <FramedPDFViewer
+              embedUrl={pdfEmbed}
+              downloadUrl={pdfDownload}
+              title={`${title} — PDF`}
+              minHeight={
+                expanded === 'pdf'
+                  ? 'max(720px, 85vh)'
+                  : 'max(480px, min(72vh, 860px))'
+              }
+              resourceId={resourceId}
+              embedLayout={expanded === 'pdf' ? 'default' : 'column'}
+              pdfApiMode="worksheet"
+              preferIframe={expanded !== 'pdf'}
+            />
+          </div>
         </div>
 
         {/* Video pane — RIGHT 60% (desktop) / TOP (mobile) */}

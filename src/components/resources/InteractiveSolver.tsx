@@ -229,8 +229,9 @@ const SolverPdfViewer = memo(function SolverPdfViewer({
       downloadUrl={downloadUrl}
       title={title}
       label="Resource Document"
-      minHeight="100%"
+      minHeight="calc(100vh - 200px)"
       resourceId={resourceId}
+      embedLayout="column"
     />
   );
 });
@@ -447,14 +448,19 @@ export default function InteractiveSolver({
         {title}
       </h1>
 
-      {/* ── Dual-Pane Layout ── */}
-      <div className="flex flex-col lg:flex-row gap-4"
+      {/* ── Dual-Pane Layout — lg:items-stretch fixes Safari % height collapse in PDF column ── */}
+      <div className="flex flex-col lg:flex-row lg:items-stretch gap-4"
            style={{ minHeight: '70vh' }}>
 
         {/* ── LEFT: PDF Viewer (60%) — NEVER re-renders on tab clicks ── */}
-        <div className={`order-3 lg:order-1 ${pdfExpanded ? 'lg:w-[75%]' : 'lg:w-[58%]'} transition-all duration-300`}
-             style={{ minHeight: '500px' }}>
-          <div className="sticky top-24 h-[calc(100vh-120px)]">
+        <div
+          className={`order-3 lg:order-1 flex flex-col min-h-0 min-w-0 ${pdfExpanded ? 'lg:w-[75%]' : 'lg:w-[58%]'} transition-all duration-300`}
+          style={{ minHeight: 'max(500px, min(75vh, 900px))' }}
+        >
+          <div
+            className="sticky top-24 flex flex-col flex-1 min-h-0 w-full"
+            style={{ minHeight: 'max(520px, min(75vh, 900px), calc(100vh - 120px))' }}
+          >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4" style={{ color: 'var(--accent, #d4a843)' }} />
@@ -475,12 +481,14 @@ export default function InteractiveSolver({
                 {pdfExpanded ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
               </button>
             </div>
-            <SolverPdfViewer
-              embedUrl={pdfEmbedUrl}
-              downloadUrl={pdfUrl}
-              title={`${title} — Paper`}
-              resourceId={resourceId}
-            />
+            <div className="flex-1 min-h-0 flex flex-col min-w-0">
+              <SolverPdfViewer
+                embedUrl={pdfEmbedUrl}
+                downloadUrl={pdfUrl}
+                title={`${title} — Paper`}
+                resourceId={resourceId}
+              />
+            </div>
           </div>
         </div>
 

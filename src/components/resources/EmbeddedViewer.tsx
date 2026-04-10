@@ -287,6 +287,7 @@ export default function EmbeddedViewer({
           label={contentType === 'worksheet' ? 'Worksheet' : 'Resource Document'}
           minHeight="max(800px, 85vh)"
           resourceId={resourceId}
+          pdfApiMode={contentType === 'worksheet' ? 'worksheet' : undefined}
         />
       )}
 
