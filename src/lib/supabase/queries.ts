@@ -694,9 +694,19 @@ function splitSearchTokens(input: string): string[] {
   return input
     .toLowerCase()
     .split(/\s+/)
+    .map((t) => t.replace(/[^a-z0-9-]/g, ''))
     .map((t) => t.trim())
     .filter((t) => t.length >= 3)
     .slice(0, 8);
+}
+
+function normalizeSearchText(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function scoreMatch(value: string | null | undefined, query: string, tokens: string[]): number {
@@ -723,7 +733,7 @@ function scoreMatch(value: string | null | undefined, query: string, tokens: str
  * Includes 3+ letter partial matching and ranking across all content tables.
  */
 export async function searchAllContent(query: string, limitPerSection = 20): Promise<GlobalSearchResults> {
-  const trimmed = query.trim().slice(0, 120);
+  const trimmed = normalizeSearchText(query).slice(0, 120);
   if (!trimmed) {
     return {
       videoTopical: [],
@@ -739,7 +749,8 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
   return unstable_cache(
     async () => {
       const supabase = createAnonClient();
-      const safe = trimmed.replace(/[%_]/g, '\\$&');
+      const safe = trimmed.replace(/[%_]/g, '');
+      const first3 = safe.slice(0, 3);
       const tokens = splitSearchTokens(trimmed);
       const tokenOr = tokens
         .map((t) => `title.ilike.%${t}%`)
@@ -822,7 +833,57 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
           .limit(limitPerSection * 3),
       ]);
 
-      const allResources = ((resourcesRes.data ?? []) as unknown as Resource[]).map((r) => ({
+      const resourcesData = resourcesRes.error
+        ? (await supabase
+            .from('resources')
+            .select('*, category:categories(id, name, slug)')
+            .eq('is_published', true)
+            .or(`title.ilike.%${safe}%,description.ilike.%${safe}%,topic.ilike.%${safe}%,title.ilike.%${first3}%`)
+            .order('sort_order', { ascending: true, nullsFirst: false })
+            .order('created_at', { ascending: false })
+            .limit(limitPerSection * 3)).data ?? []
+        : resourcesRes.data ?? [];
+
+      const mediaData = mediaRes.error
+        ? (await supabase
+            .from('media_widgets')
+            .select('*')
+            .eq('is_active', true)
+            .or(`title.ilike.%${safe}%,url.ilike.%${safe}%,title.ilike.%${first3}%`)
+            .order('section_order', { ascending: true })
+            .limit(limitPerSection * 3)).data ?? []
+        : mediaRes.data ?? [];
+
+      const blogData = blogRes.error
+        ? (await supabase
+            .from('blog_posts')
+            .select('*')
+            .eq('is_published', true)
+            .or(`title.ilike.%${safe}%,content.ilike.%${safe}%,title.ilike.%${first3}%`)
+            .order('created_at', { ascending: false })
+            .limit(limitPerSection * 3)).data ?? []
+        : blogRes.data ?? [];
+
+      const skillsData = skillsRes.error
+        ? (await supabase
+            .from('skills')
+            .select('*')
+            .eq('is_active', true)
+            .or(`name.ilike.%${safe}%,tagline.ilike.%${safe}%,name.ilike.%${first3}%`)
+            .order('sort_order', { ascending: true })
+            .limit(limitPerSection * 3)).data ?? []
+        : skillsRes.data ?? [];
+
+      const lessonsData = lessonsRes.error
+        ? (await supabase
+            .from('skill_lessons')
+            .select('*')
+            .or(`title.ilike.%${safe}%,video_url.ilike.%${safe}%,title.ilike.%${first3}%`)
+            .order('sort_order', { ascending: true })
+            .limit(limitPerSection * 3)).data ?? []
+        : lessonsRes.data ?? [];
+
+      const allResources = (resourcesData as unknown as Resource[]).map((r) => ({
         ...r,
         _score:
           scoreMatch(r.title, trimmed, tokens) * 2 +
@@ -842,7 +903,7 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
         (r) => (r as any).module_type === MODULE_TYPES.SOLVED_PAST_PAPER || r.content_type === CONTENT_TYPES.PDF,
       );
 
-      const rankedMedia = ((mediaRes.data ?? []) as unknown as MediaWidget[])
+      const rankedMedia = (mediaData as unknown as MediaWidget[])
         .map((m) => ({
           ...m,
           _score: scoreMatch(m.title, trimmed, tokens) * 2 + scoreMatch(m.url, trimmed, tokens),
@@ -851,7 +912,7 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
         .slice(0, limitPerSection)
         .map(({ _score, ...m }) => m as MediaWidget);
 
-      const rankedBlog = ((blogRes.data ?? []) as unknown as BlogPost[])
+      const rankedBlog = (blogData as unknown as BlogPost[])
         .map((b) => ({
           ...b,
           _score: scoreMatch(b.title, trimmed, tokens) * 2 + scoreMatch(b.content, trimmed, tokens),
@@ -860,7 +921,7 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
         .slice(0, limitPerSection)
         .map(({ _score, ...b }) => b as BlogPost);
 
-      const rankedSkills = ((skillsRes.data ?? []) as unknown as Skill[])
+      const rankedSkills = (skillsData as unknown as Skill[])
         .map((s) => ({
           ...s,
           _score: scoreMatch(s.name, trimmed, tokens) * 2 + scoreMatch(s.tagline, trimmed, tokens),
@@ -869,7 +930,7 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
         .slice(0, limitPerSection)
         .map(({ _score, ...s }) => s as Skill);
 
-      const rankedLessons = ((lessonsRes.data ?? []) as unknown as SkillLesson[])
+      const rankedLessons = (lessonsData as unknown as SkillLesson[])
         .map((l) => ({
           ...l,
           _score: scoreMatch(l.title, trimmed, tokens) * 2 + scoreMatch(l.video_url, trimmed, tokens),
