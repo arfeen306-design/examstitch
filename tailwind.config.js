@@ -59,5 +59,17 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    /** Admin grid toggles — visible track/thumb on light “Beach” rows (avoid white-on-white) */
+    function adminToggleComponents({ addComponents }) {
+      addComponents({
+        '.admin-toggle-track': {
+          '@apply border border-slate-300 bg-slate-200 dark:border-slate-600 dark:bg-slate-700/90': {},
+        },
+        '.admin-toggle-thumb': {
+          '@apply bg-navy-900 shadow-sm dark:bg-white': {},
+        },
+      });
+    },
+  ],
 };

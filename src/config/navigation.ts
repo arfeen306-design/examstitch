@@ -1,3 +1,6 @@
+import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS } from '@/config/subjects';
+import { ADMIN_PORTALS } from '@/config/admin-portals';
+
 // ─── Subject Metadata ────────────────────────────────────────────────────────
 // Maps URL slugs to display info. Used by breadcrumbs and page headers.
 
@@ -227,3 +230,153 @@ export const aLevelPapersBySubject: Record<string, { 'as-level': PaperConfig[]; 
 
 /** Backward-compatible: return papers for a subject (defaults to Maths) */
 export const aLevelPapers = aLevelPapersBySubject['mathematics-9709'];
+
+// ─── Footer (subject-aware; driven by pathname) ─────────────────────────────
+
+export type FooterNavLink = { label: string; href: string };
+
+/** O-Level site slug → paired A-Level slug (Cambridge progression on ExamStitch) */
+export const oLevelToALevelSlug: Record<string, string> = {
+  'mathematics-4024': 'mathematics-9709',
+  'computer-science-0478': 'computer-science-9618',
+  'physics-5054': 'physics-9702',
+  'chemistry-5070': 'chemistry-9701',
+  'biology-5090': 'biology-9700',
+};
+
+export const aLevelToOLevelSlug: Record<string, string> = Object.fromEntries(
+  Object.entries(oLevelToALevelSlug).map(([o, a]) => [a, o]),
+);
+
+export type FooterContext =
+  | {
+      mode: 'general';
+      brandTagline: string;
+      oLevelLinks: FooterNavLink[];
+      aLevelLinks: FooterNavLink[];
+    }
+  | {
+      mode: 'subject';
+      brandTagline: string;
+      subjectDisplayName: string;
+      olevelSlug: string;
+      /** Null when this O-Level subject has no A-Level hub on the site */
+      alevelSlug: string | null;
+      /** Syllabus code for the A-Level heading, e.g. "9709" */
+      aLevelHeadingCode: string;
+      oLevelGradeLinks: FooterNavLink[];
+      aLevelPaperLinks: FooterNavLink[];
+    };
+
+const GENERAL_BRAND =
+  'Free O-Level, A-Level & STEM resources — past papers, video lectures, and topical worksheets.';
+
+function buildGradeLinks(olevelSlug: string): FooterNavLink[] {
+  return oLevelGrades.map((g) => ({
+    label: g.label,
+    href: `/olevel/${olevelSlug}/${g.slug}`,
+  }));
+}
+
+function buildALevelPaperLinks(alevelSlug: string): FooterNavLink[] {
+  const cfg = aLevelPapersBySubject[alevelSlug];
+  if (!cfg) return [];
+  const base = `/alevel/${alevelSlug}`;
+  const asLinks = cfg['as-level'].map((p) => ({
+    label: `AS — ${p.label}`,
+    href: `${base}/as-level/${p.slug}`,
+  }));
+  const a2Links = cfg['a2-level'].map((p) => ({
+    label: `A2 — ${p.label}`,
+    href: `${base}/a2-level/${p.slug}`,
+  }));
+  return [...asLinks, ...a2Links];
+}
+
+function generalStemFooter(): FooterContext {
+  const oLevelLinks: FooterNavLink[] = O_LEVEL_SUBJECTS.filter((s) => s.active).map((s) => ({
+    label: `${s.name} (${s.code})`,
+    href: `/olevel/${s.id}`,
+  }));
+  const aLevelLinks: FooterNavLink[] = A_LEVEL_SUBJECTS.filter((s) => s.active).map((s) => ({
+    label: `${s.name} (${s.code})`,
+    href: `/alevel/${s.id}`,
+  }));
+  return {
+    mode: 'general',
+    brandTagline: GENERAL_BRAND,
+    oLevelLinks,
+    aLevelLinks,
+  };
+}
+
+/**
+ * Resolves footer columns from the current URL: O-Level and A-Level hubs follow the viewed subject.
+ */
+export function getFooterContextFromPathname(pathname: string): FooterContext {
+  const path = pathname.replace(/\/$/, '') || '/';
+  const parts = path.split('/').filter(Boolean);
+
+  // Subject admin portal (/admin/cs, /admin/math, …) → same public hubs as that discipline
+  if (parts[0] === 'admin' && parts[1]) {
+    const portal = ADMIN_PORTALS.find((p) => p.routeSegment === parts[1]);
+    if (portal) {
+      const oSlug = portal.taxonomyOLevelPaperSlug;
+      const meta = subjectMeta[oSlug];
+      const aSlug = oLevelToALevelSlug[oSlug] ?? null;
+      const aMeta = aSlug ? subjectMeta[aSlug] : undefined;
+      return {
+        mode: 'subject',
+        brandTagline: meta
+          ? `Manage and preview ${meta.name} (${meta.displayCode}) resources — matches the public subject hub.`
+          : GENERAL_BRAND,
+        subjectDisplayName: meta?.name ?? portal.label,
+        olevelSlug: oSlug,
+        alevelSlug: aSlug,
+        aLevelHeadingCode: aMeta?.displayCode ?? meta?.displayCode ?? '',
+        oLevelGradeLinks: buildGradeLinks(oSlug),
+        aLevelPaperLinks: aSlug ? buildALevelPaperLinks(aSlug) : [],
+      };
+    }
+  }
+
+  if (parts[0] === 'olevel' && parts[1] && subjectMeta[parts[1]]) {
+    const oSlug = parts[1];
+    const meta = subjectMeta[oSlug];
+    const aSlug = oLevelToALevelSlug[oSlug] ?? null;
+    const aMeta = aSlug ? subjectMeta[aSlug] : undefined;
+    return {
+      mode: 'subject',
+      brandTagline: `Free ${meta.name} (${meta.displayCode}) resources for O-Level & IGCSE — past papers, videos, and worksheets.${
+        aMeta ? ` Cambridge A-Level (${aMeta.displayCode}) papers and lectures are linked below.` : ''
+      }`,
+      subjectDisplayName: meta.name,
+      olevelSlug: oSlug,
+      alevelSlug: aSlug,
+      aLevelHeadingCode: aMeta?.displayCode ?? meta.displayCode,
+      oLevelGradeLinks: buildGradeLinks(oSlug),
+      aLevelPaperLinks: aSlug ? buildALevelPaperLinks(aSlug) : [],
+    };
+  }
+
+  if (parts[0] === 'alevel' && parts[1] && subjectMeta[parts[1]]) {
+    const aSlug = parts[1];
+    const meta = subjectMeta[aSlug];
+    const oSlug = aLevelToOLevelSlug[aSlug] ?? null;
+    const oMeta = oSlug ? subjectMeta[oSlug] : undefined;
+    return {
+      mode: 'subject',
+      brandTagline: `Free ${meta.name} (${meta.displayCode}) A-Level resources — AS & A2 past papers, video lectures, and topical worksheets.${
+        oMeta ? ` O-Level (${oMeta.displayCode}) grades are linked for progression.` : ''
+      }`,
+      subjectDisplayName: meta.name,
+      olevelSlug: oSlug ?? 'mathematics-4024',
+      alevelSlug: aSlug,
+      aLevelHeadingCode: meta.displayCode,
+      oLevelGradeLinks: oSlug ? buildGradeLinks(oSlug) : buildGradeLinks('mathematics-4024'),
+      aLevelPaperLinks: buildALevelPaperLinks(aSlug),
+    };
+  }
+
+  return generalStemFooter();
+}

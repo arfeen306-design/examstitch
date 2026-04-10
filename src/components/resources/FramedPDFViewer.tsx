@@ -2,6 +2,11 @@
 
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { FileText, Download, Printer, AlertTriangle, ExternalLink, RefreshCw } from 'lucide-react';
+import {
+  loadAdobePdfEmbedScript,
+  whenAdobeViewSdkReady,
+  sanitizePdfFileName,
+} from '@/lib/adobe-pdf-embed';
 
 interface FramedPDFViewerProps {
   embedUrl: string;
@@ -12,15 +17,11 @@ interface FramedPDFViewerProps {
   resourceId?: string;
 }
 
+type AdobeInitState = 'off' | 'loading' | 'ready' | 'error';
+
 /**
- * Branded PDF viewer frame used across all resource pages.
- *
- * When a resourceId is provided the PDF is served through /api/pdf/[id]
- * (server-side proxy + optional watermarking) to avoid Google Drive 403s.
- *
- * Uses a pre-flight fetch to verify the PDF endpoint is reachable before
- * rendering the iframe — this catches X-Frame-Options / CSP / network issues
- * immediately instead of showing a blank frame.
+ * Branded PDF viewer — Adobe PDF Embed API when `NEXT_PUBLIC_ADOBE_CLIENT_ID` + `resourceId`
+ * (annotation tools, Safari-friendly SIZED_CONTAINER); else same-origin iframe to `/api/pdf/[id]`.
  */
 export default function FramedPDFViewer({
   embedUrl,
@@ -30,10 +31,13 @@ export default function FramedPDFViewer({
   minHeight = '80vh',
   resourceId,
 }: FramedPDFViewerProps) {
-  const [loadState, setLoadState] = useState<'checking' | 'ready' | 'loaded' | 'error'>('checking');
+  const [loadState, setLoadState] = useState<'checking' | 'ready' | 'error'>('checking');
+  const [adobeState, setAdobeState] = useState<AdobeInitState>('off');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Use our own PDF API proxy when we have a resourceId
+  const adobeClientId = process.env.NEXT_PUBLIC_ADOBE_CLIENT_ID;
+  const useAdobeEmbed = Boolean(adobeClientId && resourceId);
+
   const iframeSrc = resourceId
     ? `/api/pdf/${resourceId}?inline=1`
     : embedUrl;
@@ -42,7 +46,12 @@ export default function FramedPDFViewer({
     ? `/api/pdf/${resourceId}`
     : downloadUrl;
 
-  // Pre-flight check: verify the PDF endpoint returns 200 + application/pdf
+  const absolutePdfUrl =
+    typeof window !== 'undefined' && resourceId
+      ? `${window.location.origin}/api/pdf/${resourceId}?inline=1`
+      : '';
+
+  // Pre-flight: PDF reachable (same as before)
   useEffect(() => {
     let cancelled = false;
     setLoadState('checking');
@@ -55,7 +64,7 @@ export default function FramedPDFViewer({
         const res = await fetch(iframeSrc, {
           method: 'GET',
           signal: controller.signal,
-          headers: { Range: 'bytes=0-0' }, // request minimal data
+          headers: { Range: 'bytes=0-0' },
         });
         clearTimeout(timer);
 
@@ -72,22 +81,84 @@ export default function FramedPDFViewer({
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [iframeSrc]);
 
+  // Adobe PDF Embed API — annotation tools + Safari-friendly container mode
+  useEffect(() => {
+    if (!useAdobeEmbed || loadState !== 'ready' || !resourceId || !absolutePdfUrl) {
+      setAdobeState('off');
+      return;
+    }
+
+    let cancelled = false;
+    const divId = `adobe-dc-view-${resourceId}`;
+
+    setAdobeState('loading');
+
+    (async () => {
+      try {
+        await loadAdobePdfEmbedScript();
+        await whenAdobeViewSdkReady();
+        if (cancelled || !window.AdobeDC?.View) {
+          setAdobeState('error');
+          return;
+        }
+
+        const el = document.getElementById(divId);
+        if (!el) {
+          setAdobeState('error');
+          return;
+        }
+        el.innerHTML = '';
+
+        const adobeDCView = new window.AdobeDC.View({
+          clientId: adobeClientId!,
+          divId,
+        });
+
+        await adobeDCView.previewFile(
+          {
+            content: { location: { url: absolutePdfUrl } },
+            metaData: { fileName: `${sanitizePdfFileName(title)}.pdf` },
+          },
+          {
+            embedMode: 'SIZED_CONTAINER',
+            showDownloadPDF: true,
+            showPrintPDF: true,
+            showAnnotationTools: true,
+            showLeftHandPanel: true,
+            enableFormFilling: true,
+            defaultViewMode: 'FIT_WIDTH',
+          },
+        );
+
+        if (!cancelled) setAdobeState('ready');
+      } catch (e) {
+        console.warn('[FramedPDFViewer] Adobe Embed failed, falling back to iframe:', e);
+        if (!cancelled) setAdobeState('error');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      const el = document.getElementById(divId);
+      if (el) el.innerHTML = '';
+    };
+  }, [useAdobeEmbed, loadState, resourceId, absolutePdfUrl, title, adobeClientId]);
+
   const handleIframeLoad = useCallback(() => {
-    setLoadState((prev) => (prev === 'ready' ? 'loaded' : prev));
+    setLoadState((prev) => (prev === 'ready' ? 'ready' : prev));
   }, []);
 
   const handleRetry = useCallback(() => {
     setLoadState('checking');
-    // Force re-run of the effect by toggling a key — simplest: just re-set
-    // We trigger via the loadState going back to 'checking', the effect runs on iframeSrc
-    // so we nudge the iframe src with a cache-buster
+    setAdobeState('off');
     if (iframeRef.current) {
       iframeRef.current.src = iframeSrc + (iframeSrc.includes('?') ? '&' : '?') + '_r=' + Date.now();
     }
-    // Re-run preflight
     (async () => {
       try {
         const controller = new AbortController();
@@ -119,7 +190,16 @@ export default function FramedPDFViewer({
     }
   }, [iframeSrc]);
 
-  const showIframe = loadState === 'ready' || loadState === 'loaded';
+  const showIframeFallback = loadState === 'ready' && (!useAdobeEmbed || adobeState === 'error');
+  /** Mount before `previewFile` — SDK requires the target div to exist in the DOM first */
+  const showAdobeContainer =
+    Boolean(resourceId) && useAdobeEmbed && loadState === 'ready' && adobeState !== 'error';
+  /** Off / loading until Adobe mounts — avoids blank frame before SDK runs */
+  const showAdobeSpinner =
+    useAdobeEmbed && loadState === 'ready' && adobeState !== 'ready' && adobeState !== 'error';
+
+  /** Safari: avoid collapsing the embed container; Adobe path uses a taller minimum */
+  const viewerMinHeight = useAdobeEmbed ? '85vh' : minHeight;
 
   const iframeAccessibleTitle = /^PDF\s+viewer\s+for\s+/i.test(title.trim())
     ? title.trim()
@@ -137,7 +217,6 @@ export default function FramedPDFViewer({
         backgroundColor: '#0d1526',
       }}
     >
-      {/* ── PDF Header Bar ────────────────────────────────────────────── */}
       <div
         role="toolbar"
         aria-label="PDF document actions"
@@ -153,6 +232,9 @@ export default function FramedPDFViewer({
         >
           <FileText className="w-4 h-4 shrink-0" style={{ color: '#6366f1' }} aria-hidden />
           {label}
+          {useAdobeEmbed && adobeState === 'ready' && (
+            <span className="text-[10px] font-normal normal-case text-indigo-300/90">(annotation tools)</span>
+          )}
         </span>
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -196,13 +278,8 @@ export default function FramedPDFViewer({
         </div>
       </div>
 
-      {/* ── PDF embed area ────────────────────────────────────────────── */}
-      <div
-        className="relative flex-1"
-        style={{ backgroundColor: '#525659', minHeight }}
-      >
+      <div className="relative flex-1 w-full" style={{ backgroundColor: '#525659', minHeight: viewerMinHeight }}>
         {loadState === 'error' ? (
-          /* ── Navy-themed fallback ──────────────────────────────────── */
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center"
             style={{ background: 'linear-gradient(180deg, #0d1526 0%, #111d35 100%)' }}
@@ -274,28 +351,33 @@ export default function FramedPDFViewer({
           </div>
         ) : (
           <>
-            {/* Loading spinner — visible during pre-flight check */}
-            {loadState === 'checking' && (
+            {(loadState === 'checking' || showAdobeSpinner) && (
               <div
                 className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
                 style={{ background: 'linear-gradient(180deg, #0d1526 0%, #111d35 100%)' }}
               >
                 <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin" />
                 <p className="text-sm font-medium" style={{ color: '#64748b' }}>
-                  Loading document...
+                  {showAdobeSpinner ? 'Loading Adobe PDF viewer…' : 'Loading document...'}
                 </p>
               </div>
             )}
 
-            {/* iframe — only mounted once pre-flight confirms the PDF is accessible */}
-            {showIframe && (
+            {showAdobeContainer && (
+              <div
+                id={`adobe-dc-view-${resourceId}`}
+                className="w-full h-full min-h-[85vh] bg-[#525659]"
+                style={{ minHeight: viewerMinHeight, width: '100%' }}
+              />
+            )}
+
+            {showIframeFallback && (
               <iframe
                 ref={iframeRef}
                 src={iframeSrc}
                 title={iframeAccessibleTitle}
-                className="w-full border-0"
-                style={{ minHeight, height: '100%' }}
-                // Same-origin /api/pdf: omit sandbox so Chrome’s PDF viewer can render (sandbox often blanks PDFs).
+                className="w-full max-w-full border-0"
+                style={{ minHeight: viewerMinHeight, height: '100%', width: '100%' }}
                 {...(resourceId
                   ? {}
                   : { sandbox: 'allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox' })}

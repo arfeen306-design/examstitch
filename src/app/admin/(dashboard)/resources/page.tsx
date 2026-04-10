@@ -48,7 +48,7 @@ export default async function AdminResourcesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="admin-resources-page space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Resource Management</h2>
         <p className="text-sm text-[var(--text-muted)] mt-1">

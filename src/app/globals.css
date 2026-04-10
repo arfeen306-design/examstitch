@@ -486,6 +486,25 @@ html[data-theme="beach"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(249, 115, 22, 0.4);
 }
 
+/* Admin /admin/resources — headings/counts read clearly on Beach (cream) panels */
+html[data-theme="beach"] .admin-resources-page h2 {
+  color: #0f172a;
+}
+html[data-theme="beach"] .admin-resources-page > div:first-child > p {
+  color: #57534e;
+}
+html[data-theme="beach"] .admin-resources-page h3 {
+  color: #1c1917;
+}
+html[data-theme="beach"] .admin-resources-page h3 span {
+  color: #57534e;
+}
+
+/* Admin resource grid toolbar — resource/paper count on Beach */
+html[data-theme="beach"] .admin-resource-toolbar-meta {
+  color: #1a2b56;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ANIMATIONS — hero art overlays
    ═══════════════════════════════════════════════════════════════════════════ */
