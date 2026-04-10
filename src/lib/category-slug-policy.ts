@@ -39,8 +39,11 @@ export interface ValidateCategorySlugInput {
   parentCategorySlug: string | null;
 }
 
+const POLICY_PREFIX = 'Category policy: ';
+
 /**
  * Returns an error message if the slug is not allowed, otherwise null.
+ * Messages begin with "Category policy:" for screen-reader and toast clarity.
  */
 export function validateCategorySlugAgainstNavigation(input: ValidateCategorySlugInput): string | null {
   const { normalizedSlug, parentSubjectSlug, parentCategorySlug } = input;
@@ -50,20 +53,22 @@ export function validateCategorySlugAgainstNavigation(input: ValidateCategorySlu
     if (A_LEVEL_SECTION_SLUGS.has(normalizedSlug)) {
       const navKey = PARENT_SUBJECT_SLUG_TO_ALEVEL_NAV_KEY[parentSubjectSlug];
       if (!navKey) {
-        return `Section categories (as-level / a2-level) are not configured for subject "${parentSubjectSlug}".`;
+        return `${POLICY_PREFIX}Section categories as-level and a2-level are not configured for subject "${parentSubjectSlug}".`;
       }
       return null;
     }
     return (
-      `Invalid top-level slug "${normalizedSlug}". Use one of: ${[...O_LEVEL_ROUTE_SLUGS].join(', ')}` +
+      `${POLICY_PREFIX}The slug "${normalizedSlug}" is not allowed for a top-level category. ` +
+      `Use one of: ${[...O_LEVEL_ROUTE_SLUGS].join(', ')}` +
       (PARENT_SUBJECT_SLUG_TO_ALEVEL_NAV_KEY[parentSubjectSlug]
         ? ', or as-level / a2-level for A-Level.'
-        : '.')
+        : '. Custom slugs such as math-101 are rejected so public URLs stay in sync.')
     );
   }
 
   if (!A_LEVEL_SECTION_SLUGS.has(parentCategorySlug)) {
     return (
+      `${POLICY_PREFIX}` +
       'Nested categories are only allowed under as-level or a2-level. ' +
       'O-Level uses flat grade categories (grade-9, grade-10, grade-11).'
     );
@@ -71,7 +76,7 @@ export function validateCategorySlugAgainstNavigation(input: ValidateCategorySlu
 
   const navKey = PARENT_SUBJECT_SLUG_TO_ALEVEL_NAV_KEY[parentSubjectSlug];
   if (!navKey) {
-    return `A-Level paper categories are not configured for subject "${parentSubjectSlug}".`;
+    return `${POLICY_PREFIX}A-Level paper categories are not configured for subject "${parentSubjectSlug}".`;
   }
 
   const sectionKey = parentCategorySlug === 'as-level' ? 'as-level' : 'a2-level';
@@ -79,7 +84,7 @@ export function validateCategorySlugAgainstNavigation(input: ValidateCategorySlu
   if (allowed.includes(normalizedSlug)) return null;
 
   return (
-    `Invalid paper slug "${normalizedSlug}" for ${parentCategorySlug}. ` +
-    `Must be one of: ${allowed.join(', ')} (see navigation / public routes).`
+    `${POLICY_PREFIX}The paper slug "${normalizedSlug}" is not valid under ${parentCategorySlug}. ` +
+    `Allowed slugs are: ${allowed.join(', ')}. These must match the public course routes.`
   );
 }

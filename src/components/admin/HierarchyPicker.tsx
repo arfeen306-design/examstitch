@@ -9,7 +9,7 @@
  * to the wrong branch.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useId } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { MODULE_TYPES as MT_CONST } from '@/lib/constants';
 import { aLevelPapersBySubject } from '@/config/navigation';
@@ -50,6 +50,18 @@ interface Props {
 }
 
 export default function HierarchyPicker({ subjectId, subjectSlug, onChange, accentColor, allowedSubjectSlugs }: Props) {
+  const uid = useId();
+  const policyHintId = `${uid}-hierarchy-policy`;
+  const idLevel = `${uid}-level`;
+  const idModule = `${uid}-module-type`;
+  const idGrade = `${uid}-grade`;
+  const idSection = `${uid}-section`;
+  const idPaper = `${uid}-paper`;
+  const idCategory = `${uid}-category`;
+  const idMissingSection = `${uid}-missing-section`;
+  const idAmbiguous = `${uid}-ambiguous`;
+  const idNoMatch = `${uid}-no-match`;
+
   const taxonomy = useMemo(() => getTaxonomyBySlug(subjectSlug), [subjectSlug]);
 
   const hasOLevel = !!taxonomy;
@@ -162,7 +174,7 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
 
   if (isLocked) {
     return (
-      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center" role="alert">
         <p className="text-sm text-red-400 font-medium">
           You do not have permission to manage resources for this subject.
         </p>
@@ -182,13 +194,43 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
 
   const missingSectionParent = level === 'alevel' && !sectionParentId && hasALevel;
 
+  const noCategoryMatch =
+    !categoriesLoading &&
+    !ambiguousMatches &&
+    !missingSectionParent &&
+    filteredCategories.length === 0 &&
+    !!targetCategorySlug;
+
+  const categoryDescribedBy = [
+    policyHintId,
+    missingSectionParent ? idMissingSection : '',
+    ambiguousMatches ? idAmbiguous : '',
+    noCategoryMatch ? idNoMatch : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div className="space-y-4">
+      <p
+        id={policyHintId}
+        className="text-xs text-[var(--text-muted)] leading-relaxed rounded-lg border border-[var(--border-subtle)] px-3 py-2 bg-[var(--bg-surface)]"
+      >
+        <span className="font-medium text-[var(--text-secondary)]">Strict navigation match: </span>
+        Each choice maps to public course URLs. O-Level grades must be exactly grade-9, grade-10, or grade-11.
+        A-Level uses sections as-level and a2-level, then a paper slug listed in navigation for this subject.
+        The final category list resolves the exact database row; if duplicate slugs exist, choose the correct row.
+      </p>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={labelClass}>Level *</label>
+          <label htmlFor={hasALevel ? idLevel : undefined} className={labelClass}>
+            Level *
+          </label>
           {hasALevel ? (
             <select
+              id={idLevel}
+              aria-describedby={policyHintId}
               value={level}
               onChange={(e) => setLevel(e.target.value as TaxLevel)}
               className={selectClass}
@@ -208,8 +250,12 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
           )}
         </div>
         <div>
-          <label className={labelClass}>Module Type *</label>
+          <label htmlFor={idModule} className={labelClass}>
+            Module Type *
+          </label>
           <select
+            id={idModule}
+            aria-describedby={policyHintId}
             value={moduleType}
             onChange={(e) => setModuleType(e.target.value as ModuleType)}
             className={selectClass}
@@ -226,8 +272,12 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
 
       {level === 'olevel' ? (
         <div>
-          <label className={labelClass}>Grade *</label>
+          <label htmlFor={idGrade} className={labelClass}>
+            Grade *
+          </label>
           <select
+            id={idGrade}
+            aria-describedby={policyHintId}
             value={grade}
             onChange={(e) => setGrade(e.target.value as OLevelGrade)}
             className={selectClass}
@@ -243,8 +293,12 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
       ) : hasALevel && aLevelNavKey ? (
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Section *</label>
+            <label htmlFor={idSection} className={labelClass}>
+              Section *
+            </label>
             <select
+              id={idSection}
+              aria-describedby={policyHintId}
               value={section}
               onChange={(e) => setSection(e.target.value as ALevelSection)}
               className={selectClass}
@@ -258,8 +312,12 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
             </select>
           </div>
           <div>
-            <label className={labelClass}>Paper *</label>
+            <label htmlFor={idPaper} className={labelClass}>
+              Paper *
+            </label>
             <select
+              id={idPaper}
+              aria-describedby={policyHintId}
               value={routePaperSlug}
               onChange={(e) => setRoutePaperSlug(e.target.value)}
               className={selectClass}
@@ -276,11 +334,13 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
       ) : null}
 
       <div>
-        <label className={labelClass}>
+        <label htmlFor={idCategory} className={labelClass}>
           Category *
           {categoriesLoading && <span className="text-xs text-[var(--text-muted)] ml-2">Loading…</span>}
         </label>
         <select
+          id={idCategory}
+          aria-describedby={categoryDescribedBy}
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
           className={selectClass}
@@ -297,24 +357,20 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
           ))}
         </select>
         {missingSectionParent && (
-          <p className="text-xs text-red-400 mt-1">
+          <p id={idMissingSection} className="text-xs text-red-400 mt-1" role="status">
             Missing top-level category <code className="text-[10px]">{sectionNavKey}</code> for this subject. Create it in Categories first.
           </p>
         )}
         {ambiguousMatches && (
-          <p className="text-xs text-amber-500 mt-1">
+          <p id={idAmbiguous} className="text-xs text-amber-500 mt-1" role="status">
             Multiple rows share slug <code className="text-[10px]">{targetCategorySlug}</code> under this section. Pick the correct category below, or merge duplicates in the database.
           </p>
         )}
-        {!categoriesLoading &&
-          !ambiguousMatches &&
-          !missingSectionParent &&
-          filteredCategories.length === 0 &&
-          targetCategorySlug && (
-            <p className="text-xs text-amber-500 mt-1">
-              No category with slug <code className="text-[10px]">{targetCategorySlug}</code> for this level/section. Create it in Categories (must match public routes).
-            </p>
-          )}
+        {noCategoryMatch && (
+          <p id={idNoMatch} className="text-xs text-amber-500 mt-1" role="status">
+            No category with slug <code className="text-[10px]">{targetCategorySlug}</code> for this level/section. Create it in Categories (must match public routes).
+          </p>
+        )}
       </div>
     </div>
   );

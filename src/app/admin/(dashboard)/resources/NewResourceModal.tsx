@@ -250,8 +250,13 @@ export default function NewResourceModal({
       <div className="bg-[var(--bg-elevated)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8 border border-[var(--border-color)]">
         <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] sticky top-0 z-10">
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">Link Teaching Materials</h2>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition">
-            <X className="w-5 h-5" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50"
+          >
+            <X className="w-5 h-5" aria-hidden />
           </button>
         </div>
 

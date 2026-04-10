@@ -46,6 +46,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
           <div
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+            aria-atomic="true"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${
               toast.type === 'success'
                 ? 'bg-green-50 text-green-800 border-green-200'
@@ -55,18 +58,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             }`}
           >
             {toast.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" aria-hidden />
             ) : toast.type === 'error' ? (
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" aria-hidden />
             ) : (
-              <AlertCircle className="w-5 h-5 text-blue-500 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-blue-500 shrink-0" aria-hidden />
             )}
             <p className="text-sm font-medium">{toast.message}</p>
             <button
+              type="button"
               onClick={() => setToast(null)}
-              className="ml-4 text-[var(--text-muted)] hover:text-[var(--text-secondary)] focus:outline-none shrink-0"
+              aria-label="Dismiss notification"
+              className="ml-4 text-[var(--text-muted)] hover:text-[var(--text-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 rounded shrink-0"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden />
             </button>
           </div>
         </div>

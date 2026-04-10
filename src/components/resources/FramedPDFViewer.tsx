@@ -121,8 +121,14 @@ export default function FramedPDFViewer({
 
   const showIframe = loadState === 'ready' || loadState === 'loaded';
 
+  const iframeAccessibleTitle = /^PDF\s+viewer\s+for\s+/i.test(title.trim())
+    ? title.trim()
+    : `PDF viewer for ${title}`;
+
   return (
     <div
+      role="region"
+      aria-label={iframeAccessibleTitle}
       className="flex flex-col overflow-hidden transition-shadow hover:shadow-2xl h-full"
       style={{
         borderRadius: '12px',
@@ -133,6 +139,8 @@ export default function FramedPDFViewer({
     >
       {/* ── PDF Header Bar ────────────────────────────────────────────── */}
       <div
+        role="toolbar"
+        aria-label="PDF document actions"
         className="flex items-center justify-between px-4 py-2.5"
         style={{
           borderBottom: '1px solid rgba(99,102,241,0.12)',
@@ -143,7 +151,7 @@ export default function FramedPDFViewer({
           className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide"
           style={{ color: '#94a3b8' }}
         >
-          <FileText className="w-4 h-4" style={{ color: '#6366f1' }} />
+          <FileText className="w-4 h-4 shrink-0" style={{ color: '#6366f1' }} aria-hidden />
           {label}
         </span>
 
@@ -153,22 +161,25 @@ export default function FramedPDFViewer({
               href={resolvedDownloadUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold rounded-lg transition-all hover:opacity-90 shadow-sm"
+              aria-label={`Download PDF: ${title}`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold rounded-lg transition-all hover:opacity-90 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1729]"
               style={{
                 background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
                 color: '#fff',
               }}
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 shrink-0" aria-hidden />
               Download
             </a>
           )}
           <button
+            type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all hover:bg-white/[0.05]"
+            aria-label={`Print PDF: ${title}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1729]"
             style={{ borderColor: 'rgba(99,102,241,0.2)', color: '#94a3b8' }}
           >
-            <Printer className="w-3.5 h-3.5" />
+            <Printer className="w-3.5 h-3.5 shrink-0" aria-hidden />
             Print
           </button>
         </div>
@@ -205,15 +216,17 @@ export default function FramedPDFViewer({
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-1">
               <button
+                type="button"
                 onClick={handleRetry}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90"
+                aria-label="Retry loading PDF"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1526]"
                 style={{
                   background: 'rgba(99,102,241,0.1)',
                   border: '1px solid rgba(99,102,241,0.2)',
                   color: '#a5b4fc',
                 }}
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-4 h-4 shrink-0" aria-hidden />
                 Retry
               </button>
               {resolvedDownloadUrl && (
@@ -221,13 +234,14 @@ export default function FramedPDFViewer({
                   href={resolvedDownloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md transition-all hover:opacity-90"
+                  aria-label={`Download PDF: ${title}`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md transition-all hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1526]"
                   style={{
                     background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
                     boxShadow: '0 4px 14px rgba(99,102,241,0.3)',
                   }}
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-4 h-4 shrink-0" aria-hidden />
                   Download PDF
                 </a>
               )}
@@ -235,13 +249,14 @@ export default function FramedPDFViewer({
                 href={iframeSrc}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all hover:bg-white/[0.05]"
+                aria-label={`Open PDF in new tab: ${title}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1526]"
                 style={{
                   border: '1px solid rgba(99,102,241,0.2)',
                   color: '#94a3b8',
                 }}
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-4 h-4 shrink-0" aria-hidden />
                 Open in New Tab
               </a>
             </div>
@@ -266,7 +281,7 @@ export default function FramedPDFViewer({
               <iframe
                 ref={iframeRef}
                 src={iframeSrc}
-                title={title}
+                title={iframeAccessibleTitle}
                 className="w-full border-0"
                 style={{ minHeight, height: '100%' }}
                 sandbox="allow-same-origin allow-scripts"

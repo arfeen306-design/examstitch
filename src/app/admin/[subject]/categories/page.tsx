@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus, Pencil, Trash2, X, Check, FolderOpen, Loader2 } from 'lucide-react';
 import { createSubjectCategory, renameCategory, deleteSubjectCategory } from './actions';
@@ -35,48 +35,56 @@ export default function CategoriesPage() {
   // Inline rename state
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const addCategoryButtonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
+  const loadCategories = useCallback(async () => {
     if (!portal) return;
+    setLoading(true);
     const supabase = createClient();
 
-    async function load() {
-      // Get subject_id
-      const { data: subject } = await supabase
-        .from('subjects')
-        .select('id')
-        .eq('slug', getPortalDbSubjectSlug(portal))
-        .single();
+    const { data: subject } = await supabase
+      .from('subjects')
+      .select('id')
+      .eq('slug', getPortalDbSubjectSlug(portal))
+      .single();
 
-      if (!subject) { setLoading(false); return; }
-      setSubjectId(subject.id);
-
-      // Get categories with resource counts
-      const { data: cats } = await supabase
-        .from('categories')
-        .select('id, name, slug, parent_id, sort_order')
-        .eq('subject_id', subject.id)
-        .order('sort_order', { ascending: true });
-
-      if (!cats) { setLoading(false); return; }
-
-      // Count resources per category
-      const withCounts: CategoryRow[] = await Promise.all(
-        cats.map(async (cat) => {
-          const { count } = await supabase
-            .from('resources')
-            .select('id', { count: 'exact', head: true })
-            .eq('category_id', cat.id);
-          return { ...cat, resource_count: count ?? 0 };
-        })
-      );
-
-      setCategories(withCounts);
+    if (!subject) {
+      setSubjectId(null);
+      setCategories([]);
       setLoading(false);
+      return;
+    }
+    setSubjectId(subject.id);
+
+    const { data: cats } = await supabase
+      .from('categories')
+      .select('id, name, slug, parent_id, sort_order')
+      .eq('subject_id', subject.id)
+      .order('sort_order', { ascending: true });
+
+    if (!cats) {
+      setCategories([]);
+      setLoading(false);
+      return;
     }
 
-    load();
+    const withCounts: CategoryRow[] = await Promise.all(
+      cats.map(async (cat) => {
+        const { count } = await supabase
+          .from('resources')
+          .select('id', { count: 'exact', head: true })
+          .eq('category_id', cat.id);
+        return { ...cat, resource_count: count ?? 0 };
+      })
+    );
+
+    setCategories(withCounts);
+    setLoading(false);
   }, [portal]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
 
   function autoSlug(name: string) {
     setFormName(name);
@@ -95,8 +103,12 @@ export default function CategoriesPage() {
       });
       if (result.success) {
         showToast({ message: 'Category created!', type: 'success' });
-        setFormName(''); setFormSlug(''); setShowForm(false); setFormParentId(null);
-        window.location.reload();
+        setFormName('');
+        setFormSlug('');
+        setShowForm(false);
+        setFormParentId(null);
+        await loadCategories();
+        requestAnimationFrame(() => addCategoryButtonRef.current?.focus());
       } else {
         showToast({ message: result.error || 'Failed', type: 'error' });
       }
@@ -143,11 +155,13 @@ export default function CategoriesPage() {
           <p className="text-sm text-[var(--text-muted)] mt-1">{categories.length} categories for {portal.label.replace(' Resources', '')}</p>
         </div>
         <button
+          ref={addCategoryButtonRef}
+          type="button"
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition"
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           style={{ backgroundColor: `${portal.accentColor}20`, color: portal.accentColor }}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" aria-hidden />
           Add Category
         </button>
       </div>

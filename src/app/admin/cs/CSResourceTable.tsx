@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useMemo, useCallback } from 'react';
+import React, { useState, useTransition, useMemo, useCallback, useRef } from 'react';
 import {
   Trash2, ExternalLink, Plus, FileText, Video, FileSpreadsheet,
   Search, X, Pencil, Check, Clock, Lock, Unlock, Shield,
@@ -59,7 +59,7 @@ function Toggle({
       onClick={onToggle}
       disabled={disabled}
       title={title}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none disabled:opacity-50 ${
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 disabled:opacity-50 ${
         enabled ? activeColor : 'bg-[var(--text-muted)]/20'
       }`}
     >
@@ -91,6 +91,7 @@ export default function CSResourceTable({
   const [mappingResourceId, setMappingResourceId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
+  const addResourceButtonRef = useRef<HTMLButtonElement>(null);
 
   const filtered = useMemo(() => resources.filter(r => {
     if (filterModule !== 'all' && r.module_type !== filterModule) return false;
@@ -203,10 +204,12 @@ export default function CSResourceTable({
         </select>
 
         <button
+          ref={addResourceButtonRef}
+          type="button"
           onClick={() => setShowUpload(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" aria-hidden />
           Add Resource
         </button>
       </div>
@@ -445,6 +448,7 @@ export default function CSResourceTable({
           onSuccess={(newResource) => {
             setResources(prev => [newResource, ...prev]);
             setShowUpload(false);
+            requestAnimationFrame(() => addResourceButtonRef.current?.focus());
           }}
         />
       )}
@@ -543,8 +547,13 @@ function CSUploadModal({
             <h2 className="text-xl font-semibold text-[var(--text-primary)]">Add CS Resource</h2>
             <p className="text-xs text-[var(--text-muted)] mt-1">O Level (0478) &middot; A Level (9618)</p>
           </div>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition">
-            <X className="w-5 h-5" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <X className="w-5 h-5" aria-hidden />
           </button>
         </div>
 

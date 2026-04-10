@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { toggleResourceFlag, deleteResource, updateResource, bulkInsertResources } from '../../actions';
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
@@ -167,6 +167,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
   const [filterModuleType, setFilterModuleType] = useState<string>('all');
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const newResourceButtonRef = useRef<HTMLButtonElement>(null);
   const { showToast } = useToast();
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -722,9 +723,13 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           </div>
           <span className="text-sm text-[var(--text-muted)]">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
         </div>
-        <button onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-[#FF6B35] hover:bg-[#e55a2b] text-[var(--text-primary)] px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-          <Plus className="w-4 h-4" /> New Resource
+        <button
+          ref={newResourceButtonRef}
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-[#FF6B35] hover:bg-[#e55a2b] text-[var(--text-primary)] px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
+        >
+          <Plus className="w-4 h-4" aria-hidden /> New Resource
         </button>
       </div>
 
@@ -796,7 +801,10 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       <NewResourceModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={() => setIsModalOpen(false)}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          requestAnimationFrame(() => newResourceButtonRef.current?.focus());
+        }}
       />
     </div>
   );

@@ -10,7 +10,8 @@
  *      source_url otherwise).
  *   4. If resource.is_watermarked OR resource.is_locked → pipe bytes through
  *      applyWatermark() before streaming to the client.
- *   5. Stream the (possibly watermarked) PDF with correct headers.
+ *   5. Stream the (possibly watermarked) PDF with correct headers
+ *      (including filename for assistive tech / save-as, nosniff).
  *
  * ?mode=worksheet   → forces worksheet_url even for video resources that have an attached PDF
  * ?inline=1         → Content-Disposition: inline  (default: attachment / download)
@@ -219,7 +220,9 @@ export async function GET(
 
   // ── 6. Stream response ─────────────────────────────────────────────────
   const filename    = toFilename(resource.title);
-  const disposition = inline ? 'inline' : `attachment; filename="${filename}"`;
+  const disposition = inline
+    ? `inline; filename="${filename}"`
+    : `attachment; filename="${filename}"`;
 
   return new NextResponse(Buffer.from(finalBuffer), {
     status: 200,
@@ -227,6 +230,7 @@ export async function GET(
       'Content-Type':        'application/pdf',
       'Content-Disposition': disposition,
       'Content-Length':      String(finalBuffer.byteLength),
+      'X-Content-Type-Options': 'nosniff',
       // Allow same-origin framing (our FramedPDFViewer embeds this route)
       'X-Frame-Options':     'SAMEORIGIN',
       'Content-Security-Policy': "frame-ancestors 'self'",
