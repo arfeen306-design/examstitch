@@ -140,7 +140,7 @@ export default function PastPapersPage({
       </div>
 
       {/* Filters + Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         {/* Filters */}
         <div className="rounded-2xl p-4 mb-6 flex flex-wrap gap-3
                         bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]">

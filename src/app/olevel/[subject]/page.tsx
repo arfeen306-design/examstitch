@@ -37,7 +37,7 @@ export default function OLevelSubjectPage({ params }: { params: { subject: strin
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main: Grade Cards */}
           <div className="flex-1">

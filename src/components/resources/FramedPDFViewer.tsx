@@ -20,8 +20,8 @@ interface FramedPDFViewerProps {
 type AdobeInitState = 'off' | 'loading' | 'ready' | 'error';
 
 /**
- * Branded PDF viewer — Adobe PDF Embed API when `NEXT_PUBLIC_ADOBE_CLIENT_ID` + `resourceId`
- * (annotation tools, Safari-friendly SIZED_CONTAINER); else same-origin iframe to `/api/pdf/[id]`.
+ * Branded PDF viewer — Adobe PDF Embed API when `NEXT_PUBLIC_ADOBE_CLIENT_ID` + `resourceId`.
+ * Adobe SDK + PDF preflight run only after the viewer enters the viewport (saves main-thread + network).
  */
 export default function FramedPDFViewer({
   embedUrl,
@@ -31,9 +31,13 @@ export default function FramedPDFViewer({
   minHeight = '80vh',
   resourceId,
 }: FramedPDFViewerProps) {
-  const [loadState, setLoadState] = useState<'checking' | 'ready' | 'error'>('checking');
+  const [loadState, setLoadState] = useState<'idle' | 'checking' | 'ready' | 'error'>('idle');
   const [adobeState, setAdobeState] = useState<AdobeInitState>('off');
+  const [inView, setInView] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  /** After Adobe has mounted once, keep it alive if the user scrolls (avoid re-init flicker). */
+  const adobeEverMountedRef = useRef(false);
 
   const adobeClientId = process.env.NEXT_PUBLIC_ADOBE_CLIENT_ID;
   const useAdobeEmbed = Boolean(adobeClientId && resourceId);
@@ -51,8 +55,25 @@ export default function FramedPDFViewer({
       ? `${window.location.origin}/api/pdf/${resourceId}?inline=1`
       : '';
 
-  // Pre-flight: PDF reachable (same as before)
+  // Lazy: start work when the viewer scrolls into view (or is already visible, e.g. modal)
   useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setInView(true);
+      },
+      { root: null, rootMargin: '240px 0px', threshold: 0.01 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Pre-flight PDF only after visible — avoids blocking above-the-fold work
+  useEffect(() => {
+    if (!inView) return;
+
     let cancelled = false;
     setLoadState('checking');
 
@@ -84,12 +105,20 @@ export default function FramedPDFViewer({
     return () => {
       cancelled = true;
     };
-  }, [iframeSrc]);
+  }, [inView, iframeSrc]);
 
-  // Adobe PDF Embed API — annotation tools + Safari-friendly container mode
+  // Adobe PDF Embed API — lazy first paint; keep viewer after first successful mount
+  useEffect(() => {
+    if (loadState === 'idle' || loadState === 'checking') {
+      setAdobeState('off');
+    }
+  }, [loadState]);
+
   useEffect(() => {
     if (!useAdobeEmbed || loadState !== 'ready' || !resourceId || !absolutePdfUrl) {
-      setAdobeState('off');
+      return;
+    }
+    if (!inView && !adobeEverMountedRef.current) {
       return;
     }
 
@@ -119,23 +148,46 @@ export default function FramedPDFViewer({
           divId,
         });
 
+        // Annotation / doodle tools are not surfaced in SIZED_CONTAINER; Adobe samples use default (full window) layout.
+        const Enum = window.AdobeDC.View.Enum;
+        if (Enum?.CallbackType?.SAVE_API != null && Enum.ApiResponseCode?.SUCCESS != null) {
+          adobeDCView.registerCallback(
+            Enum.CallbackType.SAVE_API,
+            (metaData, _content, _options) =>
+              Promise.resolve({
+                code: Enum.ApiResponseCode.SUCCESS,
+                data: {
+                  metaData: { ...metaData, updatedAt: Date.now() },
+                },
+              }),
+            {},
+          );
+        }
+
         await adobeDCView.previewFile(
           {
             content: { location: { url: absolutePdfUrl } },
-            metaData: { fileName: `${sanitizePdfFileName(title)}.pdf` },
+            metaData: {
+              fileName: `${sanitizePdfFileName(title)}.pdf`,
+              id: resourceId,
+            },
           },
           {
-            embedMode: 'SIZED_CONTAINER',
+            embedMode: 'FULL_WINDOW',
             showDownloadPDF: true,
             showPrintPDF: true,
             showAnnotationTools: true,
             showLeftHandPanel: true,
             enableFormFilling: true,
+            enableLinearization: true,
             defaultViewMode: 'FIT_WIDTH',
           },
         );
 
-        if (!cancelled) setAdobeState('ready');
+        if (!cancelled) {
+          adobeEverMountedRef.current = true;
+          setAdobeState('ready');
+        }
       } catch (e) {
         console.warn('[FramedPDFViewer] Adobe Embed failed, falling back to iframe:', e);
         if (!cancelled) setAdobeState('error');
@@ -144,16 +196,26 @@ export default function FramedPDFViewer({
 
     return () => {
       cancelled = true;
-      const el = document.getElementById(divId);
-      if (el) el.innerHTML = '';
     };
-  }, [useAdobeEmbed, loadState, resourceId, absolutePdfUrl, title, adobeClientId]);
+  }, [inView, useAdobeEmbed, loadState, resourceId, absolutePdfUrl, title, adobeClientId]);
+
+  useEffect(() => {
+    const id = resourceId;
+    return () => {
+      adobeEverMountedRef.current = false;
+      if (id) {
+        const el = document.getElementById(`adobe-dc-view-${id}`);
+        if (el) el.innerHTML = '';
+      }
+    };
+  }, [resourceId]);
 
   const handleIframeLoad = useCallback(() => {
     setLoadState((prev) => (prev === 'ready' ? 'ready' : prev));
   }, []);
 
   const handleRetry = useCallback(() => {
+    adobeEverMountedRef.current = false;
     setLoadState('checking');
     setAdobeState('off');
     if (iframeRef.current) {
@@ -191,14 +253,11 @@ export default function FramedPDFViewer({
   }, [iframeSrc]);
 
   const showIframeFallback = loadState === 'ready' && (!useAdobeEmbed || adobeState === 'error');
-  /** Mount before `previewFile` — SDK requires the target div to exist in the DOM first */
   const showAdobeContainer =
     Boolean(resourceId) && useAdobeEmbed && loadState === 'ready' && adobeState !== 'error';
-  /** Off / loading until Adobe mounts — avoids blank frame before SDK runs */
   const showAdobeSpinner =
     useAdobeEmbed && loadState === 'ready' && adobeState !== 'ready' && adobeState !== 'error';
 
-  /** Safari: avoid collapsing the embed container; Adobe path uses a taller minimum */
   const viewerMinHeight = useAdobeEmbed ? '85vh' : minHeight;
 
   const iframeAccessibleTitle = /^PDF\s+viewer\s+for\s+/i.test(title.trim())
@@ -207,9 +266,10 @@ export default function FramedPDFViewer({
 
   return (
     <div
+      ref={rootRef}
       role="region"
       aria-label={iframeAccessibleTitle}
-      className="flex flex-col overflow-hidden transition-shadow hover:shadow-2xl h-full"
+      className="flex flex-col min-h-0 overflow-hidden transition-shadow hover:shadow-2xl h-full"
       style={{
         borderRadius: '12px',
         border: '2px solid rgba(99,102,241,0.15)',
@@ -278,7 +338,22 @@ export default function FramedPDFViewer({
         </div>
       </div>
 
-      <div className="relative flex-1 w-full" style={{ backgroundColor: '#525659', minHeight: viewerMinHeight }}>
+      <div
+        className="relative flex-1 w-full min-h-0"
+        style={{ backgroundColor: '#525659', minHeight: viewerMinHeight }}
+      >
+        {loadState === 'idle' && (
+          <div
+            className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-2 px-4 text-center"
+            style={{ background: 'linear-gradient(180deg, #0d1526 0%, #111d35 100%)' }}
+          >
+            <div className="w-7 h-7 border-2 border-indigo-500/20 border-t-indigo-400/80 rounded-full animate-spin" />
+            <p className="text-xs font-medium" style={{ color: '#64748b' }}>
+              Scroll to load PDF viewer…
+            </p>
+          </div>
+        )}
+
         {loadState === 'error' ? (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center"
@@ -367,7 +442,7 @@ export default function FramedPDFViewer({
               <div
                 id={`adobe-dc-view-${resourceId}`}
                 className="w-full h-full min-h-[85vh] bg-[#525659]"
-                style={{ minHeight: viewerMinHeight, width: '100%' }}
+                style={{ minHeight: viewerMinHeight, width: '100%', height: '100%' }}
               />
             )}
 

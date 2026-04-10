@@ -117,7 +117,7 @@ function buildHierarchy(resources: Resource[]): PaperGroup[] {
 
 // High-contrast field chrome for Live Database Records (Beach: visible border + dark text)
 const ADMIN_TABLE_INPUT =
-  'bg-white text-slate-900 caret-slate-900 placeholder:text-slate-500 border border-slate-400 ' +
+  'bg-white text-slate-900 caret-slate-900 placeholder:text-slate-500 border border-slate-300 ' +
   'dark:bg-slate-950 dark:text-neutral-100 dark:caret-neutral-100 dark:border-slate-600 dark:placeholder:text-slate-400 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950';
 

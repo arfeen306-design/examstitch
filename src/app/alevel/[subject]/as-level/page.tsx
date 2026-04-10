@@ -28,7 +28,7 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {(aLevelPapersBySubject[params.subject] ?? aLevelPapers)['as-level'].map((paper, i) => (
             <motion.div

@@ -21,6 +21,7 @@ export function loadAdobePdfEmbedScript(): Promise<void> {
     const s = document.createElement('script');
     s.src = VIEWER_SCRIPT;
     s.async = true;
+    s.defer = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error('Adobe View SDK script failed'));
     document.head.appendChild(s);

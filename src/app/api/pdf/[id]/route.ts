@@ -218,28 +218,68 @@ export async function GET(
     finalBuffer = new Uint8Array(rawBuffer);
   }
 
-  // ── 6. Stream response ─────────────────────────────────────────────────
+  // ── 6. Stream response (optional HTTP Range for byte-range / first-byte probes) ──
   const filename = toFilename(resource.title);
-  // Inline viewer: disposition must be inline + PDF MIME (Chrome embeds via iframe).
   const disposition = inline
     ? `inline; filename="${filename}"`
     : `attachment; filename="${filename}"`;
 
+  const fullLen = finalBuffer.byteLength;
+  const baseHeaders: Record<string, string> = {
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': disposition,
+    'Accept-Ranges': 'bytes',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Content-Security-Policy': "frame-ancestors 'self'",
+    'Cache-Control': resource.is_locked
+      ? 'private, no-store'
+      : 'public, max-age=300, stale-while-revalidate=600',
+    'X-Watermarked': String(resource.is_watermarked || resource.is_locked),
+  };
+
+  const rangeHeader = request.headers.get('range');
+  if (rangeHeader) {
+    const m = /^bytes=(\d*)-(\d*)$/i.exec(rangeHeader.trim());
+    if (m) {
+      let start = m[1] === '' ? null : parseInt(m[1], 10);
+      let end = m[2] === '' ? null : parseInt(m[2], 10);
+      if (start === null && end !== null) {
+        const suffix = end;
+        start = Math.max(0, fullLen - suffix);
+        end = fullLen - 1;
+      } else if (start !== null && end === null) {
+        start = Math.min(start, fullLen - 1);
+        end = fullLen - 1;
+      } else if (start !== null && end !== null) {
+        end = Math.min(end, fullLen - 1);
+      }
+      if (
+        start !== null &&
+        end !== null &&
+        !Number.isNaN(start) &&
+        !Number.isNaN(end) &&
+        start <= end &&
+        start < fullLen
+      ) {
+        const slice = finalBuffer.subarray(start, end + 1);
+        return new NextResponse(Buffer.from(slice), {
+          status: 206,
+          headers: {
+            ...baseHeaders,
+            'Content-Length': String(slice.byteLength),
+            'Content-Range': `bytes ${start}-${end}/${fullLen}`,
+          },
+        });
+      }
+    }
+  }
+
   return new NextResponse(Buffer.from(finalBuffer), {
     status: 200,
     headers: {
-      'Content-Type':        'application/pdf',
-      'Content-Disposition': disposition,
-      'Content-Length':      String(finalBuffer.byteLength),
-      'X-Content-Type-Options': 'nosniff',
-      // Allow same-origin framing (our FramedPDFViewer embeds this route)
-      'X-Frame-Options':     'SAMEORIGIN',
-      'Content-Security-Policy': "frame-ancestors 'self'",
-      // Prevent CDN from caching authenticated/watermarked PDFs
-      'Cache-Control':       resource.is_locked
-        ? 'private, no-store'
-        : 'public, max-age=300, stale-while-revalidate=600',
-      'X-Watermarked':       String(resource.is_watermarked || resource.is_locked),
+      ...baseHeaders,
+      'Content-Length': String(fullLen),
     },
   });
 }

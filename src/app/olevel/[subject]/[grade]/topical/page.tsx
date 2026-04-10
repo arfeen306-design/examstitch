@@ -33,7 +33,7 @@ function TopicList({
 }) {
   if (!topics.length) {
     return (
-      <div className="flex flex-col items-center py-16 text-center">
+      <div className="flex flex-col items-center py-16 text-center portal-topic-empty">
         <Layers className="w-10 h-10 mb-3 text-white/30" />
         <h3 className="text-base font-semibold mb-1 text-white/60">No topical worksheets yet</h3>
         <p className="text-sm max-w-xs text-white/30">
@@ -48,8 +48,8 @@ function TopicList({
       {topics.map((item) => {
         const slug = item.topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         return (
-          <Link key={item.topic} href={`${basePath}/${slug}`} className="block group">
-            <div className="rounded-2xl p-5 flex items-center gap-4 transition-all duration-300
+          <Link key={item.topic} href={`${basePath}/${slug}`} className="block group portal-topic-link">
+            <div className="portal-topic-card rounded-2xl p-5 flex items-center gap-4 transition-all duration-300
                             bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]
                             hover:border-white/[0.2] hover:bg-white/[0.1]">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0
@@ -57,12 +57,12 @@ function TopicList({
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-white/80 transition-colors truncate group-hover:text-white">
+                <h3 className="portal-topic-title text-sm font-semibold text-white/80 transition-colors truncate group-hover:text-white">
                   {item.topic}
                 </h3>
-                <p className="text-xs text-white/30">{item.count} worksheet{item.count !== 1 ? 's' : ''}</p>
+                <p className="portal-topic-meta text-xs text-white/30">{item.count} worksheet{item.count !== 1 ? 's' : ''}</p>
               </div>
-              <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-white/60 group-hover:translate-x-1 transition-all shrink-0" />
+              <ArrowRight className="portal-topic-arrow w-4 h-4 text-white/20 group-hover:text-white/60 group-hover:translate-x-1 transition-all shrink-0" />
             </div>
           </Link>
         );
@@ -124,7 +124,7 @@ export default function TopicalPage({ params }: { params: { subject: string; gra
           <p className="text-white/60">Master individual topics with focused practice questions.</p>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <Suspense fallback={<TopicsSkeleton />}>
           <TopicsGrid subject={params.subject} grade={params.grade} basePath={basePath} />
         </Suspense>
