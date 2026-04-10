@@ -47,6 +47,16 @@ function toFilename(title: string): string {
 }
 
 type AdminClient = ReturnType<typeof createAdminClient>;
+type PdfResource = {
+  id: string;
+  title: string;
+  content_type: string;
+  source_url: string | null;
+  worksheet_url: string | null;
+  is_locked: boolean;
+  is_watermarked: boolean;
+  is_published: boolean;
+};
 
 /** Adobe PDF Embed loads the PDF URL from *.adobe.com — Chrome blocks XFO / frame-ancestors 'self' only. */
 function isAllowedAdobeEmbedOrigin(origin: string | null): boolean {
@@ -166,6 +176,43 @@ async function loadPdfBytes(
   return { ok: true, buffer, sourceContentType: contentType || 'application/pdf' };
 }
 
+async function resolvePdfResourceOrError(
+  request: NextRequest,
+  id: string,
+): Promise<{ ok: true; resource: PdfResource } | { ok: false; response: NextResponse }> {
+  const adminClient = createAdminClient();
+  const { data: resource, error } = await adminClient
+    .from('resources')
+    .select('id, title, content_type, source_url, worksheet_url, is_locked, is_watermarked, is_published')
+    .eq('id', id)
+    .single();
+
+  if (error || !resource) return { ok: false, response: errorResponse('Resource not found.', 404) };
+  if (!resource.is_published) return { ok: false, response: errorResponse('Resource is not available.', 404) };
+
+  if (resource.is_locked) {
+    const adminCookie = request.cookies.get('admin_session');
+    const adminMode = request.cookies.get('admin_mode');
+    const isAdmin = !!adminCookie?.value || adminMode?.value === '1';
+
+    if (!isAdmin) {
+      const userClient = createClient();
+      const { data: { user } } = await userClient.auth.getUser();
+      if (!user) {
+        return {
+          ok: false,
+          response: errorResponse(
+            'This resource requires a free ExamStitch account. Sign in at /auth/login.',
+            401,
+          ),
+        };
+      }
+    }
+  }
+
+  return { ok: true, resource: resource as PdfResource };
+}
+
 // ── Route Handler ──────────────────────────────────────────────────────────
 
 export async function OPTIONS(request: NextRequest) {
@@ -198,41 +245,10 @@ export async function GET(
   const forceWorksheet = searchParams.get('mode') === 'worksheet';
   const inline         = searchParams.get('inline') === '1';
 
-  // ── 1. Fetch resource metadata ─────────────────────────────────────────
+  const resolved = await resolvePdfResourceOrError(request, id);
+  if (!resolved.ok) return resolved.response;
+  const resource = resolved.resource;
   const adminClient = createAdminClient();
-  const { data: resource, error } = await adminClient
-    .from('resources')
-    .select('id, title, content_type, source_url, worksheet_url, is_locked, is_watermarked, is_published')
-    .eq('id', id)
-    .single();
-
-  if (error || !resource) {
-    return errorResponse('Resource not found.', 404);
-  }
-
-  if (!resource.is_published) {
-    return errorResponse('Resource is not available.', 404);
-  }
-
-  // ── 2. Auth gate for locked resources ──────────────────────────────────
-  if (resource.is_locked) {
-    // Admin bypass: either httpOnly admin_session OR client admin_mode flag
-    const adminCookie = request.cookies.get('admin_session');
-    const adminMode = request.cookies.get('admin_mode');
-    const isAdmin = !!adminCookie?.value || adminMode?.value === '1';
-
-    if (!isAdmin) {
-      const userClient = createClient();
-      const { data: { user } } = await userClient.auth.getUser();
-
-      if (!user) {
-        return errorResponse(
-          'This resource requires a free ExamStitch account. Sign in at /auth/login.',
-          401,
-        );
-      }
-    }
-  }
 
   // ── 3. Resolve the PDF URL ─────────────────────────────────────────────
   const pdfUrl = forceWorksheet
@@ -341,4 +357,56 @@ export async function GET(
       'Content-Length': String(fullLen),
     },
   });
+}
+
+export async function HEAD(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const { id } = params;
+  const { searchParams } = request.nextUrl;
+  const forceWorksheet = searchParams.get('mode') === 'worksheet';
+  const inline = searchParams.get('inline') === '1';
+
+  const resolved = await resolvePdfResourceOrError(request, id);
+  if (!resolved.ok) return resolved.response;
+  const resource = resolved.resource;
+
+  const pdfUrl = forceWorksheet
+    ? resource.worksheet_url
+    : (resource.worksheet_url || resource.source_url);
+
+  if (!pdfUrl) {
+    return errorResponse(
+      forceWorksheet
+        ? 'No worksheet PDF is attached to this resource.'
+        : 'No PDF available for this resource.',
+      404,
+    );
+  }
+
+  const filename = toFilename(resource.title);
+  const disposition = inline
+    ? `inline; filename="${filename}"`
+    : `attachment; filename="${filename}"`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': disposition,
+    'Accept-Ranges': 'bytes',
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': resource.is_locked
+      ? 'private, no-store'
+      : 'public, max-age=300, stale-while-revalidate=600',
+    'X-Watermarked': String(resource.is_watermarked || resource.is_locked),
+  };
+
+  if (inline) {
+    Object.assign(headers, inlinePdfFramingHeaders(), inlinePdfCorsHeaders(request));
+  } else {
+    headers['X-Frame-Options'] = 'SAMEORIGIN';
+    headers['Content-Security-Policy'] = "frame-ancestors 'self'";
+  }
+
+  return new NextResponse(null, { status: 200, headers });
 }

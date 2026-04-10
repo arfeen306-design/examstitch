@@ -99,6 +99,11 @@ export default function FramedPDFViewer({
   // Pre-flight PDF only after visible — avoids blocking above-the-fold work
   useEffect(() => {
     if (!inView) return;
+    if (!useAdobeEmbed) {
+      // For iframe mode, avoid extra probe request and render immediately.
+      setLoadState('ready');
+      return;
+    }
 
     let cancelled = false;
     setLoadState('checking');
@@ -109,9 +114,8 @@ export default function FramedPDFViewer({
         const timer = setTimeout(() => controller.abort(), 8000);
 
         const res = await fetch(iframeSrc, {
-          method: 'GET',
+          method: 'HEAD',
           signal: controller.signal,
-          headers: { Range: 'bytes=0-0' },
         });
         clearTimeout(timer);
 
@@ -131,7 +135,7 @@ export default function FramedPDFViewer({
     return () => {
       cancelled = true;
     };
-  }, [inView, iframeSrc]);
+  }, [inView, iframeSrc, useAdobeEmbed]);
 
   // Adobe PDF Embed API — lazy first paint; keep viewer after first successful mount
   useEffect(() => {
@@ -261,9 +265,8 @@ export default function FramedPDFViewer({
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 8000);
         const res = await fetch(iframeSrc, {
-          method: 'GET',
+          method: 'HEAD',
           signal: controller.signal,
-          headers: { Range: 'bytes=0-0' },
         });
         clearTimeout(timer);
         const ct = res.headers.get('content-type') || '';

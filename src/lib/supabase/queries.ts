@@ -31,6 +31,9 @@ import type {
   BlogPost,
   UserProgress,
   StudentAccount,
+  MediaWidget,
+  Skill,
+  SkillLesson,
 } from './types';
 
 const SUBJECT_SLUG_ALIASES: Record<string, string> = {
@@ -678,6 +681,222 @@ export async function searchResourcesCategorised(query: string): Promise<Categor
     solvedPapers: all.filter(r => (r as any).module_type === MODULE_TYPES.SOLVED_PAST_PAPER || r.content_type === CONTENT_TYPES.PDF),
     total: all.length,
   };
+}
+
+export interface GlobalSearchResults extends CategorisedResults {
+  mediaWidgets: MediaWidget[];
+  blogPosts: BlogPost[];
+  skills: Skill[];
+  skillLessons: SkillLesson[];
+}
+
+function splitSearchTokens(input: string): string[] {
+  return input
+    .toLowerCase()
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3)
+    .slice(0, 8);
+}
+
+function scoreMatch(value: string | null | undefined, query: string, tokens: string[]): number {
+  if (!value) return 0;
+  const hay = value.toLowerCase();
+  const q = query.toLowerCase();
+  let score = 0;
+  if (hay.startsWith(q)) score += 80;
+  if (hay.includes(q)) score += 45;
+  for (const t of tokens) {
+    if (hay.startsWith(t)) score += 22;
+    if (hay.includes(t)) score += 12;
+  }
+  return score;
+}
+
+/**
+ * Global content search:
+ * - resources (videos/pdfs/worksheets)
+ * - media widgets
+ * - blog posts
+ * - digital skills + skill lessons
+ *
+ * Includes 3+ letter partial matching and ranking across all content tables.
+ */
+export async function searchAllContent(query: string, limitPerSection = 20): Promise<GlobalSearchResults> {
+  const trimmed = query.trim().slice(0, 120);
+  if (!trimmed) {
+    return {
+      videoTopical: [],
+      solvedPapers: [],
+      mediaWidgets: [],
+      blogPosts: [],
+      skills: [],
+      skillLessons: [],
+      total: 0,
+    };
+  }
+
+  return unstable_cache(
+    async () => {
+      const supabase = createAnonClient();
+      const safe = trimmed.replace(/[%_]/g, '\\$&');
+      const tokens = splitSearchTokens(trimmed);
+      const tokenOr = tokens
+        .map((t) => `title.ilike.%${t}%`)
+        .join(',');
+
+      const resourceOr = [
+        `title.ilike.%${safe}%`,
+        `description.ilike.%${safe}%`,
+        `topic.ilike.%${safe}%`,
+        `source_url.ilike.%${safe}%`,
+        `worksheet_url.ilike.%${safe}%`,
+        tokenOr,
+      ].filter(Boolean).join(',');
+
+      const mediaOr = [
+        `title.ilike.%${safe}%`,
+        `url.ilike.%${safe}%`,
+        `page_slug.ilike.%${safe}%`,
+        tokenOr,
+      ].filter(Boolean).join(',');
+
+      const blogOr = [
+        `title.ilike.%${safe}%`,
+        `content.ilike.%${safe}%`,
+        `slug.ilike.%${safe}%`,
+        tokenOr,
+      ].filter(Boolean).join(',');
+
+      const skillsOr = [
+        `name.ilike.%${safe}%`,
+        `tagline.ilike.%${safe}%`,
+        `description.ilike.%${safe}%`,
+      ].join(',');
+
+      const lessonsOr = [
+        `title.ilike.%${safe}%`,
+        `duration.ilike.%${safe}%`,
+        `video_url.ilike.%${safe}%`,
+        `notes_url.ilike.%${safe}%`,
+        `exercises_url.ilike.%${safe}%`,
+        `cheatsheet_url.ilike.%${safe}%`,
+        `quiz_url.ilike.%${safe}%`,
+      ].join(',');
+
+      const [resourcesRes, mediaRes, blogRes, skillsRes, lessonsRes] = await Promise.all([
+        supabase
+          .from('resources')
+          .select('*, category:categories(id, name, slug)')
+          .eq('is_published', true)
+          .or(resourceOr)
+          .order('sort_order', { ascending: true, nullsFirst: false })
+          .order('created_at', { ascending: false })
+          .limit(limitPerSection * 3),
+        supabase
+          .from('media_widgets')
+          .select('*')
+          .eq('is_active', true)
+          .or(mediaOr)
+          .order('section_order', { ascending: true })
+          .limit(limitPerSection * 3),
+        supabase
+          .from('blog_posts')
+          .select('*')
+          .eq('is_published', true)
+          .or(blogOr)
+          .order('created_at', { ascending: false })
+          .limit(limitPerSection * 3),
+        supabase
+          .from('skills')
+          .select('*')
+          .eq('is_active', true)
+          .or(skillsOr)
+          .order('sort_order', { ascending: true })
+          .limit(limitPerSection * 3),
+        supabase
+          .from('skill_lessons')
+          .select('*')
+          .or(lessonsOr)
+          .order('sort_order', { ascending: true })
+          .limit(limitPerSection * 3),
+      ]);
+
+      const allResources = ((resourcesRes.data ?? []) as unknown as Resource[]).map((r) => ({
+        ...r,
+        _score:
+          scoreMatch(r.title, trimmed, tokens) * 2 +
+          scoreMatch((r as any).topic, trimmed, tokens) +
+          scoreMatch((r as any).description, trimmed, tokens),
+      })) as (Resource & { _score: number })[];
+
+      const rankedResources = allResources
+        .sort((a, b) => b._score - a._score)
+        .slice(0, limitPerSection)
+        .map(({ _score, ...r }) => r as Resource);
+
+      const videoTopical = rankedResources.filter(
+        (r) => (r as any).module_type === MODULE_TYPES.VIDEO_TOPICAL || r.content_type === CONTENT_TYPES.VIDEO,
+      );
+      const solvedPapers = rankedResources.filter(
+        (r) => (r as any).module_type === MODULE_TYPES.SOLVED_PAST_PAPER || r.content_type === CONTENT_TYPES.PDF,
+      );
+
+      const rankedMedia = ((mediaRes.data ?? []) as unknown as MediaWidget[])
+        .map((m) => ({
+          ...m,
+          _score: scoreMatch(m.title, trimmed, tokens) * 2 + scoreMatch(m.url, trimmed, tokens),
+        }))
+        .sort((a, b) => b._score - a._score)
+        .slice(0, limitPerSection)
+        .map(({ _score, ...m }) => m as MediaWidget);
+
+      const rankedBlog = ((blogRes.data ?? []) as unknown as BlogPost[])
+        .map((b) => ({
+          ...b,
+          _score: scoreMatch(b.title, trimmed, tokens) * 2 + scoreMatch(b.content, trimmed, tokens),
+        }))
+        .sort((a, b) => b._score - a._score)
+        .slice(0, limitPerSection)
+        .map(({ _score, ...b }) => b as BlogPost);
+
+      const rankedSkills = ((skillsRes.data ?? []) as unknown as Skill[])
+        .map((s) => ({
+          ...s,
+          _score: scoreMatch(s.name, trimmed, tokens) * 2 + scoreMatch(s.tagline, trimmed, tokens),
+        }))
+        .sort((a, b) => b._score - a._score)
+        .slice(0, limitPerSection)
+        .map(({ _score, ...s }) => s as Skill);
+
+      const rankedLessons = ((lessonsRes.data ?? []) as unknown as SkillLesson[])
+        .map((l) => ({
+          ...l,
+          _score: scoreMatch(l.title, trimmed, tokens) * 2 + scoreMatch(l.video_url, trimmed, tokens),
+        }))
+        .sort((a, b) => b._score - a._score)
+        .slice(0, limitPerSection)
+        .map(({ _score, ...l }) => l as SkillLesson);
+
+      return {
+        videoTopical,
+        solvedPapers,
+        mediaWidgets: rankedMedia,
+        blogPosts: rankedBlog,
+        skills: rankedSkills,
+        skillLessons: rankedLessons,
+        total:
+          videoTopical.length +
+          solvedPapers.length +
+          rankedMedia.length +
+          rankedBlog.length +
+          rankedSkills.length +
+          rankedLessons.length,
+      };
+    },
+    [`search-global-${trimmed}-${limitPerSection}`],
+    { revalidate: CACHE_5M, tags: ['resources', 'blog', 'skills', 'media'] },
+  )();
 }
 
 

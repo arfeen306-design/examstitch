@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { Search, Play, FileText, BookOpen } from 'lucide-react';
-import { searchResourcesCategorised, getSuggestions } from '@/lib/supabase/queries';
-import type { Resource } from '@/lib/supabase/types';
+import { searchAllContent, getSuggestions } from '@/lib/supabase/queries';
+import type { Resource, MediaWidget, BlogPost, Skill, SkillLesson } from '@/lib/supabase/types';
 import { MODULE_TYPES, CONTENT_TYPES } from '@/lib/constants';
 
 
@@ -113,15 +113,53 @@ function Section({
   );
 }
 
+function GenericSection<T>({
+  title,
+  icon,
+  items,
+  colorClass,
+  renderItem,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  items: T[];
+  colorClass: string;
+  renderItem: (item: T, index: number) => React.ReactNode;
+}) {
+  if (!items.length) return null;
+  return (
+    <div>
+      <div className={`flex items-center gap-2 mb-3 text-sm font-bold uppercase tracking-widest ${colorClass}`}>
+        {icon}
+        {title}
+        <span className="ml-auto text-xs font-normal normal-case tracking-normal text-[var(--text-muted)]">
+          {items.length} result{items.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {items.map((item, idx) => renderItem(item, idx))}
+      </div>
+    </div>
+  );
+}
+
 // ── Results component ──────────────────────────────────────────────────────────
 
 async function SearchResults({ query }: { query: string }) {
-  let results = { videoTopical: [] as Resource[], solvedPapers: [] as Resource[], total: 0 };
+  let results = {
+    videoTopical: [] as Resource[],
+    solvedPapers: [] as Resource[],
+    mediaWidgets: [] as MediaWidget[],
+    blogPosts: [] as BlogPost[],
+    skills: [] as Skill[],
+    skillLessons: [] as SkillLesson[],
+    total: 0,
+  };
   let suggestions: string[] = [];
 
   try {
     [results, suggestions] = await Promise.all([
-      searchResourcesCategorised(query),
+      searchAllContent(query),
       getSuggestions(query, 5),
     ]);
   } catch (e) {
@@ -180,6 +218,92 @@ async function SearchResults({ query }: { query: string }) {
         resources={results.solvedPapers}
         colorClass="text-blue-600"
       />
+      <GenericSection
+        title="Media Widgets (Videos/PDFs)"
+        icon={<Play className="w-4 h-4" />}
+        items={results.mediaWidgets}
+        colorClass="text-purple-600"
+        renderItem={(m) => (
+          <a
+            key={m.id}
+            href={m.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between gap-3 px-5 py-4 rounded-xl border border-[var(--border-subtle)] hover:border-purple-300 transition-all"
+            style={{ backgroundColor: 'var(--bg-card)' }}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{m.title}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {m.media_type.toUpperCase()} · {m.page_slug}
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-purple-700">Open</span>
+          </a>
+        )}
+      />
+      <GenericSection
+        title="Blog Content"
+        icon={<BookOpen className="w-4 h-4" />}
+        items={results.blogPosts}
+        colorClass="text-emerald-600"
+        renderItem={(post) => (
+          <Link
+            key={post.id}
+            href={`/blog/${post.slug}`}
+            className="flex items-center justify-between gap-3 px-5 py-4 rounded-xl border border-[var(--border-subtle)] hover:border-emerald-300 transition-all"
+            style={{ backgroundColor: 'var(--bg-card)' }}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{post.title}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">Published blog post</p>
+            </div>
+            <span className="text-xs font-semibold text-emerald-700">Read</span>
+          </Link>
+        )}
+      />
+      <GenericSection
+        title="Digital Skills Tracks"
+        icon={<BookOpen className="w-4 h-4" />}
+        items={results.skills}
+        colorClass="text-indigo-600"
+        renderItem={(skill) => (
+          <Link
+            key={skill.id}
+            href="/digital-skills"
+            className="flex items-center justify-between gap-3 px-5 py-4 rounded-xl border border-[var(--border-subtle)] hover:border-indigo-300 transition-all"
+            style={{ backgroundColor: 'var(--bg-card)' }}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{skill.name}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">{skill.tagline || 'Digital skill track'}</p>
+            </div>
+            <span className="text-xs font-semibold text-indigo-700">Explore</span>
+          </Link>
+        )}
+      />
+      <GenericSection
+        title="Digital Skills Lessons"
+        icon={<Play className="w-4 h-4" />}
+        items={results.skillLessons}
+        colorClass="text-amber-600"
+        renderItem={(lesson) => (
+          <Link
+            key={lesson.id}
+            href="/digital-skills"
+            className="flex items-center justify-between gap-3 px-5 py-4 rounded-xl border border-[var(--border-subtle)] hover:border-amber-300 transition-all"
+            style={{ backgroundColor: 'var(--bg-card)' }}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{lesson.title}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {lesson.video_url ? 'Video lesson' : 'Lesson resource'}
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-amber-700">Open</span>
+          </Link>
+        )}
+      />
     </div>
   );
 }
@@ -198,7 +322,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
             {query ? `Results for "${query}"` : 'Search Resources'}
           </h1>
           <p className="text-white/60 text-sm mb-6">
-            Search across all video lectures, worksheets, and past papers.
+            Search across all content tables: resources, videos, PDFs, blog, media widgets, and digital skills.
           </p>
           <form method="GET" action="/search" className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
