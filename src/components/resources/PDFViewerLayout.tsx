@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { ExternalLink, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import VideoSolutionsSidebar from './VideoSolutionsSidebar';
 import FramedPDFViewer from './FramedPDFViewer';
@@ -46,15 +46,6 @@ export default function PDFViewerLayout({
       <div className="bg-[var(--hero-from)] rounded-xl p-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white truncate mr-4">{title}</h2>
         <div className="flex items-center gap-1">
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            title="Open in New Tab"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </a>
           <button
             onClick={() => containerRef.current?.requestFullscreen()}
             className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"

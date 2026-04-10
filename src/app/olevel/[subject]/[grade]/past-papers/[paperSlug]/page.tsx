@@ -11,22 +11,6 @@ function formatGrade(slug: string): string {
   return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-/**
- * Converts a Google Drive file ID into a direct embed URL.
- * Drive file IDs look like: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
- */
-function driveToEmbedUrl(sourceUrl: string): string {
-  // If it's already a full URL, return as-is
-  if (sourceUrl.startsWith('http')) return sourceUrl;
-  // Otherwise treat it as a Google Drive file ID
-  return `https://drive.google.com/file/d/${sourceUrl}/preview`;
-}
-
-function driveToDownloadUrl(sourceUrl: string): string {
-  if (sourceUrl.startsWith('http')) return sourceUrl;
-  return `https://drive.google.com/uc?export=download&id=${sourceUrl}`;
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function PaperViewerPage({
@@ -67,8 +51,8 @@ export default async function PaperViewerPage({
   // Map DB solutions to the component's expected shape
   const solutionItems: ResourceSolution[] = solutions;
 
-  const pdfUrl = driveToEmbedUrl(paper.source_url);
-  const downloadUrl = driveToDownloadUrl(paper.source_url);
+  const pdfUrl = `/api/pdf/${paper.id}?inline=1`;
+  const downloadUrl = `/api/pdf/${paper.id}`;
 
   return (
     <div className="min-h-screen pt-24 pb-16">
