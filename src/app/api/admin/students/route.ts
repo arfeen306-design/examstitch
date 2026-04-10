@@ -52,6 +52,7 @@ export async function POST(request: Request) {
         full_name: full_name.trim(),
         email: email.trim().toLowerCase(),
         level,
+        role: 'student',
         password_hash,
         salt,
         is_active: true,
@@ -83,6 +84,14 @@ export async function PATCH(request: Request) {
     if (!body.id) return NextResponse.json({ error: 'Student ID is required.' }, { status: 400 });
 
     const supabase = createAdminClient();
+    const { data: account } = await supabase
+      .from('student_accounts')
+      .select('role')
+      .eq('id', body.id)
+      .single();
+    if (!account || account.role === 'admin') {
+      return NextResponse.json({ error: 'Only student accounts can be changed here.' }, { status: 403 });
+    }
 
     // Reset password
     if (body.reset_password) {
@@ -128,6 +137,14 @@ export async function DELETE(request: Request) {
     if (!id) return NextResponse.json({ error: 'Student ID is required.' }, { status: 400 });
 
     const supabase = createAdminClient();
+    const { data: account } = await supabase
+      .from('student_accounts')
+      .select('role')
+      .eq('id', id)
+      .single();
+    if (!account || account.role === 'admin') {
+      return NextResponse.json({ error: 'Only student accounts can be deleted here.' }, { status: 403 });
+    }
     const { error } = await supabase.from('student_accounts').delete().eq('id', id);
 
     if (error) return NextResponse.json({ error: 'Failed to delete student.' }, { status: 500 });

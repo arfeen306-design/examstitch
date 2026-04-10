@@ -10,6 +10,7 @@ export default async function AdminStudentsPage() {
   const { data: students, error } = await supabase
     .from('student_accounts')
     .select('*')
+    .order('role', { ascending: false })
     .order('created_at', { ascending: false });
 
   const rows = (students as StudentAccount[] | null) ?? [];

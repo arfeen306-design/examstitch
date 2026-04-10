@@ -14,6 +14,7 @@ interface NewStudent {
 
 export default function StudentsClient({ rows: initial, error }: { rows: StudentAccount[]; error?: string }) {
   const [rows, setRows] = useState(initial);
+  const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<NewStudent>({ full_name: '', email: '', level: '' });
   const [loading, setLoading] = useState(false);
@@ -24,8 +25,11 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
   const [showPasswords, setShowPasswords] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const active = rows.filter(r => r.is_active).length;
-  const inactive = rows.filter(r => !r.is_active).length;
+  const teacherRows = rows.filter((r) => r.role === 'admin');
+  const studentRows = rows.filter((r) => r.role !== 'admin');
+  const visibleRows = activeTab === 'students' ? studentRows : teacherRows;
+  const active = visibleRows.filter(r => r.is_active).length;
+  const inactive = visibleRows.filter(r => !r.is_active).length;
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -116,18 +120,46 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Student Accounts</h2>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Accounts Directory</h2>
           <p className="text-sm text-[var(--text-muted)]">
-            Create and manage login credentials for students.
+            View Teachers and Students separately with role-aware actions.
           </p>
         </div>
+        {activeTab === 'students' && (
+          <button
+            onClick={() => { setShowForm(!showForm); setCreatedPassword(''); }}
+            className="flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-lg text-[var(--text-primary)] transition-colors"
+            style={{ backgroundColor: '#FF6B35' }}
+          >
+            <Plus className="w-4 h-4" />
+            Add Student
+          </button>
+        )}
+      </div>
+
+      {/* Role Tabs */}
+      <div className="flex gap-1 p-1 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] w-fit">
         <button
-          onClick={() => { setShowForm(!showForm); setCreatedPassword(''); }}
-          className="flex items-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-lg text-[var(--text-primary)] transition-colors"
-          style={{ backgroundColor: '#FF6B35' }}
+          type="button"
+          onClick={() => { setActiveTab('students'); setShowForm(false); }}
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
+            activeTab === 'students'
+              ? 'bg-indigo-600 text-white'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          Add Student
+          Students ({studentRows.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => { setActiveTab('teachers'); setShowForm(false); }}
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
+            activeTab === 'teachers'
+              ? 'bg-indigo-600 text-white'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+          }`}
+        >
+          Teachers ({teacherRows.length})
         </button>
       </div>
 
@@ -170,7 +202,7 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
       )}
 
       {/* Create Form */}
-      {showForm && (
+      {showForm && activeTab === 'students' && (
         <form onSubmit={handleCreate} className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-6 space-y-4">
           <h3 className="text-lg font-semibold text-[var(--text-primary)]">New Student Account</h3>
           <p className="text-sm text-[var(--text-muted)]">A random password will be generated automatically.</p>
@@ -242,7 +274,9 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
 
       {/* Students table */}
       <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-[var(--border-subtle)]">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">All Students ({rows.length})</h3>
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+          {activeTab === 'students' ? `All Students (${studentRows.length})` : `All Teachers (${teacherRows.length})`}
+        </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border border-[var(--border-subtle)] rounded-lg">
             <thead className="text-xs uppercase bg-[var(--bg-surface)] text-[var(--text-muted)] sticky top-0">
@@ -257,13 +291,13 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)] bg-[var(--bg-card)]">
-              {rows.map(s => (
+              {visibleRows.map(s => (
                 <tr key={s.id} className="hover:bg-[var(--bg-elevated)] transition-colors">
                   <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{s.full_name}</td>
                   <td className="px-4 py-3 text-[var(--text-muted)] text-xs">{s.email}</td>
                   <td className="px-4 py-3">
                     <span className="bg-[var(--bg-elevated)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full text-xs font-semibold">
-                      {s.level}
+                      {s.role === 'admin' ? (s.is_super_admin ? 'Super Admin' : 'Teacher/Admin') : s.level}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -280,42 +314,48 @@ export default function StudentsClient({ rows: initial, error }: { rows: Student
                     {new Date(s.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      {showPasswords[s.id] && (
-                        <span className="font-mono text-xs text-green-700 bg-green-50 px-2 py-1 rounded mr-1">{showPasswords[s.id]}</span>
-                      )}
-                      <button
-                        onClick={() => resetPassword(s.id, s.full_name)}
-                        disabled={actionLoading === s.id}
-                        title="Reset password"
-                        className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors disabled:opacity-40"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => toggleActive(s.id, s.is_active)}
-                        disabled={actionLoading === s.id}
-                        title={s.is_active ? 'Disable account' : 'Enable account'}
-                        className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${s.is_active ? 'hover:bg-amber-50 text-amber-600' : 'hover:bg-green-50 text-green-600'}`}
-                      >
-                        {s.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => deleteStudent(s.id, s.full_name)}
-                        disabled={actionLoading === s.id}
-                        title="Delete"
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors disabled:opacity-40"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {s.role === 'admin' ? (
+                      <span className="text-xs text-[var(--text-muted)]">Manage in Super Admin panel</span>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1">
+                        {showPasswords[s.id] && (
+                          <span className="font-mono text-xs text-green-700 bg-green-50 px-2 py-1 rounded mr-1">{showPasswords[s.id]}</span>
+                        )}
+                        <button
+                          onClick={() => resetPassword(s.id, s.full_name)}
+                          disabled={actionLoading === s.id}
+                          title="Reset password"
+                          className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors disabled:opacity-40"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toggleActive(s.id, s.is_active)}
+                          disabled={actionLoading === s.id}
+                          title={s.is_active ? 'Disable account' : 'Enable account'}
+                          className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${s.is_active ? 'hover:bg-amber-50 text-amber-600' : 'hover:bg-green-50 text-green-600'}`}
+                        >
+                          {s.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => deleteStudent(s.id, s.full_name)}
+                          disabled={actionLoading === s.id}
+                          title="Delete"
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors disabled:opacity-40"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {visibleRows.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-[var(--text-muted)]">
-                    No student accounts yet. Click &quot;Add Student&quot; to create one.
+                    {activeTab === 'students'
+                      ? 'No student accounts yet. Click "Add Student" to create one.'
+                      : 'No teacher/admin accounts found.'}
                   </td>
                 </tr>
               )}
