@@ -144,6 +144,9 @@ export default function DualMediaViewer({
   const { embedUrl: videoEmbed } = toEmbedUrl(videoUrl);
   const { embedUrl: pdfEmbed } = toEmbedUrl(pdfUrl);
   const pdfDownload = toDownloadUrl(pdfUrl);
+  const fullViewerHref = resourceId
+    ? `/api/pdf/${resourceId}?mode=worksheet`
+    : (pdfDownload || pdfUrl);
 
   const [expanded, setExpanded] = useState<'video' | 'pdf' | null>(null);
 
@@ -167,15 +170,15 @@ export default function DualMediaViewer({
 
         {/* Expand controls */}
         <div className="flex items-center gap-1.5">
-          {resourceId && (
-            <Link
-              href={`/view/${resourceId}?mode=worksheet`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)]"
-            >
+          <a
+            href={fullViewerHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)]"
+          >
               <ExternalLink className="w-3 h-3" />
               Open full viewer
-            </Link>
-          )}
+          </a>
           <button
             onClick={() => setExpanded(expanded === 'video' ? null : 'video')}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
