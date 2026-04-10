@@ -40,12 +40,15 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=3600, stale-while-revalidate=86400' },
         ],
       },
-      // ── Page security headers ─────────────────────────────────────────────
-      // Applies to all routes. Binary endpoints (e.g. /api/pdf/*) set their
-      // own Content-Security-Policy and X-Frame-Options in the route handler,
-      // which override these defaults.
+      // API routes: do not attach full document CSP (Chrome can mis-handle PDF
+      // streams if default-src is applied). /api/pdf/* sets its own frame + type headers.
       {
-        source: '/(.*)',
+        source: '/api/:path*',
+        headers: [{ key: 'X-Content-Type-Options', value: 'nosniff' }],
+      },
+      // ── Page security headers (HTML pages only — excludes /api/*) ──────────
+      {
+        source: '/((?!api/).*)',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
@@ -58,10 +61,10 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://img.youtube.com https://drive.google.com https://lh3.googleusercontent.com https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com",
-              "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.supabase.co https://www.desmos.com https://www.symbolab.com https://docs.google.com",
+              "frame-src 'self' blob: data: https://examstitch.com https://www.examstitch.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://drive.google.com https://*.supabase.co https://www.desmos.com https://www.symbolab.com https://docs.google.com",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.youtube.com https://www.google-analytics.com https://www.googletagmanager.com",
-              "media-src 'self' https://*.supabase.co",
-              "object-src 'self' https://docs.google.com",
+              "media-src 'self' https://*.supabase.co blob:",
+              "object-src 'self' blob: https://docs.google.com",
               "frame-ancestors 'self'",
             ].join('; '),
           },

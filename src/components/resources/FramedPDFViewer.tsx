@@ -155,7 +155,7 @@ export default function FramedPDFViewer({
           {label}
         </span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {resolvedDownloadUrl && (
             <a
               href={resolvedDownloadUrl}
@@ -172,6 +172,17 @@ export default function FramedPDFViewer({
               Download
             </a>
           )}
+          <a
+            href={iframeSrc}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open PDF in a new browser tab: ${title}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1729]"
+            style={{ borderColor: 'rgba(99,102,241,0.35)', color: '#c7d2fe' }}
+          >
+            <ExternalLink className="w-3.5 h-3.5 shrink-0" aria-hidden />
+            Open in new tab
+          </a>
           <button
             type="button"
             onClick={handlePrint}
@@ -284,7 +295,10 @@ export default function FramedPDFViewer({
                 title={iframeAccessibleTitle}
                 className="w-full border-0"
                 style={{ minHeight, height: '100%' }}
-                sandbox="allow-same-origin allow-scripts"
+                // Same-origin /api/pdf: omit sandbox so Chrome’s PDF viewer can render (sandbox often blanks PDFs).
+                {...(resourceId
+                  ? {}
+                  : { sandbox: 'allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox' })}
                 referrerPolicy="no-referrer"
                 loading="lazy"
                 onLoad={handleIframeLoad}

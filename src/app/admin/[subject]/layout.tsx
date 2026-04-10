@@ -145,30 +145,30 @@ export default async function SubjectAdminLayout({
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 space-y-2 mt-auto">
+          {/* Footer — Theme / nav / sign-out stack */}
+          <div className="p-4 mt-auto flex flex-col gap-2 w-full">
             <div
               className="h-px mb-2"
               style={{ background: `linear-gradient(90deg, transparent, ${portal.accentColor}20, transparent)` }}
             />
-            <AdminThemeButton />
+            <AdminThemeButton tone="portal" />
             <Link
               href="/admin"
-              className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                         text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all rounded-xl
-                         border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.03]"
+              className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+                         text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.03]
+                         focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 focus-visible:ring-offset-2"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
               Back to Main
             </Link>
-            <form action={handleLogout}>
+            <form action={handleLogout} className="w-full">
               <button
                 type="submit"
-                className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                           text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all rounded-xl
-                           border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.03]"
+                className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+                           text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.03]
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 focus-visible:ring-offset-2"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 shrink-0" aria-hidden />
                 Sign Out
               </button>
             </form>

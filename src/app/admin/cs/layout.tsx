@@ -126,29 +126,29 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 space-y-2 mt-auto">
+          {/* Footer — Theme / nav / sign-out stack */}
+          <div className="p-4 mt-auto flex flex-col gap-2 w-full">
             <div className="h-px mb-2"
               style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.15), transparent)' }}
             />
-            <AdminThemeButton />
+            <AdminThemeButton tone="indigo" />
             <Link
               href="/admin"
-              className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                         text-[var(--text-muted)] hover:text-indigo-300 transition-all rounded-xl
-                         border border-white/[0.06] hover:border-indigo-500/20 hover:bg-indigo-500/5"
+              className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+                         text-[var(--text-muted)] hover:text-indigo-300 border border-white/[0.06] hover:border-indigo-500/25 hover:bg-indigo-500/5
+                         focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
               Back to Main
             </Link>
-            <form action={handleLogout}>
+            <form action={handleLogout} className="w-full">
               <button
                 type="submit"
-                className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                           text-[var(--text-muted)] hover:text-indigo-300 transition-all rounded-xl
-                           border border-white/[0.06] hover:border-indigo-500/20 hover:bg-indigo-500/5"
+                className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+                           text-[var(--text-muted)] hover:text-indigo-300 border border-white/[0.06] hover:border-indigo-500/25 hover:bg-indigo-500/5
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 shrink-0" aria-hidden />
                 Sign Out
               </button>
             </form>

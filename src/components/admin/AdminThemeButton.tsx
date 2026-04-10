@@ -27,10 +27,29 @@ const THEMES = [
   },
 ] as const;
 
-export default function AdminThemeButton() {
+/** Matches Sign Out / footer chrome per admin shell so Theme aligns visually. */
+const TRIGGER_VARIANTS = {
+  navy: `flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+          text-white/50 hover:text-white/85 border border-white/[0.08] hover:border-white/[0.18] hover:bg-white/[0.06]
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1120]`,
+  violet: `flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+           text-[var(--text-muted)] hover:text-violet-300 border border-white/[0.06] hover:border-violet-500/25 hover:bg-violet-500/5
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2`,
+  indigo: `flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+           text-[var(--text-muted)] hover:text-indigo-300 border border-white/[0.06] hover:border-indigo-500/25 hover:bg-indigo-500/5
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2`,
+  portal: `flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
+           text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.03]
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 focus-visible:ring-offset-2`,
+} as const;
+
+export type AdminSidebarTone = keyof typeof TRIGGER_VARIANTS;
+
+export default function AdminThemeButton({ tone = 'portal' }: { tone?: AdminSidebarTone }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
+  const triggerClass = TRIGGER_VARIANTS[tone];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -46,14 +65,13 @@ export default function AdminThemeButton() {
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-full">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium
-                   text-white/40 hover:text-violet-300 transition-all rounded-xl
-                   border border-white/[0.06] hover:border-violet-500/20 hover:bg-violet-500/5"
+        className={triggerClass}
       >
-        <Palette className="w-4 h-4" />
+        <Palette className="w-4 h-4 shrink-0" aria-hidden />
         Theme
       </button>
 

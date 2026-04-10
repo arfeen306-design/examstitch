@@ -219,7 +219,8 @@ export async function GET(
   }
 
   // ── 6. Stream response ─────────────────────────────────────────────────
-  const filename    = toFilename(resource.title);
+  const filename = toFilename(resource.title);
+  // Inline viewer: disposition must be inline + PDF MIME (Chrome embeds via iframe).
   const disposition = inline
     ? `inline; filename="${filename}"`
     : `attachment; filename="${filename}"`;
