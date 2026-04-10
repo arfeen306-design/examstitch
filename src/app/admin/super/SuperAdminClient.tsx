@@ -5,6 +5,7 @@ import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Shield } from 
 import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
+import TutorProfileManager from './TutorProfileManager';
 
 interface Subject {
   id: string;
@@ -17,8 +18,24 @@ interface Admin {
   id: string;
   email: string;
   full_name: string;
+  role: string;
   is_super_admin: boolean;
   managed_subjects: string[];
+  tutor_id: string | null;
+}
+
+interface TutorProfile {
+  id: string;
+  full_name: string;
+  slug: string;
+  thumbnail_url: string | null;
+  hook_intro: string | null;
+  detailed_bio: string | null;
+  video_intro_url: string | null;
+  video_demo_url: string | null;
+  specialties: string[];
+  locations: string[];
+  is_verified: boolean;
 }
 
 interface MediaWidgetItem {
@@ -51,18 +68,21 @@ function TabSkeleton() {
 export default function SuperAdminClient({
   subjects: initialSubjects,
   admins: initialAdmins,
+  tutors: initialTutors,
   mediaWidgets: initialMedia,
 }: {
   subjects: Subject[];
   admins: Admin[];
+  tutors: TutorProfile[];
   mediaWidgets: MediaWidgetItem[];
 }) {
-  const [tab, setTab] = useState<'subjects' | 'admins' | 'media'>('subjects');
+  const [tab, setTab] = useState<'subjects' | 'admins' | 'tutors' | 'media'>('subjects');
   const deferredTab = useDeferredValue(tab);
 
   const tabs = [
     { id: 'subjects' as const, label: 'Subject Factory', icon: '🏭' },
     { id: 'admins' as const, label: 'Admin Manager', icon: '👥' },
+    { id: 'tutors' as const, label: 'Tutor Profile', icon: '🎓' },
     { id: 'media' as const, label: 'Media Manager', icon: '🎬' },
   ];
 
@@ -95,6 +115,8 @@ export default function SuperAdminClient({
             <SubjectFactory subjects={initialSubjects} />
           ) : deferredTab === 'admins' ? (
             <AdminManager admins={initialAdmins} subjects={initialSubjects} />
+          ) : deferredTab === 'tutors' ? (
+            <TutorProfileManager tutors={initialTutors} admins={initialAdmins} />
           ) : (
             <MediaManager widgets={initialMedia} />
           )}

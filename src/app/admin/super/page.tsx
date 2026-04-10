@@ -64,9 +64,14 @@ export default async function SuperAdminPage() {
   // Fetch all admin accounts
   const { data: admins } = await supabase
     .from('student_accounts')
-    .select('id, email, full_name, role, is_super_admin, managed_subjects')
+    .select('id, email, full_name, role, is_super_admin, managed_subjects, tutor_id')
     .eq('role', 'admin')
     .order('email');
+
+  const { data: tutors } = await supabase
+    .from('tutors')
+    .select('*')
+    .order('created_at', { ascending: false });
 
   // Fetch all media widgets
   const { data: mediaWidgets } = await supabase
@@ -80,6 +85,7 @@ export default async function SuperAdminPage() {
   const resourceList = resources ?? [];
   const adminList = admins ?? [];
   const mediaList = mediaWidgets ?? [];
+  const tutorList = tutors ?? [];
 
   const totalResources = resourceList.length;
   const publishedResources = resourceList.filter(r => r.is_published).length;
@@ -153,8 +159,23 @@ export default async function SuperAdminPage() {
           id: a.id,
           email: a.email,
           full_name: a.full_name,
+          role: a.role,
           is_super_admin: a.is_super_admin,
           managed_subjects: (a.managed_subjects as string[]) ?? [],
+          tutor_id: (a as Record<string, unknown>).tutor_id as string | null,
+        }))}
+        tutors={tutorList.map((t) => ({
+          id: t.id,
+          full_name: t.full_name,
+          slug: t.slug,
+          thumbnail_url: t.thumbnail_url,
+          hook_intro: t.hook_intro,
+          detailed_bio: t.detailed_bio,
+          video_intro_url: t.video_intro_url,
+          video_demo_url: t.video_demo_url,
+          specialties: t.specialties ?? [],
+          locations: t.locations ?? [],
+          is_verified: t.is_verified,
         }))}
         mediaWidgets={mediaList.map(m => ({
           id: m.id,

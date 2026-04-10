@@ -143,6 +143,10 @@ export const mainNavItems = [
     href: '/digital-skills',
   },
   {
+    label: 'My Tutor',
+    href: '/tutors',
+  },
+  {
     label: 'Virtual Lab',
     href: '/stem',
   },

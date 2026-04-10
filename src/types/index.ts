@@ -84,3 +84,5 @@ export interface BlogPost {
   createdAt: string;
   updatedAt: string;
 }
+
+export type { TutorRecord, StudentAccountTutorAssignment, AppDatabaseTables } from './database';

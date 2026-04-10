@@ -187,6 +187,7 @@ export type Database = {
           is_active: boolean;
           is_super_admin: boolean;
           managed_subjects: string[];
+          tutor_id: string | null;
           created_at: string;
           last_login: string | null;
         };
@@ -221,6 +222,25 @@ export type Database = {
         };
         Insert: Omit<Database['public']['Tables']['media_widgets']['Row'], 'id' | 'created_at' | 'view_count'>;
         Update: Partial<Database['public']['Tables']['media_widgets']['Row']>;
+      };
+      tutors: {
+        Row: {
+          id: string;
+          full_name: string;
+          slug: string;
+          thumbnail_url: string | null;
+          hook_intro: string | null;
+          detailed_bio: string | null;
+          video_intro_url: string | null;
+          video_demo_url: string | null;
+          specialties: string[];
+          locations: string[];
+          is_verified: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['tutors']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['tutors']['Row']>;
       };
 
       // ── Digital Skills ──────────────────────────────────────────────
@@ -316,6 +336,7 @@ export type DemoBooking = Database['public']['Tables']['demo_bookings']['Row'];
 export type StudentAccount = Database['public']['Tables']['student_accounts']['Row'];
 export type UserProgress = Database['public']['Tables']['user_progress']['Row'];
 export type MediaWidget = Database['public']['Tables']['media_widgets']['Row'];
+export type Tutor = Database['public']['Tables']['tutors']['Row'];
 
 // ── Digital Skills ────────────────────────────────────────────────────────
 export type Skill = Database['public']['Tables']['skills']['Row'];
