@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { PlayCircle, Eye, Sparkles, X } from 'lucide-react';
 
@@ -87,11 +88,12 @@ function MarqueeCard({
         <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
           {videoId ? (
             <>
-              <img
+              <Image
                 src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
                 alt={widget.title}
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
+                fill
+                className="object-cover"
+                sizes="320px"
                 draggable={false}
               />
               <div

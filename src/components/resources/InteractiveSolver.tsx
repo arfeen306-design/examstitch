@@ -22,6 +22,7 @@ import {
   FileText, RotateCcw, Maximize2, Minimize2,
 } from 'lucide-react';
 import { toEmbedUrl } from '@/lib/url-transform';
+import { useViewTracking } from '@/hooks/useViewTracking';
 import VideoContainer from './VideoContainer';
 import FramedPDFViewer from './FramedPDFViewer';
 
@@ -379,6 +380,8 @@ export default function InteractiveSolver({
   backLabel,
   resourceId,
 }: InteractiveSolverProps) {
+  useViewTracking(resourceId);
+
   const { embedUrl: ytEmbedUrl } = toEmbedUrl(videoUrl);
   const { embedUrl: pdfEmbedUrl } = toEmbedUrl(pdfUrl);
 

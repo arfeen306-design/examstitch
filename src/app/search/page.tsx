@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Search, Play, FileText, BookOpen } from 'lucide-react';
 import { searchResourcesCategorised, getSuggestions } from '@/lib/supabase/queries';
 import type { Resource } from '@/lib/supabase/types';
+import { MODULE_TYPES, CONTENT_TYPES } from '@/lib/constants';
 
 
 // ── Result card ────────────────────────────────────────────────────────────────
@@ -14,8 +15,8 @@ type SearchResource = Resource & {
 };
 
 function ResultCard({ resource }: { resource: SearchResource }) {
-  const isVideo = resource.content_type === 'video';
-  const isPaper = resource.module_type === 'solved_past_paper';
+  const isVideo = resource.content_type === CONTENT_TYPES.VIDEO;
+  const isPaper = resource.module_type === MODULE_TYPES.SOLVED_PAST_PAPER;
   const hasWorksheet = !!resource.worksheet_url;
 
   return (

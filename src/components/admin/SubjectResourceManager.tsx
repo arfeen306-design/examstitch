@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
+import { MODULE_TYPES } from '@/lib/constants';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -206,7 +207,7 @@ export default function SubjectResourceManager({
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [newRes, setNewRes] = useState({
     title: '', source_url: '', worksheet_url: '', content_type: 'video' as 'video' | 'pdf' | 'worksheet',
-    category_id: '', module_type: '' as '' | 'video_topical' | 'solved_past_paper',
+    category_id: '', module_type: '' as '' | typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
   });
 
   // Fetch categories for this subject on first open
@@ -398,7 +399,7 @@ export default function SubjectResourceManager({
           worksheet_url: subtopicState.worksheetUrl || null,
           source_type: subtopicState.videoUrl.includes('youtu') ? 'youtube' : 'google_drive',
           content_type: subtopicState.videoUrl ? 'video' : 'pdf',
-          module_type: 'video_topical',
+          module_type: MODULE_TYPES.VIDEO_TOPICAL,
           is_published: true,
           is_locked: false,
           is_watermarked: false,
@@ -523,11 +524,11 @@ export default function SubjectResourceManager({
           {/* Module Type */}
           <td className="w-28 px-3 py-2.5">
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${
-              r.module_type === 'solved_past_paper'
+              r.module_type === MODULE_TYPES.SOLVED_PAST_PAPER
                 ? 'bg-blue-500/15 text-blue-300'
                 : 'bg-amber-500/15 text-amber-300'
             }`}>
-              {r.module_type === 'solved_past_paper' ? 'Past Paper' : 'Video Topical'}
+              {r.module_type === MODULE_TYPES.SOLVED_PAST_PAPER ? 'Past Paper' : 'Video Topical'}
             </span>
           </td>
 
@@ -727,8 +728,8 @@ export default function SubjectResourceManager({
             <div className="flex rounded-lg border border-[var(--border-color)] overflow-hidden">
               {[
                 { value: 'all', label: 'All Types' },
-                { value: 'video_topical', label: 'Video Topical' },
-                { value: 'solved_past_paper', label: 'Past Papers' },
+                { value: MODULE_TYPES.VIDEO_TOPICAL, label: 'Video Topical' },
+                { value: MODULE_TYPES.SOLVED_PAST_PAPER, label: 'Past Papers' },
               ].map(opt => (
                 <button
                   key={opt.value}
@@ -830,8 +831,8 @@ export default function SubjectResourceManager({
                 className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
               >
                 <option value="">Module type (optional)</option>
-                <option value="video_topical">Video Topical</option>
-                <option value="solved_past_paper">Solved Past Paper</option>
+                <option value={MODULE_TYPES.VIDEO_TOPICAL}>Video Topical</option>
+                <option value={MODULE_TYPES.SOLVED_PAST_PAPER}>Solved Past Paper</option>
               </select>
             )}
           </div>

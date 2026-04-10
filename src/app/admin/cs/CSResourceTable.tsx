@@ -8,6 +8,7 @@ import {
 import { deleteCSResource, createCSResource, toggleCSResourceFlag, updateCSResource } from './actions';
 import { updateResourceTimestamps } from '@/app/admin/shared/actions';
 import { useToast } from '@/components/ui/Toast';
+import { MODULE_TYPES as MT } from '@/lib/constants';
 import { MODULE_TYPES, getModuleTypeLabel } from '@/config/taxonomy';
 import HierarchyPicker, { type HierarchySelection } from '@/components/admin/HierarchyPicker';
 import VideoMapperModal from '@/components/admin/VideoMapperModal';
@@ -289,7 +290,7 @@ export default function CSResourceTable({
                     {/* Module type */}
                     <td className="py-3 pr-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        r.module_type === 'solved_past_paper'
+                        r.module_type === MT.SOLVED_PAST_PAPER
                           ? 'bg-amber-500/15 text-amber-400'
                           : 'bg-blue-500/15 text-blue-400'
                       }`}>

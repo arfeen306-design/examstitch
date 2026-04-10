@@ -11,6 +11,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
+import { useViewTracking } from '@/hooks/useViewTracking';
 import FramedPDFViewer from './FramedPDFViewer';
 
 declare global {
@@ -137,6 +138,8 @@ export default function DualMediaViewer({
   backLabel,
   resourceId,
 }: DualMediaViewerProps) {
+  useViewTracking(resourceId);
+
   const { embedUrl: videoEmbed } = toEmbedUrl(videoUrl);
   const { embedUrl: pdfEmbed } = toEmbedUrl(pdfUrl);
   const pdfDownload = toDownloadUrl(pdfUrl);

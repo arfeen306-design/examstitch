@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { MODULE_TYPES } from '@/lib/constants';
 import { BarChart3, FileText, Video, TrendingUp, BookOpen, FolderOpen } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -37,8 +38,8 @@ export default async function CSAnalyticsPage() {
   const otherCount = total - pdfCount - videoCount - worksheetCount;
 
   // Module type breakdown
-  const videoLectureCount = csResources.filter(r => r.module_type === 'video_topical').length;
-  const solvedPaperCount = csResources.filter(r => r.module_type === 'solved_past_paper').length;
+  const videoLectureCount = csResources.filter(r => r.module_type === MODULE_TYPES.VIDEO_TOPICAL).length;
+  const solvedPaperCount = csResources.filter(r => r.module_type === MODULE_TYPES.SOLVED_PAST_PAPER).length;
 
   // Category breakdown
   const categoryMap = new Map<string, number>();

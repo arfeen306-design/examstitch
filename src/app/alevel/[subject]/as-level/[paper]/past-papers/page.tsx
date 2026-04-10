@@ -7,6 +7,7 @@ import type { Resource } from '@/lib/supabase/types';
 import type { ResourceItem } from '@/components/resources/ResourceGrid';
 import { aLevelPapers, aLevelPapersBySubject, getSubjectLabel } from '@/config/navigation';
 import { isAdminRequest } from '@/lib/admin-mode';
+import { CONTENT_TYPES, MODULE_TYPES } from '@/lib/constants';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -72,7 +73,7 @@ async function PastPapersGrid({
       );
     }
 
-    const resources = await getResourcesByCategory(category.id, 'pdf', 'solved_past_paper');
+    const resources = await getResourcesByCategory(category.id, CONTENT_TYPES.PDF, MODULE_TYPES.SOLVED_PAST_PAPER);
     const items: ResourceItem[] = resources.map((r) => toResourceItem(r, basePath, isAdminRequest()));
 
     return (

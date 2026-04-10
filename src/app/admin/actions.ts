@@ -5,7 +5,8 @@ import { getAdminSession } from '@/lib/supabase/guards';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { isValidModuleType } from '@/config/taxonomy';
-import { validateCategorySlug } from '@/lib/supabase/validate-category-slug';
+import { MODULE_TYPES } from '@/lib/constants';
+import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
@@ -51,7 +52,7 @@ const ResourceSchema = z.object({
   category_id: z.string().uuid('Invalid category ID').optional(),
   description: z.string().max(2000).optional(),
   topic: z.string().max(200).optional(),
-  module_type: z.enum(['video_topical', 'solved_past_paper']).optional(),
+  module_type: z.enum([MODULE_TYPES.VIDEO_TOPICAL, MODULE_TYPES.SOLVED_PAST_PAPER]).optional(),
   worksheet_url: z
     .string()
     .regex(ALLOWED_URL, 'Must be a YouTube or Google Drive URL')
@@ -114,7 +115,7 @@ export async function bulkInsertResources(resources: unknown[]) {
     if (res.module_type && !isValidModuleType(res.module_type)) {
       return {
         success: false,
-        error: `Invalid module_type "${res.module_type}". Must be "video_topical" or "solved_past_paper".`,
+        error: `Invalid module_type "${res.module_type}". Must be "${MODULE_TYPES.VIDEO_TOPICAL}" or "${MODULE_TYPES.SOLVED_PAST_PAPER}".`,
       };
     }
   }
@@ -202,36 +203,70 @@ export async function updateResource(id: string, updates: { title?: string; sour
   return { success: true };
 }
 
+function normalizeCategorySlug(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, '-');
+}
+
 export async function createCategory(payload: {
   name: string;
   slug: string;
   subject_id: string;
-  level?: 'olevel' | 'alevel';
   parent_id?: string | null;
 }) {
-  // Validate slug format before inserting.
-  // Determine the slug type: if parent_id points to an A-Level section, it's a paper.
-  // If no level hint is provided, infer from the slug pattern.
-  const level = payload.level
-    ?? (payload.slug.startsWith('grade-') ? 'olevel' as const : 'alevel' as const);
-
-  const type = payload.parent_id ? 'paper' as const
-    : (payload.slug === 'as-level' || payload.slug === 'a2-level') ? 'section' as const
-    : undefined;
-
-  const validation = validateCategorySlug(payload.slug, level, type);
-  if (!validation.valid) {
-    return {
-      success: false,
-      error: `Invalid slug format: ${validation.error}${validation.expected ? ` Expected: ${validation.expected}` : ''}`,
-    };
-  }
-
   const supabase = createAdminClient();
 
+  if (!payload.name.trim() || !payload.slug.trim()) {
+    return { success: false, error: 'Name and slug are required.' };
+  }
+
+  const normalizedSlug = normalizeCategorySlug(payload.slug);
+
+  const { data: subjectRow, error: subjectErr } = await supabase
+    .from('subjects')
+    .select('slug')
+    .eq('id', payload.subject_id)
+    .single();
+
+  if (subjectErr || !subjectRow?.slug) {
+    return { success: false, error: 'Subject not found for category.' };
+  }
+
+  let parentCategorySlug: string | null = null;
+  if (payload.parent_id) {
+    const { data: parentCat, error: parentErr } = await supabase
+      .from('categories')
+      .select('slug')
+      .eq('id', payload.parent_id)
+      .single();
+    if (parentErr || !parentCat?.slug) {
+      return { success: false, error: 'Parent category not found.' };
+    }
+    parentCategorySlug = parentCat.slug;
+  }
+
+  const policyError = validateCategorySlugAgainstNavigation({
+    normalizedSlug,
+    parentSubjectSlug: subjectRow.slug,
+    parentCategorySlug,
+  });
+  if (policyError) {
+    return { success: false, error: policyError };
+  }
+
+  const { data: existing } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('subject_id', payload.subject_id)
+    .eq('slug', normalizedSlug)
+    .maybeSingle();
+
+  if (existing) {
+    return { success: false, error: `Slug "${normalizedSlug}" already exists for this subject.` };
+  }
+
   const { error } = await supabase.from('categories').insert([{
-    name: payload.name,
-    slug: payload.slug,
+    name: payload.name.trim(),
+    slug: normalizedSlug,
     subject_id: payload.subject_id,
     parent_id: payload.parent_id ?? null,
     sort_order: 99,
@@ -242,8 +277,9 @@ export async function createCategory(payload: {
     return { success: false, error: error.message };
   }
 
+  revalidateTag('categories');
   revalidatePath('/admin/categories');
-  revalidatePath('/', 'layout'); // Extreme cache flush for dynamic taxonomy
+  revalidatePath('/', 'layout');
   return { success: true };
 }
 
@@ -283,8 +319,10 @@ export async function deleteCategoryWithAction(categoryId: string, action: 'casc
   }
   
   // Revalidate ALL paths since category hierarchy changed
+  revalidateTag('categories');
+  revalidateTag('resources');
   revalidatePath('/', 'layout');
-  
+
   return { success: true };
 }
 
@@ -312,6 +350,7 @@ export async function createBlogPost(formData: FormData) {
     return { success: false, error: error.message };
   }
 
+  revalidateTag('blog');
   revalidatePath('/admin/blog');
   revalidatePath('/');
 
@@ -331,6 +370,7 @@ export async function deleteBlogPost(id: string) {
     return { success: false, error: error.message };
   }
 
+  revalidateTag('blog');
   revalidatePath('/admin/blog');
   revalidatePath('/');
 

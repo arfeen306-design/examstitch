@@ -110,12 +110,15 @@ export async function middleware(request: NextRequest) {
 
     // ── Generic subject isolation ──────────────────────────────────────────
     // Non-super admins can only access their assigned subject portals.
-    // The admin_subjects cookie is a comma-separated list of subject slugs
-    // (e.g. "computer-science-0478,physics-5054"), set at login time.
-    // Subject portal routes follow the pattern /admin/<subject-key>/*.
+    // `admin_subjects` (set in api/admin/login) contains comma-separated slugs from
+    // public.subjects.slug (e.g. maths, computer-science) and/or subject_papers.slug
+    // (e.g. mathematics-4024). See supabase/migrations/012_multi_subject.sql and
+    // src/config/admin-portals.ts (dbSubjectSlugs + subjectPaperSlugPrefixes).
     if (landing !== 'super') {
       const subjectsCookie = request.cookies.get('admin_subjects')?.value ?? '';
-      const assignedSlugs = subjectsCookie ? subjectsCookie.split(',') : [];
+      const assignedSlugs = subjectsCookie
+        ? subjectsCookie.split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
       const allowedRoutes = getAllowedRouteSegments(assignedSlugs);
 
       // Check subject portal routes: /admin/cs, /admin/physics, etc.

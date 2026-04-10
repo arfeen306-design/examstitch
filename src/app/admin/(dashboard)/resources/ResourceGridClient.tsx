@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import NewResourceModal from './NewResourceModal';
 import { useToast } from '@/components/ui/Toast';
+import { MODULE_TYPES } from '@/lib/constants';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -315,7 +316,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           worksheet_url: subtopicState.worksheetUrl || null,
           source_type: subtopicState.videoUrl.includes('youtu') ? 'youtube' : 'google_drive',
           content_type: subtopicState.videoUrl ? 'video' : 'pdf',
-          module_type: 'video_topical',
+          module_type: MODULE_TYPES.VIDEO_TOPICAL,
           is_published: true,
           is_locked: false,
           is_watermarked: false,
@@ -458,11 +459,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           {/* Module Type */}
           <td className="w-28 px-3 py-2.5">
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${
-              r.module_type === 'solved_past_paper'
+              r.module_type === MODULE_TYPES.SOLVED_PAST_PAPER
                 ? 'bg-blue-500/15 text-blue-300'
                 : 'bg-amber-500/15 text-amber-300'
             }`}>
-              {r.module_type === 'solved_past_paper' ? 'Past Paper' : 'Video Topical'}
+              {r.module_type === MODULE_TYPES.SOLVED_PAST_PAPER ? 'Past Paper' : 'Video Topical'}
             </span>
           </td>
 
@@ -703,8 +704,8 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           <div className="flex rounded-lg border border-[var(--border-color)] overflow-hidden">
             {[
               { value: 'all', label: 'All Types' },
-              { value: 'video_topical', label: 'Video Topical' },
-              { value: 'solved_past_paper', label: 'Past Papers' },
+              { value: MODULE_TYPES.VIDEO_TOPICAL, label: 'Video Topical' },
+              { value: MODULE_TYPES.SOLVED_PAST_PAPER, label: 'Past Papers' },
             ].map(opt => (
               <button
                 key={opt.value}

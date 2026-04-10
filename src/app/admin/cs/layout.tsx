@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Database, BarChart3, LogOut, ArrowLeft, Monitor, Terminal, Palette } from 'lucide-react';
+import { Database, BarChart3, LogOut, ArrowLeft, Monitor, Terminal, Palette, Upload } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -39,6 +39,7 @@ export default async function CSAdminLayout({ children }: { children: React.Reac
 
   const navItems = [
     { label: 'CS Resources', href: '/admin/cs', icon: Database },
+    { label: 'Bulk Upload', href: '/admin/cs/bulk-upload', icon: Upload },
     { label: 'CS Analytics', href: '/admin/cs/analytics', icon: BarChart3 },
   ];
 

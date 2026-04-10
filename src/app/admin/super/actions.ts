@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { ALL_SUBJECTS } from '@/config/subjects';
 
 export async function createSubject(payload: { name: string; slug: string; levels: string[] }) {
@@ -28,7 +28,10 @@ export async function createSubject(payload: { name: string; slug: string; level
 
   if (error) return { success: false, error: error.message };
 
+  revalidateTag('subjects');
   revalidatePath('/admin/super');
+  revalidatePath('/olevel', 'page');
+  revalidatePath('/alevel', 'page');
   return { success: true };
 }
 

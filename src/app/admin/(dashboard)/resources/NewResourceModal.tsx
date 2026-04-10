@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { X, PlayCircle, FileText, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
+import { MODULE_TYPES, CONTENT_TYPES } from '@/lib/constants';
 
 interface SubjectRow {
   id: string;
@@ -18,7 +19,7 @@ interface Category {
   subject_id: string;
 }
 
-type ModuleType = 'video_topical' | 'solved_past_paper';
+type ModuleType = typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
 
 const SESSION_OPTIONS = [
   { value: 'mj', label: 'May/June' },
@@ -48,7 +49,7 @@ export default function NewResourceModal({
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const { showToast } = useToast();
-  const [moduleType, setModuleType] = useState<ModuleType>('video_topical');
+  const [moduleType, setModuleType] = useState<ModuleType>(MODULE_TYPES.VIDEO_TOPICAL);
   const [keepOpen, setKeepOpen] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -122,7 +123,7 @@ export default function NewResourceModal({
       return /^https?:\/\/(drive\.google\.com|youtu\.be|www\.youtube\.com)\/.+/.test(url);
     };
 
-    const richTitle = moduleType === 'solved_past_paper'
+    const richTitle = moduleType === MODULE_TYPES.SOLVED_PAST_PAPER
       ? generateDisplayTitle(formData.session, formData.year, formData.variant)
       : formData.title;
 
@@ -133,7 +134,7 @@ export default function NewResourceModal({
     const subjectSlug = selectedSubject?.slug ?? '';
     const subjectId = formData.subject_id;
 
-    if (moduleType === 'video_topical') {
+    if (moduleType === MODULE_TYPES.VIDEO_TOPICAL) {
       // Must have at least a video URL
       if (!formData.video_url) {
         showToast({ message: 'Please provide a YouTube Video link.', type: 'error' });
@@ -159,8 +160,8 @@ export default function NewResourceModal({
         source_url: formData.video_url,
         worksheet_url: formData.worksheet_url || null,
         source_type: 'youtube',
-        content_type: 'video',
-        module_type: 'video_topical',
+        content_type: CONTENT_TYPES.VIDEO,
+        module_type: MODULE_TYPES.VIDEO_TOPICAL,
         is_published: true,
         is_locked: false,
         is_watermarked: false,
@@ -192,8 +193,8 @@ export default function NewResourceModal({
           source_url: formData.video_url,
           worksheet_url: formData.solution_url,
           source_type: 'youtube',
-          content_type: 'video',
-          module_type: 'solved_past_paper',
+          content_type: CONTENT_TYPES.VIDEO,
+          module_type: MODULE_TYPES.SOLVED_PAST_PAPER,
           is_published: true,
           is_locked: false,
           is_watermarked: false,
@@ -206,8 +207,8 @@ export default function NewResourceModal({
           category_id: formData.category_id,
           source_url: formData.solution_url,
           source_type: 'google_drive',
-          content_type: 'pdf',
-          module_type: 'solved_past_paper',
+          content_type: CONTENT_TYPES.PDF,
+          module_type: MODULE_TYPES.SOLVED_PAST_PAPER,
           is_published: true,
           is_locked: false,
           is_watermarked: false,
@@ -261,9 +262,9 @@ export default function NewResourceModal({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setModuleType('video_topical')}
+                onClick={() => setModuleType(MODULE_TYPES.VIDEO_TOPICAL)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-                  moduleType === 'video_topical'
+                  moduleType === MODULE_TYPES.VIDEO_TOPICAL
                     ? 'border-red-500/50 bg-red-500/10 text-red-300'
                     : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--border-color)]'
                 }`}
@@ -276,9 +277,9 @@ export default function NewResourceModal({
               </button>
               <button
                 type="button"
-                onClick={() => setModuleType('solved_past_paper')}
+                onClick={() => setModuleType(MODULE_TYPES.SOLVED_PAST_PAPER)}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-                  moduleType === 'solved_past_paper'
+                  moduleType === MODULE_TYPES.SOLVED_PAST_PAPER
                     ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
                     : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--border-color)]'
                 }`}
@@ -294,7 +295,7 @@ export default function NewResourceModal({
 
           <div className="grid grid-cols-2 gap-4">
             {/* ── Title section: Topic Name for videos, Session/Year/Variant for past papers ── */}
-            {moduleType === 'video_topical' ? (
+            {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? (
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Topic Name</label>
                 <input
@@ -385,11 +386,11 @@ export default function NewResourceModal({
             {/* Dynamic Link Inputs */}
             <div className="col-span-2 pt-2 border-t border-[var(--border-subtle)]">
               <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
-                {moduleType === 'video_topical' ? 'Resource Links' : 'PDF Solution Link'}
+                {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? 'Resource Links' : 'PDF Solution Link'}
               </label>
-              
+
               <div className="space-y-3">
-                {moduleType === 'video_topical' ? (
+                {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? (
                   <>
                     <div>
                       <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Link *</label>
@@ -431,7 +432,7 @@ export default function NewResourceModal({
             <div className="flex gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-card)] rounded-lg transition">Cancel</button>
               <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700">
-                {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === 'video_topical' ? 'Link Video + Topical' : 'Link Past Paper'}
+                {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === MODULE_TYPES.VIDEO_TOPICAL ? 'Link Video + Topical' : 'Link Past Paper'}
               </button>
             </div>
           </div>

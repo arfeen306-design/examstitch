@@ -3,6 +3,7 @@ import nextDynamic from 'next/dynamic';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { MODULE_TYPES } from '@/lib/constants';
 import PremiumGate from '@/components/resources/PremiumGate';
 import type { QuestionMapping } from '@/components/resources/InteractiveSolver';
 import type { Metadata } from 'next';
@@ -60,7 +61,7 @@ function buildBackPath(resource: any): { href: string; label: string } {
   const subjectSlug = category.subjects?.slug || resource.subject || 'mathematics-9709';
   const categorySlug = category.slug || '';
 
-  const section = resource.module_type === 'solved_past_paper' ? 'past-papers' : 'video-lectures';
+  const section = resource.module_type === MODULE_TYPES.SOLVED_PAST_PAPER ? 'past-papers' : 'video-lectures';
 
   if (categorySlug.startsWith('paper-')) {
     const paperNum = parseInt(categorySlug.match(/paper-(\d+)/)?.[1] || '1');

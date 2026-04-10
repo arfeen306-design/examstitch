@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath, revalidateTag } from 'next/cache';
+import { MODULE_TYPES } from '@/lib/constants';
 
 async function getCSSubjectId(): Promise<string | null> {
   const supabase = createAdminClient();
@@ -62,16 +63,16 @@ export async function createCSResource(payload: {
   source_url: string;
   topic?: string;
   category_id: string;
-  module_type?: 'video_topical' | 'solved_past_paper';
+  module_type?: typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
 }) {
   const csId = await getCSSubjectId();
   if (!csId) return { success: false, error: 'CS subject not configured.' };
 
   // Validate module_type
-  const validModuleTypes = ['video_topical', 'solved_past_paper'] as const;
+  const validModuleTypes = [MODULE_TYPES.VIDEO_TOPICAL, MODULE_TYPES.SOLVED_PAST_PAPER] as const;
   const moduleType = payload.module_type && validModuleTypes.includes(payload.module_type)
     ? payload.module_type
-    : 'video_topical';
+    : MODULE_TYPES.VIDEO_TOPICAL;
 
   const supabase = createAdminClient();
 

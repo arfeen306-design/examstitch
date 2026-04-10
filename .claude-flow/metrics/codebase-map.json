@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-04-09T18:28:04.094Z",
+  "projectRoot": "/Users/arfeen306/Desktop/examstitch.com",
+  "structure": {
+    "hasPackageJson": true,
+    "hasTsConfig": true,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1775759284094
+}

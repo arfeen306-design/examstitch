@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, Clock, ArrowRight, Megaphone, Download, ExternalLink } from 'lucide-react';
+import { isNextConfiguredRemoteImageUrl } from '@/lib/remote-image';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import MediaSection from '@/components/media/MediaSection';
@@ -135,12 +137,15 @@ export default async function BlogPage() {
 
                   {post.image_url && (
                     <div className="mt-4">
-                      <img
+                      <Image
                         src={post.image_url}
                         alt={post.title}
+                        width={1200}
+                        height={675}
                         className="w-full rounded-xl object-contain max-h-[600px] border"
                         style={{ borderColor: 'var(--border-subtle)' }}
-                        loading="lazy"
+                        sizes="(max-width: 1024px) 100vw, 896px"
+                        unoptimized={!isNextConfiguredRemoteImageUrl(post.image_url)}
                       />
                       <a
                         href={post.image_url}

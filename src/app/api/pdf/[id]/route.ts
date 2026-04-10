@@ -20,6 +20,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient }      from '@/lib/supabase/server';
 import { applyWatermark }    from '@/lib/pdf/watermark';
+import {
+  parseSupabaseStorageObjectUrl,
+  STORAGE_SIGNED_URL_TTL_SEC,
+} from '@/lib/supabase/storage-object-url';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -39,6 +43,93 @@ function toFilename(title: string): string {
       .replace(/^_|_$/g, '')
       .slice(0, 80) + '.pdf'
   );
+}
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/**
+ * Load PDF bytes from Supabase Storage (service role) or via HTTP (Drive / signed URL fallback).
+ * Private buckets fail plain `fetch(publicUrl)` — use storage.download / createSignedUrl first.
+ */
+async function loadPdfBytes(
+  adminClient: AdminClient,
+  pdfUrl: string,
+): Promise<
+  | { ok: true; buffer: ArrayBuffer; sourceContentType: string }
+  | { ok: false; message: string; status: number }
+> {
+  const parsed = parseSupabaseStorageObjectUrl(pdfUrl);
+  if (parsed) {
+    const { data: blob, error: dlErr } = await adminClient.storage
+      .from(parsed.bucket)
+      .download(parsed.objectPath);
+
+    if (!dlErr && blob) {
+      const buffer = await blob.arrayBuffer();
+      return { ok: true, buffer, sourceContentType: 'application/pdf' };
+    }
+
+    const { data: signed, error: signErr } = await adminClient.storage
+      .from(parsed.bucket)
+      .createSignedUrl(parsed.objectPath, STORAGE_SIGNED_URL_TTL_SEC);
+
+    if (!signErr && signed?.signedUrl) {
+      try {
+        const res = await fetch(signed.signedUrl, { cache: 'no-store', redirect: 'follow' });
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const ct = res.headers.get('content-type') || 'application/pdf';
+          return { ok: true, buffer, sourceContentType: ct };
+        }
+        return {
+          ok: false,
+          message: `PDF storage returned ${res.status}.`,
+          status: 502,
+        };
+      } catch {
+        return { ok: false, message: 'Failed to fetch signed PDF URL.', status: 502 };
+      }
+    }
+
+    const detail = dlErr?.message || signErr?.message || 'Could not access file in storage.';
+    return { ok: false, message: detail, status: 502 };
+  }
+
+  let fetchUrl = pdfUrl;
+  const driveFileMatch = pdfUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  const driveOpenMatch = pdfUrl.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  const driveId = driveFileMatch?.[1] || driveOpenMatch?.[1];
+  if (driveId) {
+    fetchUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+  }
+
+  let pdfResponse: Response;
+  try {
+    pdfResponse = await fetch(fetchUrl, { cache: 'no-store', redirect: 'follow' });
+  } catch {
+    return { ok: false, message: 'Failed to fetch the PDF source.', status: 502 };
+  }
+
+  if (!pdfResponse.ok) {
+    return {
+      ok: false,
+      message: `PDF source returned ${pdfResponse.status}. The file may have moved or its sharing permissions need to be set to "Anyone with the link."`,
+      status: 502,
+    };
+  }
+
+  const contentType = pdfResponse.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    return {
+      ok: false,
+      message:
+        'The PDF source returned an HTML page instead of a PDF. Please check the file\'s sharing permissions in Google Drive — set to "Anyone with the link can view."',
+      status: 502,
+    };
+  }
+
+  const buffer = await pdfResponse.arrayBuffer();
+  return { ok: true, buffer, sourceContentType: contentType || 'application/pdf' };
 }
 
 // ── Route Handler ──────────────────────────────────────────────────────────
@@ -89,47 +180,25 @@ export async function GET(
   }
 
   // ── 3. Resolve the PDF URL ─────────────────────────────────────────────
-  // Always prefer worksheet_url when it exists (covers video+PDF dual-media)
-  const pdfUrl = resource.worksheet_url || resource.source_url;
+  const pdfUrl = forceWorksheet
+    ? resource.worksheet_url
+    : (resource.worksheet_url || resource.source_url);
 
   if (!pdfUrl) {
-    return errorResponse('No PDF available for this resource.', 404);
-  }
-
-  // ── 4. Fetch raw PDF bytes ─────────────────────────────────────────────
-  // Convert Google Drive sharing URLs to direct download format
-  let fetchUrl = pdfUrl;
-  const driveFileMatch = pdfUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  const driveOpenMatch = pdfUrl.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  const driveId = driveFileMatch?.[1] || driveOpenMatch?.[1];
-  if (driveId) {
-    fetchUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
-  }
-
-  let pdfResponse: Response;
-  try {
-    pdfResponse = await fetch(fetchUrl, { cache: 'no-store', redirect: 'follow' });
-  } catch {
-    return errorResponse('Failed to fetch the PDF source.', 502);
-  }
-
-  if (!pdfResponse.ok) {
     return errorResponse(
-      `PDF source returned ${pdfResponse.status}. The file may have moved or its sharing permissions need to be set to "Anyone with the link."`,
-      502,
+      forceWorksheet
+        ? 'No worksheet PDF is attached to this resource.'
+        : 'No PDF available for this resource.',
+      404,
     );
   }
 
-  // Verify we got a PDF, not an HTML error page
-  const contentType = pdfResponse.headers.get('content-type') || '';
-  if (contentType.includes('text/html')) {
-    return errorResponse(
-      'The PDF source returned an HTML page instead of a PDF. Please check the file\'s sharing permissions in Google Drive — set to "Anyone with the link can view."',
-      502,
-    );
+  // ── 4. Fetch raw PDF bytes (Supabase Storage via admin client or HTTP) ──
+  const loaded = await loadPdfBytes(adminClient, pdfUrl);
+  if (!loaded.ok) {
+    return errorResponse(loaded.message, loaded.status);
   }
-
-  const rawBuffer = await pdfResponse.arrayBuffer();
+  const rawBuffer = loaded.buffer;
 
   // ── 5. Watermark if required ───────────────────────────────────────────
   // Watermark is applied when either flag is true:

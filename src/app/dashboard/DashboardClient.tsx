@@ -35,12 +35,27 @@ interface UnlockedSkill {
   description: string | null;
 }
 
+interface SubjectProgress {
+  subjectName: string;
+  subjectSlug: string;
+  viewed: number;
+  total: number;
+}
+
+interface RecommendedResource {
+  id: string;
+  title: string;
+  categoryName: string;
+}
+
 interface DashboardProps {
   studentName: string;
   studentLevel: string;
   progress: ProgressItem[];
   totalResources: number;
   unlockedSkills: UnlockedSkill[];
+  subjectProgress?: SubjectProgress[];
+  recommended?: RecommendedResource[];
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -199,6 +214,8 @@ export default function DashboardClient({
   progress,
   totalResources,
   unlockedSkills,
+  subjectProgress = [],
+  recommended = [],
 }: DashboardProps) {
   const [quoteIdx, setQuoteIdx] = useState(0);
   const [greeting, setGreeting] = useState('Welcome');
@@ -464,6 +481,94 @@ export default function DashboardClient({
                     Explore Resources <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </motion.div>
+              )}
+            </motion.div>
+
+            {/* Subject Progress Breakdown */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+            >
+              <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
+                <Target className="w-5 h-5 text-violet-400" /> Subject Progress
+              </h2>
+
+              {subjectProgress.length > 0 ? (
+                <div className="space-y-3">
+                  {subjectProgress.map((sp, idx) => {
+                    const pct = sp.total > 0 ? Math.round((sp.viewed / sp.total) * 100) : 0;
+                    return (
+                      <motion.div
+                        key={sp.subjectSlug || idx}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 1 + idx * 0.1 }}
+                        className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.03]"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-semibold text-white/90">{sp.subjectName}</span>
+                          <span className="text-xs font-bold text-white/50">{sp.viewed} / {sp.total}</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 1, ease: 'easeOut', delay: 1.2 + idx * 0.1 }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-white/30 mt-1">{pct}% complete</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-white/10 p-8 text-center">
+                  <p className="text-white/30 text-xs">No subject progress yet — start learning!</p>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Recommended Next */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1 }}
+            >
+              <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
+                <Rocket className="w-5 h-5 text-emerald-400" /> Recommended Next
+              </h2>
+
+              {recommended.length > 0 ? (
+                <div className="space-y-2">
+                  {recommended.map((r, idx) => (
+                    <motion.div
+                      key={r.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 1.2 + idx * 0.1 }}
+                    >
+                      <Link
+                        href={`/view/${r.id}`}
+                        className="group flex items-center gap-3 p-3 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] hover:border-emerald-500/30 transition-all duration-300"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                          <Play className="w-3.5 h-3.5 text-emerald-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white/80 truncate group-hover:text-emerald-300 transition-colors">{r.title}</p>
+                          <p className="text-[10px] text-white/30">{r.categoryName}</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-emerald-400 transition-colors shrink-0" />
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-white/10 p-8 text-center">
+                  <p className="text-white/30 text-xs">View some resources to get personalized recommendations!</p>
+                </div>
               )}
             </motion.div>
           </div>

@@ -11,12 +11,17 @@
  * callers without the verbose generated types.
  */
 
+// PUBLIC queries: use createAnonClient() — anon key, respects RLS
+// ADMIN queries: use createAdminClient() — service_role, bypasses RLS
+import { createAnonClient } from './anon';
 import { createAdminClient } from './admin';
 import { unstable_cache } from 'next/cache';
+import { CACHE_TIMES, MODULE_TYPES, CONTENT_TYPES } from '@/lib/constants';
+import { oLevelGrades } from '@/config/navigation';
 
-// Cache revalidation: 1 hour for near-static data, 5 min for resources
-const CACHE_1H = 3600;
-const CACHE_5M = 300;
+// Cache aliases for readability
+const CACHE_1H = CACHE_TIMES.LONG;
+const CACHE_5M = CACHE_TIMES.SHORT;
 import type {
   Level,
   Subject,
@@ -34,7 +39,7 @@ import type {
 
 export const getLevels = unstable_cache(
   async (): Promise<Level[]> => {
-    const supabase = createAdminClient();
+    const supabase = createAnonClient();
     const { data, error } = await supabase
       .from('levels')
       .select('*')
@@ -56,7 +61,7 @@ export const getLevels = unstable_cache(
 export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject[]> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('subject_papers')
         .select('*, levels!inner ( slug )')
@@ -77,7 +82,7 @@ export async function getSubjectsByLevelSlug(levelSlug: string): Promise<Subject
 export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('subject_papers')
         .select('*')
@@ -101,7 +106,7 @@ export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
  * Resolves a subject_papers slug (e.g. 'mathematics-4024') to the parent
  * subjects UUID. After migration 016 categories reference the new subjects table.
  */
-async function resolveSubjectId(supabase: ReturnType<typeof createAdminClient>, paperSlug: string): Promise<string | null> {
+async function resolveSubjectId(supabase: ReturnType<typeof createAnonClient>, paperSlug: string): Promise<string | null> {
   const { data } = await supabase
     .from('subject_papers')
     .select('parent_subject_id')
@@ -116,7 +121,7 @@ async function resolveSubjectId(supabase: ReturnType<typeof createAdminClient>, 
 export async function getCategoriesBySubjectSlug(subjectSlug: string): Promise<Category[]> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const parentId = await resolveSubjectId(supabase, subjectSlug);
       if (!parentId) return [];
       const { data, error } = await supabase
@@ -143,7 +148,7 @@ export async function getCategoryBySlug(
 ): Promise<Category | null> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const parentId = await resolveSubjectId(supabase, subjectSlug);
       if (!parentId) return null;
       const { data, error } = await supabase
@@ -173,12 +178,12 @@ export async function getCategoryBySlug(
 export async function getResourcesByCategory(
   categoryId: string,
   contentType?: 'video' | 'pdf' | 'worksheet',
-  moduleType?: 'video_topical' | 'solved_past_paper',
+  moduleType?: typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
 ): Promise<Resource[]> {
   const cacheKey = `resources-${categoryId}-${contentType ?? 'all'}-${moduleType ?? 'all'}`;
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
 
       let query = supabase
         .from('resources')
@@ -209,7 +214,7 @@ export async function getResourcesByTopic(
 ): Promise<Resource[]> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('resources')
         .select('*')
@@ -234,7 +239,7 @@ export async function getTopicsByCategory(
 ): Promise<{ topic: string; count: number }[]> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('resources')
         .select('topic')
@@ -264,7 +269,7 @@ export async function getTopicsByCategory(
 export async function getResourceById(id: string): Promise<Resource | null> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('resources')
         .select('*')
@@ -286,7 +291,7 @@ export async function getResourceById(id: string): Promise<Resource | null> {
 export async function getLatestResources(limit = 6): Promise<Resource[]> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('resources')
         .select('*')
@@ -314,7 +319,7 @@ export async function getLatestResources(limit = 6): Promise<Resource[]> {
 export async function getSolutionsForPaper(paperId: string): Promise<ResourceSolution[]> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('resource_solutions')
         .select('*')
@@ -342,6 +347,7 @@ export async function getSolutionVideo(videoResourceId: string): Promise<Resourc
 
 export type UserProgressWithResource = UserProgress & { resource: Resource };
 
+/** Fetches all progress entries for a user, joined with their resource data. */
 export async function getUserProgress(userId: string): Promise<UserProgressWithResource[]> {
   return unstable_cache(
     async () => {
@@ -359,6 +365,7 @@ export async function getUserProgress(userId: string): Promise<UserProgressWithR
   )();
 }
 
+/** Fetches a student account by its primary key (Supabase Auth UUID). */
 export async function getStudentAccount(userId: string): Promise<StudentAccount | null> {
   return unstable_cache(
     async () => {
@@ -378,6 +385,7 @@ export async function getStudentAccount(userId: string): Promise<StudentAccount 
   )();
 }
 
+/** Fetches a student account by email address (case-insensitive). */
 export async function getStudentAccountByEmail(email: string): Promise<StudentAccount | null> {
   return unstable_cache(
     async () => {
@@ -406,20 +414,53 @@ export async function getStudentAccountByAuthId(authId: string): Promise<Student
   return getStudentAccount(authId);
 }
 
+const O_LEVEL_GRADE_SLUGS = oLevelGrades.map((g) => g.slug);
+
 /**
- * Counts total published resources for a given level (e.g. 'olevel', 'alevel').
- * Joins through categories -> subjects -> levels.
+ * Counts published resources for a site section keyed by `levels.slug`.
+ *
+ * Schema (see supabase/migrations): `categories.subject_id` → `subjects` (discipline).
+ * O-Level hub categories use slugs grade-9 / grade-10 / grade-11. A-Level leaf categories
+ * have `parent_id` pointing at as-level / a2-level rows (see 003 / 016 migrations).
  */
 export async function countResourcesByLevel(levelSlug: string): Promise<number> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
+
+      if (levelSlug === 'olevel') {
+        const { count, error } = await supabase
+          .from('resources')
+          .select(
+            'id, category:categories!inner(slug, subjects!categories_subject_id_fkey(id))',
+            { count: 'exact', head: true },
+          )
+          .eq('is_published', true)
+          .in('category.slug', O_LEVEL_GRADE_SLUGS);
+
+        if (error) throw new Error(`countResourcesByLevel(${levelSlug}): ${error.message}`);
+        return count ?? 0;
+      }
+
+      if (levelSlug === 'alevel') {
+        const { count, error } = await supabase
+          .from('resources')
+          .select(
+            'id, category:categories!inner(parent_id, subjects!categories_subject_id_fkey(id))',
+            { count: 'exact', head: true },
+          )
+          .eq('is_published', true)
+          .not('category.parent_id', 'is', null);
+
+        if (error) throw new Error(`countResourcesByLevel(${levelSlug}): ${error.message}`);
+        return count ?? 0;
+      }
+
       const { count, error } = await supabase
         .from('resources')
-        .select('*, category:categories!inner(subject:subject_papers!inner(level:levels!inner(slug)))', { count: 'exact', head: true })
-        .eq('is_published', true)
-        .eq('category.subject.level.slug', levelSlug);
-      
+        .select('id', { count: 'exact', head: true })
+        .eq('is_published', true);
+
       if (error) throw new Error(`countResourcesByLevel(${levelSlug}): ${error.message}`);
       return count ?? 0;
     },
@@ -441,7 +482,7 @@ export async function countResourcesByLevel(levelSlug: string): Promise<number> 
 export async function countResourcesBySubjectSlug(paperSlug: string): Promise<number> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const parentId = await resolveSubjectId(supabase, paperSlug);
       if (!parentId) return 0;
 
@@ -477,13 +518,6 @@ export async function countResourcesForSubjects(slugs: string[]): Promise<Record
 /**
  * Full-text search across resource titles, descriptions, and topics.
  *
- * Uses the `fts` generated tsvector column (see migration 009) so queries
- * hit the GIN index instead of doing a sequential ILIKE scan.
- * Requires migration 009_add_fts_column.sql to be applied in Supabase.
- */
-/**
- * Full-text search across resource titles, descriptions, and topics.
- *
  * 3-tier strategy:
  *  Tier 1 — FTS websearch_to_tsquery (fast, stemmed, handles natural language)
  *  Tier 2 — Broad ILIKE on full query string (catches exact substrings)
@@ -495,7 +529,7 @@ export async function searchResources(query: string, limit = 60): Promise<Resour
 
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
 
       const orderOpts = [
         { column: 'sort_order', ascending: true, nullsFirst: false },
@@ -578,7 +612,7 @@ export async function getSuggestions(query: string, count = 6): Promise<string[]
 
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       // Take first 3 chars of the query as a loose prefix
       const prefix = trimmed.slice(0, 3).replace(/[%_]/g, '\\$&');
 
@@ -626,8 +660,8 @@ export interface CategorisedResults {
 export async function searchResourcesCategorised(query: string): Promise<CategorisedResults> {
   const all = await searchResources(query, 80);
   return {
-    videoTopical: all.filter(r => (r as any).module_type === 'video_topical' || r.content_type === 'video'),
-    solvedPapers: all.filter(r => (r as any).module_type === 'solved_past_paper' || r.content_type === 'pdf'),
+    videoTopical: all.filter(r => (r as any).module_type === MODULE_TYPES.VIDEO_TOPICAL || r.content_type === CONTENT_TYPES.VIDEO),
+    solvedPapers: all.filter(r => (r as any).module_type === MODULE_TYPES.SOLVED_PAST_PAPER || r.content_type === CONTENT_TYPES.PDF),
     total: all.length,
   };
 }
@@ -638,10 +672,11 @@ export async function searchResourcesCategorised(query: string): Promise<Categor
 // Blog
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Fetches published blog posts ordered by creation date. */
 export async function getBlogPosts(limit = 10): Promise<BlogPost[]> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('blog_posts')
         .select('id, title, slug, created_at, is_published, author_id, content, updated_at')
@@ -656,10 +691,11 @@ export async function getBlogPosts(limit = 10): Promise<BlogPost[]> {
   )();
 }
 
+/** Fetches a single published blog post by its URL slug. */
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   return unstable_cache(
     async () => {
-      const supabase = createAdminClient();
+      const supabase = createAnonClient();
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')

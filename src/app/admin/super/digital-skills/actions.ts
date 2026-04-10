@@ -339,13 +339,19 @@ export async function uploadDigitalSkillAsset(formData: FormData) {
     return { success: false as const, error: uploadError.message };
   }
 
-  // Use getPublicUrl for public buckets; if the bucket is private,
-  // the admin should configure it as public in Supabase dashboard
-  // or switch to createSignedUrl here.
-  const { data: urlData } = supabase.storage
+  const SIGNED_URL_TTL_SEC = 60 * 60 * 24 * 365;
+  const { data: signed, error: signError } = await supabase.storage
     .from('digital-skills-assets')
-    .getPublicUrl(path);
+    .createSignedUrl(path, SIGNED_URL_TTL_SEC);
+
+  if (signError || !signed?.signedUrl) {
+    console.error('[upload] Signed URL error:', signError);
+    return {
+      success: false as const,
+      error: signError?.message ?? 'Could not create signed URL for uploaded file.',
+    };
+  }
 
   revalidateAll();
-  return { success: true as const, url: urlData.publicUrl };
+  return { success: true as const, url: signed.signedUrl };
 }

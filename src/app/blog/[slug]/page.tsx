@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { ArrowLeft, Clock, Megaphone } from 'lucide-react';
 import Link from 'next/link';
+import { isNextConfiguredRemoteImageUrl } from '@/lib/remote-image';
 import type { Metadata } from 'next';
 import MediaSection from '@/components/media/MediaSection';
 
@@ -90,11 +92,16 @@ export default async function BlogSlugPage({ params }: { params: { slug: string 
 
         {/* Post content */}
         {blog.image_url && (
-          <img
+          <Image
             src={blog.image_url}
             alt={blog.title}
+            width={1200}
+            height={675}
             className="w-full rounded-2xl object-contain max-h-[600px] mb-8 border"
             style={{ borderColor: 'var(--border-subtle)' }}
+            sizes="(max-width: 1024px) 100vw, 896px"
+            unoptimized={!isNextConfiguredRemoteImageUrl(blog.image_url)}
+            priority
           />
         )}
 

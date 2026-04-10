@@ -11,6 +11,7 @@ import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 import AdminThemeButton from '@/components/admin/AdminThemeButton';
 import { getPortalsForSubjects } from '@/config/admin-portals';
+import { resolveManagedSubjectsToSlugs } from '@/lib/admin/resolve-managed-subjects';
 
 async function getAdminProfile(userId: string) {
   const admin = createAdminClient();
@@ -22,9 +23,8 @@ async function getAdminProfile(userId: string) {
   return data;
 }
 
-/** Derive which subject portal links a non-super admin can see */
-function getSubjectPortalLinks(managedSubjects: string[]): { label: string; href: string }[] {
-  return getPortalsForSubjects(managedSubjects).map(p => ({
+function subjectPortalNavEntries(managedSlugs: string[]): { label: string; href: string }[] {
+  return getPortalsForSubjects(managedSlugs).map((p) => ({
     label: p.label,
     href: `/admin/${p.routeSegment}`,
   }));
@@ -62,7 +62,8 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const isSuperAdmin = profile?.is_super_admin ?? false;
   const adminName = profile?.full_name || profile?.email?.split('@')[0] || 'Admin';
   const managedSubjects: string[] = (profile?.managed_subjects as string[]) ?? [];
-  const subjectPortals = isSuperAdmin ? [] : getSubjectPortalLinks(managedSubjects);
+  const resolvedManagedSlugs = await resolveManagedSubjectsToSlugs(managedSubjects);
+  const subjectPortals = isSuperAdmin ? [] : subjectPortalNavEntries(resolvedManagedSlugs);
   const newBookings = await getNewBookingsCount();
 
   const navSections = [
@@ -264,7 +265,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40 animate-pulse" />
               <h1 className="text-sm font-semibold text-[var(--text-primary)]">Dashboard</h1>
             </div>
-            <SubjectSwitcher isSuperAdmin={isSuperAdmin} managedSubjects={managedSubjects} />
+            <SubjectSwitcher isSuperAdmin={isSuperAdmin} managedSubjects={resolvedManagedSlugs} />
           </header>
           <div className="flex-1 overflow-y-auto p-6">
             {children}

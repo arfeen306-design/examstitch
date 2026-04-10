@@ -17,9 +17,11 @@
 
 // ── Module Types (universal across all subjects) ────────────────────────────
 
+import { MODULE_TYPES as MT } from '@/lib/constants';
+
 export const MODULE_TYPES = [
-  { value: 'video_topical' as const, label: 'Video Lecture' },
-  { value: 'solved_past_paper' as const, label: 'Solved Past Paper' },
+  { value: MT.VIDEO_TOPICAL, label: 'Video Lecture' },
+  { value: MT.SOLVED_PAST_PAPER, label: 'Solved Past Paper' },
 ] as const;
 
 export type ModuleType = (typeof MODULE_TYPES)[number]['value'];

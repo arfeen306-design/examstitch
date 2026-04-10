@@ -167,7 +167,7 @@ export const oLevelGrades = [
 
 // ─── A-Level Papers (per subject) ────────────────────────────────────────────
 
-type PaperConfig = { label: string; slug: string; description: string };
+export type PaperConfig = { label: string; slug: string; description: string };
 
 export const aLevelPapersBySubject: Record<string, { 'as-level': PaperConfig[]; 'a2-level': PaperConfig[] }> = {
   'mathematics-9709': {

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, RotateCcw, ChevronRight } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
+import { useViewTracking } from '@/hooks/useViewTracking';
 import VideoContainer from './VideoContainer';
 import FramedPDFViewer from './FramedPDFViewer';
 
@@ -239,6 +240,8 @@ export default function EmbeddedViewer({
   nextTitle,
   resourceId,
 }: EmbeddedViewerProps) {
+  useViewTracking(resourceId);
+
   const { embedUrl, type } = toEmbedUrl(sourceUrl);
   const downloadUrl = toDownloadUrl(sourceUrl);
   const isVideo = contentType === 'video' || type === 'youtube';

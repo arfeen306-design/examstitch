@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireSubjectAdmin } from '@/lib/supabase/guards';
 import { revalidateTag } from 'next/cache';
+import { MODULE_TYPES } from '@/lib/constants';
 
 /**
  * The Computer Science subject_id is resolved once at request time.
@@ -68,8 +69,8 @@ export async function POST(request: Request) {
     if (!category_id) return NextResponse.json({ error: 'Category is required.' }, { status: 400 });
 
     // Validate module_type
-    const validModuleTypes = ['video_topical', 'solved_past_paper'];
-    const safeModuleType = validModuleTypes.includes(module_type) ? module_type : 'video_topical';
+    const validModuleTypes = [MODULE_TYPES.VIDEO_TOPICAL, MODULE_TYPES.SOLVED_PAST_PAPER];
+    const safeModuleType = validModuleTypes.includes(module_type) ? module_type : MODULE_TYPES.VIDEO_TOPICAL;
 
     const supabase = createAdminClient();
 

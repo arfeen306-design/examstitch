@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Search,
   GraduationCap,
@@ -23,6 +24,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import NotifyMeBox from '@/components/lead-gen/NotifyMeBox';
+import { isNextConfiguredRemoteImageUrl } from '@/lib/remote-image';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 
 const fadeUp = {
@@ -382,8 +384,16 @@ function LiveFeedUI({ items }: { items: FeedItem[] }) {
                     <span className="text-xs shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>{timeAgo(item.created_at)}</span>
                   </div>
                   {item.type === 'blog' && item.image_url && (
-                    <div className="mt-3">
-                      <img src={item.image_url} alt={item.title} className="w-full rounded-lg object-cover max-h-48" loading="lazy" />
+                    <div className="mt-3 relative w-full max-h-48 overflow-hidden rounded-lg">
+                      <Image
+                        src={item.image_url}
+                        alt={item.title}
+                        width={960}
+                        height={384}
+                        className="w-full h-auto max-h-48 object-cover rounded-lg"
+                        sizes="(max-width: 1024px) 100vw, 896px"
+                        unoptimized={!isNextConfiguredRemoteImageUrl(item.image_url)}
+                      />
                       <a href={item.image_url} target="_blank" rel="noopener noreferrer" download
                          className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
                          style={{ backgroundColor: 'var(--accent-subtle)', color: 'var(--accent-text)' }}>
