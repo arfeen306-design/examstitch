@@ -127,14 +127,6 @@ export function getSubjectHeading(slug: string): string {
 
 export const mainNavItems = [
   {
-    label: 'Home',
-    href: '/',
-  },
-  {
-    label: 'STEM',
-    href: '/stem',
-  },
-  {
     label: 'A-Level',
     href: '/alevel',
   },
@@ -151,11 +143,15 @@ export const mainNavItems = [
     href: '/digital-skills',
   },
   {
-    label: 'Blog',
+    label: 'Virtual Lab',
+    href: '/stem',
+  },
+  {
+    label: 'Blogs',
     href: '/blog',
   },
   {
-    label: 'Contact',
+    label: 'Contacts',
     href: '/contact',
   },
 ];

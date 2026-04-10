@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, GraduationCap, LogOut, User, Search, LayoutDashboard } from 'lucide-react';
+import { Menu, X, GraduationCap, LogOut, User, Search, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
@@ -21,6 +21,8 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-close mobile menu on route change
   useEffect(() => {
@@ -47,6 +49,17 @@ export default function Navbar() {
   useEffect(() => {
     if (searchOpen && searchRef.current) searchRef.current.focus();
   }, [searchOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!accountMenuRef.current) return;
+      if (!accountMenuRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -152,26 +165,50 @@ export default function Navbar() {
 
             {!authLoading && (
               user ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white/60 hover:text-teal-400 transition-colors rounded-lg hover:bg-white/5"
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5" />
-                    Dashboard
-                  </Link>
-                  <span className="flex items-center gap-1.5 px-2.5 py-2 text-xs text-white/60 rounded-lg">
-                    <User className="w-3.5 h-3.5" />
-                    {user.email?.split('@')[0]}
-                  </span>
+                <div className="relative" ref={accountMenuRef}>
                   <button
-                    onClick={handleSignOut}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                    type="button"
+                    onClick={() => setAccountMenuOpen((v) => !v)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-white/15 text-white/80 hover:text-white hover:bg-white/[0.08] transition-colors"
+                    aria-label="Account switch"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    Sign Out
+                    <User className="w-4 h-4" />
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
-                </>
+                  <AnimatePresence>
+                    {accountMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-52 rounded-xl border border-white/15 bg-[#0f172a]/95 backdrop-blur-xl shadow-2xl p-1.5 z-[80]"
+                      >
+                        <p className="px-2.5 py-2 text-[11px] text-white/55">
+                          Signed in as <span className="text-white/80">{user.email?.split('@')[0]}</span>
+                        </p>
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-white/80 hover:bg-white/[0.08] transition-colors"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5" />
+                          Dashboard
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            handleSignOut();
+                          }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-white/80 hover:bg-white/[0.08] transition-colors"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               ) : (
                 <Link
                   href="/auth/login"
