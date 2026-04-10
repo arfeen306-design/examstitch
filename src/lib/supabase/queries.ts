@@ -33,6 +33,19 @@ import type {
   StudentAccount,
 } from './types';
 
+const SUBJECT_SLUG_ALIASES: Record<string, string> = {
+  maths: 'mathematics-4024',
+  mathematics: 'mathematics-4024',
+  math: 'mathematics-4024',
+  'computer-science': 'computer-science-0478',
+  cs: 'computer-science-0478',
+};
+
+function normalizeSubjectPaperSlug(slug: string): string {
+  const key = slug.trim().toLowerCase();
+  return SUBJECT_SLUG_ALIASES[key] ?? key;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Levels
 // ─────────────────────────────────────────────────────────────────────────────
@@ -107,10 +120,11 @@ export async function getSubjectBySlug(slug: string): Promise<Subject | null> {
  * subjects UUID. After migration 016 categories reference the new subjects table.
  */
 async function resolveSubjectId(supabase: ReturnType<typeof createAnonClient>, paperSlug: string): Promise<string | null> {
+  const normalizedSlug = normalizeSubjectPaperSlug(paperSlug);
   const { data } = await supabase
     .from('subject_papers')
     .select('parent_subject_id')
-    .eq('slug', paperSlug)
+    .eq('slug', normalizedSlug)
     .single();
   return data?.parent_subject_id ?? null;
 }
