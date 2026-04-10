@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { FileText, Download, Printer, AlertTriangle, ExternalLink, RefreshCw } from 'lucide-react';
+import { FileText, Download, Printer, AlertTriangle, RefreshCw } from 'lucide-react';
 import {
   loadAdobePdfEmbedScript,
   whenAdobeViewSdkReady,
@@ -355,17 +355,6 @@ export default function FramedPDFViewer({
               Download
             </a>
           )}
-          <a
-            href={iframeSrc}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open PDF in a new browser tab: ${title}`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1729]"
-            style={{ borderColor: 'rgba(99,102,241,0.35)', color: '#c7d2fe' }}
-          >
-            <ExternalLink className="w-3.5 h-3.5 shrink-0" aria-hidden />
-            Open in new tab
-          </a>
           <button
             type="button"
             onClick={handlePrint}
@@ -463,20 +452,6 @@ export default function FramedPDFViewer({
                   Download PDF
                 </a>
               )}
-              <a
-                href={iframeSrc}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Open PDF in new tab: ${title}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all hover:bg-white/[0.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1526]"
-                style={{
-                  border: '1px solid rgba(99,102,241,0.2)',
-                  color: '#94a3b8',
-                }}
-              >
-                <ExternalLink className="w-4 h-4 shrink-0" aria-hidden />
-                Open in New Tab
-              </a>
             </div>
           </div>
         ) : (

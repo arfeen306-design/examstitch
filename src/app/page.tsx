@@ -15,10 +15,23 @@ async function getFeedItems(): Promise<FeedItem[]> {
   try {
     const supabase = createClient();
 
+    const formatSlug = (value: string | null | undefined) =>
+      (value ?? '')
+        .replace(/[-_]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const formatModule = (moduleType: string | null | undefined, contentType: string) => {
+      if (moduleType === 'solved_past_paper') return 'Solved Past Paper';
+      if (moduleType === 'video_topical') return 'Video Lecture';
+      return contentType === 'video' ? 'Video Lecture' : contentType === 'worksheet' ? 'Worksheet' : 'Past Paper';
+    };
+
     const [resourcesRes, blogsRes] = await Promise.all([
       supabase
         .from('resources')
-        .select('id, title, content_type, created_at')
+        .select('id, title, content_type, module_type, topic, subject, created_at, category:categories(name, slug)')
         .eq('is_published', true)
         .order('created_at', { ascending: false })
         .limit(5),
@@ -35,6 +48,12 @@ async function getFeedItems(): Promise<FeedItem[]> {
       title: r.title,
       type: r.content_type as FeedItem['type'],
       created_at: r.created_at,
+      location_path: [
+        formatSlug(r.subject),
+        (r as any).category?.name ?? formatSlug((r as any).category?.slug),
+        r.topic ?? null,
+        formatModule((r as any).module_type, r.content_type),
+      ].filter(Boolean).join(' > '),
     }));
 
     const blogItems: FeedItem[] = (blogsRes.data ?? []).map(b => ({

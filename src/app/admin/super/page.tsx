@@ -210,7 +210,7 @@ export default async function SuperAdminPage() {
                     <p className="text-sm font-medium text-[var(--text-secondary)]">{s.name}</p>
                     <p className="text-xs text-[var(--text-muted)]">{s.levels?.join(' · ') || 'No levels'}</p>
                   </div>
-                  <span className="text-xs text-amber-400/60 font-medium">0 resources</span>
+                  <span className="text-xs text-amber-400/80 font-semibold">Coming soon</span>
                 </div>
               ))}
             </div>

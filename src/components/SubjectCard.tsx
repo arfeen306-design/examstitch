@@ -40,6 +40,7 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
   const handleComingSoon = useCallback(() => {
     onComingSoon?.();
   }, [onComingSoon]);
+  const hasNoContentYet = subject.active && resourceCount !== undefined && resourceCount === 0;
 
   const inner = (
     <motion.div
@@ -89,9 +90,15 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
               <span className="text-xs text-[var(--text-muted)] font-medium tabular-nums">
                 {resourceCount !== undefined ? `${resourceCount} resources` : '...'}
               </span>
-              <span className={`flex items-center gap-1 text-xs font-medium ${subject.colorScheme.accent} group-hover:brightness-125 transition-all`}>
-                Explore <ArrowRight className="w-3.5 h-3.5" />
-              </span>
+              {hasNoContentYet ? (
+                <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-medium">
+                  <Clock className="w-3 h-3" /> Coming Soon
+                </span>
+              ) : (
+                <span className={`flex items-center gap-1 text-xs font-medium ${subject.colorScheme.accent} group-hover:brightness-125 transition-all`}>
+                  Explore <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              )}
             </>
           ) : (
             <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-medium">
@@ -103,7 +110,7 @@ const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resour
     </motion.div>
   );
 
-  if (subject.active) {
+  if (subject.active && !hasNoContentYet) {
     return (
       <Link href={`${basePath}/${subject.id}`} className="block h-full" prefetch={true}>
         {inner}

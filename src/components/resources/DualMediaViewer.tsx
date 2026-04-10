@@ -9,7 +9,6 @@ import {
   Minimize2,
   Video,
   FileText,
-  ExternalLink,
 } from 'lucide-react';
 import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
 import { useViewTracking } from '@/hooks/useViewTracking';
@@ -144,10 +143,6 @@ export default function DualMediaViewer({
   const { embedUrl: videoEmbed } = toEmbedUrl(videoUrl);
   const { embedUrl: pdfEmbed } = toEmbedUrl(pdfUrl);
   const pdfDownload = toDownloadUrl(pdfUrl);
-  const fullViewerHref = resourceId
-    ? `/api/pdf/${resourceId}?mode=worksheet`
-    : (pdfDownload || pdfUrl);
-
   const [expanded, setExpanded] = useState<'video' | 'pdf' | null>(null);
 
   return (
@@ -170,15 +165,6 @@ export default function DualMediaViewer({
 
         {/* Expand controls */}
         <div className="flex items-center gap-1.5">
-          <a
-            href={fullViewerHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)]"
-          >
-              <ExternalLink className="w-3 h-3" />
-              Open full viewer
-          </a>
           <button
             onClick={() => setExpanded(expanded === 'video' ? null : 'video')}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${

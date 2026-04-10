@@ -86,6 +86,7 @@ export interface FeedItem {
   title: string;
   type: 'video' | 'pdf' | 'worksheet' | 'blog';
   created_at: string;
+  location_path?: string | null;
   image_url?: string | null;
   content?: string | null;
 }
@@ -377,6 +378,11 @@ function LiveFeedUI({ items }: { items: FeedItem[] }) {
                         )}
                       </div>
                       <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
+                      {item.location_path && (
+                        <p className="text-[11px] mt-1 font-medium" style={{ color: 'var(--text-secondary)' }}>
+                          Path: {item.location_path}
+                        </p>
+                      )}
                       {item.content && (
                         <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{item.content}</p>
                       )}
