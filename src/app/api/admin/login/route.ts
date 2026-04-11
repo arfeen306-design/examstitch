@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
 import { getRouteForSlug } from '@/config/admin-portals';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 export async function POST(request: Request) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       .eq('id', authData.user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== 'admin') {
+    if (profileError || !profile || !isStudentAccountAdminRole(profile.role)) {
       // Revoke session immediately — non-admin must not retain tokens
       await supabase.auth.signOut();
       return NextResponse.json(

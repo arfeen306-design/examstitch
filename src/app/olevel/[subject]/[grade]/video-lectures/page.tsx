@@ -66,7 +66,7 @@ export default function VideoLecturesPage({ params }: { params: { subject: strin
           <p className="text-white/60">Topic-by-topic video explanations — each paired with a downloadable worksheet.</p>
         </div>
       </div>
-      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <Suspense fallback={<UnifiedModuleGrid modules={[]} isLoading={true} />}>
           <VideoModules subject={params.subject} grade={params.grade} />
         </Suspense>

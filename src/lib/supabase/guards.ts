@@ -11,6 +11,7 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from './admin';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 export interface AdminSession {
   userId: string;
@@ -50,10 +51,9 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     .from('student_accounts')
     .select('id, email, role, is_super_admin, managed_subjects')
     .eq('id', user.id)
-    .eq('role', 'admin')
     .single();
 
-  if (error || !profile) return null;
+  if (error || !profile || !isStudentAccountAdminRole(profile.role)) return null;
 
   return {
     userId: profile.id,

@@ -73,7 +73,7 @@ export async function GET() {
     const { count: totalAdmins } = await supabase
       .from('student_accounts')
       .select('*', { count: 'exact', head: true })
-      .eq('role', 'admin');
+      .ilike('role', 'admin');
 
     return NextResponse.json({
       subjects: stats,

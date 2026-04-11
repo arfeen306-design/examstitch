@@ -50,8 +50,7 @@ function TopicList({
         return (
           <Link key={item.topic} href={`${basePath}/${slug}`} className="block group portal-topic-link">
             <div className="portal-topic-card rounded-2xl p-5 flex items-center gap-4 transition-all duration-300
-                            bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]
-                            hover:border-white/[0.2] hover:bg-white/[0.1]">
+                            portal-glass-card portal-glass-card--interactive">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0
                               bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
                 <BookOpen className="w-5 h-5 text-white" />
@@ -91,11 +90,11 @@ function TopicsSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {Array.from({ length: 9 }).map((_, i) => (
-        <div key={i} className="rounded-2xl p-5 animate-pulse flex items-center gap-4 bg-white/[0.04] border border-white/[0.08]">
-          <div className="w-11 h-11 rounded-xl shrink-0 bg-white/[0.08]" />
+        <div key={i} className="rounded-2xl p-5 animate-pulse flex items-center gap-4 portal-skeleton-panel">
+          <div className="w-11 h-11 rounded-xl shrink-0 portal-skeleton-bone" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 rounded-full w-3/4 bg-white/[0.08]" />
-            <div className="h-3 rounded-full w-1/3 bg-white/[0.04]" />
+            <div className="h-4 rounded-full w-3/4 portal-skeleton-bone" />
+            <div className="h-3 rounded-full w-1/3 portal-skeleton-bone opacity-70" />
           </div>
         </div>
       ))}
@@ -124,7 +123,7 @@ export default function TopicalPage({ params }: { params: { subject: string; gra
           <p className="text-white/60">Master individual topics with focused practice questions.</p>
         </div>
       </div>
-      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <Suspense fallback={<TopicsSkeleton />}>
           <TopicsGrid subject={params.subject} grade={params.grade} basePath={basePath} />
         </Suspense>

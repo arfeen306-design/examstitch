@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 export interface TutorPayload {
   id?: string;
@@ -79,7 +80,7 @@ export async function assignTutorToAdminUser(userId: string, tutorId: string | n
     .eq('id', userId)
     .single();
   if (adminErr || !adminUser) return { success: false, error: 'Admin user not found.' };
-  if (adminUser.role !== 'admin') return { success: false, error: 'Tutor can only be assigned to sub-admin users.' };
+  if (!isStudentAccountAdminRole(adminUser.role)) return { success: false, error: 'Tutor can only be assigned to sub-admin users.' };
 
   if (tutorId) {
     const { data: tutor, error: tutorErr } = await supabase

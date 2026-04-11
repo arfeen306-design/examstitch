@@ -17,6 +17,7 @@ import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubje
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
 import TutorProfileManager from './TutorProfileManager';
+import { subjectMatchesAdminLevelTab } from '@/lib/admin/subject-level-buckets';
 
 interface Subject {
   id: string;
@@ -352,19 +353,29 @@ function CategorizedSubjectPicker({
   selected: string[];
   onToggle: (id: string) => void;
 }) {
-  const [level, setLevel] = useState<'olevel' | 'alevel'>('olevel');
+  const [level, setLevel] = useState<'all' | 'olevel' | 'alevel'>('all');
   const availableSubjects = subjects.filter((s) => {
-    const levels = (s.levels || []).map((l) => l.toLowerCase());
-    if (level === 'olevel') return levels.some((l) => l.includes('o level') || l.includes('igcse'));
-    return levels.some((l) => l.includes('a level') || l.includes('as level') || l.includes('a2 level'));
+    if (level === 'all') return true;
+    return subjectMatchesAdminLevelTab(s.levels, level);
   });
 
   return (
     <div>
       <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">Assign Subjects *</label>
 
-      {/* O-Level / A-Level toggle */}
-      <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit">
+      {/* All / O-Level / A-Level — "All" lists every parent subject from DB */}
+      <div className="flex flex-wrap gap-1 mb-3 p-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit">
+        <button
+          type="button"
+          onClick={() => setLevel('all')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            level === 'all'
+              ? 'bg-slate-600 text-white shadow-md shadow-slate-500/20'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+          }`}
+        >
+          All subjects
+        </button>
         <button
           type="button"
           onClick={() => setLevel('olevel')}
@@ -436,7 +447,7 @@ function CategorizedSubjectPicker({
         </div>
       )}
 
-      <p className="text-[10px] text-[var(--text-muted)] mt-2">Admin can only manage resources for assigned subjects. O-Level and A-Level subjects have separate IDs.</p>
+      <p className="text-[10px] text-[var(--text-muted)] mt-2">Admin can only manage resources for assigned subjects. Use &quot;All subjects&quot; if a discipline does not appear under O-Level or A-Level filters.</p>
     </div>
   );
 }
@@ -456,19 +467,27 @@ function CategorizedAssignDropdown({
   isPending: boolean;
   onAssign: () => void;
 }) {
-  const [level, setLevel] = useState<'olevel' | 'alevel'>('olevel');
+  const [level, setLevel] = useState<'all' | 'olevel' | 'alevel'>('all');
   const [selectedSubject, setSelectedSubject] = useState('');
   const levelSubjects = subjects.filter((s) => {
-    const levels = (s.levels || []).map((l) => l.toLowerCase());
-    if (level === 'olevel') return levels.some((l) => l.includes('o level') || l.includes('igcse'));
-    return levels.some((l) => l.includes('a level') || l.includes('as level') || l.includes('a2 level'));
+    if (level === 'all') return true;
+    return subjectMatchesAdminLevelTab(s.levels, level);
   });
   const available = levelSubjects.filter(s => !excludeIds.includes(s.id));
 
   return (
     <div className="space-y-2">
       {/* Level tabs */}
-      <div className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit">
+      <div className="flex flex-wrap gap-1 p-0.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit">
+        <button
+          type="button"
+          onClick={() => { setLevel('all'); setSelectedSubject(''); }}
+          className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
+            level === 'all' ? 'bg-slate-600 text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+          }`}
+        >
+          All
+        </button>
         <button
           type="button"
           onClick={() => { setLevel('olevel'); setSelectedSubject(''); }}
@@ -496,7 +515,9 @@ function CategorizedAssignDropdown({
           className="flex-1 px-2 py-1.5 text-xs border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-indigo-500"
         >
           <option value="" disabled>
-            {available.length === 0 ? `All ${level === 'olevel' ? 'O-Level' : 'A-Level'} assigned` : 'Choose subject…'}
+            {available.length === 0
+              ? (level === 'all' ? 'All subjects assigned' : `All ${level === 'olevel' ? 'O-Level' : 'A-Level'} assigned`)
+              : 'Choose subject…'}
           </option>
           {available.map(s => (
             <option key={s.id} value={s.id}>{s.name}</option>

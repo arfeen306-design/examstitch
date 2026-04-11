@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { generatePassword, hashPassword } from '@/lib/password';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 // POST — Create a new student account with auto-generated password
 export async function POST(request: Request) {
@@ -89,7 +90,7 @@ export async function PATCH(request: Request) {
       .select('role')
       .eq('id', body.id)
       .single();
-    if (!account || account.role === 'admin') {
+    if (!account || isStudentAccountAdminRole(account.role)) {
       return NextResponse.json({ error: 'Only student accounts can be changed here.' }, { status: 403 });
     }
 
@@ -142,7 +143,7 @@ export async function DELETE(request: Request) {
       .select('role')
       .eq('id', id)
       .single();
-    if (!account || account.role === 'admin') {
+    if (!account || isStudentAccountAdminRole(account.role)) {
       return NextResponse.json({ error: 'Only student accounts can be deleted here.' }, { status: 403 });
     }
     const { error } = await supabase.from('student_accounts').delete().eq('id', id);

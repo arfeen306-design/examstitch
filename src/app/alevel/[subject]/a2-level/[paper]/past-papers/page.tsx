@@ -140,19 +140,19 @@ export default function PastPapersPage({
       </div>
 
       {/* Filters + Grid */}
-      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         {/* Filters */}
         <div className="rounded-2xl p-4 mb-6 flex flex-wrap gap-3
-                        bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]">
-          <select className="px-3 py-2 text-sm rounded-xl bg-white/[0.06] border border-white/[0.1] text-white/70 focus:outline-none focus:border-gold-500/50">
+                        portal-glass-card">
+          <select className="px-3 py-2 text-sm rounded-xl portal-glass-select focus:outline-none focus:border-amber-400/50">
             <option>All Years</option>
             <option>2024</option><option>2023</option><option>2022</option><option>2021</option>
           </select>
-          <select className="px-3 py-2 text-sm rounded-xl bg-white/[0.06] border border-white/[0.1] text-white/70 focus:outline-none focus:border-gold-500/50">
+          <select className="px-3 py-2 text-sm rounded-xl portal-glass-select focus:outline-none focus:border-amber-400/50">
             <option>All Sessions</option>
             <option>May/June</option><option>Oct/Nov</option><option>Feb/Mar</option>
           </select>
-          <select className="px-3 py-2 text-sm rounded-xl bg-white/[0.06] border border-white/[0.1] text-white/70 focus:outline-none focus:border-gold-500/50">
+          <select className="px-3 py-2 text-sm rounded-xl portal-glass-select focus:outline-none focus:border-amber-400/50">
             <option>All Variants</option>
             <option>Variant 1</option><option>Variant 2</option><option>Variant 3</option>
           </select>

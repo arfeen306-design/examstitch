@@ -23,7 +23,7 @@ export default function OLevelPage() {
       {/* ─── Toast ─── */}
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="px-5 py-3 rounded-xl bg-white/10 backdrop-blur-xl border border-white/[0.15] text-white text-sm font-medium shadow-2xl">
+          <div className="px-5 py-3 rounded-xl portal-glass-card text-slate-100 text-sm font-medium shadow-2xl">
             {toast}
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function OLevelPage() {
       </div>
 
       {/* ─── Subject Grid ─── */}
-      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {O_LEVEL_SUBJECTS.map((subject, i) => (
             <SubjectCard

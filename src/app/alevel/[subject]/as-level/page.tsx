@@ -28,7 +28,7 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
         </div>
       </div>
 
-      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {(aLevelPapersBySubject[params.subject] ?? aLevelPapers)['as-level'].map((paper, i) => (
             <motion.div
@@ -39,24 +39,23 @@ export default function ASLevelPage({ params }: { params: { subject: string } })
             >
               <Link href={`/alevel/${params.subject}/as-level/${paper.slug}`} className="block group">
                 <div className="relative overflow-hidden rounded-2xl p-8 h-full transition-all duration-300
-                                bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]
-                                hover:border-white/[0.2] hover:bg-white/[0.1] hover:shadow-lg">
+                                portal-glass-card portal-glass-card--interactive">
                   {/* Gradient accent line */}
                   <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full opacity-60" />
 
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-lg">
                     <FileText className="w-7 h-7 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-gold-300 transition-colors">
+                  <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-amber-200 transition-colors">
                     {paper.label}
                   </h3>
-                  <p className="text-sm text-white/40 mb-4">{paper.description}</p>
-                  <div className="flex items-center gap-4 text-xs text-white/40 mb-4">
+                  <p className="text-sm text-slate-400 mb-4">{paper.description}</p>
+                  <div className="flex items-center gap-4 text-xs text-slate-400 mb-4">
                     <span className="flex items-center gap-1"><PlayCircle className="w-3.5 h-3.5 text-red-400" /> Videos</span>
                     <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-blue-400" /> Papers</span>
                     <span className="flex items-center gap-1"><PenTool className="w-3.5 h-3.5 text-emerald-400" /> Topical</span>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-white/20 group-hover:text-white/60 group-hover:translate-x-1 transition-all" />
+                  <ArrowRight className="w-5 h-5 text-slate-500 group-hover:text-slate-200 group-hover:translate-x-1 transition-all" />
                 </div>
               </Link>
             </motion.div>

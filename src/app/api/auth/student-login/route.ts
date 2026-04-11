@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyPassword } from '@/lib/password';
 import { cookies } from 'next/headers';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 export async function POST(request: Request) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     // Only allow students through this endpoint (admins use /api/admin/login)
-    if (student.role === 'admin') {
+    if (isStudentAccountAdminRole(student.role)) {
       return NextResponse.json(
         { error: 'Please use the admin login page.' },
         { status: 403 },

@@ -18,19 +18,17 @@ export async function generateStaticParams() {
 function PaperCard({ paper, href }: { paper: { label: string; slug: string; description: string }; href: string }) {
   return (
     <Link href={href} className="block group">
-      <div className="relative overflow-hidden rounded-2xl transition-all duration-300
-                      bg-white/[0.06] backdrop-blur-xl border border-white/[0.1]
-                      hover:border-white/[0.2] hover:bg-white/[0.1] hover:shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl portal-glass-card portal-glass-card--interactive">
         <div className="p-5">
-          <h3 className="text-base font-bold text-white group-hover:text-gold-300 transition-colors">{paper.label}</h3>
-          <p className="text-xs text-white/40 mt-1 mb-4">{paper.description}</p>
-          <div className="flex items-center gap-3 text-xs text-white/40">
+          <h3 className="text-base font-bold text-slate-100 group-hover:text-amber-200 transition-colors">{paper.label}</h3>
+          <p className="text-xs text-slate-400 mt-1 mb-4">{paper.description}</p>
+          <div className="flex items-center gap-3 text-xs text-slate-400">
             <span className="flex items-center gap-1"><PlayCircle className="w-3.5 h-3.5 text-red-400" /> Videos</span>
             <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-blue-400" /> Papers</span>
             <span className="flex items-center gap-1"><PenTool className="w-3.5 h-3.5 text-emerald-400" /> Topical</span>
           </div>
           <div className="flex justify-end mt-3">
-            <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-gold-400 group-hover:translate-x-1 transition-all" />
+            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-300 group-hover:translate-x-1 transition-all" />
           </div>
         </div>
       </div>
@@ -57,7 +55,7 @@ export default function ALevelSubjectPage({ params }: { params: { subject: strin
         </div>
       </div>
 
-      <div className="portal-page-body max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 space-y-10">
             {/* AS Level Section */}

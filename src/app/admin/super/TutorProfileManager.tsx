@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { Check, Plus, Save, Trash2, UserPlus } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { assignTutorToAdminUser, deleteTutorProfile, upsertTutorProfile } from './tutor-actions';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 interface TutorItem {
   id: string;
@@ -70,7 +71,10 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
     Object.fromEntries(admins.map((a) => [a.id, a.tutor_id ?? '']))
   );
 
-  const subAdmins = useMemo(() => admins.filter((a) => a.role === 'admin' && !a.is_super_admin), [admins]);
+  const subAdmins = useMemo(
+    () => admins.filter((a) => isStudentAccountAdminRole(a.role) && !a.is_super_admin),
+    [admins],
+  );
 
   function startCreate() {
     setForm(emptyForm());

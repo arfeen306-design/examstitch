@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS } from '@/config/subjects';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 const SuperAdminClient = nextDynamic(() => import('./SuperAdminClient'), { ssr: false });
 
@@ -61,12 +62,16 @@ export default async function SuperAdminPage() {
     .from('resources')
     .select('subject_id, content_type, is_published');
 
-  // Fetch all admin accounts
-  const { data: admins } = await supabase
+  // Platform staff: admin role (any casing) or super-admin flag (covers legacy rows)
+  const { data: adminsRaw } = await supabase
     .from('student_accounts')
     .select('id, email, full_name, role, is_super_admin, managed_subjects, tutor_id')
-    .eq('role', 'admin')
+    .or('role.ilike.admin,is_super_admin.eq.true')
     .order('email');
+
+  const admins = (adminsRaw ?? []).filter(
+    (row) => row.is_super_admin === true || isStudentAccountAdminRole(row.role),
+  );
 
   const { data: tutors } = await supabase
     .from('tutors')

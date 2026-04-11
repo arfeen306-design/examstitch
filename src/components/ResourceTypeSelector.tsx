@@ -59,17 +59,15 @@ export default function ResourceTypeSelector({
   const h1Class = beach ? 'text-3xl sm:text-4xl font-bold text-slate-900 mb-2' : 'text-3xl sm:text-4xl font-bold text-white mb-2';
   const subClass = beach ? 'text-slate-600' : 'text-white/60';
 
-  const cardShell = beach
-    ? 'relative overflow-hidden rounded-2xl p-8 text-center h-full flex flex-col items-center bg-white border-2 border-slate-300 shadow-md hover:border-slate-400 hover:shadow-lg transition-all duration-300'
-    : 'relative overflow-hidden rounded-2xl p-8 text-center h-full flex flex-col items-center bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.2] hover:bg-white/[0.1] transition-all duration-300 glass-gpu';
+  const cardShell =
+    'relative overflow-hidden rounded-2xl p-8 text-center h-full flex flex-col items-center portal-glass-card portal-glass-card--interactive glass-gpu';
 
-  const cardTitle = beach
-    ? 'text-lg font-bold text-slate-900 mb-2 group-hover:text-amber-800 transition-colors'
-    : 'text-lg font-bold text-white mb-2 group-hover:text-gold-300 transition-colors';
-  const cardDesc = beach ? 'text-sm text-slate-600 mb-5 flex-1 min-h-[40px] flex items-center' : 'text-sm text-white/40 mb-5 flex-1 min-h-[40px] flex items-center';
-  const cardArrow = beach
-    ? 'w-5 h-5 text-slate-400 group-hover:text-navy-900 group-hover:translate-x-1 transition-all'
-    : 'w-5 h-5 text-white/20 group-hover:text-white/60 group-hover:translate-x-1 transition-all';
+  const cardTitle =
+    'text-lg font-bold text-slate-100 mb-2 group-hover:text-amber-200/95 transition-colors';
+  const cardDesc =
+    'text-sm text-slate-300/95 mb-5 flex-1 min-h-[40px] flex items-center';
+  const cardArrow =
+    'w-5 h-5 text-slate-500 group-hover:text-slate-200 group-hover:translate-x-1 transition-all';
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
@@ -101,8 +99,8 @@ export default function ResourceTypeSelector({
         </div>
       </div>
 
-      {/* Section Cards */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+      {/* Section cards — portal-surface-navy keeps glass + light text on every global theme */}
+      <div className="portal-page-body portal-surface-navy max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {sections.map((section, i) => (
             <motion.div

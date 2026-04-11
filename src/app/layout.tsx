@@ -62,7 +62,7 @@ export default async function RootLayout({
         {/* FOUC prevention — set theme before first paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('examstitch-theme');if(t&&['default','dark','beach','forest'].indexOf(t)!==-1){document.documentElement.setAttribute('data-theme',t)}else{document.documentElement.setAttribute('data-theme','beach')}}catch(e){document.documentElement.setAttribute('data-theme','beach')}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('examstitch-theme');if(t&&['default','dark','beach','forest'].indexOf(t)!==-1){document.documentElement.setAttribute('data-theme',t)}else{document.documentElement.setAttribute('data-theme','default')}}catch(e){document.documentElement.setAttribute('data-theme','default')}})()`,
           }}
         />
         {/* Preconnect: cuts DNS+TLS round-trip for Supabase, YouTube, Google Drive */}

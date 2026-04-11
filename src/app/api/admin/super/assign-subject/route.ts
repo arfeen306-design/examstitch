@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireSuperAdmin } from '@/lib/supabase/guards';
+import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 // ── POST /api/admin/super/assign-subject — Assign subject to an admin ───────
 export async function POST(request: Request) {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
       .single();
 
     if (!targetUser) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
-    if (targetUser.role !== 'admin') {
+    if (!isStudentAccountAdminRole(targetUser.role)) {
       return NextResponse.json({ error: 'Target user must have admin role.' }, { status: 400 });
     }
 

@@ -41,6 +41,18 @@
 
     --wave-fill:     #FDF5E6;
     --cta-orange:    #FF6B35;
+
+    /* O/A portals — navy glass on cream canvas */
+    --portal-glass-bg: rgba(15, 23, 42, 0.52);
+    --portal-glass-bg-hover: rgba(30, 41, 59, 0.7);
+    --portal-glass-border: rgba(148, 163, 184, 0.22);
+    --portal-glass-border-hover: rgba(251, 191, 36, 0.38);
+    --portal-glass-inset-bg: rgba(2, 6, 23, 0.45);
+    --portal-glass-inset-bg-hover: rgba(15, 23, 42, 0.62);
+    --portal-glass-inset-border: rgba(148, 163, 184, 0.2);
+    --portal-skeleton-surface: rgba(15, 23, 42, 0.4);
+    --portal-skeleton-border: rgba(148, 163, 184, 0.14);
+    --portal-skeleton-shine: rgba(148, 163, 184, 0.18);
   }
 
   /* ── Dark ───────────────────────────────────────────────────────────────── */
@@ -76,6 +88,17 @@
 
     --wave-fill:     #050505;
     --cta-orange:    #FF6B35;
+
+    --portal-glass-bg: rgba(17, 17, 17, 0.62);
+    --portal-glass-bg-hover: rgba(28, 28, 28, 0.78);
+    --portal-glass-border: rgba(255, 255, 255, 0.1);
+    --portal-glass-border-hover: rgba(251, 191, 36, 0.35);
+    --portal-glass-inset-bg: rgba(10, 10, 10, 0.55);
+    --portal-glass-inset-bg-hover: rgba(24, 24, 24, 0.72);
+    --portal-glass-inset-border: rgba(255, 255, 255, 0.08);
+    --portal-skeleton-surface: rgba(20, 20, 20, 0.65);
+    --portal-skeleton-border: rgba(255, 255, 255, 0.06);
+    --portal-skeleton-shine: rgba(255, 255, 255, 0.08);
   }
 
   /* ── Navy (Default) — Slate-950 / Neon Blue ─────────────────────────────── */
@@ -112,6 +135,17 @@
 
     --wave-fill:     #020617;
     --cta-orange:    #FF6B35;
+
+    --portal-glass-bg: rgba(15, 23, 42, 0.52);
+    --portal-glass-bg-hover: rgba(30, 41, 59, 0.7);
+    --portal-glass-border: rgba(148, 163, 184, 0.22);
+    --portal-glass-border-hover: rgba(251, 191, 36, 0.38);
+    --portal-glass-inset-bg: rgba(2, 6, 23, 0.45);
+    --portal-glass-inset-bg-hover: rgba(15, 23, 42, 0.62);
+    --portal-glass-inset-border: rgba(148, 163, 184, 0.2);
+    --portal-skeleton-surface: rgba(15, 23, 42, 0.4);
+    --portal-skeleton-border: rgba(148, 163, 184, 0.14);
+    --portal-skeleton-shine: rgba(148, 163, 184, 0.18);
   }
 
   /* ── Forest Green (#062C22 / Gold-Mint) ─────────────────────────────── */
@@ -147,6 +181,17 @@
 
     --wave-fill:     #062C22;
     --cta-orange:    #FF6B35;
+
+    --portal-glass-bg: rgba(6, 44, 34, 0.55);
+    --portal-glass-bg-hover: rgba(10, 61, 44, 0.72);
+    --portal-glass-border: rgba(52, 211, 153, 0.2);
+    --portal-glass-border-hover: rgba(251, 191, 36, 0.4);
+    --portal-glass-inset-bg: rgba(4, 35, 26, 0.55);
+    --portal-glass-inset-bg-hover: rgba(8, 55, 40, 0.68);
+    --portal-glass-inset-border: rgba(52, 211, 153, 0.16);
+    --portal-skeleton-surface: rgba(6, 44, 34, 0.45);
+    --portal-skeleton-border: rgba(52, 211, 153, 0.12);
+    --portal-skeleton-shine: rgba(110, 231, 183, 0.14);
   }
 
   /* ── Base element styling ───────────────────────────────────────────────── */
@@ -232,6 +277,61 @@
 
   .gradient-gold {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 50%, var(--accent) 100%);
+  }
+
+  /**
+   * O-Level / A-Level portal surfaces — theme tokens (never remapped to solid white).
+   * Use these instead of bg-white/[0.06] on curriculum pages.
+   */
+  .portal-glass-card {
+    background: var(--portal-glass-bg);
+    border: 1px solid var(--portal-glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.14);
+  }
+
+  .portal-glass-card--interactive {
+    transition:
+      border-color 0.25s ease,
+      background 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .portal-glass-card--interactive:hover {
+    border-color: var(--portal-glass-border-hover);
+    background: var(--portal-glass-bg-hover);
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.18);
+  }
+
+  .portal-glass-inset {
+    background: var(--portal-glass-inset-bg);
+    border: 1px solid var(--portal-glass-inset-border);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .portal-glass-inset--interactive:hover {
+    background: var(--portal-glass-inset-bg-hover);
+  }
+
+  .portal-glass-select {
+    background: var(--portal-glass-inset-bg);
+    border: 1px solid var(--portal-glass-inset-border);
+    color: rgba(241, 245, 249, 0.9);
+  }
+
+  .portal-glass-select option {
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+
+  .portal-skeleton-panel {
+    background: var(--portal-skeleton-surface);
+    border: 1px solid var(--portal-skeleton-border);
+  }
+
+  .portal-skeleton-bone {
+    background: var(--portal-skeleton-shine);
   }
 
   .card-hover {
@@ -487,85 +587,85 @@ html[data-theme="beach"] ::-webkit-scrollbar-thumb:hover {
 }
 
 /* Cream canvas below gradient hero — hardcoded white/glass utilities → readable Beach */
-html[data-theme="beach"] .portal-page-body .text-white {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white {
   color: #0f172a !important;
 }
-html[data-theme="beach"] .portal-page-body [class*="bg-gradient-to-br"] .text-white,
-html[data-theme="beach"] .portal-page-body [class*="bg-gradient-to-b"] .text-white,
-html[data-theme="beach"] .portal-page-body [class*="from-blue-500"] .text-white,
-html[data-theme="beach"] .portal-page-body [class*="from-purple-500"] .text-white {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) [class*="bg-gradient-to-br"] .text-white,
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) [class*="bg-gradient-to-b"] .text-white,
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) [class*="from-blue-500"] .text-white,
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) [class*="from-purple-500"] .text-white {
   color: #ffffff !important;
 }
-html[data-theme="beach"] .portal-page-body .text-white\/50 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white\/50 {
   color: #64748b !important;
 }
-html[data-theme="beach"] .portal-page-body .text-white\/40 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white\/40 {
   color: #64748b !important;
 }
-html[data-theme="beach"] .portal-page-body .text-white\/30 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white\/30 {
   color: #94a3b8 !important;
 }
-html[data-theme="beach"] .portal-page-body .text-white\/60 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white\/60 {
   color: #475569 !important;
 }
-html[data-theme="beach"] .portal-page-body .text-white\/70 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white\/70 {
   color: #334155 !important;
 }
-html[data-theme="beach"] .portal-page-body .text-white\/80 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white\/80 {
   color: #1e293b !important;
 }
-html[data-theme="beach"] .portal-page-body .text-white\/20 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .text-white\/20 {
   color: #94a3b8 !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:text-white\/80:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:text-white\/80:hover {
   color: #334155 !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:text-white\/70:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:text-white\/70:hover {
   color: #475569 !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:text-white\/60:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:text-white\/60:hover {
   color: #475569 !important;
 }
-html[data-theme="beach"] .portal-page-body .group:hover .group-hover\:text-white\/60 {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .group:hover .group-hover\:text-white\/60 {
   color: #475569 !important;
 }
-html[data-theme="beach"] .portal-page-body .backdrop-blur-xl {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .backdrop-blur-xl {
   backdrop-filter: none;
 }
-html[data-theme="beach"] .portal-page-body .bg-white\/\[0\.06\] {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .bg-white\/\[0\.06\] {
   background-color: rgba(255, 255, 255, 0.96) !important;
 }
-html[data-theme="beach"] .portal-page-body .bg-white\/\[0\.04\] {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .bg-white\/\[0\.04\] {
   background-color: rgba(255, 255, 255, 0.92) !important;
 }
-html[data-theme="beach"] .portal-page-body .bg-white\/\[0\.08\] {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .bg-white\/\[0\.08\] {
   background-color: #f8fafc !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:bg-white\/\[0\.1\]:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:bg-white\/\[0\.1\]:hover {
   background-color: #f1f5f9 !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:bg-white\/\[0\.08\]:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:bg-white\/\[0\.08\]:hover {
   background-color: #f8fafc !important;
 }
-html[data-theme="beach"] .portal-page-body .border-white\/\[0\.1\] {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .border-white\/\[0\.1\] {
   border-color: rgba(15, 23, 42, 0.12) !important;
 }
-html[data-theme="beach"] .portal-page-body .border-white\/\[0\.15\] {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .border-white\/\[0\.15\] {
   border-color: rgba(15, 23, 42, 0.14) !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:border-white\/\[0\.2\]:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:border-white\/\[0\.2\]:hover {
   border-color: rgba(15, 23, 42, 0.2) !important;
 }
-html[data-theme="beach"] .portal-page-body .border-dashed.border-white\/\[0\.1\] {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .border-dashed.border-white\/\[0\.1\] {
   border-color: rgba(15, 23, 42, 0.2) !important;
 }
-html[data-theme="beach"] .portal-page-body .group:hover .group-hover\:text-white {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .group:hover .group-hover\:text-white {
   color: #1e293b !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:text-gold-300:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:text-gold-300:hover {
   color: #b45309 !important;
 }
-html[data-theme="beach"] .portal-page-body .hover\:text-gold-400:hover {
+html[data-theme="beach"] .portal-page-body:not(.portal-surface-navy) .hover\:text-gold-400:hover {
   color: #c2410c !important;
 }
 
@@ -594,11 +694,12 @@ html[data-theme="beach"] button.admin-toggle-track {
   border-color: #64748b !important;
 }
 
-/* Topical / topic cards on cream canvas — Beach */
+/* Topical / topic cards — Beach uses same navy-glass tokens as O/A portal */
 html[data-theme="beach"] .portal-topic-card {
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  border-color: rgba(15, 23, 42, 0.18) !important;
-  backdrop-filter: none;
+  background: var(--portal-glass-bg) !important;
+  border-color: var(--portal-glass-border) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
 }
 html[data-theme="beach"] .portal-topic-title {
   color: #0f172a !important;
@@ -622,8 +723,9 @@ html[data-theme="beach"] .portal-topic-empty p {
   color: #475569 !important;
 }
 html[data-theme="beach"] .portal-topic-soon {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: rgba(15, 23, 42, 0.2) !important;
+  background: var(--portal-glass-bg) !important;
+  border-color: var(--portal-glass-border) !important;
+  backdrop-filter: blur(20px) !important;
 }
 html[data-theme="beach"] .portal-topic-soon h3 {
   color: #0f172a !important;
@@ -635,8 +737,8 @@ html[data-theme="beach"] .portal-topic-soon svg {
   color: #64748b !important;
 }
 html[data-theme="beach"] .portal-topic-soon-inner {
-  background-color: rgba(248, 250, 252, 0.95) !important;
-  border-color: rgba(15, 23, 42, 0.12) !important;
+  background: var(--portal-glass-inset-bg) !important;
+  border-color: var(--portal-glass-inset-border) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
