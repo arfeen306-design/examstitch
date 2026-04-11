@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getAdminSession } from '@/lib/supabase/guards';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
-import { FileText, Video, BookOpen, TrendingUp } from 'lucide-react';
+import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
 
 export const dynamic = 'force-dynamic';
@@ -24,10 +26,46 @@ export default async function SubjectAdminPage({
     .single();
 
   if (!subject) {
+    const session = await getAdminSession();
+    const label = portal.label.replace(' Resources', '');
+    const slug = getPortalDbSubjectSlug(portal);
     return (
-      <div className="text-center py-20 text-[var(--text-muted)]">
-        <p className="text-lg font-medium">{portal.label.replace(' Resources', '')} subject not configured.</p>
-        <p className="text-sm mt-2">Run the database migration to set up the subjects table.</p>
+      <div className="max-w-xl mx-auto py-12 px-4">
+        <div className="rounded-xl border border-slate-600/40 bg-slate-950/35 backdrop-blur-md p-6 text-left shadow-inner">
+          <div className="flex items-center gap-2 text-amber-400/90 mb-2">
+            <Database className="w-5 h-5 shrink-0" aria-hidden />
+            <h2 className="text-lg font-semibold text-slate-100">{label} is not in the database yet</h2>
+          </div>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            The portal expects a parent subject row with slug{' '}
+            <code className="text-amber-200/90 bg-slate-900/60 px-1.5 py-0.5 rounded text-xs font-mono">{slug}</code>
+            {' '}in <code className="text-slate-300 text-xs font-mono">public.subjects</code>.
+          </p>
+          <ol className="mt-4 text-sm text-slate-400 space-y-2 list-decimal list-inside">
+            <li>
+              Apply the migration{' '}
+              <code className="text-xs font-mono text-slate-300">20260414_seed_discipline_subjects.sql</code> (or run equivalent SQL in Supabase).
+            </li>
+            <li>
+              In <strong className="text-slate-300">Super Admin → Subject Factory</strong>, create the subject if it is still missing.
+            </li>
+            <li>
+              Use <strong className="text-slate-300">Provision hierarchy</strong> on the same page to seed syllabi and default categories for this portal.
+            </li>
+          </ol>
+          {session?.isSuperAdmin ? (
+            <Link
+              href="/admin/super"
+              className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border border-amber-500/50 text-amber-200 bg-transparent hover:bg-amber-500/10 transition"
+            >
+              Open Super Admin
+            </Link>
+          ) : (
+            <p className="mt-6 text-xs text-slate-500">
+              Ask a super admin to run the migration or provision <span className="text-slate-400">{label}</span>.
+            </p>
+          )}
+        </div>
       </div>
     );
   }

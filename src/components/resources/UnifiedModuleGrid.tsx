@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Play, FileText, BookOpen, ChevronDown, Layers, Lock } from 'lucide-react';
-import { useTheme } from '@/components/ui/ThemeProvider';
 
 export interface LearningModule {
   id: string;
@@ -27,6 +26,30 @@ interface UnifiedModuleGridProps {
   emptyTitle?: string;
   emptyMessage?: string;
 }
+
+/** Professional Scholar — glass rows on navy portals (no solid white cards). */
+const CARD_GLASS =
+  'rounded-xl border border-slate-600/45 bg-slate-950/25 backdrop-blur-md shadow-inner ' +
+  'transition-all duration-200 hover:border-amber-500/30 hover:bg-slate-950/40';
+
+const ROW_INNER = 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4';
+
+const IDX_MAIN =
+  'shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums ' +
+  'bg-amber-500/12 text-amber-200 border border-amber-500/35';
+
+const TITLE_MAIN = 'text-sm font-semibold text-slate-100 truncate flex items-center gap-2';
+
+const BTN_WATCH =
+  'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap ' +
+  'border border-amber-400/55 text-amber-200 bg-transparent ' +
+  'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/75 hover:text-amber-100 ' +
+  'hover:shadow-[0_0_18px_rgba(251,191,36,0.14)]';
+
+const BTN_WORKSHEET =
+  'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap ' +
+  'border border-slate-500/55 text-slate-200 bg-slate-900/30 backdrop-blur-sm ' +
+  'transition-all duration-200 hover:border-amber-400/40 hover:text-amber-100/95 hover:bg-slate-900/50';
 
 // ── Grouping logic ────────────────────────────────────────────────────────────
 
@@ -80,22 +103,19 @@ function groupModules(modules: LearningModule[]): TopicGroup[] {
 
 // ── Loading skeleton ───────────────────────────────────────────────────────────
 
-function SkeletonRow({ beach }: { beach: boolean }) {
-  const b = beach ? 'border-slate-200' : 'border-white/[0.06]';
-  const bg = beach ? 'bg-slate-200' : 'bg-white/[0.08]';
-  const bg2 = beach ? 'bg-slate-100' : 'bg-white/[0.04]';
+function SkeletonRow() {
   return (
-    <div className={`flex items-center justify-between px-5 py-4 animate-pulse border-b ${b}`}>
+    <div className="flex items-center justify-between px-5 py-4 animate-pulse border-b border-slate-700/40">
       <div className="flex items-center gap-4 flex-1">
-        <div className={`w-7 h-7 rounded-lg shrink-0 ${bg}`} />
+        <div className="w-7 h-7 rounded-lg shrink-0 bg-slate-800/60" />
         <div className="space-y-1.5 flex-1">
-          <div className={`h-4 rounded-full w-1/3 ${bg}`} />
-          <div className={`h-3 rounded-full w-1/5 ${bg2}`} />
+          <div className="h-4 rounded-full w-1/3 bg-slate-800/50" />
+          <div className="h-3 rounded-full w-1/5 bg-slate-800/35" />
         </div>
       </div>
       <div className="flex gap-2">
-        <div className={`h-7 w-24 rounded-full ${beach ? 'bg-slate-200' : 'bg-white/[0.06]'}`} />
-        <div className={`h-7 w-20 rounded-full ${bg2}`} />
+        <div className="h-7 w-24 rounded-lg bg-slate-800/40" />
+        <div className="h-7 w-20 rounded-lg bg-slate-800/30" />
       </div>
     </div>
   );
@@ -103,35 +123,25 @@ function SkeletonRow({ beach }: { beach: boolean }) {
 
 // ── Empty state ────────────────────────────────────────────────────────────────
 
-function EmptyState({ title, message, beach }: { title: string; message: string; beach: boolean }) {
+function EmptyState({ title, message }: { title: string; message: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-20 text-center"
     >
-      <div
-        className={
-          beach
-            ? 'w-14 h-14 rounded-2xl bg-slate-100 border border-slate-300 flex items-center justify-center mb-4'
-            : 'w-14 h-14 rounded-2xl bg-white/[0.06] border border-white/[0.1] flex items-center justify-center mb-4'
-        }
-      >
-        <BookOpen className={beach ? 'w-7 h-7 text-slate-500' : 'w-7 h-7 text-white/30'} />
+      <div className="w-14 h-14 rounded-2xl bg-slate-900/40 border border-slate-600/40 flex items-center justify-center mb-4 backdrop-blur-md">
+        <BookOpen className="w-7 h-7 text-slate-400" />
       </div>
-      <h3 className={beach ? 'text-sm font-semibold text-slate-800 mb-1' : 'text-sm font-semibold text-white/60 mb-1'}>
-        {title}
-      </h3>
-      <p className={beach ? 'text-xs text-slate-600 max-w-xs leading-relaxed' : 'text-xs text-white/30 max-w-xs leading-relaxed'}>
-        {message}
-      </p>
+      <h3 className="text-sm font-semibold text-slate-200 mb-1">{title}</h3>
+      <p className="text-xs text-slate-400 max-w-xs leading-relaxed">{message}</p>
     </motion.div>
   );
 }
 
-// ── Action Pills ───────────────────────────────────────────────────────────────
+// ── Action pills ───────────────────────────────────────────────────────────────
 
-function ActionPills({ mod, beach }: { mod: LearningModule; beach: boolean }) {
+function ActionPills({ mod }: { mod: LearningModule }) {
   const redirectTo = encodeURIComponent(`/view/${mod.id}`);
 
   if (mod.isLocked) {
@@ -139,11 +149,7 @@ function ActionPills({ mod, beach }: { mod: LearningModule; beach: boolean }) {
       <div className="flex flex-wrap items-center gap-2 shrink-0">
         <Link
           href={`/auth/login?redirectTo=${redirectTo}`}
-          className={
-            beach
-              ? 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-sm transition-all duration-150 hover:shadow-md whitespace-nowrap bg-amber-100 text-amber-900 border-2 border-amber-700/40 hover:bg-amber-200'
-              : 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-sm transition-all duration-150 hover:shadow-md whitespace-nowrap bg-orange-500/20 text-orange-300 border border-orange-400/30 hover:bg-orange-500/30'
-          }
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap border border-amber-600/50 text-amber-200 bg-amber-500/10 hover:bg-amber-500/15 transition"
         >
           <Lock className="w-3 h-3" />
           Members Only
@@ -152,30 +158,14 @@ function ActionPills({ mod, beach }: { mod: LearningModule; beach: boolean }) {
     );
   }
 
-  const worksheetClass = beach
-    ? 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-sm transition-all duration-150 hover:shadow-md whitespace-nowrap bg-white text-navy-900 border-2 border-slate-400 hover:bg-slate-50 hover:border-slate-500'
-    : 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap border border-slate-600/60 text-slate-200 bg-slate-900/35 backdrop-blur-sm shadow-sm transition-all duration-150 hover:border-amber-400/35 hover:bg-slate-900/50 hover:text-amber-100/90';
-
-  const watchScholar =
-    'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap ' +
-    'border border-amber-400/60 text-amber-300 bg-transparent shadow-sm ' +
-    'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/80 hover:text-amber-200 hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]';
-
   return (
     <div className="flex flex-wrap items-center gap-2 shrink-0">
-      <Link
-        href={`/view/${mod.id}`}
-        className={
-          beach
-            ? 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-sm transition-all duration-150 hover:shadow-md whitespace-nowrap bg-gradient-to-r from-red-500 to-rose-600 text-white border border-red-700/30'
-            : watchScholar
-        }
-      >
-        <Play className={`w-3 h-3 ${beach ? 'fill-white' : 'fill-amber-300/90'}`} />
+      <Link href={`/view/${mod.id}`} className={BTN_WATCH}>
+        <Play className="w-3 h-3 fill-amber-200/90" />
         Watch Video
       </Link>
       {mod.worksheetUrl && (
-        <Link href={`/view/${mod.id}?mode=worksheet`} className={worksheetClass}>
+        <Link href={`/view/${mod.id}?mode=worksheet`} className={BTN_WORKSHEET}>
           <FileText className="w-3 h-3" />
           Worksheet
         </Link>
@@ -186,36 +176,24 @@ function ActionPills({ mod, beach }: { mod: LearningModule; beach: boolean }) {
 
 // ── Single topic row ─────────────────────────────────────────────────────────
 
-function SingleRow({ group, globalIndex, beach }: { group: TopicGroup; globalIndex: number; beach: boolean }) {
+function SingleRow({ group, globalIndex }: { group: TopicGroup; globalIndex: number }) {
   const mod = group.parts[0];
-  const row = beach
-    ? 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-xl transition-all duration-200 bg-white border border-slate-300 shadow-sm hover:border-slate-400 hover:shadow'
-    : 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-xl transition-all duration-200 bg-slate-900/40 backdrop-blur-md border border-slate-700/50 shadow-inner hover:border-amber-500/20 hover:bg-slate-900/55';
-  const idx = beach
-    ? 'shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums bg-slate-200 text-slate-800'
-    : 'shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums bg-white/[0.08] text-white/50';
-  const title = beach
-    ? 'text-sm font-semibold text-slate-900 truncate transition-colors duration-150 flex items-center gap-2'
-    : 'text-sm font-semibold text-white/80 truncate transition-colors duration-150 flex items-center gap-2';
-  const lockPill = beach
-    ? 'inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 bg-amber-100 text-amber-900 border border-amber-700/30'
-    : 'inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 bg-orange-500/10 text-orange-300';
 
   return (
-    <motion.div whileHover={{ scale: 1.005 }} className={row}>
+    <motion.div whileHover={{ scale: 1.005 }} className={`${CARD_GLASS} ${ROW_INNER}`}>
       <div className="flex items-center gap-4 min-w-0 flex-1">
-        <span className={idx}>{String(globalIndex + 1).padStart(2, '0')}</span>
-        <h3 className={title}>
+        <span className={IDX_MAIN}>{String(globalIndex + 1).padStart(2, '0')}</span>
+        <h3 className={TITLE_MAIN}>
           {group.baseTitle}
           {mod.isLocked && (
-            <span className={lockPill}>
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md shrink-0 bg-orange-500/15 text-orange-200 border border-orange-400/25">
               <Lock className="w-2.5 h-2.5" /> Locked
             </span>
           )}
         </h3>
       </div>
       <div className="pl-11 sm:pl-0">
-        <ActionPills mod={mod} beach={beach} />
+        <ActionPills mod={mod} />
       </div>
     </motion.div>
   );
@@ -224,37 +202,30 @@ function SingleRow({ group, globalIndex, beach }: { group: TopicGroup; globalInd
 // ── Accordion row ────────────────────────────────────────────────────────────
 
 function AccordionRow({
-  group, globalIndex, isOpen, onToggle, beach,
+  group,
+  globalIndex,
+  isOpen,
+  onToggle,
 }: {
-  group: TopicGroup; globalIndex: number; isOpen: boolean; onToggle: () => void; beach: boolean;
+  group: TopicGroup;
+  globalIndex: number;
+  isOpen: boolean;
+  onToggle: () => void;
 }) {
-  const outer = beach
-    ? `rounded-xl transition-all duration-200 overflow-hidden border bg-white ${isOpen ? 'border-indigo-400 shadow-md' : 'border-slate-300'}`
-    : `rounded-xl transition-all duration-200 overflow-hidden border backdrop-blur-md bg-slate-900/35 ${
-        isOpen ? 'border-amber-500/35 shadow-[0_8px_28px_rgba(0,0,0,0.35)]' : 'border-slate-700/50'
-      }`;
+  const outer = `${CARD_GLASS} overflow-hidden ${isOpen ? 'border-amber-500/35 shadow-[0_8px_32px_rgba(0,0,0,0.35)]' : ''}`;
 
-  const btnBg = beach
-    ? 'w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 text-left bg-slate-50 hover:bg-slate-100'
-    : 'w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 text-left bg-slate-900/30 hover:bg-slate-900/50';
+  const btnBg =
+    'w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 text-left ' +
+    'bg-slate-950/20 hover:bg-slate-900/35';
 
-  const idxClosed = beach ? 'bg-slate-200 text-slate-800' : 'bg-white/[0.08] text-white/50';
-  const titleC = beach ? 'text-sm font-semibold text-slate-900 truncate' : 'text-sm font-semibold text-white/80 truncate';
-  const metaC = beach ? 'text-xs text-slate-600' : 'text-xs text-white/30';
-  const layersC = beach ? 'w-3 h-3 text-slate-500' : 'w-3 h-3 text-white/30';
+  const chev = `${isOpen ? 'bg-amber-500/20 text-amber-200' : 'bg-slate-800/60 text-slate-400'} w-6 h-6 rounded-full flex items-center justify-center border border-slate-600/40`;
 
-  const chev = beach
-    ? `${isOpen ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'} w-6 h-6 rounded-full flex items-center justify-center`
-    : `${isOpen ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/[0.06] text-white/30'} w-6 h-6 rounded-full flex items-center justify-center`;
-
-  const innerTop = beach ? 'border-t border-slate-200 bg-slate-50/80' : 'border-t border-slate-700/40 bg-slate-950/40';
-  const partRow = beach
-    ? 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 transition-colors duration-150 border-b border-slate-200'
-    : 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 transition-colors duration-150 border-b border-slate-800/60';
-  const partIdx = beach
-    ? 'shrink-0 w-8 h-6 flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-white border border-slate-300 text-slate-700'
-    : 'shrink-0 w-8 h-6 flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-slate-900/50 border border-slate-600/50 text-amber-200/70';
-  const partTitle = beach ? 'text-sm text-slate-800 truncate' : 'text-sm text-white/50 truncate';
+  const innerTop = 'border-t border-slate-700/45 bg-slate-950/20';
+  const partRow =
+    'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 transition-colors border-b border-slate-800/55 last:border-b-0 hover:bg-slate-900/25';
+  const partIdx =
+    'shrink-0 w-8 h-6 flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-slate-900/55 border border-slate-600/45 text-amber-200/90';
+  const partTitle = 'text-sm text-slate-200 truncate';
 
   return (
     <div className={outer}>
@@ -262,16 +233,16 @@ function AccordionRow({
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <span
             className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums transition-colors ${
-              isOpen ? 'bg-indigo-500 text-white' : idxClosed
+              isOpen ? 'bg-amber-500/25 text-amber-100 border border-amber-400/40' : IDX_MAIN
             }`}
           >
             {String(globalIndex + 1).padStart(2, '0')}
           </span>
           <div className="min-w-0">
-            <h3 className={titleC}>{group.baseTitle}</h3>
+            <h3 className="text-sm font-semibold text-slate-100 truncate">{group.baseTitle}</h3>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <Layers className={layersC} />
-              <span className={metaC}>{group.parts.length} parts</span>
+              <Layers className="w-3 h-3 text-slate-500" />
+              <span className="text-xs text-slate-400">{group.parts.length} parts</span>
             </div>
           </div>
         </div>
@@ -310,7 +281,7 @@ function AccordionRow({
                     </span>
                   </div>
                   <div className="pl-11 sm:pl-0">
-                    <ActionPills mod={part} beach={beach} />
+                    <ActionPills mod={part} />
                   </div>
                 </motion.div>
               ))}
@@ -341,81 +312,55 @@ export default function UnifiedModuleGrid({
   emptyMessage = 'Upload your first video via the admin dashboard.',
 }: UnifiedModuleGridProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const { theme } = useTheme();
-  const beach = theme === 'beach';
 
   const isAdmin = typeof document !== 'undefined' && document.cookie.includes('admin_mode=1');
-  const effectiveModules = isAdmin
-    ? modules.map(m => m.isLocked ? { ...m, isLocked: false } : m)
-    : modules;
+  const effectiveModules = isAdmin ? modules.map(m => (m.isLocked ? { ...m, isLocked: false } : m)) : modules;
 
   if (isLoading) {
     return (
-      <div
-        className={
-          beach
-            ? 'rounded-2xl overflow-hidden bg-white border border-slate-300 shadow-sm'
-            : 'rounded-2xl overflow-hidden bg-slate-900/30 border border-slate-700/50 backdrop-blur-md'
-        }
-      >
+      <div className={`${CARD_GLASS} overflow-hidden rounded-2xl`}>
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonRow key={i} beach={beach} />
+          <SkeletonRow key={i} />
         ))}
       </div>
     );
   }
 
   if (!effectiveModules.length) {
-    return <EmptyState title={emptyTitle} message={emptyMessage} beach={beach} />;
+    return <EmptyState title={emptyTitle} message={emptyMessage} />;
   }
 
   const groups = groupModules(effectiveModules);
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-2"
-    >
-      {/* Legend */}
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-2">
       <div className="flex items-center justify-between px-1 pb-2 mb-1">
-        <p
-          className={
-            beach
-              ? 'text-xs font-semibold uppercase tracking-widest text-slate-700'
-              : 'text-xs font-semibold uppercase tracking-widest text-white/30'
-          }
-        >
+        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
           {groups.length} topic{groups.length !== 1 ? 's' : ''}
-          {groups.some(g => g.parts.length > 1) && (
-            <span className={beach ? 'ml-1 text-slate-500' : 'ml-1 text-white/15'}>· click to expand parts</span>
-          )}
+          {groups.some(g => g.parts.length > 1) && <span className="ml-1 text-slate-500">· click to expand parts</span>}
         </p>
-        <div className={beach ? 'flex items-center gap-4 text-xs text-slate-700' : 'flex items-center gap-4 text-xs text-white/30'}>
+        <div className="flex items-center gap-4 text-xs text-slate-400">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full inline-block bg-red-500" />
+            <span className="w-2 h-2 rounded-full inline-block bg-amber-400/90" />
             Video
           </span>
           <span className="flex items-center gap-1">
-            <span className={`w-2 h-2 rounded-full inline-block ${beach ? 'bg-slate-500' : 'bg-white/20'}`} />
+            <span className="w-2 h-2 rounded-full inline-block bg-slate-400" />
             Worksheet
           </span>
         </div>
       </div>
 
-      {/* Rows */}
       {groups.map((group, groupIndex) => (
         <motion.div key={group.baseTitle} variants={rowVariants}>
           {group.parts.length === 1 && !group.parts[0].parentResourceId ? (
-            <SingleRow group={group} globalIndex={groupIndex} beach={beach} />
+            <SingleRow group={group} globalIndex={groupIndex} />
           ) : (
             <AccordionRow
               group={group}
               globalIndex={groupIndex}
               isOpen={openIndex === groupIndex}
               onToggle={() => setOpenIndex(openIndex === groupIndex ? null : groupIndex)}
-              beach={beach}
             />
           )}
         </motion.div>

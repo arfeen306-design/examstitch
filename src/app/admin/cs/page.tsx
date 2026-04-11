@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { FileText, Video, BookOpen, TrendingUp } from 'lucide-react';
+import { getAdminSession } from '@/lib/supabase/guards';
+import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import CSResourceTable from './CSResourceTable';
 
 export const dynamic = 'force-dynamic';
@@ -15,10 +17,29 @@ export default async function CSAdminPage() {
     .single();
 
   if (!subject) {
+    const session = await getAdminSession();
     return (
-      <div className="text-center py-20 text-[var(--text-muted)]">
-        <p className="text-lg font-medium">Computer Science subject not configured.</p>
-        <p className="text-sm mt-2">Run the database migration to set up the subjects table.</p>
+      <div className="max-w-xl mx-auto py-12 px-4">
+        <div className="rounded-xl border border-slate-600/40 bg-slate-950/35 backdrop-blur-md p-6 text-left shadow-inner">
+          <div className="flex items-center gap-2 text-amber-400/90 mb-2">
+            <Database className="w-5 h-5 shrink-0" aria-hidden />
+            <h2 className="text-lg font-semibold text-slate-100">Computer Science is not in the database yet</h2>
+          </div>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Expected slug <code className="text-amber-200/90 bg-slate-900/60 px-1.5 py-0.5 rounded text-xs font-mono">computer-science</code> in{' '}
+            <code className="text-slate-300 text-xs font-mono">public.subjects</code>.
+          </p>
+          {session?.isSuperAdmin ? (
+            <Link
+              href="/admin/super"
+              className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border border-amber-500/50 text-amber-200 bg-transparent hover:bg-amber-500/10 transition"
+            >
+              Open Super Admin
+            </Link>
+          ) : (
+            <p className="mt-6 text-xs text-slate-500">Ask a super admin to run migrations or create the CS subject.</p>
+          )}
+        </div>
       </div>
     );
   }

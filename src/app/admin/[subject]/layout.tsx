@@ -94,17 +94,11 @@ export default async function SubjectAdminLayout({
             style={{ background: `linear-gradient(90deg, transparent, ${portal.accentColor}40, transparent)` }}
           />
 
-          {/* Profile badge */}
-          <div
-            className="relative mx-4 mb-4 p-3 rounded-xl overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, ${portal.accentColor}10 0%, ${portal.accentColor}05 50%, ${portal.accentColor}08 100%)`,
-              border: `1px solid ${portal.accentColor}25`,
-            }}
-          >
+          {/* Profile badge — glass, low-contrast border (no harsh white bars) */}
+          <div className="relative mx-4 mb-4 p-3 rounded-xl overflow-hidden border border-white/[0.06] bg-slate-950/35 backdrop-blur-md">
             <div className="relative flex items-center gap-3">
               <div
-                className={`w-9 h-9 rounded-xl bg-gradient-to-br ${portal.gradient} flex items-center justify-center shrink-0 shadow-lg ring-2 ring-white/10`}
+                className={`w-9 h-9 rounded-xl bg-gradient-to-br ${portal.gradient} flex items-center justify-center shrink-0 shadow-lg ring-1 ring-amber-500/20`}
               >
                 <span className="text-sm font-bold text-white drop-shadow-sm">
                   {adminName.charAt(0).toUpperCase()}
@@ -155,8 +149,8 @@ export default async function SubjectAdminLayout({
             <Link
               href="/admin"
               className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
-                         text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.03]
-                         focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 focus-visible:ring-offset-2"
+                         text-slate-300/90 hover:text-amber-100/95 border border-slate-600/35 bg-slate-950/20 hover:border-amber-500/25 hover:bg-amber-500/5
+                         focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/25 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
             >
               <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
               Back to Main
@@ -165,8 +159,8 @@ export default async function SubjectAdminLayout({
               <button
                 type="submit"
                 className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
-                           text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.03]
-                           focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 focus-visible:ring-offset-2"
+                           text-slate-300/90 hover:text-slate-100 border border-slate-600/35 bg-slate-950/20 hover:border-slate-500/45 hover:bg-slate-900/40
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
               >
                 <LogOut className="w-4 h-4 shrink-0" aria-hidden />
                 Sign Out
