@@ -1046,6 +1046,38 @@ export default function HomeClient({ feedItems }: { feedItems: FeedItem[] }) {
         </motion.div>
       </section>
 
+      {/* How It Works */}
+      <section className="py-20" style={{ backgroundColor: 'var(--bg-surface)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+              How ExamStitch Works
+            </motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="max-w-lg mx-auto" style={{ color: 'var(--text-secondary)' }}>
+              View past papers with instant video solutions — question by question.
+            </motion.p>
+          </motion.div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { step: '01', title: 'Pick Your Paper', desc: 'Browse by grade, year, session, and variant.' },
+              { step: '02', title: 'View & Print', desc: 'Open the paper in our built-in viewer. Print or download instantly.' },
+              { step: '03', title: 'Watch Solutions', desc: 'Click any question number to jump directly to the video solution.' },
+            ].map((item, i) => (
+              <motion.div key={item.step} variants={fadeUp} custom={i + 2} className="text-center">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ backgroundColor: '#FF6B35' }}
+                >
+                  <span className="text-sm font-bold text-white">{item.step}</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{item.title}</h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* ═══ STUDENT REVIEWS — Auto-scrolling Marquee ═══ */}
       <StudentReviews />
 
