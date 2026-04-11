@@ -359,6 +359,15 @@ export function getFooterContextFromPathname(pathname: string): FooterContext {
     };
   }
 
+  if (parts[0] === 'tutors') {
+    const g = generalStemFooter();
+    return {
+      ...g,
+      brandTagline:
+        'Expert tutors for O-Level, A-Level, and university prep — verified scholars for online and in-person sessions across Pakistan, KSA, and the Gulf.',
+    };
+  }
+
   if (parts[0] === 'alevel' && parts[1] && subjectMeta[parts[1]]) {
     const aSlug = parts[1];
     const meta = subjectMeta[aSlug];
