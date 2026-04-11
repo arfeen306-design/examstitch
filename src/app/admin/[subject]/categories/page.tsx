@@ -3,11 +3,18 @@
 import { useState, useTransition, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus, Pencil, Trash2, X, Check, FolderOpen, Loader2 } from 'lucide-react';
-import { createSubjectCategory, renameCategory, deleteSubjectCategory } from './actions';
+import {
+  createSubjectCategory,
+  renameCategory,
+  deleteSubjectCategory,
+  seedPortalDefaultCategories,
+} from './actions';
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
 import { listMergedCategoriesForSubjectAdmin } from '@/app/admin/actions';
+import { oLevelGrades, aLevelPapersBySubject } from '@/config/navigation';
+import { PARENT_SUBJECT_SLUG_TO_ALEVEL_NAV_KEY, A_LEVEL_SECTION_SLUGS } from '@/lib/category-slug-policy';
 
 interface CategoryRow {
   id: string;
@@ -20,7 +27,8 @@ interface CategoryRow {
 
 export default function CategoriesPage() {
   const params = useParams();
-  const portal = ROUTE_TO_PORTAL[params.subject as string];
+  const portalRouteSegment = params.subject as string;
+  const portal = ROUTE_TO_PORTAL[portalRouteSegment];
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [categories, setCategories] = useState<CategoryRow[]>([]);
@@ -37,6 +45,7 @@ export default function CategoriesPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const addCategoryButtonRef = useRef<HTMLButtonElement>(null);
+  const [seeding, setSeeding] = useState(false);
 
   const loadCategories = useCallback(async () => {
     if (!portal) return;
@@ -131,6 +140,29 @@ export default function CategoriesPage() {
     });
   }
 
+  function handleSeedDefaults() {
+    startTransition(async () => {
+      setSeeding(true);
+      try {
+        const result = await seedPortalDefaultCategories(portalRouteSegment);
+        if (result.success) {
+          showToast({
+            message:
+              result.categoriesCreated > 0
+                ? `Added or updated ${result.categoriesCreated} category folder(s).`
+                : 'Category tree is already up to date.',
+            type: 'success',
+          });
+          await loadCategories();
+        } else {
+          showToast({ message: result.error, type: 'error' });
+        }
+      } finally {
+        setSeeding(false);
+      }
+    });
+  }
+
   function handleDelete(cat: CategoryRow) {
     if (!confirm(`Delete "${cat.name}"? This cannot be undone.`)) return;
     startTransition(async () => {
@@ -149,6 +181,20 @@ export default function CategoriesPage() {
   // Group: top-level and children
   const topLevel = categories.filter(c => !c.parent_id);
   const children = categories.filter(c => c.parent_id);
+  /** Only AS/A2 roots may have children (public URL policy); O-Level grades stay top-level. */
+  const paperSectionParents = categories.filter(
+    c => !c.parent_id && (c.slug === 'as-level' || c.slug === 'a2-level'),
+  );
+  const disciplineSlug = getPortalDbSubjectSlug(portal);
+  const alevelNavKey = PARENT_SUBJECT_SLUG_TO_ALEVEL_NAV_KEY[disciplineSlug] ?? null;
+  const alevelPaperConfig = alevelNavKey ? aLevelPapersBySubject[alevelNavKey] : null;
+  const selectedParent = categories.find(c => c.id === formParentId);
+  const selectedParentSection =
+    selectedParent && A_LEVEL_SECTION_SLUGS.has(selectedParent.slug)
+      ? (selectedParent.slug as 'as-level' | 'a2-level')
+      : null;
+  const allowedPaperSlugsForParent =
+    alevelPaperConfig && selectedParentSection ? alevelPaperConfig[selectedParentSection] : [];
 
   return (
     <div className="space-y-6">
@@ -167,6 +213,46 @@ export default function CategoriesPage() {
           <Plus className="w-4 h-4" aria-hidden />
           Add Category
         </button>
+      </div>
+
+      <div
+        className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 text-sm text-[var(--text-secondary)] leading-relaxed space-y-3"
+        role="region"
+        aria-label="How categories map to the public site"
+      >
+        <p>
+          <strong className="text-[var(--text-primary)]">O-Level and A-Level are not a dropdown here.</strong>{' '}
+          They are <strong className="text-[var(--text-primary)]">category slugs</strong> that must match the live
+          course URLs (same names as on the public site).
+        </p>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            disabled={seeding || isPending}
+            onClick={handleSeedDefaults}
+            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg text-white disabled:opacity-50 w-fit"
+            style={{ backgroundColor: portal.accentColor }}
+          >
+            {seeding ? 'Seeding…' : 'Create default O-Level & A-Level folders'}
+          </button>
+          <span className="text-xs text-[var(--text-muted)]">
+            Adds Grade 9–11, AS Level, A2 Level, and the correct paper rows for this subject (safe to run again).
+          </span>
+        </div>
+        <p className="text-xs text-[var(--text-muted)]">
+          If you add categories manually: top-level slugs must be{' '}
+          <code className="text-[var(--text-secondary)]">{oLevelGrades.map(g => g.slug).join(', ')}</code>
+          {portal.hasALevelSyllabus !== false && alevelNavKey ? (
+            <>
+              {' '}
+              or <code className="text-[var(--text-secondary)]">as-level</code>,{' '}
+              <code className="text-[var(--text-secondary)]">a2-level</code>. Paper rows must use the exact slugs
+              below (not plain &quot;paper-1&quot;).
+            </>
+          ) : (
+            <>.</>
+          )}
+        </p>
       </div>
 
       {/* Create form */}
@@ -188,13 +274,33 @@ export default function CategoriesPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Parent Category (optional)</label>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Parent (A-Level papers only)</label>
             <select value={formParentId ?? ''} onChange={e => setFormParentId(e.target.value || null)}
               className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-primary)]">
-              <option value="">None (top-level)</option>
-              {topLevel.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="">None — top-level (O-Level grades or AS/A2 roots)</option>
+              {paperSectionParents.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.slug})
+                </option>
+              ))}
             </select>
+            <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+              O-Level uses flat grades only (no parent). A-Level papers go under <strong className="font-normal text-[var(--text-secondary)]">AS Level</strong> or{' '}
+              <strong className="font-normal text-[var(--text-secondary)]">A2 Level</strong> after those rows exist (use the seed button above if the list is empty).
+            </p>
           </div>
+          {allowedPaperSlugsForParent.length > 0 && (
+            <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 p-3 text-xs">
+              <p className="font-medium text-[var(--text-primary)] mb-2">Allowed paper slugs for this parent</p>
+              <ul className="space-y-1 font-mono text-[11px] text-[var(--text-secondary)]">
+                {allowedPaperSlugsForParent.map((p) => (
+                  <li key={p.slug}>
+                    <span className="text-[var(--text-muted)]">{p.label}</span> — <span className="text-amber-200/90">{p.slug}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs text-[var(--text-muted)]">Cancel</button>
             <button type="submit" disabled={isPending}

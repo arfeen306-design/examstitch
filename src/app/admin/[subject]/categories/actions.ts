@@ -3,6 +3,13 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
+import { provisionSubjectPortal } from '@/lib/db/subject-provisioner';
+import { requireSubjectAdmin } from '@/lib/supabase/guards';
+import {
+  ROUTE_TO_PORTAL,
+  getPortalDbSubjectSlug,
+  PORTAL_ROUTE_SEGMENTS,
+} from '@/config/admin-portals';
 
 function normalizeCategorySlug(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, '-');
@@ -78,6 +85,42 @@ export async function createSubjectCategory(payload: {
   revalidateTag('categories');
   revalidatePath('/', 'layout');
   return { success: true };
+}
+
+/**
+ * Idempotent: seeds O-Level grade folders, AS/A2 roots, and A-Level paper categories
+ * (non-CS portals) so subject admins do not have to create slugs by hand.
+ */
+export async function seedPortalDefaultCategories(portalRouteSegment: string): Promise<
+  | { success: true; categoriesCreated: number }
+  | { success: false; error: string }
+> {
+  if (!PORTAL_ROUTE_SEGMENTS.has(portalRouteSegment)) {
+    return { success: false, error: 'Invalid subject portal.' };
+  }
+  const portal = ROUTE_TO_PORTAL[portalRouteSegment];
+  const supabase = createAdminClient();
+  const disciplineSlug = getPortalDbSubjectSlug(portal);
+  const { data: subject, error: subErr } = await supabase
+    .from('subjects')
+    .select('id')
+    .eq('slug', disciplineSlug)
+    .maybeSingle();
+  if (subErr || !subject?.id) {
+    return { success: false, error: 'Subject not found in the database.' };
+  }
+  const auth = await requireSubjectAdmin(subject.id);
+  if (!auth) {
+    return { success: false, error: 'Not authorised for this subject.' };
+  }
+  const result = await provisionSubjectPortal(supabase, portalRouteSegment);
+  if (!result.success) {
+    return { success: false, error: result.error ?? 'Provisioning failed.' };
+  }
+  revalidateTag('categories');
+  revalidatePath('/', 'layout');
+  revalidatePath(`/admin/${portalRouteSegment}/categories`);
+  return { success: true, categoriesCreated: result.categoriesCreated ?? 0 };
 }
 
 export async function renameCategory(categoryId: string, newName: string) {
