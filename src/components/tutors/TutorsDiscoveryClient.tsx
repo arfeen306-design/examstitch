@@ -156,7 +156,7 @@ export default function TutorsDiscoveryClient({ tutors }: { tutors: TutorListIte
             variants={staggerParent}
             initial="hidden"
             animate="visible"
-            className="mx-auto w-full max-w-4xl rounded-3xl border border-amber-500/20 bg-slate-950/50 px-8 py-10 shadow-[0_0_80px_rgba(251,191,36,0.06)] backdrop-blur-xl sm:px-12 sm:py-14 md:px-14 md:py-16"
+            className="mx-auto w-full max-w-4xl rounded-3xl border border-amber-400/15 bg-transparent px-8 py-10 shadow-[0_0_60px_rgba(251,191,36,0.05)] sm:px-12 sm:py-14 md:px-14 md:py-16 [text-shadow:0_2px_28px_rgba(0,0,0,0.75)]"
           >
             <motion.p
               variants={fadeUp}
@@ -221,7 +221,7 @@ export default function TutorsDiscoveryClient({ tutors }: { tutors: TutorListIte
               >
                 <Link
                   href={`/tutors/${tutor.slug}`}
-                  className="group flex h-full flex-col rounded-2xl border border-white/[0.06] bg-slate-950/50 p-6 shadow-sm transition hover:border-amber-500/30 hover:bg-slate-950/75 sm:p-8"
+                  className="group flex h-full flex-col rounded-2xl border border-white/[0.08] bg-transparent p-6 shadow-sm transition hover:border-amber-500/25 hover:bg-white/[0.03] sm:p-8"
                 >
                   <div className="flex gap-5">
                     <motion.div
@@ -284,7 +284,7 @@ export default function TutorsDiscoveryClient({ tutors }: { tutors: TutorListIte
             <motion.div
               variants={fadeUp}
               custom={1}
-              className="col-span-full mx-auto mt-2 max-w-xl rounded-2xl border border-amber-500/15 bg-slate-950/50 px-8 py-12 text-center backdrop-blur-sm sm:px-10"
+              className="col-span-full mx-auto mt-2 max-w-xl rounded-2xl border border-amber-400/15 bg-transparent px-8 py-12 text-center sm:px-10 [text-shadow:0_2px_20px_rgba(0,0,0,0.8)]"
             >
               <div className="mx-auto mb-4 flex justify-center gap-1 text-amber-400/90" aria-hidden>
                 <GoldStar className="text-xl" />
