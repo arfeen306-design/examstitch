@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   motion,
   AnimatePresence,
@@ -38,6 +39,8 @@ import {
   Clock,
 } from 'lucide-react';
 import TrendingRow from '@/components/digital-skills/TrendingRow';
+import { BackToDigitalSkillsHub } from '@/components/digital-skills/BackToDigitalSkillsHub';
+import { DIGITAL_SKILLS_NAV_ROOT_EVENT } from '@/lib/navigation-events';
 import dynamic from 'next/dynamic';
 
 const CheatSheetViewer = dynamic(
@@ -447,12 +450,15 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-[var(--bg-primary)]"
     >
-      {/* Top bar — breadcrumb navigation */}
+      {/* Top bar — explicit back + breadcrumb navigation */}
       <div className="sticky top-0 z-30 bg-white/[0.04] backdrop-blur-2xl border-b border-white/[0.06]">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 space-y-2">
+          <BackToDigitalSkillsHub onClick={onBack} />
+          <div className="flex items-center justify-between gap-2">
           {/* Breadcrumbs: Digital Skills > Skill Title > Playlist Name */}
           <nav className="flex items-center gap-1.5 text-sm min-w-0">
             <button
+              type="button"
               onClick={onBack}
               className="text-white/40 hover:text-white transition-colors font-medium shrink-0"
             >
@@ -460,6 +466,7 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
             </button>
             <ChevronLeft className="w-3.5 h-3.5 text-white/20 rotate-180 shrink-0" />
             <button
+              type="button"
               onClick={onBack}
               className="text-white/40 hover:text-white transition-colors font-medium truncate max-w-[120px]"
             >
@@ -486,11 +493,14 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
           </div>
 
           <button
+            type="button"
             onClick={onBack}
             className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] flex items-center justify-center transition-colors shrink-0"
+            aria-label="Close course view"
           >
             <X className="w-4 h-4 text-white/60" />
           </button>
+          </div>
         </div>
       </div>
 
@@ -795,6 +805,8 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function DigitalSkillsClient({ dbSkills = [] }: { dbSkills?: DBSkill[] }) {
+  const router = useRouter();
+
   // Transform DB skills and merge with demo fallback
   const SKILLS = useMemo(() => {
     const transformed = transformDBSkills(dbSkills);
@@ -811,6 +823,18 @@ export default function DigitalSkillsClient({ dbSkills = [] }: { dbSkills?: DBSk
   const [searchQuery, setSearchQuery] = useState('');
   const [quoteIdx, setQuoteIdx] = useState(0);
   const heroRef = useRef<HTMLElement>(null);
+
+  // Global nav “Digital Skills” while already on this route: return to hub (no full reload).
+  useEffect(() => {
+    const goHub = () => {
+      setSelectedSkill(null);
+      setSearchQuery('');
+      router.replace('/digital-skills');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    window.addEventListener(DIGITAL_SKILLS_NAV_ROOT_EVENT, goHub);
+    return () => window.removeEventListener(DIGITAL_SKILLS_NAV_ROOT_EVENT, goHub);
+  }, [router]);
 
   // Cycle quotes
   useEffect(() => {

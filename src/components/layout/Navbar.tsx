@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, GraduationCap, LogOut, User, Search, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { mainNavItems } from '@/config/navigation';
+import { DIGITAL_SKILLS_NAV_ROOT_EVENT } from '@/lib/navigation-events';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -76,6 +77,15 @@ export default function Navbar() {
     setSearchQuery('');
   };
 
+  /** Same URL as the hub does not remount the page; reset in-page cinema state via event + URL normalize. */
+  const handleDigitalSkillsNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const path = pathname ?? '';
+    if (path !== '/digital-skills' && !path.startsWith('/digital-skills/')) return;
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent(DIGITAL_SKILLS_NAV_ROOT_EVENT));
+    router.replace('/digital-skills');
+  };
+
   return (
     <header className="glass-navbar fixed top-0 left-0 right-0 z-[70]">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -96,6 +106,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={item.href === '/digital-skills' ? handleDigitalSkillsNavClick : undefined}
                 className="px-2.5 py-2 text-[13px] font-medium text-white/75 hover:text-white transition-colors rounded-lg hover:bg-white/[0.08] whitespace-nowrap"
               >
                 {item.label}
@@ -289,7 +300,10 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={(e) => {
+                      if (item.href === '/digital-skills') handleDigitalSkillsNavClick(e);
+                      setMobileOpen(false);
+                    }}
                     className="block px-4 py-3 text-sm font-medium text-white/80 hover:text-gold-500 hover:bg-white/5 rounded-lg transition-colors"
                   >
                     {item.label}
