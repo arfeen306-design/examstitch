@@ -149,7 +149,7 @@ export default async function SubjectAdminLayout({
             <Link
               href="/admin"
               className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
-                         text-slate-300/90 hover:text-amber-100/95 border border-slate-600/35 bg-slate-950/20 hover:border-amber-500/25 hover:bg-amber-500/5
+                         text-slate-300/90 hover:text-amber-100/95 border border-transparent bg-white/[0.04] hover:border-amber-500/20 hover:bg-amber-500/[0.07]
                          focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/25 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
             >
               <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
@@ -159,7 +159,7 @@ export default async function SubjectAdminLayout({
               <button
                 type="submit"
                 className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
-                           text-slate-300/90 hover:text-slate-100 border border-slate-600/35 bg-slate-950/20 hover:border-slate-500/45 hover:bg-slate-900/40
+                           text-slate-300/90 hover:text-slate-100 border border-transparent bg-white/[0.04] hover:border-white/10 hover:bg-white/[0.07]
                            focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
               >
                 <LogOut className="w-4 h-4 shrink-0" aria-hidden />

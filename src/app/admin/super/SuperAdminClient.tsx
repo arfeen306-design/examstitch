@@ -13,6 +13,7 @@ import {
   provisionPortalHierarchy,
 } from './actions';
 import { ADMIN_PORTALS } from '@/config/admin-portals';
+import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
 import TutorProfileManager from './TutorProfileManager';
@@ -201,6 +202,17 @@ const SubjectFactory = memo(function SubjectFactory({ subjects }: { subjects: Su
 
   return (
     <div className="space-y-4">
+      <div className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] space-y-3">
+        <div>
+          <h4 className="text-sm font-semibold text-[var(--text-primary)]">Discipline subjects (Physics, Chemistry, …)</h4>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">
+            If portals like <span className="font-mono text-[var(--text-secondary)]">/admin/physics</span> say the subject is missing,
+            run this once — it upserts parent rows in <span className="font-mono">public.subjects</span> (same as migration 20260414).
+          </p>
+        </div>
+        <SeedDisciplineSubjectsButton returnTo="/admin/super" />
+      </div>
+
       <div className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] space-y-3">
         <div>
           <h4 className="text-sm font-semibold text-[var(--text-primary)]">Portal hierarchy (syllabi + modules)</h4>

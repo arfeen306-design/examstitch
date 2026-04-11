@@ -263,3 +263,48 @@ export async function provisionPortalHierarchy(portalRouteSegment: string) {
 
   return result;
 }
+
+const DISCIPLINE_SUBJECT_SEED: { name: string; slug: string; levels: string[] }[] = [
+  { name: 'Physics', slug: 'physics', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
+  { name: 'Chemistry', slug: 'chemistry', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
+  { name: 'Biology', slug: 'biology', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
+  { name: 'English', slug: 'english', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
+  { name: 'Urdu', slug: 'urdu', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
+  { name: 'Pakistan Studies', slug: 'pakistan-studies', levels: ['O Level', 'A Level'] },
+];
+
+/**
+ * Super-admin: upsert Physics, Chemistry, … parent rows in public.subjects
+ * (same as migration 20260414). Use when the DB was never migrated remotely.
+ */
+export async function seedDisciplineSubjectsFromApp() {
+  const session = await getAdminSession();
+  if (!session?.isSuperAdmin) {
+    return { success: false as const, error: 'Super admin only.' };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from('subjects').upsert(DISCIPLINE_SUBJECT_SEED, { onConflict: 'slug' });
+  if (error) {
+    return { success: false as const, error: error.message };
+  }
+
+  const { data: subjects, error: listErr } = await supabase.from('subjects').select('id');
+  if (listErr) return { success: false as const, error: listErr.message };
+  const ids = (subjects ?? []).map((s) => s.id);
+
+  const { error: syncErr } = await supabase
+    .from('student_accounts')
+    .update({ managed_subjects: ids })
+    .eq('is_super_admin', true);
+  if (syncErr) return { success: false as const, error: syncErr.message };
+
+  revalidatePath('/admin/super');
+  revalidatePath('/admin/resources');
+  revalidateTag('subjects');
+  for (const seg of PORTAL_ROUTE_SEGMENTS) {
+    revalidatePath(`/admin/${seg}`);
+  }
+
+  return { success: true as const };
+}

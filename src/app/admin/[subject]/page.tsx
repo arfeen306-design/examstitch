@@ -5,6 +5,7 @@ import { getAdminSession } from '@/lib/supabase/guards';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
+import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,12 +55,15 @@ export default async function SubjectAdminPage({
             </li>
           </ol>
           {session?.isSuperAdmin ? (
-            <Link
-              href="/admin/super"
-              className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border border-amber-500/50 text-amber-200 bg-transparent hover:bg-amber-500/10 transition"
-            >
-              Open Super Admin
-            </Link>
+            <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
+              <SeedDisciplineSubjectsButton returnTo={`/admin/${params.subject}`} />
+              <Link
+                href="/admin/super"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border border-amber-500/50 text-amber-200 bg-transparent hover:bg-amber-500/10 transition"
+              >
+                Open Super Admin
+              </Link>
+            </div>
           ) : (
             <p className="mt-6 text-xs text-slate-500">
               Ask a super admin to run the migration or provision <span className="text-slate-400">{label}</span>.

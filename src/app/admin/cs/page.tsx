@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getAdminSession } from '@/lib/supabase/guards';
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import CSResourceTable from './CSResourceTable';
+import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,12 +31,15 @@ export default async function CSAdminPage() {
             <code className="text-slate-300 text-xs font-mono">public.subjects</code>.
           </p>
           {session?.isSuperAdmin ? (
-            <Link
-              href="/admin/super"
-              className="mt-6 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border border-amber-500/50 text-amber-200 bg-transparent hover:bg-amber-500/10 transition"
-            >
-              Open Super Admin
-            </Link>
+            <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
+              <SeedDisciplineSubjectsButton returnTo="/admin/cs" />
+              <Link
+                href="/admin/super"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border border-amber-500/50 text-amber-200 bg-transparent hover:bg-amber-500/10 transition"
+              >
+                Open Super Admin
+              </Link>
+            </div>
           ) : (
             <p className="mt-6 text-xs text-slate-500">Ask a super admin to run migrations or create the CS subject.</p>
           )}

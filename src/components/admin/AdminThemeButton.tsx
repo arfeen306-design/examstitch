@@ -39,7 +39,7 @@ const TRIGGER_VARIANTS = {
            text-[var(--text-muted)] hover:text-indigo-300 border border-white/[0.06] hover:border-indigo-500/25 hover:bg-indigo-500/5
            focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2`,
   portal: `flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
-           text-slate-300/90 hover:text-amber-100/90 border border-slate-600/35 bg-slate-950/20 hover:border-amber-500/25 hover:bg-amber-500/5
+           text-slate-300/90 hover:text-amber-100/90 border border-transparent bg-white/[0.04] hover:border-amber-500/20 hover:bg-amber-500/[0.07]
            focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/25 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]`,
 } as const;
 
