@@ -227,6 +227,8 @@ const shimmerCSS = `
 export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouselProps) {
   const hookRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const hoverStripRef = useRef(false);
+  const spotlightRef = useRef<CarouselWidget | null>(null);
   const inView = useInView(hookRef, { once: true, margin: '-60px' });
   const [spotlight, setSpotlight] = useState<CarouselWidget | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -237,7 +239,12 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
     [widgets],
   );
 
+  /** Two identical runs so we can loop scrollLeft (same idea as the old CSS marquee). */
+  const loopItems = useMemo(() => [...youtubeWidgets, ...youtubeWidgets], [youtubeWidgets]);
+
   const widgetIdsKey = useMemo(() => youtubeWidgets.map((w) => w.id).join('|'), [youtubeWidgets]);
+
+  spotlightRef.current = spotlight;
 
   const updateScrollArrows = useCallback(() => {
     const el = scrollRef.current;
@@ -245,7 +252,7 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
     const { scrollLeft, scrollWidth, clientWidth } = el;
     const eps = 4;
     setCanScrollLeft(scrollLeft > eps);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - eps);
+    setCanScrollRight(scrollWidth > clientWidth + eps);
   }, []);
 
   useEffect(() => {
@@ -260,6 +267,50 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
       ro.disconnect();
     };
   }, [widgetIdsKey, updateScrollArrows]);
+
+  /** Continuous right → left motion (RAF), same pacing spirit as the old marquee (~half-width per max(n*6,20)s at 60fps). */
+  useEffect(() => {
+    if (youtubeWidgets.length === 0) return;
+
+    const reduced =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+
+    const durationSec = Math.max(youtubeWidgets.length * 6, 20);
+    let rafId = 0;
+    let speedPxPerFrame = 0.35;
+    let measured = false;
+
+    const measureSpeed = () => {
+      const node = scrollRef.current;
+      if (!node || node.scrollWidth < 20) return;
+      const half = node.scrollWidth / 2;
+      speedPxPerFrame = Math.max(0.2, half / (durationSec * 60));
+      measured = true;
+    };
+
+    const tick = () => {
+      const node = scrollRef.current;
+      if (!node) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      if (!measured && node.scrollWidth > 20) measureSpeed();
+
+      const pause = spotlightRef.current != null || hoverStripRef.current;
+      if (!pause) {
+        node.scrollLeft += speedPxPerFrame;
+        const half = node.scrollWidth / 2;
+        if (half > 20 && node.scrollLeft >= half - 1) {
+          node.scrollLeft -= half;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [widgetIdsKey, youtubeWidgets.length]);
 
   const scrollByDir = useCallback((dir: 'left' | 'right') => {
     const el = scrollRef.current;
@@ -341,11 +392,17 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
 
           <div
             ref={scrollRef}
-            className="flex gap-8 overflow-x-auto overflow-y-hidden py-6 px-12 sm:px-16 scroll-smooth [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [-webkit-overflow-scrolling:touch]"
+            className="flex gap-8 overflow-x-auto overflow-y-hidden py-6 px-12 sm:px-16 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [-webkit-overflow-scrolling:touch]"
             style={{ scrollSnapType: 'x mandatory' }}
+            onMouseEnter={() => {
+              hoverStripRef.current = true;
+            }}
+            onMouseLeave={() => {
+              hoverStripRef.current = false;
+            }}
           >
-            {youtubeWidgets.map((w) => (
-              <div key={w.id} className="shrink-0 snap-start" style={{ scrollSnapAlign: 'start' }}>
+            {loopItems.map((w, i) => (
+              <div key={`${w.id}-${i}`} className="shrink-0 snap-start" style={{ scrollSnapAlign: 'start' }}>
                 <MarqueeCard widget={w} isAdmin={isAdmin} onPlay={handlePlay} />
               </div>
             ))}
