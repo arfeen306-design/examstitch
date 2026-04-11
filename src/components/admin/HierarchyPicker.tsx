@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useMemo, useId } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import { MODULE_TYPES as MT_CONST } from '@/lib/constants';
 import { aLevelPapersBySubject } from '@/config/navigation';
 import {
@@ -83,15 +84,17 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
   useEffect(() => {
     setCategoriesLoading(true);
     const supabase = createClient();
-    supabase
-      .from('categories')
-      .select('id, name, slug, parent_id')
-      .eq('subject_id', subjectId)
-      .order('sort_order')
-      .then(({ data }) => {
-        setAllCategories(data ?? []);
+    fetchMergedCategoriesForSubject(supabase, subjectId).then(({ data, error }) => {
+      if (error) {
+        setAllCategories([]);
         setCategoriesLoading(false);
-      });
+        return;
+      }
+      setAllCategories(
+        data.map((c) => ({ id: c.id, name: c.name, slug: c.slug, parent_id: c.parent_id })),
+      );
+      setCategoriesLoading(false);
+    });
   }, [subjectId]);
 
   const aLevelNavKey = taxonomy?.aLevelSlug ?? null;

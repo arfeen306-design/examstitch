@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAdminSession } from '@/lib/supabase/guards';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
+import { provisionSubjectPortal } from '@/lib/db/subject-provisioner';
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
 import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
@@ -74,6 +75,15 @@ export default async function SubjectAdminPage({
     );
   }
 
+  try {
+    const prov = await provisionSubjectPortal(supabase, params.subject);
+    if (!prov.success && prov.error) {
+      console.error('[admin subject portal] provisionSubjectPortal:', prov.error);
+    }
+  } catch (e) {
+    console.error('[admin subject portal] provisionSubjectPortal threw:', e);
+  }
+
   // Fetch all resources for this subject
   const { data: resources, count } = await supabase
     .from('resources')
@@ -104,7 +114,10 @@ export default async function SubjectAdminPage({
           {subject.name} Dashboard
         </h2>
         <p className="text-sm text-[var(--text-muted)] mt-1">
-          Manage resources for {subject.levels?.join(', ')} levels.
+          Manage resources for{' '}
+          {portal.hasALevelSyllabus === false
+            ? 'O Level and IGCSE.'
+            : `${subject.levels?.join(', ') ?? 'O Level, A Level, AS Level, A2 Level'} levels.`}
         </p>
       </div>
 

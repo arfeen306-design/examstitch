@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
 import { createClient } from '@/lib/supabase/client';
+import { fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import BulkResourceUploader, { type ValidRow } from '@/components/admin/BulkResourceUploader';
 import { bulkCreateResources } from './actions';
 import { Upload, Loader2 } from 'lucide-react';
@@ -29,13 +30,8 @@ export default function BulkUploadPage() {
       if (!subject) { setLoading(false); return; }
       setSubjectId(subject.id);
 
-      const { data: cats } = await supabase
-        .from('categories')
-        .select('slug, name')
-        .eq('subject_id', subject.id)
-        .order('sort_order');
-
-      setCategories(cats ?? []);
+      const { data: cats } = await fetchMergedCategoriesForSubject(supabase, subject.id);
+      setCategories(cats.map((c) => ({ slug: c.slug, name: c.name })));
       setLoading(false);
     }
     load();

@@ -268,9 +268,9 @@ const DISCIPLINE_SUBJECT_SEED: { name: string; slug: string; levels: string[] }[
   { name: 'Physics', slug: 'physics', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
   { name: 'Chemistry', slug: 'chemistry', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
   { name: 'Biology', slug: 'biology', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
-  { name: 'English', slug: 'english', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
-  { name: 'Urdu', slug: 'urdu', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
-  { name: 'Pakistan Studies', slug: 'pakistan-studies', levels: ['O Level', 'A Level'] },
+  { name: 'English', slug: 'english', levels: ['O Level', 'IGCSE'] },
+  { name: 'Urdu', slug: 'urdu', levels: ['O Level', 'IGCSE'] },
+  { name: 'Pakistan Studies', slug: 'pakistan-studies', levels: ['O Level', 'IGCSE'] },
 ];
 
 /**

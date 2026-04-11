@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
+import { fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import { MODULE_TYPES } from '@/lib/constants';
 import { getSubjectLabel } from '@/config/navigation';
 
@@ -241,21 +242,27 @@ export default function SubjectResourceManager({
     category_id: '', module_type: '' as '' | typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
   });
 
-  // Fetch categories for this subject on first open
+  // Refetch when opening the form so modules from syllabus-linked rows appear
   useEffect(() => {
-    if (!showNewResource || categories.length > 0) return;
+    if (!showNewResource) return;
+    let cancelled = false;
     setCategoriesLoading(true);
     const supabase = createClient();
-    supabase
-      .from('categories')
-      .select('id, name')
-      .eq('subject_id', subjectId)
-      .order('sort_order')
-      .then(({ data }) => {
-        setCategories(data ?? []);
+    fetchMergedCategoriesForSubject(supabase, subjectId).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) {
+        setCategories([]);
         setCategoriesLoading(false);
-      });
-  }, [showNewResource, subjectId, categories.length]);
+        showToast({ message: `Could not load modules: ${error}`, type: 'error' });
+        return;
+      }
+      setCategories(data.map((c) => ({ id: c.id, name: c.name })));
+      setCategoriesLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [showNewResource, subjectId, showToast]);
 
   const handleAddResource = () => {
     if (!newRes.title.trim() || !newRes.source_url.trim()) {

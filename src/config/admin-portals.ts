@@ -36,6 +36,11 @@ export interface AdminPortal {
    * subject_papers.slug for the O-Level row — matches SUBJECT_TAXONOMY / HierarchyPicker.
    */
   taxonomyOLevelPaperSlug: string;
+  /**
+   * Cambridge offers an A-Level syllabus for this discipline (AS/A2 papers exist).
+   * When false, provisioning creates only O-Level/IGCSE syllabi + grade folders (e.g. Pakistan Studies 2059).
+   */
+  hasALevelSyllabus?: boolean;
 }
 
 /**
@@ -96,6 +101,7 @@ export const ADMIN_PORTALS: AdminPortal[] = [
     dbSubjectSlugs: ['english'],
     subjectPaperSlugPrefixes: ['english'],
     taxonomyOLevelPaperSlug: 'english-1123',
+    hasALevelSyllabus: false,
   },
   {
     routeSegment: 'urdu',
@@ -105,6 +111,7 @@ export const ADMIN_PORTALS: AdminPortal[] = [
     dbSubjectSlugs: ['urdu'],
     subjectPaperSlugPrefixes: ['urdu'],
     taxonomyOLevelPaperSlug: 'urdu-3248',
+    hasALevelSyllabus: false,
   },
   {
     routeSegment: 'pakistan-studies',
@@ -114,6 +121,7 @@ export const ADMIN_PORTALS: AdminPortal[] = [
     dbSubjectSlugs: ['pakistan-studies'],
     subjectPaperSlugPrefixes: ['pakistan-studies'],
     taxonomyOLevelPaperSlug: 'pakistan-studies-2059',
+    hasALevelSyllabus: false,
   },
 ];
 
