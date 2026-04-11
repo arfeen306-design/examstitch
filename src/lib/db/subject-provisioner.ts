@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ADMIN_PORTALS, getPortalDbSubjectSlug, type AdminPortal } from '@/config/admin-portals';
+import { aLevelPapersBySubject, oLevelToALevelSlug } from '@/config/navigation';
 
 /** Service-role client; avoid `SupabaseClient<Database>` here — hand-written Database omits supabase-js v2 schema keys, which collapses Insert/Row to `never`. */
 type AdminClient = SupabaseClient;
@@ -154,22 +155,28 @@ async function provisionComputerScience(
   return n;
 }
 
-/** Default grades + optional AS/A2 shells for science-style portals (empty subjects only). */
-async function provisionDefaultScienceStructure(
+const OLEVEL_GRADE_SEED: [string, string, number][] = [
+  ['grade-9', 'Grade 9', 1],
+  ['grade-10', 'Grade 10', 2],
+  ['grade-11', 'Grade 11', 3],
+];
+
+/** Idempotent: O-Level grade folders (parent subject_id). */
+async function ensureOLevelGradeCategoriesIfMissing(
   supabase: AdminClient,
   subjectId: string,
   olevelId: string,
-  alevelId: string | null,
   oPaperId: string | null,
-  aPaperId: string | null,
 ): Promise<number> {
   let n = 0;
-  const grades: [string, string, number][] = [
-    ['grade-9', 'Grade 9', 1],
-    ['grade-10', 'Grade 10', 2],
-    ['grade-11', 'Grade 11', 3],
-  ];
-  for (const [slug, name, order] of grades) {
+  for (const [slug, name, order] of OLEVEL_GRADE_SEED) {
+    const { data: ex } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('subject_id', subjectId)
+      .eq('slug', slug)
+      .maybeSingle();
+    if (ex) continue;
     const { error } = await supabase.from('categories').insert({
       subject_id: subjectId,
       name,
@@ -181,31 +188,131 @@ async function provisionDefaultScienceStructure(
     });
     if (!error) n += 1;
   }
+  return n;
+}
 
-  if (alevelId) {
-    const { error: e1 } = await supabase.from('categories').insert({
+/** Idempotent: AS Level / A2 Level root rows for A-Level syllabi. */
+async function ensureAsA2RootCategoriesIfMissing(
+  supabase: AdminClient,
+  subjectId: string,
+  alevelId: string,
+  aPaperId: string | null,
+): Promise<number> {
+  let n = 0;
+  const roots: [string, string, number][] = [
+    ['as-level', 'AS Level', 4],
+    ['a2-level', 'A2 Level', 5],
+  ];
+  for (const [slug, name, order] of roots) {
+    const { data: ex } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('subject_id', subjectId)
+      .eq('slug', slug)
+      .maybeSingle();
+    if (ex) continue;
+    const { error } = await supabase.from('categories').insert({
       subject_id: subjectId,
-      name: 'AS Level',
-      slug: 'as-level',
-      sort_order: 4,
+      name,
+      slug,
+      sort_order: order,
       syllabus_tier_id: alevelId,
       syllabus_id: aPaperId,
       parent_id: null,
     });
-    if (!e1) n += 1;
-
-    const { error: e2 } = await supabase.from('categories').insert({
-      subject_id: subjectId,
-      name: 'A2 Level',
-      slug: 'a2-level',
-      sort_order: 5,
-      syllabus_tier_id: alevelId,
-      syllabus_id: aPaperId,
-      parent_id: null,
-    });
-    if (!e2) n += 1;
+    if (!error) n += 1;
   }
+  return n;
+}
 
+/**
+ * Idempotent: A-Level paper categories under as-level / a2-level using the same
+ * slugs as `aLevelPapersBySubject` (HierarchyPicker + public nav). Skips CS (custom tree).
+ */
+async function ensureSciencePaperCategories(
+  supabase: AdminClient,
+  portal: AdminPortal,
+  subjectId: string,
+  alevelId: string,
+  aPaperId: string | null,
+): Promise<number> {
+  const aLevelNavSlug = oLevelToALevelSlug[portal.taxonomyOLevelPaperSlug];
+  if (!aLevelNavSlug) return 0;
+  const papersCfg = aLevelPapersBySubject[aLevelNavSlug];
+  if (!papersCfg) return 0;
+
+  const { data: asParent } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('subject_id', subjectId)
+    .eq('slug', 'as-level')
+    .maybeSingle();
+  const { data: a2Parent } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('subject_id', subjectId)
+    .eq('slug', 'a2-level')
+    .maybeSingle();
+  if (!asParent?.id || !a2Parent?.id) return 0;
+
+  let n = 0;
+  for (let i = 0; i < papersCfg['as-level'].length; i++) {
+    const p = papersCfg['as-level'][i];
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('subject_id', subjectId)
+      .eq('slug', p.slug)
+      .maybeSingle();
+    if (existing) continue;
+    const { error } = await supabase.from('categories').insert({
+      subject_id: subjectId,
+      name: p.label,
+      slug: p.slug,
+      parent_id: asParent.id,
+      sort_order: i + 1,
+      syllabus_tier_id: alevelId,
+      syllabus_id: aPaperId,
+    });
+    if (!error) n += 1;
+  }
+  for (let i = 0; i < papersCfg['a2-level'].length; i++) {
+    const p = papersCfg['a2-level'][i];
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('subject_id', subjectId)
+      .eq('slug', p.slug)
+      .maybeSingle();
+    if (existing) continue;
+    const { error } = await supabase.from('categories').insert({
+      subject_id: subjectId,
+      name: p.label,
+      slug: p.slug,
+      parent_id: a2Parent.id,
+      sort_order: i + 1,
+      syllabus_tier_id: alevelId,
+      syllabus_id: aPaperId,
+    });
+    if (!error) n += 1;
+  }
+  return n;
+}
+
+/** Seed O-Level grades + AS/A2 roots when the subject has zero merged categories. */
+async function provisionDefaultScienceStructure(
+  supabase: AdminClient,
+  subjectId: string,
+  olevelId: string,
+  alevelId: string | null,
+  oPaperId: string | null,
+  aPaperId: string | null,
+): Promise<number> {
+  let n = 0;
+  n += await ensureOLevelGradeCategoriesIfMissing(supabase, subjectId, olevelId, oPaperId);
+  if (alevelId) {
+    n += await ensureAsA2RootCategoriesIfMissing(supabase, subjectId, alevelId, aPaperId);
+  }
   return n;
 }
 
@@ -234,18 +341,26 @@ export async function provisionSubjectPortal(
 
   const { data: existingCats, error: exErr } = await fetchMergedCategoriesForSubject(supabase, subj.id);
   if (exErr) return { success: false, error: exErr };
-  if (existingCats.length > 0) {
-    return { success: true, categoriesCreated: 0 };
-  }
 
   const { olevelId, alevelId } = await resolveTierIds(supabase, subj.id, includeALevel);
   const { oPaperId, aPaperId } = await resolvePaperIds(supabase, subj.id, portal);
 
   let created = 0;
-  if (portal.routeSegment === 'cs') {
-    created = await provisionComputerScience(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
-  } else {
-    created = await provisionDefaultScienceStructure(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
+  if (existingCats.length === 0) {
+    if (portal.routeSegment === 'cs') {
+      created = await provisionComputerScience(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
+    } else {
+      created = await provisionDefaultScienceStructure(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
+    }
+  }
+
+  // Idempotent backfill: grades, AS/A2 roots, and A-Level paper rows (Physics/Chem/Bio/Math; not CS).
+  if (portal.routeSegment !== 'cs') {
+    created += await ensureOLevelGradeCategoriesIfMissing(supabase, subj.id, olevelId, oPaperId);
+    if (includeALevel && alevelId) {
+      created += await ensureAsA2RootCategoriesIfMissing(supabase, subj.id, alevelId, aPaperId);
+      created += await ensureSciencePaperCategories(supabase, portal, subj.id, alevelId, aPaperId);
+    }
   }
 
   return { success: true, categoriesCreated: created };
