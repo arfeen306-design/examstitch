@@ -702,25 +702,28 @@ html[data-theme="beach"] .portal-topic-card {
   -webkit-backdrop-filter: blur(20px) !important;
 }
 html[data-theme="beach"] .portal-topic-title {
-  color: #0f172a !important;
+  color: #f1f5f9 !important;
 }
 html[data-theme="beach"] .portal-topic-link.group:hover .portal-topic-title {
-  color: #1e293b !important;
+  color: #ffffff !important;
 }
 html[data-theme="beach"] .portal-topic-meta {
-  color: #475569 !important;
+  color: #94a3b8 !important;
 }
 html[data-theme="beach"] .portal-topic-arrow {
   color: #64748b !important;
+}
+html[data-theme="beach"] .portal-topic-link.group:hover .portal-topic-arrow {
+  color: #cbd5e1 !important;
 }
 html[data-theme="beach"] .portal-topic-empty svg {
   color: #64748b !important;
 }
 html[data-theme="beach"] .portal-topic-empty h3 {
-  color: #0f172a !important;
+  color: #f1f5f9 !important;
 }
 html[data-theme="beach"] .portal-topic-empty p {
-  color: #475569 !important;
+  color: #94a3b8 !important;
 }
 html[data-theme="beach"] .portal-topic-soon {
   background: var(--portal-glass-bg) !important;
@@ -728,10 +731,10 @@ html[data-theme="beach"] .portal-topic-soon {
   backdrop-filter: blur(20px) !important;
 }
 html[data-theme="beach"] .portal-topic-soon h3 {
-  color: #0f172a !important;
+  color: #f1f5f9 !important;
 }
 html[data-theme="beach"] .portal-topic-soon p {
-  color: #475569 !important;
+  color: #94a3b8 !important;
 }
 html[data-theme="beach"] .portal-topic-soon svg {
   color: #64748b !important;
