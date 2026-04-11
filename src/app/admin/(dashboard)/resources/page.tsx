@@ -29,7 +29,10 @@ export default async function AdminResourcesPage() {
     .from('resources')
     .select(`
       *,
-      category:categories(id, name, slug, parent_id, subject_id)
+      category:categories(
+        id, name, slug, parent_id, subject_id, syllabus_id,
+        syllabus:subject_papers(slug, code, name)
+      )
     `)
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });

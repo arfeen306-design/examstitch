@@ -17,6 +17,8 @@ interface Category {
   id: string;
   name: string;
   subject_id: string;
+  syllabus_id?: string | null;
+  syllabus?: { slug: string; code?: string; name?: string } | null;
 }
 
 type ModuleType = typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
@@ -39,10 +41,13 @@ export default function NewResourceModal({
   isOpen,
   onClose,
   onSuccess,
+  defaultSyllabusSlug = null,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  /** When set (e.g. from admin syllabus filter), only categories for this syllabus appear */
+  defaultSyllabusSlug?: string | null;
 }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
@@ -93,14 +98,26 @@ export default function NewResourceModal({
       // Fetch all categories (filtered client-side by selected subject)
       const { data: catData } = await supabase
         .from('categories')
-        .select('id, name, subject_id')
+        .select('id, name, subject_id, syllabus_id, syllabus:subject_papers(slug, code, name)')
         .order('sort_order');
-      if (catData) setCategories(catData as Category[]);
+      if (catData) setCategories(catData as unknown as Category[]);
       setCategoriesLoading(false);
     };
     fetchData();
     setTimeout(() => titleRef.current?.focus(), 80);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !defaultSyllabusSlug || !categories.length) return;
+    setFormData(prev => {
+      const current = categories.find(c => c.id === prev.category_id);
+      if (current?.syllabus?.slug === defaultSyllabusSlug) return prev;
+      const first = categories.find(
+        c => c.subject_id === prev.subject_id && c.syllabus?.slug === defaultSyllabusSlug,
+      );
+      return { ...prev, category_id: first?.id ?? '' };
+    });
+  }, [isOpen, defaultSyllabusSlug, categories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,8 +259,11 @@ export default function NewResourceModal({
 
   if (!isOpen) return null;
 
-  // Filter categories to only show those belonging to the selected subject
-  const activeCategories = categories.filter(c => c.subject_id === formData.subject_id);
+  const activeCategories = categories.filter(c => {
+    if (c.subject_id !== formData.subject_id) return false;
+    if (defaultSyllabusSlug && c.syllabus?.slug !== defaultSyllabusSlug) return false;
+    return true;
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">

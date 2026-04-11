@@ -50,6 +50,8 @@ const ResourceSchema = z.object({
   subject: z.string().optional(),
   subject_id: z.string().uuid('Invalid subject ID').optional(),
   category_id: z.string().uuid('Invalid category ID').optional(),
+  syllabus_id: z.string().uuid('Invalid syllabus ID').optional(),
+  parent_resource_id: z.string().uuid('Invalid parent resource ID').optional(),
   description: z.string().max(2000).optional(),
   topic: z.string().max(200).optional(),
   module_type: z.enum([MODULE_TYPES.VIDEO_TOPICAL, MODULE_TYPES.SOLVED_PAST_PAPER]).optional(),
@@ -92,34 +94,30 @@ export async function bulkInsertResources(resources: unknown[]) {
 
   const supabase = createAdminClient();
 
-  // Resolve subject_id from category when omitted (e.g. legacy admin paths, bulk JSON)
-  const categoryIdsNeedingSubject = [
-    ...new Set(
-      parsed.data
-        .filter(r => !r.subject_id && r.category_id)
-        .map(r => r.category_id as string),
-    ),
-  ];
+  // Resolve subject_id + syllabus_id from category when omitted
+  const allCategoryIds = [...new Set(parsed.data.map(r => r.category_id).filter(Boolean) as string[])];
 
-  let categorySubjectById = new Map<string, string>();
-  if (categoryIdsNeedingSubject.length > 0) {
+  const categorySubjectById = new Map<string, string>();
+  const categorySyllabusById = new Map<string, string>();
+  if (allCategoryIds.length > 0) {
     const { data: catRows, error: catErr } = await supabase
       .from('categories')
-      .select('id, subject_id')
-      .in('id', categoryIdsNeedingSubject);
+      .select('id, subject_id, syllabus_id')
+      .in('id', allCategoryIds);
     if (catErr) {
-      console.error('bulkInsertResources: failed to resolve categories', catErr);
-      return { success: false, error: 'Could not resolve subject from category. Try again or add subject_id to each row.' };
+      console.error('bulkInsertResources: failed to load categories', catErr);
+      return { success: false, error: 'Could not load categories for this batch. Check category IDs.' };
     }
     for (const row of catRows ?? []) {
       if (row.subject_id) categorySubjectById.set(row.id, row.subject_id);
+      if (row.syllabus_id) categorySyllabusById.set(row.id, row.syllabus_id);
     }
   }
 
   const enriched = parsed.data.map((res, index) => {
-    const fromCategory = res.category_id ? categorySubjectById.get(res.category_id) : undefined;
-    const subject_id = res.subject_id ?? fromCategory;
-    return { ...res, subject_id, _rowIndex: index };
+    const subject_id = res.subject_id ?? (res.category_id ? categorySubjectById.get(res.category_id) : undefined);
+    const syllabus_id = res.syllabus_id ?? (res.category_id ? categorySyllabusById.get(res.category_id) : undefined);
+    return { ...res, subject_id, syllabus_id, _rowIndex: index };
   });
 
   for (const res of enriched) {
@@ -128,6 +126,41 @@ export async function bulkInsertResources(resources: unknown[]) {
         success: false,
         error: `Missing subject_id (row ${res._rowIndex + 1}): set subject_id on the resource or use a category linked to a subject.`,
       };
+    }
+  }
+
+  const parentIds = [...new Set(enriched.map(r => r.parent_resource_id).filter(Boolean) as string[])];
+  if (parentIds.length > 0) {
+    const { data: parents, error: pErr } = await supabase
+      .from('resources')
+      .select('id, category_id, syllabus_id')
+      .in('id', parentIds);
+    if (pErr) {
+      console.error('bulkInsertResources: parent lookup failed', pErr);
+      return { success: false, error: 'Could not validate parent_resource_id rows.' };
+    }
+    const parentById = new Map((parents ?? []).map(p => [p.id, p]));
+    for (const res of enriched) {
+      if (!res.parent_resource_id) continue;
+      const p = parentById.get(res.parent_resource_id);
+      if (!p) {
+        return {
+          success: false,
+          error: `Invalid parent_resource_id on row ${res._rowIndex + 1}: parent resource not found.`,
+        };
+      }
+      if (res.category_id && p.category_id && res.category_id !== p.category_id) {
+        return {
+          success: false,
+          error: `Row ${res._rowIndex + 1}: sub-resource must use the same category_id as its parent.`,
+        };
+      }
+      if (res.syllabus_id && p.syllabus_id && res.syllabus_id !== p.syllabus_id) {
+        return {
+          success: false,
+          error: `Row ${res._rowIndex + 1}: syllabus must match the parent resource (O-Level vs A-Level isolation).`,
+        };
+      }
     }
   }
 
@@ -171,7 +204,9 @@ export async function bulkInsertResources(resources: unknown[]) {
     if (res.source_type)               item.source_type   = res.source_type;
     if (res.subject)                   item.subject       = res.subject;
     if (res.subject_id)                item.subject_id    = res.subject_id;
+    if (res.syllabus_id)               item.syllabus_id   = res.syllabus_id;
     if (res.category_id)               item.category_id   = res.category_id;
+    if (res.parent_resource_id)        item.parent_resource_id = res.parent_resource_id;
     if (res.description)               item.description   = res.description;
     if (res.topic)                     item.topic         = res.topic;
     if (res.module_type)               item.module_type   = res.module_type;

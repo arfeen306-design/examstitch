@@ -50,6 +50,7 @@ export type Database = {
           slug: string;
           parent_id: string | null;
           sort_order: number;
+          syllabus_id: string | null;
         };
         Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['categories']['Row']>;
@@ -67,6 +68,17 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['exam_series']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['exam_series']['Row']>;
       };
+      topics: {
+        Row: {
+          id: string;
+          syllabus_id: string;
+          parent_topic_id: string | null;
+          title: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['topics']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['topics']['Row']>;
+      };
       resources: {
         Row: {
           id: string;
@@ -80,6 +92,8 @@ export type Database = {
           topic: string | null;
           subject: string;
           subject_id: string;
+          syllabus_id: string | null;
+          parent_resource_id: string | null;
           is_watermarked: boolean;
           is_locked: boolean;
           is_published: boolean;

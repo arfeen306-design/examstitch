@@ -26,6 +26,7 @@ async function VideoModules({ subject, paper }: { subject: string; paper: string
       videoUrl: r.source_url,
       worksheetUrl: (r as any).worksheet_url || null,
       isLocked: adminBypass ? false : ((r as any).is_locked ?? false),
+      parentResourceId: (r as { parent_resource_id?: string | null }).parent_resource_id ?? null,
     }));
 
     return (

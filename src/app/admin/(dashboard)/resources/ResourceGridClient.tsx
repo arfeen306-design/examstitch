@@ -1,39 +1,23 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { Fragment, useMemo, useState, useTransition, useRef } from 'react';
 import { toggleResourceFlag, deleteResource, updateResource, bulkInsertResources } from '../../actions';
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
-  FolderOpen, FileVideo, FileText, ChevronRight, Clock, Lock,
+  FolderOpen, FileVideo, FileText, ChevronRight, ChevronDown, Clock, Lock,
 } from 'lucide-react';
 import NewResourceModal from './NewResourceModal';
 import { useToast } from '@/components/ui/Toast';
 import { MODULE_TYPES } from '@/lib/constants';
 import { getSubjectLabel } from '@/config/navigation';
+import {
+  type AdminResourceRow,
+  buildSyllabusModuleTopicHierarchy,
+  filterResourcesBySyllabusSlug,
+  getBaseTitle,
+} from '@/lib/admin/resource-admin-hierarchy';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface Resource {
-  id: string;
-  title: string;
-  subject: string;
-  /** FK to subjects — required by DB; may be absent on very old rows */
-  subject_id?: string | null;
-  content_type: string;
-  source_url?: string;
-  worksheet_url?: string | null;
-  module_type?: string;
-  sort_order?: number | null;
-  question_mapping?: any[] | null;
-  topic: string | null;
-  category: { name: string; slug: string; id: string; subject_id?: string | null } | null;
-  is_published: boolean;
-  is_locked: boolean;
-  is_watermarked: boolean;
-  created_at: string;
-}
+type Resource = AdminResourceRow;
 
 interface EditState {
   title: string;
@@ -50,116 +34,11 @@ interface SubtopicState {
   worksheetUrl: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Grouping / numbering helpers  (mirrors UnifiedModuleGrid)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function getBaseTitle(title: string): string {
-  return title
-    .replace(/\s*[—–-]\s*Part\s+\d+\s*$/i, '')
-    .replace(/\s*\(Part\s+\d+\)\s*$/i, '')
-    .replace(/\s+Part\s+\d+\s*$/i, '')
-    .trim();
-}
-
-function isSubTopic(title: string): boolean {
-  return (
-    /[—–-]\s*Part\s+\d+\s*$/i.test(title) ||
-    /\(Part\s+\d+\)\s*$/i.test(title) ||
-    /Part\s+\d+\s*$/i.test(title)
-  );
-}
-
-/** Group an array of resources into Paper → TopicGroup hierarchy */
-interface TopicGroup {
-  baseTitle: string;
-  parts: Resource[]; // sorted by sort_order then created_at
-}
-
-interface PaperGroup {
-  subjectKey: string;
-  subjectLabel: string;
-  categoryId: string;
-  categoryName: string;
-  topicGroups: TopicGroup[];
-}
-
-const SUBJECT_ALIASES: Record<string, string> = {
-  maths: 'mathematics-4024',
-  mathematics: 'mathematics-4024',
-  math: 'mathematics-4024',
-  cs: 'computer-science-0478',
-};
-
-function normalizeSubjectSlug(raw: string): string {
-  const key = raw.trim().toLowerCase();
-  return SUBJECT_ALIASES[key] ?? key;
-}
-
-function resolveSubjectLabel(raw: string): string {
-  const normalized = normalizeSubjectSlug(raw);
-  return getSubjectLabel(normalized);
-}
-
-function buildHierarchy(resources: Resource[]): PaperGroup[] {
-  // Step 1: group by subject + category so repeated names like "Grade 11"
-  // across O-Level and A-Level stay clearly separated.
-  const paperMap = new Map<string, { subjectKey: string; subjectLabel: string; categoryId: string; categoryName: string; resources: Resource[] }>();
-  for (const r of resources) {
-    const subjectKey = normalizeSubjectSlug(r.subject || 'unknown-subject');
-    const subjectLabel = resolveSubjectLabel(r.subject || 'Unknown Subject');
-    const catId = r.category?.id ?? '__none__';
-    const catName = r.category?.name ?? 'Uncategorised';
-    const groupKey = `${subjectKey}::${catId}`;
-    if (!paperMap.has(groupKey)) {
-      paperMap.set(groupKey, {
-        subjectKey,
-        subjectLabel,
-        categoryId: catId,
-        categoryName: catName,
-        resources: [],
-      });
-    }
-    paperMap.get(groupKey)!.resources.push(r);
-  }
-
-  // Step 2: within each paper group, sub-group by base title
-  return Array.from(paperMap.values())
-    .map(({ subjectKey, subjectLabel, categoryId, categoryName, resources: catResources }) => {
-    // Sort within paper by sort_order then created_at
-    const sorted = [...catResources].sort((a, b) => {
-      const ao = a.sort_order ?? 9999;
-      const bo = b.sort_order ?? 9999;
-      if (ao !== bo) return ao - bo;
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    });
-
-    const groupMap = new Map<string, Resource[]>();
-    for (const r of sorted) {
-      const base = getBaseTitle(r.title);
-      if (!groupMap.has(base)) groupMap.set(base, []);
-      groupMap.get(base)!.push(r);
-    }
-
-    const topicGroups: TopicGroup[] = Array.from(groupMap.entries()).map(([baseTitle, parts]) => ({
-      baseTitle,
-      parts,
-    }));
-
-      return { subjectKey, subjectLabel, categoryId, categoryName, topicGroups };
-    })
-    .sort((a, b) => {
-      const s = a.subjectLabel.localeCompare(b.subjectLabel);
-      if (s !== 0) return s;
-      return a.categoryName.localeCompare(b.categoryName);
-    });
-}
-
-// High-contrast field chrome for Live Database Records (Beach: visible border + dark text)
+// Glass field chrome — Professional Scholar / navy dashboard
 const ADMIN_TABLE_INPUT =
-  'bg-white text-slate-900 caret-slate-900 placeholder:text-slate-500 border border-slate-300 ' +
-  'dark:bg-slate-950 dark:text-neutral-100 dark:caret-neutral-100 dark:border-slate-600 dark:placeholder:text-slate-400 ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950';
+  'bg-slate-900/40 backdrop-blur-md text-slate-100 caret-slate-100 placeholder:text-slate-500 ' +
+  'border border-slate-600/50 shadow-inner ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40 focus-visible:border-amber-500/40';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline edit form
@@ -209,8 +88,10 @@ function EditForm({
 
 export default function ResourceGridClient({ initialResources }: { initialResources: Resource[] }) {
   const [resources, setResources] = useState<Resource[]>(initialResources);
-  const [filterSubject, setFilterSubject] = useState<string>('all');
+  const [filterSyllabus, setFilterSyllabus] = useState<string>('all');
   const [filterModuleType, setFilterModuleType] = useState<string>('all');
+  const [collapsedSyllabi, setCollapsedSyllabi] = useState<Set<string>>(new Set());
+  const [collapsedModules, setCollapsedModules] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const newResourceButtonRef = useRef<HTMLButtonElement>(null);
@@ -253,15 +134,49 @@ export default function ResourceGridClient({ initialResources }: { initialResour
     });
   };
 
-  // ── Filtering ──────────────────────────────────────────────────────────────
+  // ── Filtering & hierarchy (syllabus → module → parent/child topics) ───────
 
-  const filtered = resources.filter(r => {
-    if (filterSubject !== 'all' && normalizeSubjectSlug(r.subject) !== normalizeSubjectSlug(filterSubject)) return false;
-    if (filterModuleType !== 'all' && r.module_type !== filterModuleType) return false;
-    return true;
-  });
+  const syllabusSlugsInData = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of resources) {
+      const slug = r.category?.syllabus?.slug;
+      if (slug) s.add(slug);
+    }
+    return [...s].sort();
+  }, [resources]);
 
-  const paperGroups = buildHierarchy(filtered);
+  const filtered = useMemo(() => {
+    let rows = filterResourcesBySyllabusSlug(resources, filterSyllabus);
+    if (filterModuleType !== 'all') {
+      rows = rows.filter(r => r.module_type === filterModuleType);
+    }
+    return rows;
+  }, [resources, filterSyllabus, filterModuleType]);
+
+  const syllabusBuckets = useMemo(
+    () => buildSyllabusModuleTopicHierarchy(filtered),
+    [filtered],
+  );
+
+  const moduleCollapseKey = (syllabusSlug: string, categoryId: string) => `${syllabusSlug}::${categoryId}`;
+
+  const toggleSyllabusCollapsed = (slug: string) => {
+    setCollapsedSyllabi(prev => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  };
+
+  const toggleModuleCollapsed = (key: string) => {
+    setCollapsedModules(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   // ── Toggle flags ───────────────────────────────────────────────────────────
 
@@ -337,11 +252,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
 
   const openSubtopic = (r: Resource) => {
     const base = getBaseTitle(r.title);
-    const siblings = resources.filter(x => getBaseTitle(x.title) === base && x.id !== r.id);
+    const existingChildren = resources.filter(x => x.parent_resource_id === r.id).length;
     setSubtopicParentId(r.id);
     setSubtopicState({
       parentId: r.id,
-      title: `${base} — Part ${siblings.length + 2}`,
+      title: `${base} — Part ${existingChildren + 2}`,
       videoUrl: '',
       worksheetUrl: '',
     });
@@ -371,11 +286,14 @@ export default function ResourceGridClient({ initialResources }: { initialResour
     }
     startTransition(async () => {
       try {
+        const syllabusId = parent.syllabus_id ?? parent.category?.syllabus_id ?? null;
         const payload = {
           title: subtopicState.title,
           subject: parent.subject,
           subject_id: subjectId,
           category_id: categoryId,
+          syllabus_id: syllabusId ?? undefined,
+          parent_resource_id: parent.id,
           source_url: subtopicState.videoUrl || subtopicState.worksheetUrl,
           worksheet_url: subtopicState.worksheetUrl || null,
           source_type: subtopicState.videoUrl.includes('youtu') ? 'youtube' : 'google_drive',
@@ -401,18 +319,21 @@ export default function ResourceGridClient({ initialResources }: { initialResour
 
   const renderRow = (
     r: Resource,
-    topicIndex: number,       // 0-based parent index in paper group  → "1", "2" …
-    partIndex: number | null, // null = parent row, else 0-based → "1.1", "1.2" …
+    topicIndex: number,
+    /** null = root row in a topic cluster; else 1-based child ordinal */
+    childOrdinal: number | null,
     totalParts: number,
+    rootId: string,
   ) => {
-    const isSub = partIndex !== null;
-    const label = isSub
-      ? `${topicIndex + 1}.${partIndex! + 1}`
-      : `${topicIndex + 1}`;
+    const isSub = childOrdinal !== null || (Boolean(r.parent_resource_id) && r.id !== rootId);
+    const label =
+      childOrdinal === null
+        ? `${topicIndex + 1}`
+        : `${topicIndex + 1}.${childOrdinal}`;
 
     const baseTitle = getBaseTitle(r.title);
     const partSuffix = isSub
-      ? r.title.replace(baseTitle, '').replace(/^[\s—–-]+/, '').trim() || `Part ${partIndex! + 1}`
+      ? r.title.replace(baseTitle, '').replace(/^[\s—–-]+/, '').trim() || (childOrdinal != null ? `Part ${childOrdinal}` : 'Part')
       : '';
     const subLabel = isSub ? baseTitle : r.title;
 
@@ -775,11 +696,18 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       {/* Toolbar */}
       <div className="flex items-center justify-between pb-2 flex-wrap gap-3">
         <div className="flex items-center gap-4 flex-wrap">
-          <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
-            className={`rounded-lg px-3 py-2 text-sm ${ADMIN_TABLE_INPUT} focus-visible:ring-orange-500`}>
-            <option value="all">All Syllabi</option>
-            <option value="mathematics-4024">O-Level / IGCSE (4024)</option>
-            <option value="mathematics-9709">A-Level (9709)</option>
+          <select
+            value={filterSyllabus}
+            onChange={e => setFilterSyllabus(e.target.value)}
+            className={`rounded-lg px-3 py-2 text-sm ${ADMIN_TABLE_INPUT}`}
+            aria-label="Filter by syllabus"
+          >
+            <option value="all">All syllabi</option>
+            {syllabusSlugsInData.map(slug => (
+              <option key={slug} value={slug}>
+                {getSubjectLabel(slug)}
+              </option>
+            ))}
           </select>
           <div className="flex rounded-lg border border-[var(--border-color)] overflow-hidden">
             {[
@@ -800,7 +728,9 @@ export default function ResourceGridClient({ initialResources }: { initialResour
               </button>
             ))}
           </div>
-          <span className="admin-resource-toolbar-meta text-sm text-slate-800">{filtered.length} resources · {paperGroups.length} paper{paperGroups.length !== 1 ? 's' : ''}</span>
+          <span className="admin-resource-toolbar-meta text-sm text-[var(--text-muted)]">
+            {filtered.length} resources · {syllabusBuckets.reduce((n, b) => n + b.modules.length, 0)} modules
+          </span>
         </div>
         <button
           ref={newResourceButtonRef}
@@ -813,8 +743,9 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       </div>
 
       {/* Hierarchical table */}
-      <div className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto shadow-sm"
-           style={{ border: '1px solid var(--border-color)' }}>
+      <div
+        className="overflow-x-auto rounded-xl max-h-[70vh] overflow-y-auto border border-slate-700/50 bg-slate-900/20 backdrop-blur-md shadow-lg"
+      >
         <table className="w-full text-sm text-left">
           <thead
             className="text-[10px] uppercase tracking-wider sticky top-0 z-10"
@@ -839,44 +770,92 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           </thead>
           <tbody style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
                  className="divide-y divide-[var(--border-subtle)]" >
-            {paperGroups.length === 0 ? (
+            {syllabusBuckets.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-12 text-center text-[var(--text-muted)] text-sm">No resources found.</td>
               </tr>
             ) : (
-              paperGroups.map(paper => (
-                <>
-                  {/* ── Paper group header ── */}
-                  <tr key={`header-${paper.categoryId}`}
-                      style={{ backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-                    <td colSpan={9} className="px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        <FolderOpen className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                        <span className="text-xs font-bold uppercase tracking-widest"
-                              style={{ color: 'var(--text-secondary)' }}>
-                          {paper.subjectLabel} → {paper.categoryName}
+              syllabusBuckets.map(bucket => (
+                <Fragment key={bucket.syllabusSlug}>
+                  <tr className="bg-slate-950/70 border-y border-amber-500/25">
+                    <td colSpan={9} className="px-2 py-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleSyllabusCollapsed(bucket.syllabusSlug)}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-amber-500/5 transition-colors rounded-none"
+                      >
+                        <ChevronDown
+                          className={`w-4 h-4 shrink-0 text-amber-400/90 transition-transform ${
+                            collapsedSyllabi.has(bucket.syllabusSlug) ? '-rotate-90' : ''
+                          }`}
+                          aria-hidden
+                        />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">Syllabus</span>
+                        <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                          {bucket.syllabusLabel}
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
+                        <span className="text-xs text-[var(--text-muted)]">
+                          · {bucket.modules.length} module{bucket.modules.length !== 1 ? 's' : ''}
                         </span>
-                      </div>
+                      </button>
                     </td>
                   </tr>
-
-                  {/* ── Topic groups ── */}
-                  {paper.topicGroups.map((group, topicIdx) => (
-                    <>
-                      {group.parts.map((part, partIdx) =>
-                        renderRow(
-                          part,
-                          topicIdx,
-                          group.parts.length > 1 ? partIdx : null,
-                          group.parts.length,
-                        )
-                      )}
-                    </>
-                  ))}
-                </>
+                  {!collapsedSyllabi.has(bucket.syllabusSlug) &&
+                    bucket.modules.map(mod => {
+                      const mk = moduleCollapseKey(bucket.syllabusSlug, mod.categoryId);
+                      return (
+                        <Fragment key={mk}>
+                          <tr className="bg-[var(--bg-surface)]/60 border-b border-slate-700/40">
+                            <td colSpan={9} className="px-2 py-0">
+                              <button
+                                type="button"
+                                onClick={() => toggleModuleCollapsed(mk)}
+                                className="flex w-full items-center gap-2 px-6 py-2 text-left hover:bg-slate-800/40 transition-colors"
+                              >
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 shrink-0 text-[var(--text-muted)] transition-transform ${
+                                    collapsedModules.has(mk) ? '-rotate-90' : ''
+                                  }`}
+                                  aria-hidden
+                                />
+                                <FolderOpen className="w-4 h-4 shrink-0 text-gold-500" aria-hidden />
+                                <span
+                                  className="text-[10px] font-bold uppercase tracking-widest"
+                                  style={{ color: 'var(--text-secondary)' }}
+                                >
+                                  Module
+                                </span>
+                                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                  {mod.categoryName}
+                                </span>
+                                <span className="text-xs text-[var(--text-muted)]">
+                                  · {mod.topicClusters.length} topic{mod.topicClusters.length !== 1 ? 's' : ''}
+                                </span>
+                              </button>
+                            </td>
+                          </tr>
+                          {!collapsedModules.has(mk) &&
+                            mod.topicClusters.map((cluster, topicIdx) => (
+                              <Fragment key={cluster.rootId}>
+                                {cluster.parts.map((part, idx) => {
+                                  const isRoot = part.id === cluster.rootId;
+                                  const childOrdinal = isRoot
+                                    ? null
+                                    : cluster.parts.slice(0, idx + 1).filter(p => p.id !== cluster.rootId).length;
+                                  return renderRow(
+                                    part,
+                                    topicIdx,
+                                    childOrdinal,
+                                    cluster.parts.length,
+                                    cluster.rootId,
+                                  );
+                                })}
+                              </Fragment>
+                            ))}
+                        </Fragment>
+                      );
+                    })}
+                </Fragment>
               ))
             )}
           </tbody>
@@ -886,6 +865,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       <NewResourceModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        defaultSyllabusSlug={filterSyllabus !== 'all' ? filterSyllabus : null}
         onSuccess={() => {
           setIsModalOpen(false);
           requestAnimationFrame(() => newResourceButtonRef.current?.focus());

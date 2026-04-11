@@ -12,6 +12,8 @@ export interface LearningModule {
   videoUrl: string;
   worksheetUrl?: string | null;
   isLocked?: boolean;
+  /** When set, groups with parent as root so a lone "Part 2" still nests correctly */
+  parentResourceId?: string | null;
 }
 
 interface TopicGroup {
@@ -36,14 +38,44 @@ function getBaseTitle(title: string): string {
     .trim();
 }
 
-function groupModules(modules: LearningModule[]): TopicGroup[] {
-  const map = new Map<string, LearningModule[]>();
-  for (const mod of modules) {
-    const base = getBaseTitle(mod.title);
-    if (!map.has(base)) map.set(base, []);
-    map.get(base)!.push(mod);
+function moduleRootId(mod: LearningModule, byId: Map<string, LearningModule>): string {
+  let cur: LearningModule | undefined = mod;
+  const seen = new Set<string>();
+  while (cur?.parentResourceId) {
+    if (seen.has(cur.id)) break;
+    seen.add(cur.id);
+    const p = byId.get(cur.parentResourceId);
+    if (!p) break;
+    cur = p;
   }
-  return Array.from(map.entries()).map(([baseTitle, parts]) => ({ baseTitle, parts }));
+  return cur?.id ?? mod.id;
+}
+
+function groupModules(modules: LearningModule[]): TopicGroup[] {
+  const byId = new Map(modules.map(m => [m.id, m]));
+  const rootClusters = new Map<string, LearningModule[]>();
+
+  for (const mod of modules) {
+    const root = moduleRootId(mod, byId);
+    if (!rootClusters.has(root)) rootClusters.set(root, []);
+    rootClusters.get(root)!.push(mod);
+  }
+
+  const groups: TopicGroup[] = [];
+  for (const [rootId, parts] of rootClusters) {
+    const sorted = [...parts].sort((a, b) => {
+      if (a.id === rootId) return -1;
+      if (b.id === rootId) return 1;
+      return a.title.localeCompare(b.title);
+    });
+    const root = sorted.find(p => p.id === rootId) ?? sorted[0];
+    groups.push({
+      baseTitle: getBaseTitle(root.title),
+      parts: sorted,
+    });
+  }
+  groups.sort((a, b) => a.baseTitle.localeCompare(b.baseTitle));
+  return groups;
 }
 
 // ── Loading skeleton ───────────────────────────────────────────────────────────
@@ -122,18 +154,24 @@ function ActionPills({ mod, beach }: { mod: LearningModule; beach: boolean }) {
 
   const worksheetClass = beach
     ? 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-sm transition-all duration-150 hover:shadow-md whitespace-nowrap bg-white text-navy-900 border-2 border-slate-400 hover:bg-slate-50 hover:border-slate-500'
-    : 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-sm transition-all duration-150 hover:shadow-md whitespace-nowrap bg-white/[0.06] text-white/60 border border-white/[0.1] hover:bg-white/[0.1] hover:text-white/80';
+    : 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap border border-slate-600/60 text-slate-200 bg-slate-900/35 backdrop-blur-sm shadow-sm transition-all duration-150 hover:border-amber-400/35 hover:bg-slate-900/50 hover:text-amber-100/90';
+
+  const watchScholar =
+    'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap ' +
+    'border border-amber-400/60 text-amber-300 bg-transparent shadow-sm ' +
+    'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/80 hover:text-amber-200 hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]';
 
   return (
     <div className="flex flex-wrap items-center gap-2 shrink-0">
       <Link
         href={`/view/${mod.id}`}
-        className="inline-flex items-center gap-1.5 px-3.5 py-1.5
-                   text-xs font-semibold rounded-full shadow-sm
-                   transition-all duration-150 hover:shadow-md whitespace-nowrap
-                   bg-gradient-to-r from-red-500 to-rose-600 text-white border border-red-700/30"
+        className={
+          beach
+            ? 'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-sm transition-all duration-150 hover:shadow-md whitespace-nowrap bg-gradient-to-r from-red-500 to-rose-600 text-white border border-red-700/30'
+            : watchScholar
+        }
       >
-        <Play className="w-3 h-3 fill-white" />
+        <Play className={`w-3 h-3 ${beach ? 'fill-white' : 'fill-amber-300/90'}`} />
         Watch Video
       </Link>
       {mod.worksheetUrl && (
@@ -152,7 +190,7 @@ function SingleRow({ group, globalIndex, beach }: { group: TopicGroup; globalInd
   const mod = group.parts[0];
   const row = beach
     ? 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-xl transition-all duration-200 bg-white border border-slate-300 shadow-sm hover:border-slate-400 hover:shadow'
-    : 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-xl transition-all duration-200 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.07] hover:border-white/[0.15]';
+    : 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 rounded-xl transition-all duration-200 bg-slate-900/40 backdrop-blur-md border border-slate-700/50 shadow-inner hover:border-amber-500/20 hover:bg-slate-900/55';
   const idx = beach
     ? 'shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums bg-slate-200 text-slate-800'
     : 'shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold tabular-nums bg-white/[0.08] text-white/50';
@@ -192,11 +230,13 @@ function AccordionRow({
 }) {
   const outer = beach
     ? `rounded-xl transition-all duration-200 overflow-hidden border bg-white ${isOpen ? 'border-indigo-400 shadow-md' : 'border-slate-300'}`
-    : `rounded-xl transition-all duration-200 overflow-hidden border ${isOpen ? 'border-indigo-500/40 shadow-[0_6px_24px_rgba(99,102,241,0.1)]' : 'border-white/[0.08]'}`;
+    : `rounded-xl transition-all duration-200 overflow-hidden border backdrop-blur-md bg-slate-900/35 ${
+        isOpen ? 'border-amber-500/35 shadow-[0_8px_28px_rgba(0,0,0,0.35)]' : 'border-slate-700/50'
+      }`;
 
   const btnBg = beach
     ? 'w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 text-left bg-slate-50 hover:bg-slate-100'
-    : 'w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 text-left bg-white/[0.04] hover:bg-white/[0.07]';
+    : 'w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-150 text-left bg-slate-900/30 hover:bg-slate-900/50';
 
   const idxClosed = beach ? 'bg-slate-200 text-slate-800' : 'bg-white/[0.08] text-white/50';
   const titleC = beach ? 'text-sm font-semibold text-slate-900 truncate' : 'text-sm font-semibold text-white/80 truncate';
@@ -207,13 +247,13 @@ function AccordionRow({
     ? `${isOpen ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'} w-6 h-6 rounded-full flex items-center justify-center`
     : `${isOpen ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/[0.06] text-white/30'} w-6 h-6 rounded-full flex items-center justify-center`;
 
-  const innerTop = beach ? 'border-t border-slate-200 bg-slate-50/80' : 'border-t border-white/[0.06] bg-white/[0.02]';
+  const innerTop = beach ? 'border-t border-slate-200 bg-slate-50/80' : 'border-t border-slate-700/40 bg-slate-950/40';
   const partRow = beach
     ? 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 transition-colors duration-150 border-b border-slate-200'
-    : 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 transition-colors duration-150 border-b border-white/[0.04]';
+    : 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 transition-colors duration-150 border-b border-slate-800/60';
   const partIdx = beach
     ? 'shrink-0 w-8 h-6 flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-white border border-slate-300 text-slate-700'
-    : 'shrink-0 w-8 h-6 flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-white/[0.06] border border-white/[0.08] text-white/40';
+    : 'shrink-0 w-8 h-6 flex items-center justify-center rounded-md text-xs font-bold tabular-nums bg-slate-900/50 border border-slate-600/50 text-amber-200/70';
   const partTitle = beach ? 'text-sm text-slate-800 truncate' : 'text-sm text-white/50 truncate';
 
   return (
@@ -315,7 +355,7 @@ export default function UnifiedModuleGrid({
         className={
           beach
             ? 'rounded-2xl overflow-hidden bg-white border border-slate-300 shadow-sm'
-            : 'rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08]'
+            : 'rounded-2xl overflow-hidden bg-slate-900/30 border border-slate-700/50 backdrop-blur-md'
         }
       >
         {Array.from({ length: 4 }).map((_, i) => (
@@ -367,7 +407,7 @@ export default function UnifiedModuleGrid({
       {/* Rows */}
       {groups.map((group, groupIndex) => (
         <motion.div key={group.baseTitle} variants={rowVariants}>
-          {group.parts.length === 1 ? (
+          {group.parts.length === 1 && !group.parts[0].parentResourceId ? (
             <SingleRow group={group} globalIndex={groupIndex} beach={beach} />
           ) : (
             <AccordionRow
