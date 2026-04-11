@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import type { Skill, SkillLesson, SkillPlaylist } from '@/lib/supabase/types';
 
 const REVALIDATE_PATHS = ['/admin/super/digital-skills', '/digital-skills'];
 
@@ -48,22 +49,26 @@ export async function createSkill(payload: {
 
   const nextOrder = (maxRow?.sort_order ?? 0) + 1;
 
-  const { error } = await supabase.from('skills').insert({
-    name: payload.name.trim(),
-    slug,
-    icon: payload.icon || 'Code2',
-    tagline: payload.tagline?.trim() || null,
-    description: payload.description?.trim() || null,
-    gradient: payload.gradient || 'from-violet-600 to-indigo-700',
-    glow_color: payload.glow_color || 'rgba(124,58,237,0.35)',
-    sort_order: nextOrder,
-    is_active: true,
-  });
+  const { data, error } = await supabase
+    .from('skills')
+    .insert({
+      name: payload.name.trim(),
+      slug,
+      icon: payload.icon || 'Code2',
+      tagline: payload.tagline?.trim() || null,
+      description: payload.description?.trim() || null,
+      gradient: payload.gradient || 'from-violet-600 to-indigo-700',
+      glow_color: payload.glow_color || 'rgba(124,58,237,0.35)',
+      sort_order: nextOrder,
+      is_active: true,
+    })
+    .select('*')
+    .single();
 
   if (error) return { success: false, error: error.message };
 
   revalidateAll();
-  return { success: true };
+  return { success: true, skill: data as Skill };
 }
 
 export async function updateSkill(
@@ -115,16 +120,20 @@ export async function createPlaylist(payload: {
     .limit(1)
     .single();
 
-  const { error } = await supabase.from('skill_playlists').insert({
-    skill_id: payload.skill_id,
-    title: payload.title.trim(),
-    description: payload.description?.trim() || null,
-    sort_order: (maxRow?.sort_order ?? 0) + 1,
-  });
+  const { data, error } = await supabase
+    .from('skill_playlists')
+    .insert({
+      skill_id: payload.skill_id,
+      title: payload.title.trim(),
+      description: payload.description?.trim() || null,
+      sort_order: (maxRow?.sort_order ?? 0) + 1,
+    })
+    .select('*')
+    .single();
 
   if (error) return { success: false, error: error.message };
   revalidateAll();
-  return { success: true };
+  return { success: true, playlist: data as SkillPlaylist };
 }
 
 export async function updatePlaylist(
@@ -174,23 +183,27 @@ export async function createLesson(payload: {
     .limit(1)
     .single();
 
-  const { error } = await supabase.from('skill_lessons').insert({
-    playlist_id: payload.playlist_id,
-    title: payload.title.trim(),
-    video_url: payload.video_url?.trim() || null,
-    resource_url: payload.resource_url?.trim() || null,
-    notes_url: payload.notes_url?.trim() || null,
-    exercises_url: payload.exercises_url?.trim() || null,
-    cheatsheet_url: payload.cheatsheet_url?.trim() || null,
-    quiz_url: payload.quiz_url?.trim() || null,
-    duration: payload.duration?.trim() || null,
-    sort_order: (maxRow?.sort_order ?? 0) + 1,
-    is_free: payload.is_free ?? false,
-  });
+  const { data, error } = await supabase
+    .from('skill_lessons')
+    .insert({
+      playlist_id: payload.playlist_id,
+      title: payload.title.trim(),
+      video_url: payload.video_url?.trim() || null,
+      resource_url: payload.resource_url?.trim() || null,
+      notes_url: payload.notes_url?.trim() || null,
+      exercises_url: payload.exercises_url?.trim() || null,
+      cheatsheet_url: payload.cheatsheet_url?.trim() || null,
+      quiz_url: payload.quiz_url?.trim() || null,
+      duration: payload.duration?.trim() || null,
+      sort_order: (maxRow?.sort_order ?? 0) + 1,
+      is_free: payload.is_free ?? false,
+    })
+    .select('*')
+    .single();
 
   if (error) return { success: false, error: error.message };
   revalidateAll();
-  return { success: true };
+  return { success: true, lesson: data as SkillLesson };
 }
 
 export async function updateLesson(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useCallback } from 'react';
+import { useState, useTransition, useCallback, useRef } from 'react';
 import {
   createSkill, updateSkill, deleteSkill,
   createPlaylist, updatePlaylist, deletePlaylist,
@@ -214,6 +214,8 @@ export default function DigitalSkillsManager({
     lessonId?: string;
   }>({ open: false, mode: 'create', playlistId: '' });
   const [lessonForm, setLessonForm] = useState<LessonFormData>(EMPTY_LESSON_FORM);
+  const lessonTitleInputRef = useRef<HTMLInputElement>(null);
+  const [isSavingLesson, setIsSavingLesson] = useState(false);
 
   // Skill editing
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
@@ -268,11 +270,23 @@ export default function DigitalSkillsManager({
         gradient: preset.value,
         glow_color: preset.glow,
       });
-      if (result.success) {
+      if (result.success && 'skill' in result && result.skill) {
+        const row = result.skill;
+        setSkills((prev) => [...prev, {
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          icon: row.icon,
+          tagline: row.tagline,
+          description: row.description,
+          gradient: row.gradient,
+          glow_color: row.glow_color,
+          is_active: row.is_active,
+          sort_order: row.sort_order,
+        }].sort((a, b) => a.sort_order - b.sort_order));
         showToast({ message: 'Skill created!', type: 'success' });
         setShowNewSkill(false);
         setSkillForm({ name: '', slug: '', icon: 'Code2', tagline: '', description: '', gradient: GRADIENT_PRESETS[0].value });
-        window.location.reload();
       } else {
         showToast({ message: result.error || 'Failed', type: 'error' });
       }
@@ -342,11 +356,18 @@ export default function DigitalSkillsManager({
         title: playlistForm.title,
         description: playlistForm.description || undefined,
       });
-      if (result.success) {
+      if (result.success && 'playlist' in result && result.playlist) {
+        const pl = result.playlist;
+        setPlaylists((prev) => [...prev, {
+          id: pl.id,
+          skill_id: pl.skill_id,
+          title: pl.title,
+          description: pl.description,
+          sort_order: pl.sort_order,
+        }].sort((a, b) => a.sort_order - b.sort_order));
         showToast({ message: 'Playlist created!', type: 'success' });
         setNewPlaylistSkillId(null);
         setPlaylistForm({ title: '', description: '' });
-        window.location.reload();
       } else {
         showToast({ message: result.error || 'Failed', type: 'error' });
       }
@@ -415,42 +436,53 @@ export default function DigitalSkillsManager({
   // ── Lesson CRUD ───────────────────────────────────────────────────────────
 
   const handleSubmitLesson = () => {
+    if (isSavingLesson) return;
+    if (lessonModal.mode === 'create' && !lessonForm.title.trim()) return;
+
+    setIsSavingLesson(true);
     startTransition(async () => {
-      if (lessonModal.mode === 'create') {
-        const result = await createLesson({
-          playlist_id: lessonModal.playlistId,
-          title: lessonForm.title,
-          video_url: lessonForm.video_url || undefined,
-          notes_url: lessonForm.notes_url || undefined,
-          exercises_url: lessonForm.exercises_url || undefined,
-          cheatsheet_url: lessonForm.cheatsheet_url || undefined,
-          quiz_url: lessonForm.quiz_url || undefined,
-          resource_url: lessonForm.resource_url || undefined,
-          duration: lessonForm.duration || undefined,
-          is_free: lessonForm.is_free,
-        });
-        if (result.success) {
-          showToast({ message: 'Lesson added!', type: 'success' });
-          closeLessonModal();
-          window.location.reload();
-        } else {
-          showToast({ message: result.error || 'Failed', type: 'error' });
-        }
-      } else if (lessonModal.lessonId) {
-        const result = await updateLesson(lessonModal.lessonId, {
-          title: lessonForm.title,
-          video_url: lessonForm.video_url || null,
-          notes_url: lessonForm.notes_url || null,
-          exercises_url: lessonForm.exercises_url || null,
-          cheatsheet_url: lessonForm.cheatsheet_url || null,
-          quiz_url: lessonForm.quiz_url || null,
-          resource_url: lessonForm.resource_url || null,
-          duration: lessonForm.duration || null,
-          is_free: lessonForm.is_free,
-        });
-        if (result.success) {
-          setLessons(prev => prev.map(l => l.id === lessonModal.lessonId ? {
-            ...l,
+      try {
+        if (lessonModal.mode === 'create') {
+          const result = await createLesson({
+            playlist_id: lessonModal.playlistId,
+            title: lessonForm.title,
+            video_url: lessonForm.video_url || undefined,
+            notes_url: lessonForm.notes_url || undefined,
+            exercises_url: lessonForm.exercises_url || undefined,
+            cheatsheet_url: lessonForm.cheatsheet_url || undefined,
+            quiz_url: lessonForm.quiz_url || undefined,
+            resource_url: lessonForm.resource_url || undefined,
+            duration: lessonForm.duration || undefined,
+            is_free: lessonForm.is_free,
+          });
+          if (result.success && 'lesson' in result && result.lesson) {
+            const row = result.lesson;
+            setLessons((prev) => [...prev, {
+              id: row.id,
+              playlist_id: row.playlist_id,
+              title: row.title,
+              video_url: row.video_url,
+              resource_url: row.resource_url,
+              notes_url: row.notes_url,
+              exercises_url: row.exercises_url,
+              cheatsheet_url: row.cheatsheet_url,
+              quiz_url: row.quiz_url,
+              duration: row.duration,
+              sort_order: row.sort_order,
+              is_free: row.is_free,
+            }].sort((a, b) => a.sort_order - b.sort_order));
+            setLessonForm(EMPTY_LESSON_FORM);
+            showToast({
+              message: 'Lesson saved successfully. Ready for next entry.',
+              type: 'success',
+            });
+            requestAnimationFrame(() => lessonTitleInputRef.current?.focus());
+          } else {
+            const msg = !result.success && 'error' in result && result.error ? result.error : 'Failed';
+            showToast({ message: msg, type: 'error' });
+          }
+        } else if (lessonModal.lessonId) {
+          const result = await updateLesson(lessonModal.lessonId, {
             title: lessonForm.title,
             video_url: lessonForm.video_url || null,
             notes_url: lessonForm.notes_url || null,
@@ -460,12 +492,28 @@ export default function DigitalSkillsManager({
             resource_url: lessonForm.resource_url || null,
             duration: lessonForm.duration || null,
             is_free: lessonForm.is_free,
-          } : l));
-          closeLessonModal();
-          showToast({ message: 'Lesson updated!', type: 'success' });
-        } else {
-          showToast({ message: result.error || 'Failed', type: 'error' });
+          });
+          if (result.success) {
+            setLessons(prev => prev.map(l => l.id === lessonModal.lessonId ? {
+              ...l,
+              title: lessonForm.title,
+              video_url: lessonForm.video_url || null,
+              notes_url: lessonForm.notes_url || null,
+              exercises_url: lessonForm.exercises_url || null,
+              cheatsheet_url: lessonForm.cheatsheet_url || null,
+              quiz_url: lessonForm.quiz_url || null,
+              resource_url: lessonForm.resource_url || null,
+              duration: lessonForm.duration || null,
+              is_free: lessonForm.is_free,
+            } : l));
+            closeLessonModal();
+            showToast({ message: 'Lesson updated!', type: 'success' });
+          } else {
+            showToast({ message: result.error || 'Failed', type: 'error' });
+          }
         }
+      } finally {
+        setIsSavingLesson(false);
       }
     });
   };
@@ -939,7 +987,11 @@ export default function DigitalSkillsManager({
       {lessonModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeLessonModal} />
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => { if (!isSavingLesson) closeLessonModal(); }}
+            aria-hidden="true"
+          />
 
           {/* Modal */}
           <div className="relative bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[var(--border-color)]">
@@ -951,22 +1003,28 @@ export default function DigitalSkillsManager({
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">Fill in the fields that match your content tabs.</p>
               </div>
-              <button onClick={closeLessonModal} className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition">
+              <button
+                type="button"
+                onClick={() => { if (!isSavingLesson) closeLessonModal(); }}
+                disabled={isSavingLesson}
+                className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition disabled:opacity-40"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-5">
+            <fieldset disabled={isSavingLesson} className="px-6 py-5 space-y-5 border-0 min-w-0 block">
               {/* Title + Duration */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Lesson Title *</label>
                   <input
+                    ref={lessonTitleInputRef}
                     value={lessonForm.title}
                     onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="e.g. Color Theory Essentials"
                     className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
-                    autoFocus
+                    autoFocus={lessonModal.mode === 'create'}
                   />
                 </div>
                 <div>
@@ -1074,23 +1132,47 @@ export default function DigitalSkillsManager({
                 <span className="font-medium">Free Preview</span>
                 <span className="text-xs text-[var(--text-muted)]">— available without enrollment</span>
               </label>
-            </div>
+            </fieldset>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+            <div className="sticky bottom-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-6 py-4 flex flex-wrap items-center justify-between gap-3 rounded-b-2xl">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { if (!isSavingLesson) closeLessonModal(); }}
+                  disabled={isSavingLesson}
+                  className="px-5 py-2.5 text-sm font-medium text-[var(--text-muted)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)] rounded-xl transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                {lessonModal.mode === 'create' && (
+                  <button
+                    type="button"
+                    onClick={() => { if (!isSavingLesson) closeLessonModal(); }}
+                    disabled={isSavingLesson}
+                    className="px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] border border-[var(--border-color)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)] rounded-xl transition disabled:opacity-50"
+                  >
+                    Done
+                  </button>
+                )}
+              </div>
               <button
-                onClick={closeLessonModal}
-                className="px-5 py-2.5 text-sm font-medium text-[var(--text-muted)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)] rounded-xl transition"
-              >
-                Cancel
-              </button>
-              <button
+                type="button"
                 onClick={handleSubmitLesson}
-                disabled={isPending || !lessonForm.title.trim()}
+                disabled={isSavingLesson || !lessonForm.title.trim()}
                 className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition shadow-sm disabled:opacity-50"
               >
-                {lessonModal.mode === 'create' ? <Plus className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                {lessonModal.mode === 'create' ? 'Add Lesson' : 'Save Changes'}
+                {isSavingLesson ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    {lessonModal.mode === 'create' ? <Plus className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    {lessonModal.mode === 'create' ? 'Add Lesson' : 'Save Changes'}
+                  </>
+                )}
               </button>
             </div>
           </div>
