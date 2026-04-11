@@ -337,33 +337,39 @@ export async function provisionSubjectPortal(
   }
 
   const includeALevel = portal.hasALevelSyllabus !== false;
-  await ensureSyllabiForSubject(supabase, subj.id, { includeALevel });
 
-  const { data: existingCats, error: exErr } = await fetchMergedCategoriesForSubject(supabase, subj.id);
-  if (exErr) return { success: false, error: exErr };
+  try {
+    await ensureSyllabiForSubject(supabase, subj.id, { includeALevel });
 
-  const { olevelId, alevelId } = await resolveTierIds(supabase, subj.id, includeALevel);
-  const { oPaperId, aPaperId } = await resolvePaperIds(supabase, subj.id, portal);
+    const { data: existingCats, error: exErr } = await fetchMergedCategoriesForSubject(supabase, subj.id);
+    if (exErr) return { success: false, error: exErr };
 
-  let created = 0;
-  if (existingCats.length === 0) {
-    if (portal.routeSegment === 'cs') {
-      created = await provisionComputerScience(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
-    } else {
-      created = await provisionDefaultScienceStructure(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
+    const { olevelId, alevelId } = await resolveTierIds(supabase, subj.id, includeALevel);
+    const { oPaperId, aPaperId } = await resolvePaperIds(supabase, subj.id, portal);
+
+    let created = 0;
+    if (existingCats.length === 0) {
+      if (portal.routeSegment === 'cs') {
+        created = await provisionComputerScience(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
+      } else {
+        created = await provisionDefaultScienceStructure(supabase, subj.id, olevelId, alevelId, oPaperId, aPaperId);
+      }
     }
-  }
 
-  // Idempotent backfill: grades, AS/A2 roots, and A-Level paper rows (Physics/Chem/Bio/Math; not CS).
-  if (portal.routeSegment !== 'cs') {
-    created += await ensureOLevelGradeCategoriesIfMissing(supabase, subj.id, olevelId, oPaperId);
-    if (includeALevel && alevelId) {
-      created += await ensureAsA2RootCategoriesIfMissing(supabase, subj.id, alevelId, aPaperId);
-      created += await ensureSciencePaperCategories(supabase, portal, subj.id, alevelId, aPaperId);
+    // Idempotent backfill: grades, AS/A2 roots, and A-Level paper rows (Physics/Chem/Bio/Math; not CS).
+    if (portal.routeSegment !== 'cs') {
+      created += await ensureOLevelGradeCategoriesIfMissing(supabase, subj.id, olevelId, oPaperId);
+      if (includeALevel && alevelId) {
+        created += await ensureAsA2RootCategoriesIfMissing(supabase, subj.id, alevelId, aPaperId);
+        created += await ensureSciencePaperCategories(supabase, portal, subj.id, alevelId, aPaperId);
+      }
     }
-  }
 
-  return { success: true, categoriesCreated: created };
+    return { success: true, categoriesCreated: created };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { success: false, error: msg };
+  }
 }
 
 /** Row shape for admin category pickers (subject + syllabus-linked trees). */

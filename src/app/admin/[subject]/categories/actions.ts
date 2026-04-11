@@ -113,12 +113,15 @@ export async function seedPortalDefaultCategories(portalRouteSegment: string): P
   if (!auth) {
     return { success: false, error: 'Not authorised for this subject.' };
   }
+
   const result = await provisionSubjectPortal(supabase, portalRouteSegment);
   if (!result.success) {
     return { success: false, error: result.error ?? 'Provisioning failed.' };
   }
+
   revalidateTag('categories');
-  revalidatePath('/', 'layout');
+  /** Scope cache invalidation to this admin portal — avoid revalidatePath('/', 'layout') which can destabilise unrelated RSC trees after bulk inserts. */
+  revalidatePath(`/admin/${portalRouteSegment}`);
   revalidatePath(`/admin/${portalRouteSegment}/categories`);
   return { success: true, categoriesCreated: result.categoriesCreated ?? 0 };
 }
