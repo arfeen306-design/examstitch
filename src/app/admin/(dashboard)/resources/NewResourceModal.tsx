@@ -18,7 +18,15 @@ interface Category {
   name: string;
   subject_id: string;
   syllabus_id?: string | null;
+  syllabus_tier_id?: string | null;
   syllabus?: { slug: string; code?: string; name?: string } | null;
+  syllabus_tier?: { id: string; tier: string; name: string } | null;
+}
+
+interface SyllabusTierRow {
+  id: string;
+  tier: string;
+  name: string;
 }
 
 type ModuleType = typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
@@ -50,6 +58,7 @@ export default function NewResourceModal({
   defaultSyllabusSlug?: string | null;
 }) {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [syllabiList, setSyllabiList] = useState<SyllabusTierRow[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
@@ -61,6 +70,7 @@ export default function NewResourceModal({
   const [formData, setFormData] = useState({
     title: '',
     subject_id: '',
+    syllabus_tier_id: '',
     category_id: '',
     paper: '',
     year: new Date().getFullYear().toString(),
@@ -98,7 +108,9 @@ export default function NewResourceModal({
       // Fetch all categories (filtered client-side by selected subject)
       const { data: catData } = await supabase
         .from('categories')
-        .select('id, name, subject_id, syllabus_id, syllabus:subject_papers(slug, code, name)')
+        .select(
+          'id, name, subject_id, syllabus_id, syllabus_tier_id, syllabus:subject_papers(slug, code, name), syllabus_tier:syllabi(id, tier, name)',
+        )
         .order('sort_order');
       if (catData) setCategories(catData as unknown as Category[]);
       setCategoriesLoading(false);
@@ -108,16 +120,61 @@ export default function NewResourceModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !defaultSyllabusSlug || !categories.length) return;
-    setFormData(prev => {
-      const current = categories.find(c => c.id === prev.category_id);
-      if (current?.syllabus?.slug === defaultSyllabusSlug) return prev;
-      const first = categories.find(
-        c => c.subject_id === prev.subject_id && c.syllabus?.slug === defaultSyllabusSlug,
-      );
-      return { ...prev, category_id: first?.id ?? '' };
-    });
-  }, [isOpen, defaultSyllabusSlug, categories]);
+    if (!isOpen || !formData.subject_id) {
+      setSyllabiList([]);
+      return;
+    }
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    supabase
+      .from('syllabi')
+      .select('id, tier, name')
+      .eq('subject_id', formData.subject_id)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => setSyllabiList((data ?? []) as SyllabusTierRow[]));
+  }, [isOpen, formData.subject_id]);
+
+  useEffect(() => {
+    if (!isOpen || !defaultSyllabusSlug || !formData.subject_id) return;
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    (async () => {
+      const { data: paper } = await supabase
+        .from('subject_papers')
+        .select('level_id')
+        .eq('slug', defaultSyllabusSlug)
+        .maybeSingle();
+      if (!paper?.level_id) {
+        const first = categories.find(
+          c => c.subject_id === formData.subject_id && c.syllabus?.slug === defaultSyllabusSlug,
+        );
+        if (first?.syllabus_tier_id) {
+          const tierId = first.syllabus_tier_id;
+          setFormData(prev => ({
+            ...prev,
+            syllabus_tier_id: tierId,
+            category_id: first.id,
+          }));
+        }
+        return;
+      }
+      const { data: lev } = await supabase.from('levels').select('slug').eq('id', paper.level_id).single();
+      const tier = lev?.slug === 'alevel' ? 'alevel' : 'olevel';
+      const { data: sy } = await supabase
+        .from('syllabi')
+        .select('id')
+        .eq('subject_id', formData.subject_id)
+        .eq('tier', tier)
+        .maybeSingle();
+      if (sy?.id) {
+        setFormData(prev => ({ ...prev, syllabus_tier_id: sy.id as string, category_id: '' }));
+      }
+    })();
+  }, [isOpen, defaultSyllabusSlug, formData.subject_id, categories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,8 +186,14 @@ export default function NewResourceModal({
       return;
     }
 
+    if (!formData.syllabus_tier_id) {
+      showToast({ message: 'Please select O-Level or A-Level (syllabus tier).', type: 'error' });
+      setLoading(false);
+      return;
+    }
+
     if (!formData.category_id) {
-      showToast({ message: 'Please select a Target Module.', type: 'error' });
+      showToast({ message: 'Please select a grade, paper, or module (category).', type: 'error' });
       setLoading(false);
       return;
     }
@@ -150,6 +213,8 @@ export default function NewResourceModal({
     const selectedSubject = subjects.find(s => s.id === formData.subject_id);
     const subjectSlug = selectedSubject?.slug ?? '';
     const subjectId = formData.subject_id;
+    const selectedCategory = categories.find(c => c.id === formData.category_id);
+    const syllabusPaperId = selectedCategory?.syllabus_id ?? undefined;
 
     if (moduleType === MODULE_TYPES.VIDEO_TOPICAL) {
       // Must have at least a video URL
@@ -174,6 +239,7 @@ export default function NewResourceModal({
         subject: subjectSlug,
         subject_id: subjectId,
         category_id: formData.category_id,
+        syllabus_id: syllabusPaperId,
         source_url: formData.video_url,
         worksheet_url: formData.worksheet_url || null,
         source_type: 'youtube',
@@ -207,6 +273,7 @@ export default function NewResourceModal({
           subject: subjectSlug,
           subject_id: subjectId,
           category_id: formData.category_id,
+          syllabus_id: syllabusPaperId,
           source_url: formData.video_url,
           worksheet_url: formData.solution_url,
           source_type: 'youtube',
@@ -222,6 +289,7 @@ export default function NewResourceModal({
           subject: subjectSlug,
           subject_id: subjectId,
           category_id: formData.category_id,
+          syllabus_id: syllabusPaperId,
           source_url: formData.solution_url,
           source_type: 'google_drive',
           content_type: CONTENT_TYPES.PDF,
@@ -240,12 +308,28 @@ export default function NewResourceModal({
       if (success) {
         showToast({ message: `Saved! ${keepOpen ? 'Ready for next entry.' : ''}`, type: 'success' });
         if (keepOpen) {
-          // Clear only the URL fields — keep subject, category, module type, session
-          setFormData(prev => ({ ...prev, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '', variant: '' }));
+          // Clear only the URL fields — keep subject, syllabus tier, category, module type, session
+          setFormData(prev => ({
+            ...prev,
+            title: '',
+            video_url: '',
+            worksheet_url: '',
+            solution_url: '',
+            paper: '',
+            variant: '',
+          }));
           setTimeout(() => titleRef.current?.focus(), 50);
         } else {
           onSuccess();
-          setFormData({ ...formData, title: '', video_url: '', worksheet_url: '', solution_url: '', paper: '', variant: '' });
+          setFormData(prev => ({
+            ...prev,
+            title: '',
+            video_url: '',
+            worksheet_url: '',
+            solution_url: '',
+            paper: '',
+            variant: '',
+          }));
         }
       } else {
         showToast({ message: error || 'Failed to link resources', type: 'error' });
@@ -261,7 +345,10 @@ export default function NewResourceModal({
 
   const activeCategories = categories.filter(c => {
     if (c.subject_id !== formData.subject_id) return false;
-    if (defaultSyllabusSlug && c.syllabus?.slug !== defaultSyllabusSlug) return false;
+    if (formData.syllabus_tier_id && c.syllabus_tier_id !== formData.syllabus_tier_id) return false;
+    if (!formData.syllabus_tier_id && defaultSyllabusSlug && c.syllabus?.slug !== defaultSyllabusSlug) {
+      return false;
+    }
     return true;
   });
 
@@ -318,10 +405,10 @@ export default function NewResourceModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* ── Title section: Topic Name for videos, Session/Year/Variant for past papers ── */}
             {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? (
-              <div className="col-span-2">
+              <div className="sm:col-span-2 lg:col-span-3">
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Topic Name</label>
                 <input
                   ref={titleRef}
@@ -333,7 +420,7 @@ export default function NewResourceModal({
                 />
               </div>
             ) : (
-              <div className="col-span-2">
+              <div className="sm:col-span-2 lg:col-span-3">
                 <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Paper Identity</label>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
@@ -378,7 +465,13 @@ export default function NewResourceModal({
 
             <div>
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Subject</label>
-              <select value={formData.subject_id} onChange={e => setFormData({ ...formData, subject_id: e.target.value, category_id: '' })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]">
+              <select
+                value={formData.subject_id}
+                onChange={e =>
+                  setFormData({ ...formData, subject_id: e.target.value, syllabus_tier_id: '', category_id: '' })
+                }
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
+              >
                 <option value="" disabled>Select subject…</option>
                 {subjects.map(s => (
                   <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
@@ -387,29 +480,68 @@ export default function NewResourceModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Target Module</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Syllabus</label>
+              <select
+                value={formData.syllabus_tier_id}
+                onChange={e => setFormData({ ...formData, syllabus_tier_id: e.target.value, category_id: '' })}
+                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
+                required
+              >
+                <option value="" disabled>
+                  Select O-Level or A-Level…
+                </option>
+                {syllabiList.length === 0 && formData.subject_id ? (
+                  <option value="" disabled>
+                    No syllabus tiers — run DB migration or provision portal
+                  </option>
+                ) : (
+                  syllabiList.map(sy => (
+                    <option key={sy.id} value={sy.id}>
+                      {sy.name}
+                    </option>
+                  ))
+                )}
+              </select>
+              <p className="text-[10px] text-[var(--text-muted)] mt-1">Filters grades vs papers by Cambridge level.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Grade / paper / module</label>
               {categoriesLoading ? (
                 <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-muted)] border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading modules…
                 </div>
+              ) : !formData.syllabus_tier_id ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-muted)] border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
+                  Choose a syllabus tier first.
+                </div>
               ) : activeCategories.length === 0 && formData.subject_id ? (
                 <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-amber-400 border border-amber-500/20 rounded-lg bg-amber-500/10">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>No modules found for this subject. Create one in Taxonomy Manager.</span>
+                  <span>No modules for this tier. Use Super Admin → Provision portal or Taxonomy Manager.</span>
                 </div>
               ) : (
-                <select required value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]">
-                  <option value="" disabled>Select mapping...</option>
+                <select
+                  required
+                  value={formData.category_id}
+                  onChange={e => setFormData({ ...formData, category_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
+                >
+                  <option value="" disabled>
+                    Select module…
+                  </option>
                   {activeCategories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
                   ))}
                 </select>
               )}
             </div>
 
             {/* Dynamic Link Inputs */}
-            <div className="col-span-2 pt-2 border-t border-[var(--border-subtle)]">
+            <div className="sm:col-span-2 lg:col-span-3 pt-2 border-t border-[var(--border-subtle)]">
               <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
                 {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? 'Resource Links' : 'PDF Solution Link'}
               </label>

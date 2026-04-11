@@ -40,6 +40,11 @@ const ADMIN_TABLE_INPUT =
   'border border-slate-600/50 shadow-inner ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40 focus-visible:border-amber-500/40';
 
+/** Gold-bordered ghost buttons — Professional Scholar */
+const SCHOLAR_LINK =
+  'inline-flex items-center gap-1 rounded-md border border-amber-500/55 bg-transparent px-2 py-0.5 text-[11px] font-semibold ' +
+  'text-amber-400/95 hover:bg-amber-500/10 hover:border-amber-400/80 hover:shadow-[0_0_14px_rgba(245,158,11,0.12)] transition';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline edit form
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,6 +146,9 @@ export default function ResourceGridClient({ initialResources }: { initialResour
     for (const r of resources) {
       const slug = r.category?.syllabus?.slug;
       if (slug) s.add(slug);
+      const tier = r.category?.syllabus_tier?.tier;
+      if (tier === 'olevel') s.add('tier:olevel');
+      if (tier === 'alevel') s.add('tier:alevel');
     }
     return [...s].sort();
   }, [resources]);
@@ -382,9 +390,19 @@ export default function ResourceGridClient({ initialResources }: { initialResour
                       </span>
                     )}
                   </span>
-                  <div className="flex gap-1 mt-0.5 flex-wrap items-center">
+                  <div className="flex gap-1.5 mt-1 flex-wrap items-center">
                     {r.source_url && <span className="text-[10px] font-semibold text-red-400 bg-red-500/15 px-1.5 py-0.5 rounded">YT</span>}
                     {r.worksheet_url && <span className="text-[10px] font-semibold text-green-400 bg-green-500/15 px-1.5 py-0.5 rounded">PDF</span>}
+                    {r.source_url && r.content_type === 'video' && (
+                      <a href={r.source_url} target="_blank" rel="noreferrer" className={SCHOLAR_LINK}>
+                        Watch video
+                      </a>
+                    )}
+                    {r.worksheet_url && (
+                      <a href={r.worksheet_url} target="_blank" rel="noreferrer" className={SCHOLAR_LINK}>
+                        Worksheet
+                      </a>
+                    )}
                     {r.is_locked && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-orange-400 bg-orange-500/15 px-1.5 py-0.5 rounded">
                         <Lock className="w-2.5 h-2.5" /> Locked
@@ -705,7 +723,11 @@ export default function ResourceGridClient({ initialResources }: { initialResour
             <option value="all">All syllabi</option>
             {syllabusSlugsInData.map(slug => (
               <option key={slug} value={slug}>
-                {getSubjectLabel(slug)}
+                {slug === 'tier:olevel'
+                  ? 'O-Level (tier)'
+                  : slug === 'tier:alevel'
+                    ? 'A-Level (tier)'
+                    : getSubjectLabel(slug)}
               </option>
             ))}
           </select>

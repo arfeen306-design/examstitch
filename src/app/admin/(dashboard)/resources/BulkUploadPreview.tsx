@@ -45,7 +45,7 @@ export default function BulkUploadPreview() {
   return (
     <div className="space-y-4">
       <textarea
-        className="w-full h-32 p-3 font-mono text-sm border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+        className="w-full h-32 p-3 font-mono text-sm rounded-lg bg-slate-900/40 backdrop-blur-md border border-slate-700/50 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400/35 focus:border-amber-500/40"
         placeholder="Paste JSON array here..."
         value={jsonInput}
         onChange={(e) => setJsonInput(e.target.value)}
@@ -53,17 +53,19 @@ export default function BulkUploadPreview() {
 
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={handleParse}
-          className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--bg-surface)] rounded-lg hover:bg-[var(--bg-elevated)]"
+          className="px-4 py-2 text-sm font-medium rounded-lg border border-amber-500/50 bg-transparent text-amber-400 hover:bg-amber-500/10 hover:shadow-[0_0_12px_rgba(245,158,11,0.12)] transition"
         >
           Preview JSON
         </button>
 
         {parsedData.length > 0 && (
           <button
+            type="button"
             onClick={handleUpload}
             disabled={isPending}
-            className="px-4 py-2 text-sm font-medium text-[var(--text-primary)] bg-green-600 rounded-lg hover:bg-green-500 disabled:opacity-50 transition-colors shadow-sm"
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-emerald-500/50 bg-transparent text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition"
           >
             {isPending ? 'Committing...' : `Commit to Production (${jsonInput.length ? JSON.parse(jsonInput).length : 0} items)`}
           </button>
@@ -73,9 +75,9 @@ export default function BulkUploadPreview() {
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       {parsedData.length > 0 && (
-        <div className="mt-4 overflow-x-auto border border-[var(--border-subtle)] rounded-lg max-h-64">
-          <table className="w-full text-sm text-left align-middle">
-            <thead className="text-xs uppercase bg-[var(--bg-surface)] text-[var(--text-muted)] sticky top-0">
+        <div className="mt-4 overflow-x-auto rounded-lg max-h-64 border border-slate-700/50 bg-slate-950/30">
+          <table className="w-full text-sm text-left align-middle text-slate-200">
+            <thead className="text-xs uppercase bg-slate-900/60 text-slate-400 sticky top-0 border-b border-slate-700/50">
               <tr>
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Subject</th>

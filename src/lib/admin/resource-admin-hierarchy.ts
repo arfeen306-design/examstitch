@@ -21,7 +21,9 @@ export interface AdminResourceRow {
     slug: string;
     subject_id?: string | null;
     syllabus_id?: string | null;
+    syllabus_tier_id?: string | null;
     syllabus?: { slug: string; code: string; name?: string } | null;
+    syllabus_tier?: { id: string; tier: string; name: string } | null;
   } | null;
   is_published: boolean;
   is_locked: boolean;
@@ -69,13 +71,18 @@ function resourceRootId(r: AdminResourceRow, byId: Map<string, AdminResourceRow>
 }
 
 function syllabusSlugFromRow(r: AdminResourceRow): string {
-  const s = r.category?.syllabus?.slug;
-  if (s) return s;
+  const paper = r.category?.syllabus?.slug;
+  if (paper) return paper;
+  const tier = r.category?.syllabus_tier?.tier;
+  if (tier === 'alevel') return 'tier:alevel';
+  if (tier === 'olevel') return 'tier:olevel';
   if (r.syllabus_id) return `id:${r.syllabus_id}`;
   return 'unspecified';
 }
 
 function syllabusLabelFromSlug(slug: string): string {
+  if (slug === 'tier:olevel') return 'O-Level';
+  if (slug === 'tier:alevel') return 'A-Level';
   if (slug === 'unspecified') return 'Syllabus not set';
   if (slug.startsWith('id:')) return 'Syllabus (set category syllabus in DB)';
   return getSubjectLabel(slug);
@@ -169,6 +176,8 @@ export function filterResourcesBySyllabusSlug(
   return resources.filter(r => {
     const slug = r.category?.syllabus?.slug ?? null;
     if (slug === filter) return true;
+    if (filter === 'tier:olevel' && r.category?.syllabus_tier?.tier === 'olevel') return true;
+    if (filter === 'tier:alevel' && r.category?.syllabus_tier?.tier === 'alevel') return true;
     return false;
   });
 }

@@ -30,8 +30,9 @@ export default async function AdminResourcesPage() {
     .select(`
       *,
       category:categories(
-        id, name, slug, parent_id, subject_id, syllabus_id,
-        syllabus:subject_papers(slug, code, name)
+        id, name, slug, parent_id, subject_id, syllabus_id, syllabus_tier_id,
+        syllabus:subject_papers(slug, code, name),
+        syllabus_tier:syllabi(id, tier, name)
       )
     `)
     .order('sort_order', { ascending: true, nullsFirst: false })
@@ -61,13 +62,13 @@ export default async function AdminResourcesPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
-        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4">Bulk JSON Upload</h3>
+      <div className="rounded-xl p-6 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
+        <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Bulk JSON Upload</h3>
         <BulkUploadPreview />
       </div>
 
-      <div className="rounded-2xl p-6 bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-subtle)]">
-        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4">
+      <div className="rounded-xl p-6 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
+        <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">
           Live Database Records
           <span className="ml-2 text-xs font-normal text-[var(--text-muted)]">({(resources || []).length} total)</span>
         </h3>

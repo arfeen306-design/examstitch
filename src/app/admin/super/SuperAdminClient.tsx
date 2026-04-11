@@ -2,7 +2,17 @@
 
 import { useState, useTransition, memo, Suspense, useDeferredValue } from 'react';
 import { Plus, UserPlus, X, Trash2, Video, FileText, Eye, EyeOff, Shield } from 'lucide-react';
-import { createSubject, assignSubjectToAdmin, removeSubjectFromAdmin, createAdminAccount, deleteAdminAccount, toggleSuperAdmin } from './actions';
+import { useRouter } from 'next/navigation';
+import {
+  createSubject,
+  assignSubjectToAdmin,
+  removeSubjectFromAdmin,
+  createAdminAccount,
+  deleteAdminAccount,
+  toggleSuperAdmin,
+  provisionPortalHierarchy,
+} from './actions';
+import { ADMIN_PORTALS } from '@/config/admin-portals';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
 import TutorProfileManager from './TutorProfileManager';
@@ -131,10 +141,13 @@ export default function SuperAdminClient({
 const LEVEL_OPTIONS = ['Pre-O', 'O Level', 'A Level', 'AS Level', 'A2 Level'] as const;
 
 const SubjectFactory = memo(function SubjectFactory({ subjects }: { subjects: Subject[] }) {
+  const router = useRouter();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', slug: '', levels: [] as string[] });
+  const [provisionSegment, setProvisionSegment] = useState(ADMIN_PORTALS[0]?.routeSegment ?? 'math');
+  const [provisionPending, setProvisionPending] = useState(false);
 
   function toggleLevel(level: string) {
     setForm(prev => ({
@@ -164,8 +177,63 @@ const SubjectFactory = memo(function SubjectFactory({ subjects }: { subjects: Su
     });
   }
 
+  async function handleProvisionHierarchy() {
+    setProvisionPending(true);
+    try {
+      const result = await provisionPortalHierarchy(provisionSegment);
+      if (result.success) {
+        const n = result.categoriesCreated;
+        showToast({
+          message:
+            n === 0
+              ? `Syllabi ready for “${provisionSegment}” (category tree already present).`
+              : `Provisioned “${provisionSegment}”${n != null ? ` (${n} new folders)` : ''}.`,
+          type: 'success',
+        });
+        router.refresh();
+      } else {
+        showToast({ message: result.error || 'Provisioning failed.', type: 'error' });
+      }
+    } finally {
+      setProvisionPending(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <div className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] space-y-3">
+        <div>
+          <h4 className="text-sm font-semibold text-[var(--text-primary)]">Portal hierarchy (syllabi + modules)</h4>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">
+            Seeds O-Level / A-Level tiers and default category folders for an admin portal (idempotent).
+          </p>
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[180px]">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Portal</label>
+            <select
+              value={provisionSegment}
+              onChange={e => setProvisionSegment(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+            >
+              {ADMIN_PORTALS.map(p => (
+                <option key={p.routeSegment} value={p.routeSegment}>
+                  {p.label} ({p.routeSegment})
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            disabled={provisionPending || isPending}
+            onClick={handleProvisionHierarchy}
+            className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
+          >
+            {provisionPending ? 'Provisioning…' : 'Provision hierarchy'}
+          </button>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h4 className="font-semibold text-[var(--text-primary)]">Active Subjects</h4>

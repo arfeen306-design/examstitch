@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { isValidModuleType } from '@/config/taxonomy';
 import { MODULE_TYPES } from '@/lib/constants';
 import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
+import { assertResourceSyllabusBatch } from '@/lib/admin/resource-syllabus-guard';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
@@ -102,7 +103,7 @@ export async function bulkInsertResources(resources: unknown[]) {
   if (allCategoryIds.length > 0) {
     const { data: catRows, error: catErr } = await supabase
       .from('categories')
-      .select('id, subject_id, syllabus_id')
+      .select('id, subject_id, syllabus_id, syllabus_tier_id, parent_id')
       .in('id', allCategoryIds);
     if (catErr) {
       console.error('bulkInsertResources: failed to load categories', catErr);
@@ -127,6 +128,24 @@ export async function bulkInsertResources(resources: unknown[]) {
         error: `Missing subject_id (row ${res._rowIndex + 1}): set subject_id on the resource or use a category linked to a subject.`,
       };
     }
+  }
+
+  const guard = await assertResourceSyllabusBatch(
+    supabase,
+    enriched.map(r => ({
+      category_id: r.category_id,
+      syllabus_id: r.syllabus_id,
+      subject_id: r.subject_id,
+      parent_resource_id: r.parent_resource_id,
+      _rowIndex: r._rowIndex,
+    })),
+  );
+  if (!guard.ok) {
+    return { success: false, error: guard.error };
+  }
+  for (const r of enriched) {
+    const sid = guard.resolvedSyllabusIds.get(r._rowIndex);
+    if (sid) (r as { syllabus_id?: string }).syllabus_id = sid;
   }
 
   const parentIds = [...new Set(enriched.map(r => r.parent_resource_id).filter(Boolean) as string[])];
@@ -233,18 +252,8 @@ export async function bulkInsertResources(resources: unknown[]) {
   }
 }
 
-export async function createResource(data: any) {
-  const supabase = createAdminClient();
-  
-  const { error } = await supabase.from('resources').insert([data]);
-
-  if (error) {
-    console.error('Failed to create resource', error);
-    return { success: false, error: error.message };
-  }
-
-  revalidateResourcePaths();
-  return { success: true };
+export async function createResource(data: unknown) {
+  return bulkInsertResources([data]);
 }
 
 export async function deleteResource(id: string) {

@@ -42,6 +42,22 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['subject_papers']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['subject_papers']['Row']>;
       };
+      syllabi: {
+        Row: {
+          id: string;
+          subject_id: string;
+          tier: 'olevel' | 'alevel';
+          name: string;
+          sort_order: number;
+        };
+        Insert: {
+          subject_id: string;
+          tier: 'olevel' | 'alevel';
+          name: string;
+          sort_order?: number;
+        };
+        Update: Partial<Database['public']['Tables']['syllabi']['Row']>;
+      };
       categories: {
         Row: {
           id: string;
@@ -51,6 +67,7 @@ export type Database = {
           parent_id: string | null;
           sort_order: number;
           syllabus_id: string | null;
+          syllabus_tier_id: string | null;
         };
         Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['categories']['Row']>;

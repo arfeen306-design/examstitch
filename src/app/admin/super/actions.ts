@@ -1,7 +1,10 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getAdminSession } from '@/lib/supabase/guards';
+import { provisionSubjectPortal } from '@/lib/db-init';
 import { revalidatePath, revalidateTag } from 'next/cache';
+import { PORTAL_ROUTE_SEGMENTS } from '@/config/admin-portals';
 
 export async function createSubject(payload: { name: string; slug: string; levels: string[] }) {
   const supabase = createAdminClient();
@@ -237,4 +240,26 @@ export async function toggleSuperAdmin(userId: string, makeSuperAdmin: boolean) 
 
   revalidatePath('/admin/super');
   return { success: true };
+}
+
+/** Super-admin: provision syllabi + default category tree for a portal (Physics, CS, …). */
+export async function provisionPortalHierarchy(portalRouteSegment: string) {
+  const session = await getAdminSession();
+  if (!session?.isSuperAdmin) {
+    return { success: false as const, error: 'Super admin only.' };
+  }
+  if (!PORTAL_ROUTE_SEGMENTS.has(portalRouteSegment)) {
+    return { success: false as const, error: 'Invalid portal segment.' };
+  }
+
+  const supabase = createAdminClient();
+  const result = await provisionSubjectPortal(supabase, portalRouteSegment);
+
+  if (result.success) {
+    revalidatePath('/admin/super');
+    revalidatePath('/admin/resources');
+    revalidateTag('categories');
+  }
+
+  return result;
 }
