@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect, useLayoutEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { PlayCircle, Eye, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -227,7 +227,6 @@ const shimmerCSS = `
 export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouselProps) {
   const hookRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const pauseAutoRef = useRef(false);
   const spotlightRef = useRef<CarouselWidget | null>(null);
   const inView = useInView(hookRef, { once: true, margin: '-60px' });
   const [spotlight, setSpotlight] = useState<CarouselWidget | null>(null);
@@ -270,43 +269,52 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
     };
   }, [widgetIdsKey, updateScrollArrows]);
 
-  /** Continuous rightward drift (content moves right-to-left on screen), like the original marquee. */
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || youtubeWidgets.length === 0) return;
+  /**
+   * Continuous rightward drift (content moves right-to-left), like the original CSS marquee.
+   * useLayoutEffect + rAF wait ensures scrollWidth is measured; cancelled flag stops the full chain on unmount.
+   * Hover no longer pauses auto-scroll (it kept the strip frozen whenever the cursor sat over the hero).
+   */
+  useLayoutEffect(() => {
+    if (youtubeWidgets.length === 0) return;
 
     const prefersReduced =
       typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) return;
 
-    let raf = 0;
-    const pxPerFrame = 0.2;
+    let cancelled = false;
+    let rafId = 0;
+    const pxPerFrame = 0.35;
 
     const tick = () => {
+      if (cancelled) return;
       const node = scrollRef.current;
       if (!node) {
-        raf = requestAnimationFrame(tick);
+        rafId = requestAnimationFrame(tick);
         return;
       }
-      if (spotlightRef.current || pauseAutoRef.current) {
-        raf = requestAnimationFrame(tick);
+      if (spotlightRef.current) {
+        rafId = requestAnimationFrame(tick);
         return;
       }
 
       const half = node.scrollWidth / 2;
-      if (half < 40) {
-        raf = requestAnimationFrame(tick);
+      if (half < 16) {
+        rafId = requestAnimationFrame(tick);
         return;
       }
 
       let next = node.scrollLeft + pxPerFrame;
       if (next >= half - 0.5) next -= half;
       node.scrollLeft = next;
-      raf = requestAnimationFrame(tick);
+      rafId = requestAnimationFrame(tick);
     };
 
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
   }, [widgetIdsKey, youtubeWidgets.length]);
 
   const scrollByDir = useCallback((dir: 'left' | 'right') => {
@@ -356,16 +364,8 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
           />
         </div>
 
-        {/* ── Horizontal strip: auto-drift + prev/next (pause drift on hover) ─ */}
-        <div
-          className="relative"
-          onMouseEnter={() => {
-            pauseAutoRef.current = true;
-          }}
-          onMouseLeave={() => {
-            pauseAutoRef.current = false;
-          }}
-        >
+        {/* ── Horizontal strip: auto-drift + prev/next ─ */}
+        <div className="relative">
           {/* Fade edges */}
           <div
             className="absolute left-0 top-0 bottom-0 z-20 pointer-events-none"
