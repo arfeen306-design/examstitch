@@ -1,10 +1,24 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+
+/** Rotating accent phrases — same spirit as the home hero subject carousel. */
+const HERO_FOCUS_PHRASES = [
+  { text: 'O-Level & IGCSE', color: '#60a5fa' },
+  { text: 'A-Level AS & A2', color: '#fbbf24' },
+  { text: 'Pakistan · KSA · Gulf', color: '#FF6B35' },
+  { text: 'Verified experts', color: '#c084fc' },
+] as const;
+
+const SUBTITLE_ACCENTS = [
+  { text: 'scholarship', color: '#fbbf24' },
+  { text: 'mentorship', color: '#38bdf8' },
+  { text: 'measurable outcomes', color: '#c084fc' },
+] as const;
 
 export type TutorListItem = {
   id: string;
@@ -129,8 +143,60 @@ function GoldStar({ className = '' }: { className?: string }) {
   );
 }
 
+function ShimmerGradientText({
+  children,
+  className = '',
+  reduceMotion,
+}: {
+  children: ReactNode;
+  className?: string;
+  reduceMotion: boolean | null;
+}) {
+  return (
+    <motion.span
+      className={`inline bg-gradient-to-r from-amber-200 via-sky-300 to-violet-300 bg-clip-text text-transparent ${className}`}
+      style={{
+        backgroundSize: '220% 100%',
+        backgroundPosition: '0% 50%',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+      }}
+      animate={
+        reduceMotion
+          ? undefined
+          : {
+              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+            }
+      }
+      transition={
+        reduceMotion ? undefined : { duration: 7, repeat: Infinity, ease: 'linear' }
+      }
+    >
+      {children}
+    </motion.span>
+  );
+}
+
 export default function TutorsDiscoveryClient({ tutors }: { tutors: TutorListItem[] }) {
   const reduceMotion = useReducedMotion();
+  const [focusIndex, setFocusIndex] = useState(0);
+  const [subtitleIndex, setSubtitleIndex] = useState(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setFocusIndex((i) => (i + 1) % HERO_FOCUS_PHRASES.length);
+    }, 2800);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setSubtitleIndex((i) => (i + 1) % SUBTITLE_ACCENTS.length);
+    }, 3200);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden bg-[#060b14]">
@@ -168,24 +234,64 @@ export default function TutorsDiscoveryClient({ tutors }: { tutors: TutorListIte
             <motion.h1
               variants={fadeUp}
               custom={1}
-              className="mt-4 max-w-4xl text-3xl font-semibold leading-tight tracking-tight text-slate-100 sm:text-4xl md:text-[2.35rem]"
+              className="mt-4 max-w-4xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-[2.35rem]"
             >
-              <motion.span
-                className="inline-block bg-gradient-to-r from-slate-50 via-slate-100 to-slate-300/90 bg-clip-text text-transparent"
-                animate={reduceMotion ? undefined : { opacity: [1, 0.92, 1] }}
-                transition={
-                  reduceMotion ? undefined : { duration: 5, repeat: Infinity, ease: 'easeInOut' }
-                }
-              >
+              <span className="sr-only">
                 Expert Tutors for Authentic, Online, and Face-to-Face Learning (Pakistan, KSA &amp; Gulf).
-              </motion.span>
+              </span>
+              <span aria-hidden className="contents">
+              <span className="text-slate-100">Expert Tutors for </span>
+              {reduceMotion ? (
+                <span className="font-semibold text-amber-200">{HERO_FOCUS_PHRASES[0].text}</span>
+              ) : (
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={HERO_FOCUS_PHRASES[focusIndex].text}
+                    initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, y: -14, filter: 'blur(6px)' }}
+                    transition={{ duration: 0.42, ease: 'easeInOut' }}
+                    className="inline-block font-semibold"
+                    style={{ color: HERO_FOCUS_PHRASES[focusIndex].color }}
+                  >
+                    {HERO_FOCUS_PHRASES[focusIndex].text}
+                  </motion.span>
+                </AnimatePresence>
+              )}
+              <span className="text-slate-100">
+                {' '}
+                —{' '}
+                <ShimmerGradientText reduceMotion={reduceMotion} className="font-semibold">
+                  Authentic, online &amp; face-to-face learning
+                </ShimmerGradientText>{' '}
+                across the region.
+              </span>
+              </span>
             </motion.h1>
             <motion.p
               variants={fadeUp}
               custom={2}
               className="mt-5 max-w-3xl text-base leading-relaxed text-slate-300/95 sm:text-lg"
             >
-              Our meticulously verified profiles ensure professional scholarship and student success.
+              Our meticulously verified profiles ensure professional{' '}
+              {reduceMotion ? (
+                <span style={{ color: SUBTITLE_ACCENTS[0].color }}>{SUBTITLE_ACCENTS[0].text}</span>
+              ) : (
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={SUBTITLE_ACCENTS[subtitleIndex].text}
+                    initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, y: -8, filter: 'blur(4px)' }}
+                    transition={{ duration: 0.4, ease: 'easeInOut' }}
+                    className="inline-block font-medium"
+                    style={{ color: SUBTITLE_ACCENTS[subtitleIndex].color }}
+                  >
+                    {SUBTITLE_ACCENTS[subtitleIndex].text}
+                  </motion.span>
+                </AnimatePresence>
+              )}{' '}
+              and student success.
             </motion.p>
           </motion.div>
         </div>
@@ -204,7 +310,12 @@ export default function TutorsDiscoveryClient({ tutors }: { tutors: TutorListIte
             custom={0}
             className="col-span-full mb-2 flex flex-col gap-2 sm:mb-4"
           >
-            <h2 className="text-lg font-semibold text-slate-100 sm:text-xl">Discover your tutor</h2>
+            <h2 className="text-lg font-semibold sm:text-xl">
+              <span className="text-slate-200">Discover your </span>
+              <ShimmerGradientText reduceMotion={reduceMotion} className="font-semibold">
+                tutor
+              </ShimmerGradientText>
+            </h2>
             <p className="max-w-2xl text-sm text-slate-400">
               Each listing is reviewed for credentials and teaching quality. Browse profiles and book when you are
               ready.
