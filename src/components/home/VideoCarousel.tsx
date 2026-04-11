@@ -227,7 +227,7 @@ const shimmerCSS = `
 export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouselProps) {
   const hookRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const hoverStripRef = useRef(false);
+  const pauseAutoRef = useRef(false);
   const spotlightRef = useRef<CarouselWidget | null>(null);
   const inView = useInView(hookRef, { once: true, margin: '-60px' });
   const [spotlight, setSpotlight] = useState<CarouselWidget | null>(null);
@@ -239,12 +239,14 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
     [widgets],
   );
 
-  /** Two identical runs so we can loop scrollLeft (same idea as the old CSS marquee). */
+  /** Two identical runs → jump scroll by half for a seamless infinite loop (same idea as the old CSS marquee). */
   const loopItems = useMemo(() => [...youtubeWidgets, ...youtubeWidgets], [youtubeWidgets]);
 
   const widgetIdsKey = useMemo(() => youtubeWidgets.map((w) => w.id).join('|'), [youtubeWidgets]);
 
-  spotlightRef.current = spotlight;
+  useEffect(() => {
+    spotlightRef.current = spotlight;
+  }, [spotlight]);
 
   const updateScrollArrows = useCallback(() => {
     const el = scrollRef.current;
@@ -252,7 +254,7 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
     const { scrollLeft, scrollWidth, clientWidth } = el;
     const eps = 4;
     setCanScrollLeft(scrollLeft > eps);
-    setCanScrollRight(scrollWidth > clientWidth + eps);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - eps);
   }, []);
 
   useEffect(() => {
@@ -268,48 +270,43 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
     };
   }, [widgetIdsKey, updateScrollArrows]);
 
-  /** Continuous right → left motion (RAF), same pacing spirit as the old marquee (~half-width per max(n*6,20)s at 60fps). */
+  /** Continuous rightward drift (content moves right-to-left on screen), like the original marquee. */
   useEffect(() => {
-    if (youtubeWidgets.length === 0) return;
+    const el = scrollRef.current;
+    if (!el || youtubeWidgets.length === 0) return;
 
-    const reduced =
+    const prefersReduced =
       typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
+    if (prefersReduced) return;
 
-    const durationSec = Math.max(youtubeWidgets.length * 6, 20);
-    let rafId = 0;
-    let speedPxPerFrame = 0.35;
-    let measured = false;
-
-    const measureSpeed = () => {
-      const node = scrollRef.current;
-      if (!node || node.scrollWidth < 20) return;
-      const half = node.scrollWidth / 2;
-      speedPxPerFrame = Math.max(0.2, half / (durationSec * 60));
-      measured = true;
-    };
+    let raf = 0;
+    const pxPerFrame = 0.2;
 
     const tick = () => {
       const node = scrollRef.current;
       if (!node) {
-        rafId = requestAnimationFrame(tick);
+        raf = requestAnimationFrame(tick);
         return;
       }
-      if (!measured && node.scrollWidth > 20) measureSpeed();
-
-      const pause = spotlightRef.current != null || hoverStripRef.current;
-      if (!pause) {
-        node.scrollLeft += speedPxPerFrame;
-        const half = node.scrollWidth / 2;
-        if (half > 20 && node.scrollLeft >= half - 1) {
-          node.scrollLeft -= half;
-        }
+      if (spotlightRef.current || pauseAutoRef.current) {
+        raf = requestAnimationFrame(tick);
+        return;
       }
-      rafId = requestAnimationFrame(tick);
+
+      const half = node.scrollWidth / 2;
+      if (half < 40) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
+      let next = node.scrollLeft + pxPerFrame;
+      if (next >= half - 0.5) next -= half;
+      node.scrollLeft = next;
+      raf = requestAnimationFrame(tick);
     };
 
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [widgetIdsKey, youtubeWidgets.length]);
 
   const scrollByDir = useCallback((dir: 'left' | 'right') => {
@@ -359,8 +356,16 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
           />
         </div>
 
-        {/* ── Horizontal strip + prev/next ─────────────────────── */}
-        <div className="relative">
+        {/* ── Horizontal strip: auto-drift + prev/next (pause drift on hover) ─ */}
+        <div
+          className="relative"
+          onMouseEnter={() => {
+            pauseAutoRef.current = true;
+          }}
+          onMouseLeave={() => {
+            pauseAutoRef.current = false;
+          }}
+        >
           {/* Fade edges */}
           <div
             className="absolute left-0 top-0 bottom-0 z-20 pointer-events-none"
@@ -393,16 +398,9 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
           <div
             ref={scrollRef}
             className="flex gap-8 overflow-x-auto overflow-y-hidden py-6 px-12 sm:px-16 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [-webkit-overflow-scrolling:touch]"
-            style={{ scrollSnapType: 'x mandatory' }}
-            onMouseEnter={() => {
-              hoverStripRef.current = true;
-            }}
-            onMouseLeave={() => {
-              hoverStripRef.current = false;
-            }}
           >
             {loopItems.map((w, i) => (
-              <div key={`${w.id}-${i}`} className="shrink-0 snap-start" style={{ scrollSnapAlign: 'start' }}>
+              <div key={`${w.id}-${i}`} className="shrink-0">
                 <MarqueeCard widget={w} isAdmin={isAdmin} onPlay={handlePlay} />
               </div>
             ))}
