@@ -10,8 +10,7 @@
  */
 
 import { useState, useEffect, useMemo, useId } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
+import { listMergedCategoriesForSubjectAdmin } from '@/app/admin/actions';
 import { MODULE_TYPES as MT_CONST } from '@/lib/constants';
 import { aLevelPapersBySubject } from '@/config/navigation';
 import {
@@ -83,15 +82,14 @@ export default function HierarchyPicker({ subjectId, subjectSlug, onChange, acce
 
   useEffect(() => {
     setCategoriesLoading(true);
-    const supabase = createClient();
-    fetchMergedCategoriesForSubject(supabase, subjectId).then(({ data, error }) => {
-      if (error) {
+    listMergedCategoriesForSubjectAdmin(subjectId).then((res) => {
+      if (!res.ok) {
         setAllCategories([]);
         setCategoriesLoading(false);
         return;
       }
       setAllCategories(
-        data.map((c) => ({ id: c.id, name: c.name, slug: c.slug, parent_id: c.parent_id })),
+        res.categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug, parent_id: c.parent_id })),
       );
       setCategoriesLoading(false);
     });

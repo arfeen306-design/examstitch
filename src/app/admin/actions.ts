@@ -1,7 +1,8 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getAdminSession } from '@/lib/supabase/guards';
+import { getAdminSession, requireSubjectAdmin } from '@/lib/supabase/guards';
+import { fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { isValidModuleType } from '@/config/taxonomy';
@@ -456,4 +457,39 @@ export async function deleteBlogPost(id: string) {
   revalidatePath('/');
 
   return { success: true };
+}
+
+/** Subject-scoped merged categories (service role). Use from client admin UIs instead of anon Supabase queries. */
+export async function listMergedCategoriesForSubjectAdmin(subjectId: string): Promise<
+  | {
+      ok: true;
+      categories: {
+        id: string;
+        name: string;
+        slug: string;
+        parent_id: string | null;
+        sort_order: number | null;
+      }[];
+    }
+  | { ok: false; error: string }
+> {
+  const session = await requireSubjectAdmin(subjectId);
+  if (!session) {
+    return { ok: false, error: 'Not authorised for this subject.' };
+  }
+  const supabase = createAdminClient();
+  const { data, error } = await fetchMergedCategoriesForSubject(supabase, subjectId);
+  if (error) {
+    return { ok: false, error };
+  }
+  return {
+    ok: true,
+    categories: (data ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      parent_id: c.parent_id,
+      sort_order: c.sort_order,
+    })),
+  };
 }

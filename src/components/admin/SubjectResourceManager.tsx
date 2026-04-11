@@ -22,6 +22,7 @@ import {
   deleteResource,
   updateResource,
   bulkInsertResources,
+  listMergedCategoriesForSubjectAdmin,
 } from '@/app/admin/actions';
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
@@ -29,8 +30,6 @@ import {
   Search, Upload, Loader2, AlertTriangle,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
-import { createClient } from '@/lib/supabase/client';
-import { fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import { MODULE_TYPES } from '@/lib/constants';
 import { getSubjectLabel } from '@/config/navigation';
 
@@ -245,21 +244,20 @@ export default function SubjectResourceManager({
     category_id: '', module_type: '' as '' | typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
   });
 
-  // Refetch when opening the form so modules from syllabus-linked rows appear
+  // Refetch when opening the form via server action (service role — avoids empty anon RLS reads).
   useEffect(() => {
     if (!showNewResource) return;
     let cancelled = false;
     setCategoriesLoading(true);
-    const supabase = createClient();
-    fetchMergedCategoriesForSubject(supabase, subjectId).then(({ data, error }) => {
+    listMergedCategoriesForSubjectAdmin(subjectId).then((res) => {
       if (cancelled) return;
-      if (error) {
-        setCategoriesLoading(false);
-        showToast({ message: `Could not load modules: ${error}`, type: 'error' });
+      setCategoriesLoading(false);
+      if (!res.ok) {
+        showToast({ message: `Could not load modules: ${res.error}`, type: 'error' });
         return;
       }
-      setCategories(data.map((c) => ({ id: c.id, name: c.name })));
-      setCategoriesLoading(false);
+      const mapped = res.categories.map((c) => ({ id: c.id, name: c.name }));
+      setCategories((prev) => (mapped.length > 0 ? mapped : prev));
     });
     return () => {
       cancelled = true;

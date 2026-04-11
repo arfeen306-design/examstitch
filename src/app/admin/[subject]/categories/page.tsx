@@ -7,7 +7,7 @@ import { createSubjectCategory, renameCategory, deleteSubjectCategory } from './
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
-import { fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
+import { listMergedCategoriesForSubjectAdmin } from '@/app/admin/actions';
 
 interface CategoryRow {
   id: string;
@@ -57,13 +57,14 @@ export default function CategoriesPage() {
     }
     setSubjectId(subject.id);
 
-    const { data: cats, error: catErr } = await fetchMergedCategoriesForSubject(supabase, subject.id);
-    if (catErr) {
-      showToast({ message: `Could not load categories: ${catErr}`, type: 'error' });
+    const merged = await listMergedCategoriesForSubjectAdmin(subject.id);
+    if (!merged.ok) {
+      showToast({ message: `Could not load categories: ${merged.error}`, type: 'error' });
       setCategories([]);
       setLoading(false);
       return;
     }
+    const cats = merged.categories;
     if (!cats.length) {
       setCategories([]);
       setLoading(false);
