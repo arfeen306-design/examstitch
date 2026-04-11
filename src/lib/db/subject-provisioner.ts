@@ -5,6 +5,26 @@ import { aLevelPapersBySubject, oLevelToALevelSlug } from '@/config/navigation';
 /** Service-role client; avoid `SupabaseClient<Database>` here — hand-written Database omits supabase-js v2 schema keys, which collapses Insert/Row to `never`. */
 type AdminClient = SupabaseClient;
 
+/**
+ * Migration `20260412_syllabi_relational_tiers.sql` creates `public.syllabi`.
+ * If it was never applied, PostgREST returns "Could not find the table … in the schema cache".
+ * When false, we still seed categories but omit `syllabus_tier_id` on inserts.
+ */
+async function hasSyllabiTable(supabase: AdminClient): Promise<boolean> {
+  const { error } = await supabase.from('syllabi').select('id').limit(1);
+  if (!error) return true;
+  const m = error.message.toLowerCase();
+  if (
+    m.includes('could not find') ||
+    m.includes('schema cache') ||
+    m.includes('does not exist') ||
+    (m.includes('relation') && m.includes('syllabi'))
+  ) {
+    return false;
+  }
+  throw new Error(error.message);
+}
+
 /** Ensure syllabi rows exist for a subject (idempotent). */
 export async function ensureSyllabiForSubject(
   supabase: AdminClient,
@@ -25,14 +45,18 @@ export async function ensureSyllabiForSubject(
   if (error) throw new Error(`syllabi upsert: ${error.message}`);
 }
 
-async function resolveTierIds(supabase: AdminClient, subjectId: string, includeALevel: boolean) {
+async function resolveTierIds(
+  supabase: AdminClient,
+  subjectId: string,
+  includeALevel: boolean,
+): Promise<{ olevelId: string | null; alevelId: string | null }> {
   const { data: tiers, error } = await supabase
     .from('syllabi')
     .select('id, tier')
     .eq('subject_id', subjectId);
   if (error) throw new Error(error.message);
-  const o = tiers?.find(t => t.tier === 'olevel')?.id;
-  const a = includeALevel ? tiers?.find(t => t.tier === 'alevel')?.id : null;
+  const o = tiers?.find(t => t.tier === 'olevel')?.id ?? null;
+  const a = includeALevel ? tiers?.find(t => t.tier === 'alevel')?.id ?? null : null;
   if (!o) throw new Error('O-Level syllabi tier not found.');
   if (includeALevel && !a) throw new Error('A-Level syllabi tier not found.');
   return { olevelId: o, alevelId: a };
@@ -55,7 +79,7 @@ async function resolvePaperIds(supabase: AdminClient, subjectId: string, portal:
 async function provisionComputerScience(
   supabase: AdminClient,
   subjectId: string,
-  olevelId: string,
+  olevelId: string | null,
   alevelId: string | null,
   oPaperId: string | null,
   aPaperId: string | null,
@@ -66,11 +90,20 @@ async function provisionComputerScience(
     name: string;
     slug: string;
     sort_order: number;
-    syllabus_tier_id: string;
+    syllabus_tier_id: string | null;
     syllabus_id: string | null;
     parent_id: string | null;
   }) => {
-    const { error } = await supabase.from('categories').insert(row);
+    const payload: Record<string, unknown> = {
+      subject_id: row.subject_id,
+      name: row.name,
+      slug: row.slug,
+      sort_order: row.sort_order,
+      parent_id: row.parent_id,
+      syllabus_id: row.syllabus_id,
+    };
+    if (row.syllabus_tier_id) payload.syllabus_tier_id = row.syllabus_tier_id;
+    const { error } = await supabase.from('categories').insert(payload as never);
     if (!error) n += 1;
   };
 
@@ -165,7 +198,7 @@ const OLEVEL_GRADE_SEED: [string, string, number][] = [
 async function ensureOLevelGradeCategoriesIfMissing(
   supabase: AdminClient,
   subjectId: string,
-  olevelId: string,
+  olevelId: string | null,
   oPaperId: string | null,
 ): Promise<number> {
   let n = 0;
@@ -177,15 +210,16 @@ async function ensureOLevelGradeCategoriesIfMissing(
       .eq('slug', slug)
       .maybeSingle();
     if (ex) continue;
-    const { error } = await supabase.from('categories').insert({
+    const row: Record<string, unknown> = {
       subject_id: subjectId,
       name,
       slug,
       sort_order: order,
-      syllabus_tier_id: olevelId,
-      syllabus_id: oPaperId,
       parent_id: null,
-    });
+    };
+    if (olevelId) row.syllabus_tier_id = olevelId;
+    if (oPaperId != null) row.syllabus_id = oPaperId;
+    const { error } = await supabase.from('categories').insert(row as never);
     if (!error) n += 1;
   }
   return n;
@@ -195,7 +229,7 @@ async function ensureOLevelGradeCategoriesIfMissing(
 async function ensureAsA2RootCategoriesIfMissing(
   supabase: AdminClient,
   subjectId: string,
-  alevelId: string,
+  alevelId: string | null,
   aPaperId: string | null,
 ): Promise<number> {
   let n = 0;
@@ -211,15 +245,16 @@ async function ensureAsA2RootCategoriesIfMissing(
       .eq('slug', slug)
       .maybeSingle();
     if (ex) continue;
-    const { error } = await supabase.from('categories').insert({
+    const row: Record<string, unknown> = {
       subject_id: subjectId,
       name,
       slug,
       sort_order: order,
-      syllabus_tier_id: alevelId,
-      syllabus_id: aPaperId,
       parent_id: null,
-    });
+    };
+    if (alevelId) row.syllabus_tier_id = alevelId;
+    if (aPaperId != null) row.syllabus_id = aPaperId;
+    const { error } = await supabase.from('categories').insert(row as never);
     if (!error) n += 1;
   }
   return n;
@@ -233,7 +268,7 @@ async function ensureSciencePaperCategories(
   supabase: AdminClient,
   portal: AdminPortal,
   subjectId: string,
-  alevelId: string,
+  alevelId: string | null,
   aPaperId: string | null,
 ): Promise<number> {
   const aLevelNavSlug = oLevelToALevelSlug[portal.taxonomyOLevelPaperSlug];
@@ -265,15 +300,16 @@ async function ensureSciencePaperCategories(
       .eq('slug', p.slug)
       .maybeSingle();
     if (existing) continue;
-    const { error } = await supabase.from('categories').insert({
+    const rowAs: Record<string, unknown> = {
       subject_id: subjectId,
       name: p.label,
       slug: p.slug,
       parent_id: asParent.id,
       sort_order: i + 1,
-      syllabus_tier_id: alevelId,
-      syllabus_id: aPaperId,
-    });
+    };
+    if (alevelId) rowAs.syllabus_tier_id = alevelId;
+    if (aPaperId != null) rowAs.syllabus_id = aPaperId;
+    const { error } = await supabase.from('categories').insert(rowAs as never);
     if (!error) n += 1;
   }
   for (let i = 0; i < papersCfg['a2-level'].length; i++) {
@@ -285,15 +321,16 @@ async function ensureSciencePaperCategories(
       .eq('slug', p.slug)
       .maybeSingle();
     if (existing) continue;
-    const { error } = await supabase.from('categories').insert({
+    const rowA2: Record<string, unknown> = {
       subject_id: subjectId,
       name: p.label,
       slug: p.slug,
       parent_id: a2Parent.id,
       sort_order: i + 1,
-      syllabus_tier_id: alevelId,
-      syllabus_id: aPaperId,
-    });
+    };
+    if (alevelId) rowA2.syllabus_tier_id = alevelId;
+    if (aPaperId != null) rowA2.syllabus_id = aPaperId;
+    const { error } = await supabase.from('categories').insert(rowA2 as never);
     if (!error) n += 1;
   }
   return n;
@@ -303,7 +340,7 @@ async function ensureSciencePaperCategories(
 async function provisionDefaultScienceStructure(
   supabase: AdminClient,
   subjectId: string,
-  olevelId: string,
+  olevelId: string | null,
   alevelId: string | null,
   oPaperId: string | null,
   aPaperId: string | null,
@@ -339,12 +376,22 @@ export async function provisionSubjectPortal(
   const includeALevel = portal.hasALevelSyllabus !== false;
 
   try {
-    await ensureSyllabiForSubject(supabase, subj.id, { includeALevel });
+    const syllabiOk = await hasSyllabiTable(supabase);
+    if (syllabiOk) {
+      await ensureSyllabiForSubject(supabase, subj.id, { includeALevel });
+    }
 
     const { data: existingCats, error: exErr } = await fetchMergedCategoriesForSubject(supabase, subj.id);
     if (exErr) return { success: false, error: exErr };
 
-    const { olevelId, alevelId } = await resolveTierIds(supabase, subj.id, includeALevel);
+    let olevelId: string | null = null;
+    let alevelId: string | null = null;
+    if (syllabiOk) {
+      const tiers = await resolveTierIds(supabase, subj.id, includeALevel);
+      olevelId = tiers.olevelId;
+      alevelId = tiers.alevelId;
+    }
+
     const { oPaperId, aPaperId } = await resolvePaperIds(supabase, subj.id, portal);
 
     let created = 0;
@@ -359,7 +406,7 @@ export async function provisionSubjectPortal(
     // Idempotent backfill: grades, AS/A2 roots, and A-Level paper rows (Physics/Chem/Bio/Math; not CS).
     if (portal.routeSegment !== 'cs') {
       created += await ensureOLevelGradeCategoriesIfMissing(supabase, subj.id, olevelId, oPaperId);
-      if (includeALevel && alevelId) {
+      if (includeALevel) {
         created += await ensureAsA2RootCategoriesIfMissing(supabase, subj.id, alevelId, aPaperId);
         created += await ensureSciencePaperCategories(supabase, portal, subj.id, alevelId, aPaperId);
       }
