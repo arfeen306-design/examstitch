@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Check, Plus, Save, Trash2, UserPlus } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { assignTutorToAdminUser, deleteTutorProfile, upsertTutorProfile } from './tutor-actions';
@@ -63,6 +64,7 @@ function toArray(csv: string): string[] {
 }
 
 export default function TutorProfileManager({ tutors, admins }: { tutors: TutorItem[]; admins: AdminItem[] }) {
+  const router = useRouter();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<TutorFormState>(emptyForm());
@@ -121,6 +123,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
       showToast({ message: form.id ? 'Tutor profile updated.' : 'Tutor profile created.', type: 'success' });
       setForm(emptyForm());
       setShowForm(false);
+      router.refresh();
     });
   }
 
@@ -133,6 +136,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
         return;
       }
       showToast({ message: 'Tutor profile deleted.', type: 'success' });
+      router.refresh();
     });
   }
 
@@ -145,6 +149,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
         return;
       }
       showToast({ message: selectedTutor ? 'Tutor assigned to sub-admin.' : 'Tutor assignment removed.', type: 'success' });
+      router.refresh();
     });
   }
 

@@ -3,6 +3,18 @@
 import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
+import { requireSuperAdmin } from '@/lib/supabase/guards';
+
+function mapTutorDbError(error: { message: string; code?: string }): string {
+  const m = error.message ?? '';
+  if (/does not exist|schema cache|Could not find the table/i.test(m)) {
+    return 'Tutor storage is not set up on this database. Apply the Supabase migration that creates public.tutors, then try again.';
+  }
+  if (error.code === '23505' || /duplicate key|unique constraint/i.test(m)) {
+    return 'A tutor with this slug already exists. Change the slug or edit the existing profile.';
+  }
+  return m || 'Database error.';
+}
 
 export interface TutorPayload {
   id?: string;
@@ -27,6 +39,9 @@ function normalizeSlug(input: string): string {
 }
 
 export async function upsertTutorProfile(payload: TutorPayload) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   if (!payload.full_name.trim()) return { success: false, error: 'Full name is required.' };
@@ -48,23 +63,27 @@ export async function upsertTutorProfile(payload: TutorPayload) {
 
   if (payload.id) {
     const { error } = await supabase.from('tutors').update(row).eq('id', payload.id);
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: mapTutorDbError(error) };
   } else {
     const { error } = await supabase.from('tutors').insert(row);
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: mapTutorDbError(error) };
   }
 
   revalidatePath('/admin/super');
   revalidatePath('/tutors');
+  revalidatePath(`/tutors/${slug}`);
   return { success: true };
 }
 
 export async function deleteTutorProfile(tutorId: string) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   await supabase.from('student_accounts').update({ tutor_id: null }).eq('tutor_id', tutorId);
   const { error } = await supabase.from('tutors').delete().eq('id', tutorId);
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTutorDbError(error) };
 
   revalidatePath('/admin/super');
   revalidatePath('/tutors');
@@ -72,6 +91,9 @@ export async function deleteTutorProfile(tutorId: string) {
 }
 
 export async function assignTutorToAdminUser(userId: string, tutorId: string | null) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   const { data: adminUser, error: adminErr } = await supabase
@@ -95,7 +117,7 @@ export async function assignTutorToAdminUser(userId: string, tutorId: string | n
     .from('student_accounts')
     .update({ tutor_id: tutorId })
     .eq('id', userId);
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTutorDbError(error) };
 
   revalidatePath('/admin/super');
   revalidatePath('/tutors');
