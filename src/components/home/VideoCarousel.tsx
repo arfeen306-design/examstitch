@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useState, useMemo, useCallback, useEffect, useLayoutEffect } from 'react';
+import { useRef, useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { PlayCircle, Eye, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlayCircle, Eye, Sparkles, X } from 'lucide-react';
 
 /* ── Types ──────────────────────────────────────────────────────── */
 
@@ -220,114 +220,52 @@ const shimmerCSS = `
   background-clip: text;
   animation: shimmer 3s linear infinite;
 }
+/* Transform marquee: works when the strip fits in the viewport (scrollLeft cannot). */
+@keyframes esHomeMarquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.es-home-marquee-track {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+  will-change: transform;
+  animation: esHomeMarquee var(--es-marquee-dur, 48s) linear infinite;
+}
+.es-home-marquee-paused {
+  animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .es-home-marquee-track {
+    animation: none !important;
+  }
+}
 `;
 
 /* ── Main Carousel ───────────────────────────────────────────────── */
 
 export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouselProps) {
   const hookRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const spotlightRef = useRef<CarouselWidget | null>(null);
   const inView = useInView(hookRef, { once: true, margin: '-60px' });
   const [spotlight, setSpotlight] = useState<CarouselWidget | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const youtubeWidgets = useMemo(
     () => widgets.filter((w) => w.media_type === 'youtube'),
     [widgets],
   );
 
-  /** Two identical runs → jump scroll by half for a seamless infinite loop (same idea as the old CSS marquee). */
+  /** Two identical runs → translate -50% loops seamlessly (no dependency on overflow scroll). */
   const loopItems = useMemo(() => [...youtubeWidgets, ...youtubeWidgets], [youtubeWidgets]);
 
   const widgetIdsKey = useMemo(() => youtubeWidgets.map((w) => w.id).join('|'), [youtubeWidgets]);
 
-  useEffect(() => {
-    spotlightRef.current = spotlight;
-  }, [spotlight]);
-
-  const updateScrollArrows = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    const eps = 4;
-    setCanScrollLeft(scrollLeft > eps);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - eps);
-  }, []);
-
-  useEffect(() => {
-    updateScrollArrows();
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', updateScrollArrows, { passive: true });
-    const ro = new ResizeObserver(updateScrollArrows);
-    ro.observe(el);
-    return () => {
-      el.removeEventListener('scroll', updateScrollArrows);
-      ro.disconnect();
-    };
-  }, [widgetIdsKey, updateScrollArrows]);
-
-  /**
-   * Continuous rightward drift (content moves right-to-left), like the original CSS marquee.
-   * useLayoutEffect + rAF wait ensures scrollWidth is measured; cancelled flag stops the full chain on unmount.
-   * Hover no longer pauses auto-scroll (it kept the strip frozen whenever the cursor sat over the hero).
-   */
-  useLayoutEffect(() => {
-    if (youtubeWidgets.length === 0) return;
-
-    const prefersReduced =
-      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
-
-    let cancelled = false;
-    let rafId = 0;
-    const pxPerFrame = 0.35;
-
-    const tick = () => {
-      if (cancelled) return;
-      const node = scrollRef.current;
-      if (!node) {
-        rafId = requestAnimationFrame(tick);
-        return;
-      }
-      if (spotlightRef.current) {
-        rafId = requestAnimationFrame(tick);
-        return;
-      }
-
-      const half = node.scrollWidth / 2;
-      if (half < 16) {
-        rafId = requestAnimationFrame(tick);
-        return;
-      }
-
-      let next = node.scrollLeft + pxPerFrame;
-      if (next >= half - 0.5) next -= half;
-      node.scrollLeft = next;
-      rafId = requestAnimationFrame(tick);
-    };
-
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(rafId);
-    };
-  }, [widgetIdsKey, youtubeWidgets.length]);
-
-  const scrollByDir = useCallback((dir: 'left' | 'right') => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const prefersReduced =
-      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const step = Math.min(CARD_OUTER, Math.max(120, el.clientWidth * 0.85));
-    el.scrollBy({
-      left: dir === 'left' ? -step : step,
-      behavior: prefersReduced ? 'auto' : 'smooth',
-    });
-  }, []);
+  /** One “pass” width in px (cards + gap); used only to tune animation speed. */
+  const marqueeDurationSec = useMemo(() => {
+    const n = Math.max(1, youtubeWidgets.length);
+    const onePassPx = n * CARD_OUTER;
+    const pxPerSec = 32;
+    return Math.max(20, Math.min(100, onePassPx / pxPerSec));
+  }, [youtubeWidgets.length, widgetIdsKey]);
 
   const handlePlay = useCallback((w: CarouselWidget) => setSpotlight(w), []);
   const handleClose = useCallback(() => setSpotlight(null), []);
@@ -364,8 +302,8 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
           />
         </div>
 
-        {/* ── Horizontal strip: auto-drift + prev/next ─ */}
-        <div className="relative">
+        {/* ── Horizontal strip: CSS transform marquee (works when strip fits viewport — no scroll overflow). */}
+        <div className="relative overflow-hidden py-6 px-12 sm:px-16">
           {/* Fade edges */}
           <div
             className="absolute left-0 top-0 bottom-0 z-20 pointer-events-none"
@@ -376,28 +314,13 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
             style={{ width: '8%', background: 'linear-gradient(270deg, var(--bg-primary, #fff) 0%, transparent 100%)' }}
           />
 
-          <button
-            type="button"
-            aria-label="Scroll videos left"
-            disabled={!canScrollLeft}
-            onClick={() => scrollByDir('left')}
-            className="absolute left-1 sm:left-3 top-1/2 z-30 -translate-y-1/2 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-white/15 bg-[var(--bg-card,#0f172a)]/90 text-white shadow-lg backdrop-blur-md transition hover:bg-[var(--bg-card,#0f172a)] hover:border-white/25 disabled:pointer-events-none disabled:opacity-25"
-          >
-            <ChevronLeft className="h-6 w-6 shrink-0" aria-hidden />
-          </button>
-          <button
-            type="button"
-            aria-label="Scroll videos right"
-            disabled={!canScrollRight}
-            onClick={() => scrollByDir('right')}
-            className="absolute right-1 sm:right-3 top-1/2 z-30 -translate-y-1/2 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-white/15 bg-[var(--bg-card,#0f172a)]/90 text-white shadow-lg backdrop-blur-md transition hover:bg-[var(--bg-card,#0f172a)] hover:border-white/25 disabled:pointer-events-none disabled:opacity-25"
-          >
-            <ChevronRight className="h-6 w-6 shrink-0" aria-hidden />
-          </button>
-
           <div
-            ref={scrollRef}
-            className="flex gap-8 overflow-x-auto overflow-y-hidden py-6 px-12 sm:px-16 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [-webkit-overflow-scrolling:touch]"
+            className={`es-home-marquee-track ${spotlight ? 'es-home-marquee-paused' : ''}`}
+            style={
+              {
+                ['--es-marquee-dur' as string]: `${marqueeDurationSec}s`,
+              } as React.CSSProperties
+            }
           >
             {loopItems.map((w, i) => (
               <div key={`${w.id}-${i}`} className="shrink-0">
