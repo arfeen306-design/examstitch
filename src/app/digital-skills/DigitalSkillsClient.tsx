@@ -654,8 +654,10 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
                     </div>
                   ) : (
                     <InteractiveSolver
+                      key={activeLesson?.id || 'no-lesson'}
                       lessonId={activeLesson?.id || ''}
                       lessonTitle={activeLesson?.title || ''}
+                      lessonDuration={activeLesson?.duration}
                       gradient={skill.gradient}
                       glowColor={skill.glowColor}
                       isAdmin={false}

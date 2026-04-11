@@ -1,6 +1,10 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import {
+  mcqCountFromVideoMinutes,
+  parseLessonDurationToMinutes,
+} from '@/lib/quiz-question-count';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap,
@@ -34,9 +38,17 @@ interface QuizData {
   question_count: number;
 }
 
+interface QuizResponseMeta {
+  estimatedVideoMinutes?: number;
+  targetQuestionCount?: number;
+  actualQuestionCount?: number;
+}
+
 interface InteractiveSolverProps {
   lessonId: string;
   lessonTitle: string;
+  /** Shown for quiz-size hint (e.g. "12:30"); server still uses DB + transcript for the real count. */
+  lessonDuration?: string | null;
   gradient: string;
   glowColor: string;
   isAdmin?: boolean;
@@ -58,11 +70,13 @@ const OPTION_COLORS = {
 export default function InteractiveSolver({
   lessonId,
   lessonTitle,
+  lessonDuration,
   gradient,
   glowColor,
   isAdmin = false,
 }: InteractiveSolverProps) {
   const [quiz, setQuiz] = useState<QuizData | null>(null);
+  const [quizMeta, setQuizMeta] = useState<QuizResponseMeta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -75,7 +89,13 @@ export default function InteractiveSolver({
   const [started, setStarted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch or generate quiz
+  const durationHintCount = useMemo(() => {
+    const m = parseLessonDurationToMinutes(lessonDuration ?? null);
+    if (m == null) return null;
+    return mcqCountFromVideoMinutes(m);
+  }, [lessonDuration]);
+
+  // Fetch or generate quiz (question count is computed server-side from video length)
   const fetchQuiz = useCallback(
     async (regenerate = false) => {
       setLoading(true);
@@ -87,13 +107,13 @@ export default function InteractiveSolver({
           body: JSON.stringify({
             lessonId,
             difficulty: 'medium',
-            questionCount: 5,
             regenerate,
           }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to generate quiz');
         setQuiz(data.quiz);
+        setQuizMeta((data.meta as QuizResponseMeta | undefined) ?? null);
         setCurrentIdx(0);
         setSelectedOption(null);
         setAnswered(false);
@@ -101,6 +121,7 @@ export default function InteractiveSolver({
         setAnsweredCount(0);
         setShowSummary(false);
       } catch (err) {
+        setQuizMeta(null);
         setError(err instanceof Error ? err.message : 'Something went wrong');
       } finally {
         setLoading(false);
@@ -198,9 +219,19 @@ export default function InteractiveSolver({
             <Brain className="w-8 h-8 text-white" />
           </motion.div>
           <p className="text-white/70 text-sm font-medium mb-1">AI-Powered Examiner</p>
-          <p className="text-white/40 text-xs max-w-sm mx-auto leading-relaxed mb-4">
-            Gemini AI will analyze this lesson and generate personalized MCQs to test your understanding.
+          <p className="text-white/40 text-xs max-w-sm mx-auto leading-relaxed mb-2">
+            OpenAI analyzes the lesson transcript and builds MCQs sized to the video: about one question per two minutes of content, up to 100. Changing the lesson resets the quiz.
           </p>
+          {durationHintCount != null && (
+            <p className="text-white/35 text-[11px] max-w-sm mx-auto leading-relaxed mb-4">
+              From the listed duration, expect roughly <span className="text-teal-300/90 font-semibold">{durationHintCount}</span> questions (final count uses transcript timing if duration is missing).
+            </p>
+          )}
+          {durationHintCount == null && (
+            <p className="text-white/35 text-[11px] max-w-sm mx-auto leading-relaxed mb-4">
+              Final count follows the real video length from your data or captions.
+            </p>
+          )}
           <button
             onClick={handleStart}
             className={`px-6 py-2.5 rounded-xl bg-gradient-to-r ${gradient} text-white text-xs font-bold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]`}
@@ -231,6 +262,9 @@ export default function InteractiveSolver({
           <p className="text-white/70 text-sm font-medium mb-1">Generating Quiz…</p>
           <p className="text-white/40 text-xs">
             Analyzing transcript & crafting questions
+            {durationHintCount != null && (
+              <span className="block mt-1 text-white/30">Target ~{durationHintCount} (from duration hint)</span>
+            )}
           </p>
         </div>
       </div>
@@ -334,6 +368,11 @@ export default function InteractiveSolver({
           <Brain className="w-4 h-4 text-teal-400" /> AI Examiner
         </h3>
         <div className="flex items-center gap-2">
+          {quizMeta?.estimatedVideoMinutes != null && (
+            <span className="hidden sm:inline text-[10px] text-white/30 max-w-[140px] truncate" title="Sizing metadata">
+              ~{quizMeta.estimatedVideoMinutes} min → {quiz.questions.length} Q
+            </span>
+          )}
           <span className="text-xs text-white/40 font-mono">
             {currentIdx + 1}/{quiz.questions.length}
           </span>

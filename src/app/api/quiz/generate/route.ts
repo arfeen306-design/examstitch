@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import OpenAI from 'openai';
 import { YoutubeTranscript } from 'youtube-transcript';
+import {
+  mcqCountFromVideoMinutes,
+  minutesFromTranscriptSegments,
+  parseLessonDurationToMinutes,
+} from '@/lib/quiz-question-count';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    POST /api/quiz/generate
-   Body: { lessonId, difficulty?, questionCount?, regenerate? }
+   Body: { lessonId, difficulty?, regenerate? }
+   questionCount is derived from video length (~1 MCQ per 2 min, max 100), not client-supplied.
    Returns cached quiz or generates one via OpenAI + YouTube transcript.
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -26,12 +32,10 @@ export async function POST(req: NextRequest) {
     const {
       lessonId,
       difficulty = 'medium',
-      questionCount = 5,
       regenerate = false,
     } = body as {
       lessonId: string;
       difficulty?: string;
-      questionCount?: number;
       regenerate?: boolean;
     };
 
@@ -41,27 +45,10 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // ── 1. Check for cached quiz ────────────────────────────────
-    if (!regenerate) {
-      const { data: cached } = await supabase
-        .from('lesson_quizzes')
-        .select('id, questions, difficulty, question_count, created_at')
-        .eq('lesson_id', lessonId)
-        .eq('difficulty', difficulty)
-        .maybeSingle();
-
-      if (cached && Array.isArray(cached.questions) && cached.questions.length > 0) {
-        return NextResponse.json({
-          quiz: cached,
-          source: 'cache',
-        });
-      }
-    }
-
-    // ── 2. Fetch lesson → video URL ─────────────────────────────
+    // ── 1. Fetch lesson → video URL + duration (for MCQ scaling) ─
     const { data: lesson, error: lessonErr } = await supabase
       .from('skill_lessons')
-      .select('id, title, video_url')
+      .select('id, title, video_url, duration')
       .eq('id', lessonId)
       .single();
 
@@ -73,19 +60,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Lesson has no video URL' }, { status: 400 });
     }
 
-    // ── 3. Get YouTube transcript ───────────────────────────────
+    // ── 2. YouTube transcript (segments used for length if duration missing) ─
     const videoId = extractVideoId(lesson.video_url);
     if (!videoId) {
       return NextResponse.json({ error: 'Could not parse YouTube video ID' }, { status: 400 });
     }
 
     let transcript: string;
+    let segments: Awaited<ReturnType<typeof YoutubeTranscript.fetchTranscript>> = [];
     try {
-      const segments = await YoutubeTranscript.fetchTranscript(videoId);
+      segments = await YoutubeTranscript.fetchTranscript(videoId);
       transcript = segments.map((s) => s.text).join(' ');
     } catch {
-      // Fallback: generate from title alone if transcript unavailable
+      segments = [];
       transcript = `Topic: "${lesson.title}". This is an educational lesson. Generate questions based on common knowledge for this topic.`;
+    }
+
+    const minutesFromField = parseLessonDurationToMinutes(lesson.duration);
+    const minutesFromCaptions = segments.length ? minutesFromTranscriptSegments(segments) : null;
+    const effectiveMinutes = minutesFromField ?? minutesFromCaptions ?? 10;
+    const questionCount = mcqCountFromVideoMinutes(effectiveMinutes);
+
+    // ── 3. Check for cached quiz (same difficulty + same question count) ───
+    if (!regenerate) {
+      const { data: cached } = await supabase
+        .from('lesson_quizzes')
+        .select('id, questions, difficulty, question_count, created_at')
+        .eq('lesson_id', lessonId)
+        .eq('difficulty', difficulty)
+        .maybeSingle();
+
+      if (
+        cached &&
+        Array.isArray(cached.questions) &&
+        cached.questions.length > 0 &&
+        cached.questions.length === questionCount
+      ) {
+        return NextResponse.json({
+          quiz: cached,
+          source: 'cache',
+          meta: quizMeta(effectiveMinutes, questionCount),
+        });
+      }
     }
 
     // Truncate to ~8000 chars to stay within token limits
@@ -94,6 +110,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 4. Generate quiz via OpenAI ─────────────────────────────
+    const completionMaxTokens = Math.min(16384, 400 + questionCount * 360);
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
@@ -133,7 +150,7 @@ ${transcript}`;
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: completionMaxTokens,
       });
 
       text = completion.choices[0]?.message?.content ?? null;
@@ -199,6 +216,15 @@ ${transcript}`;
       explanation: String(q.explanation || ''),
     }));
 
+    if (questions.length < questionCount) {
+      return NextResponse.json(
+        {
+          error: `The model returned ${questions.length} question(s) but ${questionCount} were needed for this video length. Tap Try Again to regenerate.`,
+        },
+        { status: 502 },
+      );
+    }
+
     // ── 5. Cache to Supabase ────────────────────────────────────
     const { data: saved, error: saveErr } = await supabase
       .from('lesson_quizzes')
@@ -207,7 +233,7 @@ ${transcript}`;
           lesson_id: lessonId,
           questions,
           difficulty,
-          question_count: questions.length,
+          question_count: questionCount,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'lesson_id,difficulty' },
@@ -219,12 +245,17 @@ ${transcript}`;
       console.error('[quiz/generate] Save error:', saveErr);
       // Still return the quiz even if caching fails
       return NextResponse.json({
-        quiz: { questions, difficulty, question_count: questions.length },
+        quiz: { questions, difficulty, question_count: questionCount },
         source: 'generated',
+        meta: quizMeta(effectiveMinutes, questionCount, questions.length),
       });
     }
 
-    return NextResponse.json({ quiz: saved, source: 'generated' });
+    return NextResponse.json({
+      quiz: saved,
+      source: 'generated',
+      meta: quizMeta(effectiveMinutes, questionCount, questionCount),
+    });
   } catch (err) {
     console.error('[quiz/generate] Unexpected error:', err);
     return NextResponse.json(
@@ -241,4 +272,18 @@ function extractVideoId(url: string): string | null {
   if (m) return m[1];
   if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
   return null;
+}
+
+function quizMeta(
+  estimatedVideoMinutes: number,
+  targetQuestionCount: number,
+  actualQuestionCount?: number,
+) {
+  return {
+    estimatedVideoMinutes: Math.round(estimatedVideoMinutes * 10) / 10,
+    targetQuestionCount,
+    ...(actualQuestionCount !== undefined
+      ? { actualQuestionCount }
+      : {}),
+  };
 }
