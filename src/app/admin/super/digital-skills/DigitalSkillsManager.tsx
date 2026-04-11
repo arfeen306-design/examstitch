@@ -95,6 +95,17 @@ const EMPTY_LESSON_FORM: LessonFormData = {
   cheatsheet_url: '', quiz_url: '', resource_url: '', duration: '', is_free: false,
 };
 
+/** Form controls must set background + text explicitly; browser defaults are light and break dark theme. */
+const DS_INPUT =
+  'px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/30';
+const DS_INPUT_MONO = `${DS_INPUT} font-mono`;
+const DS_TEXTAREA =
+  'w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none resize-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/30';
+const DS_SELECT =
+  'px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/30';
+const DS_INPUT_BLUE =
+  'w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30';
+
 // ─── Helper: Upload-or-URL field ─────────────────────────────────────────────
 
 function UploadableField({
@@ -143,7 +154,7 @@ function UploadableField({
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`flex-1 px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 ${ringColor} outline-none`}
+          className={`flex-1 px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 ${ringColor} outline-none`}
         />
         <label className={`shrink-0 px-3 py-2.5 rounded-xl border border-[var(--border-color)] cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
@@ -152,7 +163,7 @@ function UploadableField({
         </label>
       </div>
       {value && (
-        <p className="text-xs text-green-600 mt-1 truncate">✓ {value.split('/').pop()}</p>
+        <p className="text-xs text-emerald-400 mt-1 truncate">✓ {value.split('/').pop()}</p>
       )}
     </div>
   );
@@ -516,7 +527,7 @@ export default function DigitalSkillsManager({
     if (lesson.notes_url) badges.push({ label: 'Notes', color: 'text-blue-400 bg-blue-500/15' });
     if (lesson.exercises_url) badges.push({ label: 'Exercises', color: 'text-amber-400 bg-amber-500/15' });
     if (lesson.cheatsheet_url) badges.push({ label: 'Cheat Sheet', color: 'text-purple-400 bg-purple-500/15' });
-    if (lesson.quiz_url) badges.push({ label: 'Quiz', color: 'text-emerald-600 bg-emerald-50' });
+    if (lesson.quiz_url) badges.push({ label: 'Quiz', color: 'text-emerald-300 bg-emerald-500/15' });
     if (lesson.resource_url) badges.push({ label: 'Resource', color: 'text-green-400 bg-green-500/15' });
     return badges;
   };
@@ -536,9 +547,9 @@ export default function DigitalSkillsManager({
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Skills', value: skills.length, icon: Sparkles, color: 'text-violet-600', bg: 'bg-violet-50' },
-            { label: 'Playlists', value: totalPlaylists, icon: Layers, color: 'text-blue-400', bg: 'bg-blue-500/15' },
-            { label: 'Lessons', value: totalLessons, icon: ListVideo, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Skills', value: skills.length, icon: Sparkles, color: 'text-violet-300', bg: 'bg-violet-500/15' },
+            { label: 'Playlists', value: totalPlaylists, icon: Layers, color: 'text-blue-300', bg: 'bg-blue-500/15' },
+            { label: 'Lessons', value: totalLessons, icon: ListVideo, color: 'text-emerald-300', bg: 'bg-emerald-500/15' },
             { label: 'Enrolled', value: Object.values(skillAccessCounts).reduce((a, b) => a + b, 0), icon: Users, color: 'text-amber-400', bg: 'bg-amber-500/15' },
           ].map(s => (
             <div key={s.label} className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-5 flex items-center gap-4">
@@ -566,38 +577,38 @@ export default function DigitalSkillsManager({
 
         {/* New Skill Form */}
         {showNewSkill && (
-          <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5 space-y-3">
-            <p className="text-sm font-bold text-violet-800">Create New Skill</p>
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-2xl p-5 space-y-3">
+            <p className="text-sm font-bold text-[var(--text-primary)]">Create New Skill</p>
             <div className="grid sm:grid-cols-2 gap-3">
               <input
                 value={skillForm.name}
                 onChange={e => setSkillForm(f => ({ ...f, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
                 placeholder="Skill name (e.g. Web Development)"
-                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none"
+                className={DS_INPUT}
               />
               <input
                 value={skillForm.slug}
                 onChange={e => setSkillForm(f => ({ ...f, slug: e.target.value }))}
                 placeholder="Slug (auto-generated)"
-                className="px-3 py-2 text-sm font-mono border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none"
+                className={DS_INPUT_MONO}
               />
               <input
                 value={skillForm.tagline}
                 onChange={e => setSkillForm(f => ({ ...f, tagline: e.target.value }))}
                 placeholder="Tagline (e.g. Build the future)"
-                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none"
+                className={DS_INPUT}
               />
               <select
                 value={skillForm.icon}
                 onChange={e => setSkillForm(f => ({ ...f, icon: e.target.value }))}
-                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none"
+                className={DS_SELECT}
               >
                 {ICON_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
               <select
                 value={skillForm.gradient}
                 onChange={e => setSkillForm(f => ({ ...f, gradient: e.target.value }))}
-                className="px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none col-span-full sm:col-span-1"
+                className={`${DS_SELECT} col-span-full sm:col-span-1`}
               >
                 {GRADIENT_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
@@ -607,7 +618,7 @@ export default function DigitalSkillsManager({
               onChange={e => setSkillForm(f => ({ ...f, description: e.target.value }))}
               placeholder="Short description…"
               rows={2}
-              className="w-full px-3 py-2 text-sm border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-400 outline-none resize-none"
+              className={DS_TEXTAREA}
             />
             <div className="flex gap-2">
               <button
@@ -666,7 +677,7 @@ export default function DigitalSkillsManager({
                         <span className="text-[10px] font-bold text-red-400 bg-red-500/15 px-1.5 py-0.5 rounded">HIDDEN</span>
                       )}
                     </div>
-                    {skill.tagline && <p className="text-xs text-violet-500 italic mt-0.5">{skill.tagline}</p>}
+                    {skill.tagline && <p className="text-xs text-violet-300/90 italic mt-0.5">{skill.tagline}</p>}
                     <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{skill.description || 'No description'}</p>
                   </div>
 
@@ -700,7 +711,7 @@ export default function DigitalSkillsManager({
                     <button
                       onClick={() => handleToggleSkillActive(skill)}
                       title={skill.is_active ? 'Active — click to hide' : 'Hidden — click to activate'}
-                      className={`p-1.5 rounded-lg transition ${skill.is_active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'}`}
+                      className={`p-1.5 rounded-lg transition ${skill.is_active ? 'text-emerald-400 hover:bg-emerald-500/15' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'}`}
                     >
                       {skill.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
@@ -715,18 +726,18 @@ export default function DigitalSkillsManager({
 
                 {/* Inline Skill Edit */}
                 {isEditingThis && (
-                  <div className="border-t border-violet-100 bg-violet-50/50 px-5 py-4 space-y-3">
+                  <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-5 py-4 space-y-3">
                     <div className="grid sm:grid-cols-2 gap-3">
-                      <input value={editSkillForm.name} onChange={e => setEditSkillForm(f => ({ ...f, name: e.target.value }))} placeholder="Name" className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none" />
-                      <input value={editSkillForm.tagline} onChange={e => setEditSkillForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Tagline" className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 outline-none" />
-                      <select value={editSkillForm.icon} onChange={e => setEditSkillForm(f => ({ ...f, icon: e.target.value }))} className="px-3 py-2 text-sm border border-violet-200 rounded-lg outline-none">
+                      <input value={editSkillForm.name} onChange={e => setEditSkillForm(f => ({ ...f, name: e.target.value }))} placeholder="Name" className={DS_INPUT} />
+                      <input value={editSkillForm.tagline} onChange={e => setEditSkillForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Tagline" className={DS_INPUT} />
+                      <select value={editSkillForm.icon} onChange={e => setEditSkillForm(f => ({ ...f, icon: e.target.value }))} className={DS_SELECT}>
                         {ICON_OPTIONS.map(i => <option key={i} value={i}>{i}</option>)}
                       </select>
-                      <select value={editSkillForm.gradient} onChange={e => setEditSkillForm(f => ({ ...f, gradient: e.target.value }))} className="px-3 py-2 text-sm border border-violet-200 rounded-lg outline-none">
+                      <select value={editSkillForm.gradient} onChange={e => setEditSkillForm(f => ({ ...f, gradient: e.target.value }))} className={DS_SELECT}>
                         {GRADIENT_PRESETS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                       </select>
                     </div>
-                    <textarea value={editSkillForm.description} onChange={e => setEditSkillForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" rows={2} className="w-full px-3 py-2 text-sm border border-violet-200 rounded-lg outline-none resize-none" />
+                    <textarea value={editSkillForm.description} onChange={e => setEditSkillForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" rows={2} className={DS_TEXTAREA} />
                     <div className="flex gap-2">
                       <button onClick={() => handleSaveSkillEdit(skill)} disabled={isPending} className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-500 transition disabled:opacity-50">
                         <Save className="w-4 h-4" /> Save
@@ -759,14 +770,14 @@ export default function DigitalSkillsManager({
                           value={playlistForm.title}
                           onChange={e => setPlaylistForm(f => ({ ...f, title: e.target.value }))}
                           placeholder="Playlist title (e.g. Getting Started)"
-                          className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-blue-400 outline-none"
+                          className={DS_INPUT_BLUE}
                           autoFocus
                         />
                         <input
                           value={playlistForm.description}
                           onChange={e => setPlaylistForm(f => ({ ...f, description: e.target.value }))}
                           placeholder="Description (optional)"
-                          className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-blue-400 outline-none"
+                          className={DS_INPUT_BLUE}
                         />
                         <div className="flex gap-2">
                           <button
@@ -832,9 +843,9 @@ export default function DigitalSkillsManager({
 
                           {/* Inline Playlist Edit */}
                           {isEditingPl && (
-                            <div className="border-t border-blue-100 bg-blue-50/50 px-4 py-3 space-y-2">
-                              <input value={editPlaylistForm.title} onChange={e => setEditPlaylistForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg outline-none" />
-                              <input value={editPlaylistForm.description} onChange={e => setEditPlaylistForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg outline-none" />
+                            <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 space-y-2">
+                              <input value={editPlaylistForm.title} onChange={e => setEditPlaylistForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" className={DS_INPUT_BLUE} />
+                              <input value={editPlaylistForm.description} onChange={e => setEditPlaylistForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" className={DS_INPUT_BLUE} />
                               <div className="flex gap-2">
                                 <button onClick={() => handleSavePlaylistEdit(playlist)} disabled={isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-[var(--text-primary)] text-xs font-semibold rounded-lg transition disabled:opacity-50"><Save className="w-3.5 h-3.5" /> Save</button>
                                 <button onClick={() => setEditingPlaylistId(null)} className="px-3 py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] rounded-lg transition">Cancel</button>
@@ -877,7 +888,7 @@ export default function DigitalSkillsManager({
                                     <p className="text-sm text-[var(--text-primary)] truncate">{lesson.title}</p>
                                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                       {lesson.duration && <span className="text-[10px] text-[var(--text-muted)]">{lesson.duration}</span>}
-                                      {lesson.is_free && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">FREE</span>}
+                                      {lesson.is_free && <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-1 py-0.5 rounded">FREE</span>}
                                       {resourceBadges(lesson).map(b => (
                                         <span key={b.label} className={`text-[10px] font-semibold px-1 py-0.5 rounded ${b.color}`}>{b.label}</span>
                                       ))}
@@ -898,7 +909,7 @@ export default function DigitalSkillsManager({
                                     <button
                                       onClick={() => handleToggleLessonFree(lesson)}
                                       title={lesson.is_free ? 'Free — click to lock' : 'Locked — click to make free'}
-                                      className={`p-1 rounded transition ${lesson.is_free ? 'text-emerald-600 hover:bg-emerald-50' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'}`}
+                                      className={`p-1 rounded transition ${lesson.is_free ? 'text-emerald-400 hover:bg-emerald-500/15' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'}`}
                                     >
                                       {lesson.is_free ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                     </button>
@@ -954,7 +965,7 @@ export default function DigitalSkillsManager({
                     value={lessonForm.title}
                     onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="e.g. Color Theory Essentials"
-                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
                     autoFocus
                   />
                 </div>
@@ -964,7 +975,7 @@ export default function DigitalSkillsManager({
                     value={lessonForm.duration}
                     onChange={e => setLessonForm(f => ({ ...f, duration: e.target.value }))}
                     placeholder="e.g. 12:30"
-                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
+                    className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-violet-400 focus:border-violet-400 outline-none"
                   />
                 </div>
               </div>
@@ -978,7 +989,7 @@ export default function DigitalSkillsManager({
                   value={lessonForm.video_url}
                   onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none"
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none"
                 />
                 {ytPreviewId && (
                   <div className="mt-2 rounded-xl overflow-hidden border border-[var(--border-color)] bg-black aspect-video max-w-xs">
@@ -1033,7 +1044,7 @@ export default function DigitalSkillsManager({
                       value={lessonForm.quiz_url}
                       onChange={e => setLessonForm(f => ({ ...f, quiz_url: e.target.value }))}
                       placeholder="https://quiz.examstitch.com/..."
-                      className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-emerald-300 outline-none"
+                      className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-emerald-300 outline-none"
                     />
                   </div>
                 </div>
@@ -1048,7 +1059,7 @@ export default function DigitalSkillsManager({
                   value={lessonForm.resource_url}
                   onChange={e => setLessonForm(f => ({ ...f, resource_url: e.target.value }))}
                   placeholder="Any additional resource link"
-                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-green-300 outline-none"
+                  className="w-full px-3 py-2.5 text-sm font-mono border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-green-300 outline-none"
                 />
               </div>
 
@@ -1058,7 +1069,7 @@ export default function DigitalSkillsManager({
                   type="checkbox"
                   checked={lessonForm.is_free}
                   onChange={e => setLessonForm(f => ({ ...f, is_free: e.target.checked }))}
-                  className="rounded border-[var(--border-color)] bg-[var(--bg-surface)] text-emerald-600 focus:ring-emerald-500"
+                  className="rounded border-[var(--border-color)] bg-[var(--bg-card)] text-emerald-500 focus:ring-emerald-500"
                 />
                 <span className="font-medium">Free Preview</span>
                 <span className="text-xs text-[var(--text-muted)]">— available without enrollment</span>
