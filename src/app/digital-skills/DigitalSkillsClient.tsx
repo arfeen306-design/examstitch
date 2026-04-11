@@ -30,8 +30,6 @@ import {
   ArrowRight,
   Zap,
   Monitor,
-  Volume2,
-  Maximize2,
   ListVideo,
   ImageIcon,
   PenLine,
@@ -517,42 +515,37 @@ function CinemaPlayer({ skill, onBack }: CinemaPlayerProps) {
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl shadow-black/40"
             >
-              {/* Glow ring behind video */}
+              {/* Glow ring — decorative only; must not intercept clicks */}
               <div
-                className="absolute -inset-[2px] rounded-2xl opacity-50 blur-sm"
+                className="pointer-events-none absolute -inset-[2px] z-0 rounded-2xl opacity-50 blur-sm"
                 style={{ background: `linear-gradient(135deg, ${skill.glowColor}, transparent 60%)` }}
+                aria-hidden
               />
-              <div className="relative aspect-video bg-black rounded-2xl overflow-hidden">
+              {/* Player: nothing may stack above the iframe inside this box (YouTube controls live at bottom of embed) */}
+              <div className="relative z-[1] aspect-video bg-black overflow-hidden rounded-t-2xl">
                 <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${activeLesson.videoId}?autoplay=0&rel=0&modestbranding=1`}
+                  src={`https://www.youtube-nocookie.com/embed/${activeLesson.videoId}?autoplay=0&rel=0&modestbranding=1&controls=1`}
                   title={activeLesson.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
-                  className="absolute inset-0 w-full h-full"
+                  className="absolute inset-0 z-[1] h-full w-full border-0"
                 />
               </div>
 
-              {/* Bottom glassmorphic control bar */}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${skill.gradient} flex items-center justify-center shrink-0`}>
-                      <Play className="w-4 h-4 text-white fill-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-white text-sm font-semibold truncate">{activeLesson.title}</p>
-                      <p className="text-white/40 text-xs">{activeLesson.duration}</p>
-                    </div>
+              {/* Lesson strip below the embed — does not overlay the player, so embed controls stay clickable */}
+              <div className="relative z-[2] flex items-center justify-between gap-3 border-t border-white/[0.08] bg-gradient-to-b from-black/90 to-black/95 px-4 py-3 rounded-b-2xl">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${skill.gradient}`}>
+                    <Play className="h-4 w-4 fill-white text-white" aria-hidden />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className="w-8 h-8 rounded-lg bg-white/[0.1] backdrop-blur-sm hover:bg-white/[0.2] flex items-center justify-center transition-colors">
-                      <Volume2 className="w-4 h-4 text-white/70" />
-                    </button>
-                    <button className="w-8 h-8 rounded-lg bg-white/[0.1] backdrop-blur-sm hover:bg-white/[0.2] flex items-center justify-center transition-colors">
-                      <Maximize2 className="w-4 h-4 text-white/70" />
-                    </button>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">{activeLesson.title}</p>
+                    <p className="text-xs text-white/40">{activeLesson.duration}</p>
                   </div>
                 </div>
+                <p className="hidden shrink-0 text-[11px] text-white/35 sm:block">
+                  Use the player controls for play, volume, and fullscreen
+                </p>
               </div>
             </motion.div>
 
