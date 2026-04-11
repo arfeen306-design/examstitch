@@ -77,6 +77,8 @@ interface Props {
   subjectId: string;
   accentColor?: string;
   showModuleTypeFilter?: boolean;
+  /** Server-resolved modules (parent + syllabus + legacy paper subject_id). */
+  initialCategories?: { id: string; name: string }[];
   /** Optional slot for a "New Resource" modal trigger — rendered in toolbar */
   renderAddButton?: (open: () => void) => React.ReactNode;
   /** Optional extra toolbar content (e.g. subject filter dropdown for Maths) */
@@ -215,6 +217,7 @@ export default function SubjectResourceManager({
   subjectId,
   accentColor = '#FF6B35',
   showModuleTypeFilter = true,
+  initialCategories = [],
   renderAddButton,
   toolbarPrefix,
 }: Props) {
@@ -235,7 +238,7 @@ export default function SubjectResourceManager({
 
   // ── New Resource form state ───────────────────────────────────────────────
   const [showNewResource, setShowNewResource] = useState(false);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(initialCategories);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [newRes, setNewRes] = useState({
     title: '', source_url: '', worksheet_url: '', content_type: 'video' as 'video' | 'pdf' | 'worksheet',
@@ -251,7 +254,6 @@ export default function SubjectResourceManager({
     fetchMergedCategoriesForSubject(supabase, subjectId).then(({ data, error }) => {
       if (cancelled) return;
       if (error) {
-        setCategories([]);
         setCategoriesLoading(false);
         showToast({ message: `Could not load modules: ${error}`, type: 'error' });
         return;

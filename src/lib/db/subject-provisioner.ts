@@ -232,29 +232,9 @@ export async function provisionSubjectPortal(
   const includeALevel = portal.hasALevelSyllabus !== false;
   await ensureSyllabiForSubject(supabase, subj.id, { includeALevel });
 
-  const { data: papersForCount } = await supabase
-    .from('subject_papers')
-    .select('id')
-    .eq('parent_subject_id', subj.id);
-  const paperIdsForCount = (papersForCount ?? []).map((p) => p.id);
-
-  const { count: countBySubject, error: cErr } = await supabase
-    .from('categories')
-    .select('*', { count: 'exact', head: true })
-    .eq('subject_id', subj.id);
-  if (cErr) return { success: false, error: cErr.message };
-
-  let countBySyllabus = 0;
-  if (paperIdsForCount.length > 0) {
-    const { count: cSyl, error: csErr } = await supabase
-      .from('categories')
-      .select('*', { count: 'exact', head: true })
-      .in('syllabus_id', paperIdsForCount);
-    if (csErr) return { success: false, error: csErr.message };
-    countBySyllabus = cSyl ?? 0;
-  }
-
-  if ((countBySubject ?? 0) > 0 || countBySyllabus > 0) {
+  const { data: existingCats, error: exErr } = await fetchMergedCategoriesForSubject(supabase, subj.id);
+  if (exErr) return { success: false, error: exErr };
+  if (existingCats.length > 0) {
     return { success: true, categoriesCreated: 0 };
   }
 
@@ -281,9 +261,11 @@ export interface MergedCategoryRow {
 }
 
 /**
- * Categories for a parent subject: `subject_id` match OR `syllabus_id` on any
- * `subject_papers` row for that parent (deduped). Use in subject admin UIs so
- * modules appear when taxonomy was seeded against paper rows only.
+ * Categories for a parent subject (deduped):
+ * - `subject_id` = parent discipline row
+ * - `syllabus_id` ∈ this subject's `subject_papers` ids
+ * - **Legacy:** `subject_id` was a `subject_papers.id` before FK migration 016; those
+ *   rows still point at paper UUIDs, so we include `subject_id` ∈ paper ids.
  */
 export async function fetchMergedCategoriesForSubject(
   supabase: SupabaseClient,
@@ -303,18 +285,28 @@ export async function fetchMergedCategoriesForSubject(
 
   const paperIds = (papersRes.data ?? []).map((p) => p.id).filter(Boolean);
   let bySyllabus: MergedCategoryRow[] = [];
+  let byLegacyPaperSubjectId: MergedCategoryRow[] = [];
   if (paperIds.length > 0) {
-    const { data: sylCats, error: e2 } = await supabase
-      .from('categories')
-      .select('id, name, slug, parent_id, sort_order')
-      .in('syllabus_id', paperIds)
-      .order('sort_order');
-    if (e2) return { data: [], error: e2.message };
-    bySyllabus = (sylCats ?? []) as MergedCategoryRow[];
+    const [sylRes, legRes] = await Promise.all([
+      supabase
+        .from('categories')
+        .select('id, name, slug, parent_id, sort_order')
+        .in('syllabus_id', paperIds)
+        .order('sort_order'),
+      supabase
+        .from('categories')
+        .select('id, name, slug, parent_id, sort_order')
+        .in('subject_id', paperIds)
+        .order('sort_order'),
+    ]);
+    if (sylRes.error) return { data: [], error: sylRes.error.message };
+    if (legRes.error) return { data: [], error: legRes.error.message };
+    bySyllabus = (sylRes.data ?? []) as MergedCategoryRow[];
+    byLegacyPaperSubjectId = (legRes.data ?? []) as MergedCategoryRow[];
   }
 
   const map = new Map<string, MergedCategoryRow>();
-  for (const row of [...(bySubject ?? []), ...bySyllabus] as MergedCategoryRow[]) {
+  for (const row of [...(bySubject ?? []), ...bySyllabus, ...byLegacyPaperSubjectId] as MergedCategoryRow[]) {
     map.set(row.id, row);
   }
   const merged = Array.from(map.values());

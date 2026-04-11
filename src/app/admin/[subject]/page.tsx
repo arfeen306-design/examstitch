@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAdminSession } from '@/lib/supabase/guards';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
-import { provisionSubjectPortal } from '@/lib/db/subject-provisioner';
+import { provisionSubjectPortal, fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
 import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
@@ -84,6 +84,15 @@ export default async function SubjectAdminPage({
     console.error('[admin subject portal] provisionSubjectPortal threw:', e);
   }
 
+  const { data: mergedCategories, error: mergeCatErr } = await fetchMergedCategoriesForSubject(
+    supabase,
+    subject.id,
+  );
+  if (mergeCatErr) {
+    console.error('[admin subject portal] fetchMergedCategoriesForSubject:', mergeCatErr);
+  }
+  const initialCategoryOptions = (mergedCategories ?? []).map((c) => ({ id: c.id, name: c.name }));
+
   // Fetch all resources for this subject
   const { data: resources, count } = await supabase
     .from('resources')
@@ -117,7 +126,7 @@ export default async function SubjectAdminPage({
           Manage resources for{' '}
           {portal.hasALevelSyllabus === false
             ? 'O Level and IGCSE.'
-            : `${subject.levels?.join(', ') ?? 'O Level, A Level, AS Level, A2 Level'} levels.`}
+            : `${subject.levels?.length ? subject.levels.join(', ') : 'O Level, A Level, AS Level, and A2 Level'}.`}
         </p>
       </div>
 
@@ -148,7 +157,9 @@ export default async function SubjectAdminPage({
           {subject.name} Resource Manager
         </h3>
         <SubjectResourceManager
+          key={subject.id}
           initialResources={allResources}
+          initialCategories={initialCategoryOptions}
           subjectSlug={portal.taxonomyOLevelPaperSlug}
           subjectId={subject.id}
           accentColor={portal.accentColor}
