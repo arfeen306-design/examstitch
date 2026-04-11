@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useState, useMemo, useCallback } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { PlayCircle, Eye, Sparkles, X } from 'lucide-react';
+import { PlayCircle, Eye, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /* ── Types ──────────────────────────────────────────────────────── */
 
@@ -205,23 +205,9 @@ function SpotlightPlayer({
 /* ── Injected CSS: marquee keyframes + shimmer ───────────────────── */
 
 const GAP = 32;
+const CARD_OUTER = 320 + GAP;
 
-const marqueeCSS = `
-@keyframes marquee-scroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.marquee-track {
-  display: flex;
-  gap: ${GAP}px;
-  width: max-content;
-  animation: marquee-scroll var(--marquee-dur) linear infinite;
-  will-change: transform;
-}
-.marquee-track:hover,
-.marquee-track[data-paused="true"] {
-  animation-play-state: paused;
-}
+const shimmerCSS = `
 @keyframes shimmer {
   0%   { background-position: -200% center; }
   100% { background-position: 200% center; }
@@ -240,19 +226,52 @@ const marqueeCSS = `
 
 export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouselProps) {
   const hookRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inView = useInView(hookRef, { once: true, margin: '-60px' });
   const [spotlight, setSpotlight] = useState<CarouselWidget | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const youtubeWidgets = useMemo(
     () => widgets.filter((w) => w.media_type === 'youtube'),
     [widgets],
   );
 
-  // Duplicate items so the second half is an identical copy → seamless loop
-  const items = useMemo(() => [...youtubeWidgets, ...youtubeWidgets], [youtubeWidgets]);
+  const widgetIdsKey = useMemo(() => youtubeWidgets.map((w) => w.id).join('|'), [youtubeWidgets]);
 
-  // ~6s per card for smooth pacing
-  const duration = useMemo(() => Math.max(youtubeWidgets.length * 6, 20), [youtubeWidgets.length]);
+  const updateScrollArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const eps = 4;
+    setCanScrollLeft(scrollLeft > eps);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - eps);
+  }, []);
+
+  useEffect(() => {
+    updateScrollArrows();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollArrows, { passive: true });
+    const ro = new ResizeObserver(updateScrollArrows);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateScrollArrows);
+      ro.disconnect();
+    };
+  }, [widgetIdsKey, updateScrollArrows]);
+
+  const scrollByDir = useCallback((dir: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const prefersReduced =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const step = Math.min(CARD_OUTER, Math.max(120, el.clientWidth * 0.85));
+    el.scrollBy({
+      left: dir === 'left' ? -step : step,
+      behavior: prefersReduced ? 'auto' : 'smooth',
+    });
+  }, []);
 
   const handlePlay = useCallback((w: CarouselWidget) => setSpotlight(w), []);
   const handleClose = useCallback(() => setSpotlight(null), []);
@@ -261,7 +280,7 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
 
   return (
     <>
-      <style>{marqueeCSS}</style>
+      <style>{shimmerCSS}</style>
 
       <section className="relative w-full overflow-hidden py-12 lg:py-16">
         {/* ── Hook Section with shimmer ─────────────────────────── */}
@@ -289,9 +308,9 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
           />
         </div>
 
-        {/* ── Marquee ──────────────────────────────────────────── */}
+        {/* ── Horizontal strip + prev/next ─────────────────────── */}
         <div className="relative">
-          {/* Fade edges — pointer-events-none so cards beneath are clickable */}
+          {/* Fade edges */}
           <div
             className="absolute left-0 top-0 bottom-0 z-20 pointer-events-none"
             style={{ width: '8%', background: 'linear-gradient(90deg, var(--bg-primary, #fff) 0%, transparent 100%)' }}
@@ -301,19 +320,34 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
             style={{ width: '8%', background: 'linear-gradient(270deg, var(--bg-primary, #fff) 0%, transparent 100%)' }}
           />
 
-          {/* Infinite track — hovers pause the entire marquee */}
-          <div
-            className="marquee-track py-6"
-            data-paused={spotlight ? 'true' : undefined}
-            style={{ ['--marquee-dur' as string]: `${duration}s` }}
+          <button
+            type="button"
+            aria-label="Scroll videos left"
+            disabled={!canScrollLeft}
+            onClick={() => scrollByDir('left')}
+            className="absolute left-1 sm:left-3 top-1/2 z-30 -translate-y-1/2 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-white/15 bg-[var(--bg-card,#0f172a)]/90 text-white shadow-lg backdrop-blur-md transition hover:bg-[var(--bg-card,#0f172a)] hover:border-white/25 disabled:pointer-events-none disabled:opacity-25"
           >
-            {items.map((w, i) => (
-              <MarqueeCard
-                key={`${w.id}-${i}`}
-                widget={w}
-                isAdmin={isAdmin}
-                onPlay={handlePlay}
-              />
+            <ChevronLeft className="h-6 w-6 shrink-0" aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label="Scroll videos right"
+            disabled={!canScrollRight}
+            onClick={() => scrollByDir('right')}
+            className="absolute right-1 sm:right-3 top-1/2 z-30 -translate-y-1/2 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-white/15 bg-[var(--bg-card,#0f172a)]/90 text-white shadow-lg backdrop-blur-md transition hover:bg-[var(--bg-card,#0f172a)] hover:border-white/25 disabled:pointer-events-none disabled:opacity-25"
+          >
+            <ChevronRight className="h-6 w-6 shrink-0" aria-hidden />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="flex gap-8 overflow-x-auto overflow-y-hidden py-6 px-12 sm:px-16 scroll-smooth [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.5)_transparent] [-webkit-overflow-scrolling:touch]"
+            style={{ scrollSnapType: 'x mandatory' }}
+          >
+            {youtubeWidgets.map((w) => (
+              <div key={w.id} className="shrink-0 snap-start" style={{ scrollSnapAlign: 'start' }}>
+                <MarqueeCard widget={w} isAdmin={isAdmin} onPlay={handlePlay} />
+              </div>
             ))}
           </div>
         </div>
