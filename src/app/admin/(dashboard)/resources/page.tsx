@@ -29,7 +29,7 @@ export default async function AdminResourcesPage() {
     .from('resources')
     .select(`
       *,
-      category:categories(id, name, slug, parent_id)
+      category:categories(id, name, slug, parent_id, subject_id)
     `)
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });

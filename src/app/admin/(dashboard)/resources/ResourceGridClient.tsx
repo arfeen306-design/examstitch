@@ -19,6 +19,8 @@ interface Resource {
   id: string;
   title: string;
   subject: string;
+  /** FK to subjects — required by DB; may be absent on very old rows */
+  subject_id?: string | null;
   content_type: string;
   source_url?: string;
   worksheet_url?: string | null;
@@ -26,7 +28,7 @@ interface Resource {
   sort_order?: number | null;
   question_mapping?: any[] | null;
   topic: string | null;
-  category: { name: string; slug: string; id: string } | null;
+  category: { name: string; slug: string; id: string; subject_id?: string | null } | null;
   is_published: boolean;
   is_locked: boolean;
   is_watermarked: boolean;
@@ -351,12 +353,29 @@ export default function ResourceGridClient({ initialResources }: { initialResour
       showToast({ message: 'Provide at least a video or worksheet URL.', type: 'error' });
       return;
     }
+    const subjectId = parent.subject_id ?? parent.category?.subject_id ?? null;
+    if (!subjectId) {
+      showToast({
+        message: 'Cannot save: this row has no subject link. Edit the parent resource or re-assign its category.',
+        type: 'error',
+      });
+      return;
+    }
+    const categoryId = parent.category?.id;
+    if (!categoryId) {
+      showToast({
+        message: 'Cannot save: parent has no category. Assign a module/category first.',
+        type: 'error',
+      });
+      return;
+    }
     startTransition(async () => {
       try {
         const payload = {
           title: subtopicState.title,
           subject: parent.subject,
-          category_id: parent.category?.id || '',
+          subject_id: subjectId,
+          category_id: categoryId,
           source_url: subtopicState.videoUrl || subtopicState.worksheetUrl,
           worksheet_url: subtopicState.worksheetUrl || null,
           source_type: subtopicState.videoUrl.includes('youtu') ? 'youtube' : 'google_drive',

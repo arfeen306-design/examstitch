@@ -90,6 +90,47 @@ export async function bulkInsertResources(resources: unknown[]) {
     };
   }
 
+  const supabase = createAdminClient();
+
+  // Resolve subject_id from category when omitted (e.g. legacy admin paths, bulk JSON)
+  const categoryIdsNeedingSubject = [
+    ...new Set(
+      parsed.data
+        .filter(r => !r.subject_id && r.category_id)
+        .map(r => r.category_id as string),
+    ),
+  ];
+
+  let categorySubjectById = new Map<string, string>();
+  if (categoryIdsNeedingSubject.length > 0) {
+    const { data: catRows, error: catErr } = await supabase
+      .from('categories')
+      .select('id, subject_id')
+      .in('id', categoryIdsNeedingSubject);
+    if (catErr) {
+      console.error('bulkInsertResources: failed to resolve categories', catErr);
+      return { success: false, error: 'Could not resolve subject from category. Try again or add subject_id to each row.' };
+    }
+    for (const row of catRows ?? []) {
+      if (row.subject_id) categorySubjectById.set(row.id, row.subject_id);
+    }
+  }
+
+  const enriched = parsed.data.map((res, index) => {
+    const fromCategory = res.category_id ? categorySubjectById.get(res.category_id) : undefined;
+    const subject_id = res.subject_id ?? fromCategory;
+    return { ...res, subject_id, _rowIndex: index };
+  });
+
+  for (const res of enriched) {
+    if (!res.subject_id) {
+      return {
+        success: false,
+        error: `Missing subject_id (row ${res._rowIndex + 1}): set subject_id on the resource or use a category linked to a subject.`,
+      };
+    }
+  }
+
   // ── Subject ownership guard ────────────────────────────────────────────
   // Verify the calling admin has permission for every subject_id in the batch.
   const session = await getAdminSession();
@@ -97,9 +138,7 @@ export async function bulkInsertResources(resources: unknown[]) {
     return { success: false, error: 'Not authenticated.' };
   }
   if (!session.isSuperAdmin) {
-    const requestedSubjects = new Set(
-      parsed.data.map(r => r.subject_id).filter(Boolean) as string[],
-    );
+    const requestedSubjects = new Set(enriched.map(r => r.subject_id).filter(Boolean) as string[]);
     for (const sid of requestedSubjects) {
       if (!session.managedSubjects.includes(sid)) {
         return {
@@ -111,7 +150,7 @@ export async function bulkInsertResources(resources: unknown[]) {
   }
 
   // ── Validate module_type values ────────────────────────────────────────
-  for (const res of parsed.data) {
+  for (const res of enriched) {
     if (res.module_type && !isValidModuleType(res.module_type)) {
       return {
         success: false,
@@ -120,10 +159,8 @@ export async function bulkInsertResources(resources: unknown[]) {
     }
   }
 
-  const supabase = createAdminClient();
-
   // Build clean payload — only include fields that have actual values
-  const payload = parsed.data.map(res => {
+  const payload = enriched.map(res => {
     const item: Record<string, unknown> = {
       title: res.title,
       content_type: res.content_type,
