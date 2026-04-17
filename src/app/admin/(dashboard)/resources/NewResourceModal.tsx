@@ -105,14 +105,7 @@ export default function NewResourceModal({
           setFormData(prev => ({ ...prev, subject_id: mapped[0].id }));
         }
       }
-      // Fetch all categories (filtered client-side by selected subject)
-      const { data: catData } = await supabase
-        .from('categories')
-        .select(
-          'id, name, subject_id, syllabus_id, syllabus_tier_id, syllabus:subject_papers(slug, code, name), syllabus_tier:syllabi(id, tier, name)',
-        )
-        .order('sort_order');
-      if (catData) setCategories(catData as unknown as Category[]);
+      setCategories([]);
       setCategoriesLoading(false);
     };
     fetchData();
@@ -135,6 +128,30 @@ export default function NewResourceModal({
       .order('sort_order', { ascending: true })
       .then(({ data }) => setSyllabiList((data ?? []) as SyllabusTierRow[]));
   }, [isOpen, formData.subject_id]);
+
+  useEffect(() => {
+    if (!isOpen || !formData.subject_id || !formData.syllabus_tier_id) {
+      setCategories([]);
+      return;
+    }
+    setCategoriesLoading(true);
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    supabase
+      .from('categories')
+      .select(
+        'id, name, subject_id, syllabus_id, syllabus_tier_id, syllabus:subject_papers(slug, code, name), syllabus_tier:syllabi(id, tier, name)',
+      )
+      .eq('subject_id', formData.subject_id)
+      .eq('syllabus_tier_id', formData.syllabus_tier_id)
+      .order('sort_order')
+      .then(({ data }) => {
+        setCategories((data ?? []) as unknown as Category[]);
+        setCategoriesLoading(false);
+      });
+  }, [isOpen, formData.subject_id, formData.syllabus_tier_id]);
 
   useEffect(() => {
     if (!isOpen || !defaultSyllabusSlug || !formData.subject_id) return;
@@ -214,6 +231,21 @@ export default function NewResourceModal({
     const subjectSlug = selectedSubject?.slug ?? '';
     const subjectId = formData.subject_id;
     const selectedCategory = categories.find(c => c.id === formData.category_id);
+    if (!selectedCategory) {
+      showToast({ message: 'Selected category was not found. Please reselect module.', type: 'error' });
+      setLoading(false);
+      return;
+    }
+    if (selectedCategory.subject_id !== subjectId) {
+      showToast({ message: 'Category does not belong to the selected subject.', type: 'error' });
+      setLoading(false);
+      return;
+    }
+    if (selectedCategory.syllabus_tier_id !== formData.syllabus_tier_id) {
+      showToast({ message: 'Category does not match the selected syllabus tier.', type: 'error' });
+      setLoading(false);
+      return;
+    }
     const syllabusPaperId = selectedCategory?.syllabus_id ?? undefined;
 
     if (moduleType === MODULE_TYPES.VIDEO_TOPICAL) {
@@ -303,7 +335,9 @@ export default function NewResourceModal({
 
     try {
       const { bulkInsertResources } = await import('../../actions');
-      const { success, error } = await bulkInsertResources(payloads);
+      const { success, error } = await bulkInsertResources(payloads, {
+        expectedSubjectId: subjectId,
+      });
 
       if (success) {
         showToast({ message: `Saved! ${keepOpen ? 'Ready for next entry.' : ''}`, type: 'success' });
@@ -343,14 +377,7 @@ export default function NewResourceModal({
 
   if (!isOpen) return null;
 
-  const activeCategories = categories.filter(c => {
-    if (c.subject_id !== formData.subject_id) return false;
-    if (formData.syllabus_tier_id && c.syllabus_tier_id !== formData.syllabus_tier_id) return false;
-    if (!formData.syllabus_tier_id && defaultSyllabusSlug && c.syllabus?.slug !== defaultSyllabusSlug) {
-      return false;
-    }
-    return true;
-  });
+  const activeCategories = categories;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">

@@ -50,8 +50,8 @@ const ResourceSchema = z.object({
   is_locked: z.boolean().default(false),
   source_type: z.string().optional(),
   subject: z.string().optional(),
-  subject_id: z.string().uuid('Invalid subject ID').optional(),
-  category_id: z.string().uuid('Invalid category ID').optional(),
+  subject_id: z.string().uuid('Invalid subject ID'),
+  category_id: z.string().uuid('Invalid category ID'),
   syllabus_id: z.string().uuid('Invalid syllabus ID').optional(),
   parent_resource_id: z.string().uuid('Invalid parent resource ID').optional(),
   description: z.string().max(2000).optional(),
@@ -65,6 +65,8 @@ const ResourceSchema = z.object({
   is_watermarked: z.boolean().optional(),
   is_published: z.boolean().optional(),
 });
+
+export type InsertResourceInput = z.infer<typeof ResourceSchema>;
 
 export async function toggleResourceFlag(id: string, field: 'is_published' | 'is_locked' | 'is_watermarked', value: boolean) {
   const supabase = createAdminClient();
@@ -83,7 +85,10 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
   return { success: true };
 }
 
-export async function bulkInsertResources(resources: unknown[]) {
+export async function bulkInsertResources(
+  resources: unknown[],
+  options?: { expectedSubjectId?: string },
+) {
   // Validate every row before touching the database
   const parsed = z.array(ResourceSchema).safeParse(resources);
   if (!parsed.success) {
@@ -97,7 +102,7 @@ export async function bulkInsertResources(resources: unknown[]) {
   const supabase = createAdminClient();
 
   // Resolve subject_id + syllabus_id from category when omitted
-  const allCategoryIds = [...new Set(parsed.data.map(r => r.category_id).filter(Boolean) as string[])];
+  const allCategoryIds = [...new Set(parsed.data.map(r => r.category_id))];
 
   const categorySubjectById = new Map<string, string>();
   const categorySyllabusById = new Map<string, string>();
@@ -117,16 +122,36 @@ export async function bulkInsertResources(resources: unknown[]) {
   }
 
   const enriched = parsed.data.map((res, index) => {
-    const subject_id = res.subject_id ?? (res.category_id ? categorySubjectById.get(res.category_id) : undefined);
-    const syllabus_id = res.syllabus_id ?? (res.category_id ? categorySyllabusById.get(res.category_id) : undefined);
+    const categorySubjectId = categorySubjectById.get(res.category_id);
+    const subject_id = res.subject_id;
+    const syllabus_id = res.syllabus_id ?? categorySyllabusById.get(res.category_id);
     return { ...res, subject_id, syllabus_id, _rowIndex: index };
   });
 
   for (const res of enriched) {
+    const categorySubjectId = categorySubjectById.get(res.category_id);
     if (!res.subject_id) {
       return {
         success: false,
         error: `Missing subject_id (row ${res._rowIndex + 1}): set subject_id on the resource or use a category linked to a subject.`,
+      };
+    }
+    if (!categorySubjectId) {
+      return {
+        success: false,
+        error: `Invalid category_id on row ${res._rowIndex + 1}: category not found or missing subject linkage.`,
+      };
+    }
+    if (categorySubjectId !== res.subject_id) {
+      return {
+        success: false,
+        error: `Row ${res._rowIndex + 1}: subject_id does not match selected category.`,
+      };
+    }
+    if (options?.expectedSubjectId && res.subject_id !== options.expectedSubjectId) {
+      return {
+        success: false,
+        error: `Row ${res._rowIndex + 1}: payload subject does not match active portal subject.`,
       };
     }
   }

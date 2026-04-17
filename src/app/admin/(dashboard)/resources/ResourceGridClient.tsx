@@ -311,7 +311,9 @@ export default function ResourceGridClient({ initialResources }: { initialResour
           is_locked: false,
           is_watermarked: false,
         };
-        const result = await bulkInsertResources([payload]);
+        const result = await bulkInsertResources([payload], {
+          expectedSubjectId: subjectId,
+        });
         if (result.success) {
           showToast({ message: 'Sub-topic added!', type: 'success' });
           cancelSubtopic();

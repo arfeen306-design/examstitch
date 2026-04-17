@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
 import { provisionSubjectPortal } from '@/lib/db/subject-provisioner';
+import { initSubject } from '@/lib/init-subject';
 import { requireSubjectAdmin } from '@/lib/supabase/guards';
 import {
   ROUTE_TO_PORTAL,
@@ -171,4 +172,57 @@ export async function deleteSubjectCategory(categoryId: string) {
   revalidateTag('resources');
   revalidatePath('/', 'layout');
   return { success: true };
+}
+
+export async function quickSetupSubjectPortal(
+  subjectId: string,
+  portalRouteSegment: string,
+): Promise<{ success: true; created: number } | { success: false; error: string }> {
+  if (!PORTAL_ROUTE_SEGMENTS.has(portalRouteSegment)) {
+    return { success: false, error: 'Invalid subject portal.' };
+  }
+
+  const auth = await requireSubjectAdmin(subjectId);
+  if (!auth) {
+    return { success: false, error: 'Not authorised for this subject.' };
+  }
+
+  const result = await initSubject(subjectId);
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  const supabase = createAdminClient();
+  const expectedSlugs = [
+    'grade-9',
+    'grade-10',
+    'grade-11',
+    'as-level',
+    'a2-level',
+    'paper-1',
+    'paper-2',
+    'paper-3',
+    'paper-4',
+    'paper-5',
+  ];
+
+  const { data: verificationRows, error: verificationError } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('subject_id', subjectId)
+    .in('slug', expectedSlugs);
+
+  if (verificationError) {
+    return { success: false, error: verificationError.message };
+  }
+  if (!verificationRows || verificationRows.length === 0) {
+    return { success: false, error: 'Quick setup ran but no categories were created for this subject.' };
+  }
+
+  revalidateTag('categories');
+  revalidateTag('resources');
+  revalidatePath(`/admin/${portalRouteSegment}`);
+  revalidatePath(`/admin/${portalRouteSegment}/categories`);
+  revalidatePath('/', 'layout');
+  return { success: true, created: result.created };
 }

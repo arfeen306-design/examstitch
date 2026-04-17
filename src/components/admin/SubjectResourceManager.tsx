@@ -41,6 +41,9 @@ export interface Resource {
   id: string;
   title: string;
   subject: string;
+  subject_id?: string | null;
+  syllabus_id?: string | null;
+  parent_resource_id?: string | null;
   content_type: string;
   source_url?: string;
   worksheet_url?: string | null;
@@ -269,20 +272,24 @@ export default function SubjectResourceManager({
       showToast({ message: 'Title and Source URL are required.', type: 'error' });
       return;
     }
+    if (!newRes.category_id) {
+      showToast({ message: 'Select a module/category before adding a resource.', type: 'error' });
+      return;
+    }
     startTransition(async () => {
-      const payload: Record<string, unknown> = {
+      const payload = {
         title: newRes.title.trim(),
         content_type: newRes.content_type,
         source_url: newRes.source_url.trim(),
         subject_id: subjectId,
+        category_id: newRes.category_id,
         is_locked: false,
       };
-      if (newRes.category_id) payload.category_id = newRes.category_id;
       if (newRes.module_type) payload.module_type = newRes.module_type;
       if (newRes.worksheet_url.trim()) payload.worksheet_url = newRes.worksheet_url.trim();
       payload.is_published = true;
 
-      const result = await bulkInsertResources([payload]);
+      const result = await bulkInsertResources([payload], { expectedSubjectId: subjectId });
       if (result.success) {
         showToast({ message: 'Resource added!', type: 'success' });
         setShowNewResource(false);
@@ -429,10 +436,18 @@ export default function SubjectResourceManager({
     }
     startTransition(async () => {
       try {
+        const categoryId = parent.category?.id;
+        if (!categoryId) {
+          showToast({ message: 'Parent resource has no category; assign it before adding sub-topic.', type: 'error' });
+          return;
+        }
         const payload = {
           title: subtopicState.title,
           subject: parent.subject,
-          category_id: parent.category?.id || '',
+          subject_id: parent.subject_id ?? subjectId,
+          category_id: categoryId,
+          syllabus_id: parent.syllabus_id ?? undefined,
+          parent_resource_id: parent.id,
           source_url: subtopicState.videoUrl || subtopicState.worksheetUrl,
           worksheet_url: subtopicState.worksheetUrl || null,
           source_type: subtopicState.videoUrl.includes('youtu') ? 'youtube' : 'google_drive',
@@ -442,7 +457,7 @@ export default function SubjectResourceManager({
           is_locked: false,
           is_watermarked: false,
         };
-        const result = await bulkInsertResources([payload]);
+        const result = await bulkInsertResources([payload], { expectedSubjectId: subjectId });
         if (result.success) {
           showToast({ message: 'Sub-topic added!', type: 'success' });
           cancelSubtopic();
@@ -858,7 +873,7 @@ export default function SubjectResourceManager({
                 onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
                 className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
               >
-                <option value="">Category (optional)</option>
+                <option value="">Category *</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             )}

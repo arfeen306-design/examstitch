@@ -7,6 +7,7 @@ import { provisionSubjectPortal, fetchMergedCategoriesForSubject } from '@/lib/d
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
 import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
+import QuickSetupButton from '@/components/admin/QuickSetupButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,11 @@ export default async function SubjectAdminPage({
     console.error('[admin subject portal] fetchMergedCategoriesForSubject:', mergeCatErr);
   }
   const initialCategoryOptions = (mergedCategories ?? []).map((c) => ({ id: c.id, name: c.name }));
+  const { data: topics } = await supabase
+    .from('topics')
+    .select('id, subject_papers!inner(parent_subject_id)')
+    .eq('subject_papers.parent_subject_id', subject.id);
+  const isUnconfiguredSubject = (topics ?? []).length === 0;
 
   // Fetch all resources for this subject
   const { data: resources, count } = await supabase
@@ -118,11 +124,14 @@ export default async function SubjectAdminPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           {subject.name} Dashboard
         </h2>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
+        {isUnconfiguredSubject ? (
+          <QuickSetupButton subjectId={subject.id} portalRouteSegment={params.subject} />
+        ) : null}
+        <p className="w-full text-sm text-[var(--text-muted)] mt-1">
           Manage resources for{' '}
           {portal.hasALevelSyllabus === false
             ? 'O Level and IGCSE.'
@@ -137,7 +146,7 @@ export default async function SubjectAdminPage({
           return (
             <div
               key={stat.label}
-              className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm flex items-center gap-4"
+              className="bg-slate-900/30 backdrop-blur-md border border-slate-700/40 rounded-2xl p-6 shadow-sm flex items-center gap-4"
             >
               <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center shrink-0`}>
                 <Icon className={`w-6 h-6 ${stat.color}`} />
@@ -152,7 +161,7 @@ export default async function SubjectAdminPage({
       </div>
 
       {/* Resource Manager */}
-      <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-[var(--border-subtle)]">
+      <div className="bg-slate-900/30 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-700/40">
         <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
           {subject.name} Resource Manager
         </h3>
