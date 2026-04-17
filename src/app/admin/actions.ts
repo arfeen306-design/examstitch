@@ -13,6 +13,12 @@ import { fetchCategoryRowsForIdsInChunks } from '@/lib/admin/fetch-categories-by
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
+function inferSourceTypeFromUrl(url: string): 'youtube' | 'google_drive' | 'external_link' {
+  if (/youtu\.be|youtube\.com/i.test(url)) return 'youtube';
+  if (/drive\.google\.com/i.test(url)) return 'google_drive';
+  return 'external_link';
+}
+
 /**
  * Revalidate all public-facing resource pages so new/updated content
  * appears instantly without a manual rebuild.
@@ -250,7 +256,7 @@ export async function bulkInsertResources(
       is_locked: res.is_locked,
     };
 
-    if (res.source_type)               item.source_type   = res.source_type;
+    item.source_type = res.source_type ?? inferSourceTypeFromUrl(res.source_url);
     if (res.subject)                   item.subject       = res.subject;
     if (res.subject_id)                item.subject_id    = res.subject_id;
     if (res.syllabus_id)               item.syllabus_id   = res.syllabus_id;
