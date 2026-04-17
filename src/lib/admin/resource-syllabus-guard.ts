@@ -7,6 +7,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { fetchCategoryRowsForIdsInChunks } from '@/lib/admin/fetch-categories-by-ids';
 
 type AdminSupabase = SupabaseClient;
 
@@ -54,13 +55,10 @@ async function loadCategoryClosure(supabase: AdminSupabase, seedIds: string[]): 
   let guard = 0;
   while (pending.length > 0 && guard < 25) {
     guard += 1;
-    const { data, error } = await supabase
-      .from('categories')
-      .select('id, subject_id, syllabus_id, syllabus_tier_id, parent_id')
-      .in('id', pending);
-    if (error) throw new Error(error.message);
+    const { rows, errorMessage } = await fetchCategoryRowsForIdsInChunks(supabase, pending);
+    if (errorMessage) throw new Error(errorMessage);
     const nextParents: string[] = [];
-    for (const row of data ?? []) {
+    for (const row of rows) {
       if (byId.has(row.id)) continue;
       byId.set(row.id, row as CategoryGuardRow);
       if (row.parent_id && !byId.has(row.parent_id)) nextParents.push(row.parent_id);

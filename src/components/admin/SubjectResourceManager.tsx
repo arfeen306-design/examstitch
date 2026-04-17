@@ -252,16 +252,26 @@ export default function SubjectResourceManager({
     if (!showNewResource) return;
     let cancelled = false;
     setCategoriesLoading(true);
-    listMergedCategoriesForSubjectAdmin(subjectId).then((res) => {
-      if (cancelled) return;
-      setCategoriesLoading(false);
-      if (!res.ok) {
-        showToast({ message: `Could not load modules: ${res.error}`, type: 'error' });
-        return;
-      }
-      const mapped = res.categories.map((c) => ({ id: c.id, name: c.name }));
-      setCategories((prev) => (mapped.length > 0 ? mapped : prev));
-    });
+    listMergedCategoriesForSubjectAdmin(subjectId)
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.ok) {
+          showToast({ message: `Could not load modules: ${res.error}`, type: 'error' });
+          return;
+        }
+        const mapped = res.categories.map((c) => ({ id: c.id, name: c.name }));
+        setCategories((prev) => (mapped.length > 0 ? mapped : prev));
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        showToast({
+          message: e instanceof Error ? e.message : 'Could not load modules.',
+          type: 'error',
+        });
+      })
+      .finally(() => {
+        if (!cancelled) setCategoriesLoading(false);
+      });
     return () => {
       cancelled = true;
     };

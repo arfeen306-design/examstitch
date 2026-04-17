@@ -9,6 +9,7 @@ import { isValidModuleType } from '@/config/taxonomy';
 import { MODULE_TYPES } from '@/lib/constants';
 import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
 import { assertResourceSyllabusBatch } from '@/lib/admin/resource-syllabus-guard';
+import { fetchCategoryRowsForIdsInChunks } from '@/lib/admin/fetch-categories-by-ids';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
@@ -107,15 +108,18 @@ export async function bulkInsertResources(
   const categorySubjectById = new Map<string, string>();
   const categorySyllabusById = new Map<string, string>();
   if (allCategoryIds.length > 0) {
-    const { data: catRows, error: catErr } = await supabase
-      .from('categories')
-      .select('id, subject_id, syllabus_id, syllabus_tier_id, parent_id')
-      .in('id', allCategoryIds);
-    if (catErr) {
-      console.error('bulkInsertResources: failed to load categories', catErr);
-      return { success: false, error: 'Could not load categories for this batch. Check category IDs.' };
+    const { rows: catRows, errorMessage: catLoadErr } = await fetchCategoryRowsForIdsInChunks(
+      supabase,
+      allCategoryIds,
+    );
+    if (catLoadErr) {
+      console.error('bulkInsertResources: failed to load categories', catLoadErr);
+      return {
+        success: false,
+        error: `Could not load categories for this batch: ${catLoadErr}`,
+      };
     }
-    for (const row of catRows ?? []) {
+    for (const row of catRows) {
       if (row.subject_id) categorySubjectById.set(row.id, row.subject_id);
       if (row.syllabus_id) categorySyllabusById.set(row.id, row.syllabus_id);
     }
