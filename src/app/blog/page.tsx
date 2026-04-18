@@ -218,7 +218,7 @@ export default async function BlogPage() {
              style={{ background: 'linear-gradient(135deg, var(--hero-from), var(--hero-to))' }}>
           <h3 className="text-xl font-bold text-white mb-2">Want to be notified when we publish?</h3>
           <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            Join our mailing list — we'll send you study guides and exam tips directly.
+            {`Join our mailing list — we'll send you study guides and exam tips directly.`}
           </p>
           <Link
             href="/"

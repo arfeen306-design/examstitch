@@ -8,8 +8,12 @@ import { z } from 'zod';
 import { isValidModuleType } from '@/config/taxonomy';
 import { MODULE_TYPES } from '@/lib/constants';
 import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
-import { assertResourceSyllabusBatch } from '@/lib/admin/resource-syllabus-guard';
-import { fetchCategoryRowsForIdsInChunks } from '@/lib/admin/fetch-categories-by-ids';
+import {
+  assertResourceSyllabusBatch,
+  loadCategoryClosure,
+  type CategoryGuardRow,
+} from '@/lib/admin/resource-syllabus-guard';
+import { resolveDisciplineSubjectIdByCategoryRow } from '@/lib/admin/resolve-category-discipline-subject';
 
 const ALLOWED_URL = /^https?:\/\/(drive\.google\.com\/|youtu\.be\/[\w-]+|www\.youtube\.com\/watch\?v=[\w-]+)/;
 
@@ -114,20 +118,38 @@ export async function bulkInsertResources(
   const categorySubjectById = new Map<string, string>();
   const categorySyllabusById = new Map<string, string>();
   if (allCategoryIds.length > 0) {
-    const { rows: catRows, errorMessage: catLoadErr } = await fetchCategoryRowsForIdsInChunks(
-      supabase,
-      allCategoryIds,
-    );
-    if (catLoadErr) {
-      console.error('bulkInsertResources: failed to load categories', catLoadErr);
+    let closureMap: Map<string, CategoryGuardRow>;
+    try {
+      closureMap = await loadCategoryClosure(supabase, allCategoryIds);
+    } catch (e) {
+      const catLoadErr = e instanceof Error ? e.message : String(e);
+      console.error('bulkInsertResources: failed to load category closure', catLoadErr);
       return {
         success: false,
         error: `Could not load categories for this batch: ${catLoadErr}`,
       };
     }
-    for (const row of catRows) {
-      if (row.subject_id) categorySubjectById.set(row.id, row.subject_id);
-      if (row.syllabus_id) categorySyllabusById.set(row.id, row.syllabus_id);
+    for (const id of allCategoryIds) {
+      if (!closureMap.has(id)) {
+        return {
+          success: false,
+          error: `Invalid category_id on batch: category not found or incomplete hierarchy for "${id}".`,
+        };
+      }
+    }
+    const closureRows = [...closureMap.values()].map((row) => ({
+      id: row.id,
+      subject_id: row.subject_id,
+      syllabus_id: row.syllabus_id,
+      syllabus_tier_id: row.syllabus_tier_id,
+      parent_id: row.parent_id,
+    }));
+    const disciplineByCategory = await resolveDisciplineSubjectIdByCategoryRow(supabase, closureRows);
+    for (const id of allCategoryIds) {
+      const owner = disciplineByCategory.get(id);
+      if (owner) categorySubjectById.set(id, owner);
+      const row = closureMap.get(id);
+      if (row?.syllabus_id) categorySyllabusById.set(id, row.syllabus_id);
     }
   }
 

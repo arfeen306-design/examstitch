@@ -1,6 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from 'react';
 import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -26,10 +34,10 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<(ToastOptions & { id: number }) | null>(null);
 
-  const showToast = (options: ToastOptions) => {
+  const showToast = useCallback((options: ToastOptions) => {
     const id = Date.now();
     setToast({ ...options, id, duration: options.duration || 3000 });
-  };
+  }, []);
 
   useEffect(() => {
     if (toast) {
@@ -40,8 +48,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }
   }, [toast]);
 
+  const contextValue = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">

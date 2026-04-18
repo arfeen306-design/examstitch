@@ -286,28 +286,44 @@ export default function SubjectResourceManager({
       showToast({ message: 'Select a module/category before adding a resource.', type: 'error' });
       return;
     }
-    startTransition(async () => {
-      const payload = {
-        title: newRes.title.trim(),
-        content_type: newRes.content_type,
-        source_url: newRes.source_url.trim(),
-        subject_id: subjectId,
-        category_id: newRes.category_id,
-        is_locked: false,
-      };
-      if (newRes.module_type) payload.module_type = newRes.module_type;
-      if (newRes.worksheet_url.trim()) payload.worksheet_url = newRes.worksheet_url.trim();
-      payload.is_published = true;
+    startTransition(() => {
+      void (async () => {
+        try {
+          const payload: Record<string, unknown> = {
+            title: newRes.title.trim(),
+            content_type: newRes.content_type,
+            source_url: newRes.source_url.trim(),
+            subject_id: subjectId,
+            category_id: newRes.category_id,
+            is_locked: false,
+          };
+          if (newRes.module_type) payload.module_type = newRes.module_type;
+          if (newRes.worksheet_url.trim()) payload.worksheet_url = newRes.worksheet_url.trim();
+          payload.is_published = true;
 
-      const result = await bulkInsertResources([payload], { expectedSubjectId: subjectId });
-      if (result.success) {
-        showToast({ message: 'Resource added!', type: 'success' });
-        setShowNewResource(false);
-        setNewRes({ title: '', source_url: '', worksheet_url: '', content_type: 'video', category_id: '', module_type: '' });
-        window.location.reload();
-      } else {
-        showToast({ message: result.error || 'Failed to add resource', type: 'error' });
-      }
+          const result = await bulkInsertResources([payload], { expectedSubjectId: subjectId });
+          if (result.success) {
+            showToast({ message: 'Resource added!', type: 'success' });
+            setShowNewResource(false);
+            setNewRes({
+              title: '',
+              source_url: '',
+              worksheet_url: '',
+              content_type: 'video',
+              category_id: '',
+              module_type: '',
+            });
+            window.location.reload();
+          } else {
+            showToast({ message: result.error || 'Failed to add resource', type: 'error' });
+          }
+        } catch (err: unknown) {
+          showToast({
+            message: err instanceof Error ? err.message : 'Failed to add resource.',
+            type: 'error',
+          });
+        }
+      })();
     });
   };
 

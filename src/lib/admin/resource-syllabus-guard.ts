@@ -8,12 +8,14 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fetchCategoryRowsForIdsInChunks } from '@/lib/admin/fetch-categories-by-ids';
+import { resolveDisciplineSubjectIdByCategoryRow } from '@/lib/admin/resolve-category-discipline-subject';
 
 type AdminSupabase = SupabaseClient;
 
 export type CategoryGuardRow = {
   id: string;
-  subject_id: string;
+  /** Discipline subject or legacy `subject_papers.id` — use resolved discipline for comparisons. */
+  subject_id: string | null;
   syllabus_id: string | null;
   syllabus_tier_id: string | null;
   parent_id: string | null;
@@ -49,7 +51,7 @@ export function resolveInheritedCategorySyllabusId(
   return null;
 }
 
-async function loadCategoryClosure(supabase: AdminSupabase, seedIds: string[]): Promise<Map<string, CategoryGuardRow>> {
+export async function loadCategoryClosure(supabase: AdminSupabase, seedIds: string[]): Promise<Map<string, CategoryGuardRow>> {
   const byId = new Map<string, CategoryGuardRow>();
   let pending = [...new Set(seedIds.filter(Boolean))];
   let guard = 0;
@@ -100,6 +102,17 @@ export async function assertResourceSyllabusBatch(
     }
   }
 
+  const disciplineByCatId = await resolveDisciplineSubjectIdByCategoryRow(
+    supabase,
+    [...byId.values()].map((c) => ({
+      id: c.id,
+      subject_id: c.subject_id,
+      syllabus_id: c.syllabus_id,
+      syllabus_tier_id: c.syllabus_tier_id,
+      parent_id: c.parent_id,
+    })),
+  );
+
   const paperIds = new Set<string>();
   for (const row of rows) {
     if (!row.category_id) {
@@ -130,11 +143,20 @@ export async function assertResourceSyllabusBatch(
     paperIds.add(finalPaperId);
     resolvedSyllabusIds.set(row._rowIndex, finalPaperId);
 
-    if (row.subject_id && cat.subject_id && row.subject_id !== cat.subject_id) {
-      return {
-        ok: false,
-        error: `Row ${row._rowIndex + 1}: subject_id does not match the category's subject.`,
-      };
+    const disciplineOwner = disciplineByCatId.get(row.category_id!) ?? null;
+    if (row.subject_id) {
+      if (!disciplineOwner) {
+        return {
+          ok: false,
+          error: `Row ${row._rowIndex + 1}: could not resolve discipline subject for this category (check category.subject_id / parent chain).`,
+        };
+      }
+      if (row.subject_id !== disciplineOwner) {
+        return {
+          ok: false,
+          error: `Row ${row._rowIndex + 1}: subject_id does not match the category's discipline subject.`,
+        };
+      }
     }
   }
 
@@ -179,10 +201,11 @@ export async function assertResourceSyllabusBatch(
       return { ok: false, error: `Row ${row._rowIndex + 1}: invalid syllabus_id (subject paper not found).` };
     }
     const paperTier = levelSlugToTier(paper.level_id ? levelSlugById.get(paper.level_id) : undefined);
-    if (paper.parent_subject_id && paper.parent_subject_id !== cat.subject_id) {
+    const catDiscipline = disciplineByCatId.get(cat.id) ?? null;
+    if (paper.parent_subject_id && catDiscipline && paper.parent_subject_id !== catDiscipline) {
       return {
         ok: false,
-        error: `Row ${row._rowIndex + 1}: syllabus paper does not belong to this category's subject.`,
+        error: `Row ${row._rowIndex + 1}: syllabus paper does not belong to this category's discipline subject.`,
       };
     }
 
