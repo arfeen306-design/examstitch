@@ -1,4 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { MODULE_TYPES } from '@/lib/constants';
+
+/** Canonical portal streams — every provisioned subject inherits the same two module_type lanes. */
+export const PORTAL_RESOURCE_STREAMS = {
+  videoLectures: MODULE_TYPES.VIDEO_TOPICAL,
+  solvedPastPapers: MODULE_TYPES.SOLVED_PAST_PAPER,
+} as const;
 
 type InitResult =
   | { success: true; created: number }

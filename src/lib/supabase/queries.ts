@@ -223,6 +223,36 @@ export async function getResourcesByCategory(
 }
 
 /**
+ * Public portal streams — **module_type is the source of truth** (not content_type).
+ * Video Lectures vs Solved Past Papers must never share the same fetch.
+ */
+export async function getPublishedResourcesByModuleStream(
+  categoryId: string,
+  moduleType: typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
+): Promise<Resource[]> {
+  const cacheKey = `resources-stream-${categoryId}-${moduleType}`;
+  return unstable_cache(
+    async () => {
+      const supabase = createAnonClient();
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('is_published', true)
+        .eq('module_type', moduleType)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true });
+      if (error) {
+        throw new Error(`getPublishedResourcesByModuleStream(${categoryId}, ${moduleType}): ${error.message}`);
+      }
+      return (data ?? []) as unknown as Resource[];
+    },
+    [cacheKey],
+    { revalidate: CACHE_5M, tags: ['resources'] },
+  )();
+}
+
+/**
  * Fetches resources for a category filtered by topic name.
  */
 export async function getResourcesByTopic(
@@ -262,6 +292,7 @@ export async function getTopicsByCategory(
         .select('topic')
         .eq('category_id', categoryId)
         .eq('is_published', true)
+        .eq('module_type', MODULE_TYPES.VIDEO_TOPICAL)
         .not('topic', 'is', null);
       if (error) throw new Error(`getTopicsByCategory(${categoryId}): ${error.message}`);
 
@@ -275,7 +306,7 @@ export async function getTopicsByCategory(
         .map(([topic, count]) => ({ topic, count }))
         .sort((a, b) => a.topic.localeCompare(b.topic));
     },
-    [`topics-${categoryId}`],
+    [`topics-vt-${categoryId}`],
     { revalidate: CACHE_5M, tags: ['resources'] },
   )();
 }
@@ -677,8 +708,8 @@ export interface CategorisedResults {
 export async function searchResourcesCategorised(query: string): Promise<CategorisedResults> {
   const all = await searchResources(query, 80);
   return {
-    videoTopical: all.filter(r => (r as any).module_type === MODULE_TYPES.VIDEO_TOPICAL || r.content_type === CONTENT_TYPES.VIDEO),
-    solvedPapers: all.filter(r => (r as any).module_type === MODULE_TYPES.SOLVED_PAST_PAPER || r.content_type === CONTENT_TYPES.PDF),
+    videoTopical: all.filter((r) => (r as { module_type?: string }).module_type === MODULE_TYPES.VIDEO_TOPICAL),
+    solvedPapers: all.filter((r) => (r as { module_type?: string }).module_type === MODULE_TYPES.SOLVED_PAST_PAPER),
     total: all.length,
   };
 }
@@ -897,10 +928,10 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
         .map(({ _score, ...r }) => r as Resource);
 
       const videoTopical = rankedResources.filter(
-        (r) => (r as any).module_type === MODULE_TYPES.VIDEO_TOPICAL || r.content_type === CONTENT_TYPES.VIDEO,
+        (r) => (r as { module_type?: string }).module_type === MODULE_TYPES.VIDEO_TOPICAL,
       );
       const solvedPapers = rankedResources.filter(
-        (r) => (r as any).module_type === MODULE_TYPES.SOLVED_PAST_PAPER || r.content_type === CONTENT_TYPES.PDF,
+        (r) => (r as { module_type?: string }).module_type === MODULE_TYPES.SOLVED_PAST_PAPER,
       );
 
       const rankedMedia = (mediaData as unknown as MediaWidget[])

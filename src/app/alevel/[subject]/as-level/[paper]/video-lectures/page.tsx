@@ -1,47 +1,9 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import UnifiedModuleGrid from '@/components/resources/UnifiedModuleGrid';
-import type { LearningModule } from '@/components/resources/UnifiedModuleGrid';
-import { getCategoryBySlug, getResourcesByCategory } from '@/lib/supabase/queries';
-import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
+import PortalResourceStreamSection from '@/components/resources/PortalResourceStreamSection';
+import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
 import { aLevelPapers, aLevelPapersBySubject, getSubjectLabel } from '@/config/navigation';
-import { isAdminRequest } from '@/lib/admin-mode';
-
-async function VideoModules({ subject, paper }: { subject: string; paper: string }) {
-  if (!isSupabaseConfigured()) {
-    return <UnifiedModuleGrid modules={[]} emptyTitle="Database not configured" emptyMessage="Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY." />;
-  }
-
-  try {
-    const category = await getCategoryBySlug(subject, paper);
-    if (!category) return <UnifiedModuleGrid modules={[]} emptyTitle="Category not found" emptyMessage="Run the SQL migrations first." />;
-
-    // Fetch ALL published videos for this category (no module_type filter —
-    // resources uploaded via bulk JSON may not have module_type set)
-    const resources = await getResourcesByCategory(category.id, 'video');
-
-    const adminBypass = isAdminRequest();
-    const modules: LearningModule[] = resources.map(r => ({
-      id: r.id,
-      title: r.title,
-      videoUrl: r.source_url,
-      worksheetUrl: (r as any).worksheet_url || null,
-      isLocked: adminBypass ? false : ((r as any).is_locked ?? false),
-      parentResourceId: (r as { parent_resource_id?: string | null }).parent_resource_id ?? null,
-    }));
-
-    return (
-      <UnifiedModuleGrid
-        modules={modules}
-        emptyTitle="No video lectures yet"
-        emptyMessage="Upload your first video lecture via the admin dashboard."
-      />
-    );
-  } catch (err) {
-    console.error('VideoModules error:', err);
-    return <UnifiedModuleGrid modules={[]} emptyTitle="Failed to load" emptyMessage="Please refresh the page." />;
-  }
-}
 
 export default function VideoLecturesPage({ params }: { params: { subject: string; paper: string } }) {
   const papers = aLevelPapersBySubject[params.subject] ?? aLevelPapers;
@@ -73,7 +35,12 @@ export default function VideoLecturesPage({ params }: { params: { subject: strin
       </div>
       <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <Suspense fallback={<UnifiedModuleGrid modules={[]} isLoading={true} />}>
-          <VideoModules subject={params.subject} paper={params.paper} />
+          <PortalResourceStreamSection
+            subjectSlug={params.subject}
+            categorySlug={params.paper}
+            moduleType={PORTAL_RESOURCE_STREAMS.videoLectures}
+            layout="video-modules"
+          />
         </Suspense>
       </div>
     </div>

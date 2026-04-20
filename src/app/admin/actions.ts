@@ -100,7 +100,8 @@ const ResourceSchema = z.object({
   parent_resource_id: z.string().uuid('Invalid parent resource ID').optional(),
   description: z.string().max(2000).optional(),
   topic: z.string().max(200).optional(),
-  module_type: z.enum([MODULE_TYPES.VIDEO_TOPICAL, MODULE_TYPES.SOLVED_PAST_PAPER]).optional(),
+  /** DB column is NOT NULL with default; explicit values are required from admin UIs. */
+  module_type: z.enum([MODULE_TYPES.VIDEO_TOPICAL, MODULE_TYPES.SOLVED_PAST_PAPER]).default(MODULE_TYPES.VIDEO_TOPICAL),
   worksheet_url: z
     .string()
     .regex(ALLOWED_URL, 'Must be a YouTube or Google Drive URL')
@@ -296,12 +297,12 @@ export async function bulkInsertResources(
     }
   }
 
-  // ── Validate module_type values ────────────────────────────────────────
+  // ── Validate module_type values (Zod default applies; guard for drift) ───
   for (const res of enriched) {
-    if (res.module_type && !isValidModuleType(res.module_type)) {
+    if (!isValidModuleType(res.module_type)) {
       return {
         success: false,
-        error: `Invalid module_type "${res.module_type}". Must be "${MODULE_TYPES.VIDEO_TOPICAL}" or "${MODULE_TYPES.SOLVED_PAST_PAPER}".`,
+        error: `Invalid module_type on row ${res._rowIndex + 1}. Must be "${MODULE_TYPES.VIDEO_TOPICAL}" or "${MODULE_TYPES.SOLVED_PAST_PAPER}".`,
       };
     }
   }
@@ -323,7 +324,7 @@ export async function bulkInsertResources(
     if (res.parent_resource_id)        item.parent_resource_id = res.parent_resource_id;
     if (res.description)               item.description   = res.description;
     if (res.topic)                     item.topic         = res.topic;
-    if (res.module_type)               item.module_type   = res.module_type;
+    item.module_type = res.module_type;
     if (res.worksheet_url !== undefined) item.worksheet_url = res.worksheet_url;
     if (res.is_watermarked !== undefined) item.is_watermarked = res.is_watermarked;
     if (res.is_published !== undefined)   item.is_published   = res.is_published;

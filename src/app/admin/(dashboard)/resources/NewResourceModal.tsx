@@ -30,6 +30,7 @@ interface SyllabusTierRow {
 }
 
 type ModuleType = typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
+type ModuleTypeChoice = ModuleType | '';
 
 const SESSION_OPTIONS = [
   { value: 'mj', label: 'May/June' },
@@ -63,7 +64,7 @@ export default function NewResourceModal({
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const { showToast } = useToast();
-  const [moduleType, setModuleType] = useState<ModuleType>(MODULE_TYPES.VIDEO_TOPICAL);
+  const [moduleType, setModuleType] = useState<ModuleTypeChoice>('');
   const [keepOpen, setKeepOpen] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -83,6 +84,7 @@ export default function NewResourceModal({
 
   useEffect(() => {
     if (!isOpen) return;
+    setModuleType('');
     const fetchData = async () => {
       setCategoriesLoading(true);
       const supabase = createBrowserClient(
@@ -219,6 +221,12 @@ export default function NewResourceModal({
       if (!url) return true;
       return /^https?:\/\/(drive\.google\.com|youtu\.be|www\.youtube\.com)\/.+/.test(url);
     };
+
+    if (!moduleType) {
+      showToast({ message: 'Select a module type (Video + Topical or Solved Past Paper).', type: 'error' });
+      setLoading(false);
+      return;
+    }
 
     const richTitle = moduleType === MODULE_TYPES.SOLVED_PAST_PAPER
       ? generateDisplayTitle(formData.session, formData.year, formData.variant)
@@ -397,7 +405,9 @@ export default function NewResourceModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Module Type Radio Toggle */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">Content Type</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+              Module type <span className="text-amber-400/90">*</span>
+            </label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -430,11 +440,18 @@ export default function NewResourceModal({
                 </div>
               </button>
             </div>
+            {!moduleType && (
+              <p className="text-[11px] text-amber-400/80 mt-2">Choose one stream above — video lectures and past papers are stored separately.</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* ── Title section: Topic Name for videos, Session/Year/Variant for past papers ── */}
-            {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? (
+            {moduleType === '' ? (
+              <div className="sm:col-span-2 lg:col-span-3 rounded-lg border border-dashed border-[var(--border-color)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                Select a module type above to show the right fields.
+              </div>
+            ) : moduleType === MODULE_TYPES.VIDEO_TOPICAL ? (
               <div className="sm:col-span-2 lg:col-span-3">
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Topic Name</label>
                 <input
@@ -568,38 +585,40 @@ export default function NewResourceModal({
             </div>
 
             {/* Dynamic Link Inputs */}
-            <div className="sm:col-span-2 lg:col-span-3 pt-2 border-t border-[var(--border-subtle)]">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
-                {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? 'Resource Links' : 'PDF Solution Link'}
-              </label>
+            {moduleType !== '' && (
+              <div className="sm:col-span-2 lg:col-span-3 pt-2 border-t border-[var(--border-subtle)]">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+                  {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? 'Resource Links' : 'Paper & optional walkthrough'}
+                </label>
 
-              <div className="space-y-3">
-                {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Link *</label>
-                      <input required value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-green-600 mb-1">Worksheet Drive Link (Optional)</label>
-                      <input value={formData.worksheet_url} onChange={e => setFormData({ ...formData, worksheet_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-emerald-500/50 focus:border-emerald-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium text-blue-600 mb-1">PDF Solution Link *</label>
-                      <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-blue-500/50 focus:border-blue-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Walkthrough (Optional)</label>
-                      <input value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1">Adding a video enables the Interactive Solver (split-screen PDF + Video)</p>
-                    </div>
-                  </>
-                )}
+                <div className="space-y-3">
+                  {moduleType === MODULE_TYPES.VIDEO_TOPICAL ? (
+                    <>
+                      <div>
+                        <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Link *</label>
+                        <input required value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-green-600 mb-1">Worksheet Drive Link (Optional)</label>
+                        <input value={formData.worksheet_url} onChange={e => setFormData({ ...formData, worksheet_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-emerald-500/50 focus:border-emerald-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-xs font-medium text-blue-600 mb-1">PDF / paper solution (Google Drive) *</label>
+                        <input required value={formData.solution_url} onChange={e => setFormData({ ...formData, solution_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-blue-500/50 focus:border-blue-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://drive.google.com/file/d/..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-red-600 mb-1">YouTube Video Walkthrough (Optional)</label>
+                        <input value={formData.video_url} onChange={e => setFormData({ ...formData, video_url: e.target.value })} className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-red-500/50 focus:border-red-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-mono text-sm" placeholder="https://www.youtube.com/watch?v=..." />
+                        <p className="text-[10px] text-[var(--text-muted)] mt-1">Adding a video enables the Interactive Solver (split-screen PDF + Video)</p>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)] mt-6 sticky bottom-0 bg-[var(--bg-elevated)]">
@@ -615,7 +634,11 @@ export default function NewResourceModal({
             </label>
             <div className="flex gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-card)] rounded-lg transition">Cancel</button>
-              <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700">
+              <button
+                type="submit"
+                disabled={loading || !moduleType}
+                className="px-4 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700"
+              >
                 {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === MODULE_TYPES.VIDEO_TOPICAL ? 'Link Video + Topical' : 'Link Past Paper'}
               </button>
             </div>

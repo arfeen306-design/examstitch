@@ -1,36 +1,16 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import ResourceGrid from '@/components/resources/ResourceGrid';
-import { getCategoryBySlug, getResourcesByCategory } from '@/lib/supabase/queries';
-import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
-import type { Resource } from '@/lib/supabase/types';
 import type { ResourceItem } from '@/components/resources/ResourceGrid';
+import PortalResourceStreamSection from '@/components/resources/PortalResourceStreamSection';
+import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
+import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
 import { getSubjectLabel } from '@/config/navigation';
-import { isAdminRequest } from '@/lib/admin-mode';
-import { CONTENT_TYPES, MODULE_TYPES } from '@/lib/constants';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatGrade(slug: string): string {
   return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-}
-
-function toResourceItem(resource: Resource, basePath: string, adminBypass = false): ResourceItem {
-  const examSeries = (resource as Resource & {
-    exam_series?: { year: number; session: string; variant: number } | null;
-  }).exam_series;
-  return {
-    id: resource.id,
-    title: resource.title,
-    description: resource.description ?? undefined,
-    contentType: resource.content_type,
-    href: `/view/${resource.id}`,
-    year: examSeries?.year,
-    session: examSeries?.session,
-    variant: examSeries?.variant,
-    subject: resource.subject,
-    isLocked: adminBypass ? false : ((resource as any).is_locked ?? false),
-  };
 }
 
 // Demo papers shown while Supabase is not yet connected
@@ -54,7 +34,6 @@ async function PastPapersGrid({
   grade: string;
   basePath: string;
 }) {
-  // Return demo data while Supabase isn't configured yet
   if (!isSupabaseConfigured()) {
     return (
       <ResourceGrid
@@ -65,40 +44,15 @@ async function PastPapersGrid({
     );
   }
 
-  try {
-    const category = await getCategoryBySlug(subject, grade);
-
-    if (!category) {
-      return (
-        <ResourceGrid
-          resources={[]}
-          emptyTitle="Category not found"
-          emptyMessage="Run the SQL migrations to create the grade categories."
-        />
-      );
-    }
-
-    const resources = await getResourcesByCategory(category.id, CONTENT_TYPES.PDF, MODULE_TYPES.SOLVED_PAST_PAPER);
-    const bypass = isAdminRequest();
-    const items: ResourceItem[] = resources.map((r) => toResourceItem(r, basePath, bypass));
-
-    return (
-      <ResourceGrid
-        resources={items}
-        emptyTitle="No past papers yet"
-        emptyMessage="Upload your first past paper via the admin dashboard."
-      />
-    );
-  } catch (err) {
-    console.error('PastPapersGrid error:', err);
-    return (
-      <ResourceGrid
-        resources={DEMO_PAPERS}
-        emptyTitle="Database error"
-        emptyMessage="Could not load papers. Showing demo data."
-      />
-    );
-  }
+  return (
+    <PortalResourceStreamSection
+      subjectSlug={subject}
+      categorySlug={grade}
+      moduleType={PORTAL_RESOURCE_STREAMS.solvedPastPapers}
+      layout="past-paper-cards"
+      basePath={basePath}
+    />
+  );
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────

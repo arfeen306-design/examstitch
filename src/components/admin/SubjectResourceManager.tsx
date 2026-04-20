@@ -288,6 +288,19 @@ export default function SubjectResourceManager({
     };
   }, [showNewResource, subjectId, showToast, initialCategories]);
 
+  const openNewResourceForm = () => {
+    if (showModuleTypeFilter) setNewRes((s) => ({ ...s, module_type: '' }));
+    setShowNewResource(true);
+  };
+
+  const toggleNewResourceForm = () => {
+    setShowNewResource((open) => {
+      if (open) return false;
+      if (showModuleTypeFilter) setNewRes((s) => ({ ...s, module_type: '' }));
+      return true;
+    });
+  };
+
   const handleAddResource = () => {
     if (!newRes.title.trim() || !newRes.source_url.trim()) {
       showToast({ message: 'Title and Source URL are required.', type: 'error' });
@@ -297,9 +310,16 @@ export default function SubjectResourceManager({
       showToast({ message: 'Select a module/category before adding a resource.', type: 'error' });
       return;
     }
+    if (showModuleTypeFilter && !newRes.module_type) {
+      showToast({ message: 'Select a module type (Video Topical or Solved Past Paper).', type: 'error' });
+      return;
+    }
     startTransition(() => {
       void (async () => {
         try {
+          const moduleType = showModuleTypeFilter
+            ? newRes.module_type
+            : MODULE_TYPES.VIDEO_TOPICAL;
           const payload: Record<string, unknown> = {
             title: newRes.title.trim(),
             content_type: newRes.content_type,
@@ -307,8 +327,8 @@ export default function SubjectResourceManager({
             subject_id: subjectId,
             category_id: newRes.category_id,
             is_locked: false,
+            module_type: moduleType,
           };
-          if (newRes.module_type) payload.module_type = newRes.module_type;
           if (newRes.worksheet_url.trim()) payload.worksheet_url = newRes.worksheet_url.trim();
           payload.is_published = true;
 
@@ -842,9 +862,9 @@ export default function SubjectResourceManager({
           </span>
         </div>
 
-        {renderAddButton ? renderAddButton(() => setShowNewResource(true)) : (
+        {renderAddButton ? renderAddButton(openNewResourceForm) : (
           <button
-            onClick={() => setShowNewResource(!showNewResource)}
+            onClick={toggleNewResourceForm}
             className="flex items-center gap-2 px-4 py-2 text-[var(--text-primary)] text-sm font-medium rounded-lg transition shadow-sm hover:opacity-90"
             style={{ backgroundColor: accentColor }}
           >
@@ -875,7 +895,7 @@ export default function SubjectResourceManager({
             />
             <select
               value={newRes.content_type}
-              onChange={e => setNewRes(s => ({ ...s, content_type: e.target.value as any }))}
+              onChange={e => setNewRes(s => ({ ...s, content_type: e.target.value as 'video' | 'pdf' | 'worksheet' }))}
               className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
             >
               <option value="video">Video</option>
@@ -885,13 +905,21 @@ export default function SubjectResourceManager({
             <input
               value={newRes.source_url}
               onChange={e => setNewRes(s => ({ ...s, source_url: e.target.value }))}
-              placeholder="YouTube or Google Drive URL"
+              placeholder={
+                showModuleTypeFilter && newRes.module_type === MODULE_TYPES.SOLVED_PAST_PAPER
+                  ? 'Primary paper / solution PDF (Google Drive) *'
+                  : 'YouTube or Google Drive URL *'
+              }
               className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 outline-none"
             />
             <input
               value={newRes.worksheet_url}
               onChange={e => setNewRes(s => ({ ...s, worksheet_url: e.target.value }))}
-              placeholder="Worksheet / PDF URL (optional)"
+              placeholder={
+                showModuleTypeFilter && newRes.module_type === MODULE_TYPES.SOLVED_PAST_PAPER
+                  ? 'Optional walkthrough video (YouTube / Drive)'
+                  : 'Worksheet / PDF URL (optional)'
+              }
               className="px-3 py-2 text-sm font-mono border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 outline-none"
             />
             {categoriesLoading ? (
@@ -916,11 +944,21 @@ export default function SubjectResourceManager({
             )}
             {showModuleTypeFilter && (
               <select
+                required
                 value={newRes.module_type}
-                onChange={e => setNewRes(s => ({ ...s, module_type: e.target.value as any }))}
-                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
+                onChange={e => {
+                  const v = e.target.value as '' | typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
+                  setNewRes(s => ({
+                    ...s,
+                    module_type: v,
+                    content_type: v === MODULE_TYPES.SOLVED_PAST_PAPER ? 'pdf' : v === MODULE_TYPES.VIDEO_TOPICAL ? 'video' : s.content_type,
+                  }));
+                }}
+                className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none [&_option]:bg-[var(--bg-card)] [&_option]:text-[var(--text-primary)]"
               >
-                <option value="">Module type (optional)</option>
+                <option value="" disabled>
+                  Module type *
+                </option>
                 <option value={MODULE_TYPES.VIDEO_TOPICAL}>Video Topical</option>
                 <option value={MODULE_TYPES.SOLVED_PAST_PAPER}>Solved Past Paper</option>
               </select>
@@ -929,7 +967,12 @@ export default function SubjectResourceManager({
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleAddResource}
-              disabled={isPending || !newRes.title.trim() || !newRes.source_url.trim()}
+              disabled={
+                isPending ||
+                !newRes.title.trim() ||
+                !newRes.source_url.trim() ||
+                (showModuleTypeFilter && !newRes.module_type)
+              }
               className="flex items-center gap-1.5 px-4 py-2 text-[var(--text-primary)] text-sm font-semibold rounded-lg transition disabled:opacity-50 hover:opacity-90"
               style={{ backgroundColor: accentColor }}
             >

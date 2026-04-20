@@ -42,14 +42,15 @@ const TITLE_MAIN = 'text-sm font-semibold text-slate-100 truncate flex items-cen
 
 const BTN_WATCH =
   'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap ' +
-  'border border-amber-400/55 text-amber-200 bg-transparent ' +
-  'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/75 hover:text-amber-100 ' +
+  'border border-amber-400/60 text-amber-400 bg-transparent ' +
+  'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/80 hover:text-amber-300 ' +
   'hover:shadow-[0_0_18px_rgba(251,191,36,0.14)]';
 
 const BTN_WORKSHEET =
   'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap ' +
-  'border border-slate-500/55 text-slate-200 bg-slate-900/30 backdrop-blur-sm ' +
-  'transition-all duration-200 hover:border-amber-400/40 hover:text-amber-100/95 hover:bg-slate-900/50';
+  'border border-amber-400/55 text-amber-400 bg-transparent ' +
+  'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/75 hover:text-amber-300 ' +
+  'hover:shadow-[0_0_14px_rgba(251,191,36,0.1)]';
 
 // ── Grouping logic ────────────────────────────────────────────────────────────
 
@@ -149,7 +150,7 @@ function ActionPills({ mod }: { mod: LearningModule }) {
       <div className="flex flex-wrap items-center gap-2 shrink-0">
         <Link
           href={`/auth/login?redirectTo=${redirectTo}`}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap border border-amber-600/50 text-amber-200 bg-amber-500/10 hover:bg-amber-500/15 transition"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap border border-amber-400/60 text-amber-400 bg-transparent hover:bg-amber-400/10 hover:text-amber-300 transition"
         >
           <Lock className="w-3 h-3" />
           Members Only
