@@ -227,6 +227,23 @@ export async function quickSetupSubjectPortal(
     return { success: false, error: 'Quick setup ran but no categories were found for this subject.' };
   }
 
+  const { count: missingSyllabusCount, error: missingSyllabusErr } = await supabase
+    .from('categories')
+    .select('id', { count: 'exact', head: true })
+    .eq('subject_id', subjectId)
+    .is('syllabus_id', null);
+
+  if (missingSyllabusErr) {
+    return { success: false, error: missingSyllabusErr.message };
+  }
+  if ((missingSyllabusCount ?? 0) > 0) {
+    return {
+      success: false,
+      error:
+        'Quick setup failed integrity check: one or more categories were created without syllabus_id. Run DB migrations and reprovision this subject.',
+    };
+  }
+
   revalidateTag('categories');
   revalidateTag('resources');
   revalidatePath(`/admin/${portalRouteSegment}`);

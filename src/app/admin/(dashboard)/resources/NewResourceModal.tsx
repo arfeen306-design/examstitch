@@ -286,9 +286,7 @@ export default function NewResourceModal({
       payloads.push({
         title: richTitle,
         subject: subjectSlug,
-        subject_id: subjectId,
         category_id: formData.category_id,
-        syllabus_id: syllabusPaperId,
         source_url: formData.video_url,
         worksheet_url: formData.worksheet_url || null,
         source_type: 'youtube',
@@ -320,9 +318,7 @@ export default function NewResourceModal({
         payloads.push({
           title: richTitle,
           subject: subjectSlug,
-          subject_id: subjectId,
           category_id: formData.category_id,
-          syllabus_id: syllabusPaperId,
           source_url: formData.video_url,
           worksheet_url: formData.solution_url,
           source_type: 'youtube',
@@ -336,9 +332,7 @@ export default function NewResourceModal({
         payloads.push({
           title: richTitle,
           subject: subjectSlug,
-          subject_id: subjectId,
           category_id: formData.category_id,
-          syllabus_id: syllabusPaperId,
           source_url: formData.solution_url,
           source_type: 'google_drive',
           content_type: CONTENT_TYPES.PDF,

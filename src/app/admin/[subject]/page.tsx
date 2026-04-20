@@ -120,11 +120,9 @@ export default async function SubjectAdminPage({
     .eq('subject_papers.parent_subject_id', subject.id);
   const isUnconfiguredSubject = (topics ?? []).length === 0;
 
-  // Fetch all resources for this discipline (`subjects.id`). With FK `resources_subject_id_fkey`
-  // → `subjects`, rows cannot legitimately use `subject_papers.id` here; an empty grid while
-  // Supabase still has rows usually means `subject_id` ≠ this parent or RLS/service path issues.
-  // Use `scripts/diagnose-resource-subject-linkage.sql` + migration `20260422_resources_discipline_linkage_repair.sql`.
-  const { data: resources, count } = await supabase
+  // Canonical fetch: resources must be keyed by the parent discipline subject_id.
+  // If this query returns empty, treat it as a data-integrity issue and repair DB rows.
+  const { data: resources, count, error: resourcesError } = await supabase
     .from('resources')
     .select(
       `
@@ -143,6 +141,12 @@ export default async function SubjectAdminPage({
     .order('category_id', { ascending: true })
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
+  const resourceFetchWarning = resourcesError
+    ? `Resource query failed: ${resourcesError.message}`
+    : null;
+  if (resourcesError) {
+    console.error('[admin subject portal] resources query failed:', resourcesError.message);
+  }
 
   const allResources = (resources ?? []) as any[];
   const totalCount = count ?? 0;
@@ -180,6 +184,9 @@ export default async function SubjectAdminPage({
             ? 'O Level and IGCSE.'
             : `${subject.levels?.length ? subject.levels.join(', ') : 'O Level, A Level, AS Level, and A2 Level'}.`}
         </p>
+        {resourceFetchWarning ? (
+          <p className="w-full text-xs text-amber-300 mt-1">{resourceFetchWarning}</p>
+        ) : null}
       </div>
 
       {/* Stats Grid */}

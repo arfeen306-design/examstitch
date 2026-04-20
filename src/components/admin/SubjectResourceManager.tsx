@@ -384,10 +384,18 @@ export default function SubjectResourceManager({
       return true;
     });
   }, [resources, filterModuleType, searchQuery]);
+  const resourcesNeedingRepair = useMemo(
+    () => filtered.filter((r) => !r.syllabus_id),
+    [filtered],
+  );
+  const filteredForHierarchy = useMemo(
+    () => filtered.filter((r) => Boolean(r.syllabus_id)),
+    [filtered],
+  );
 
   const syllabusBuckets = useMemo(
-    () => buildSyllabusModuleTopicHierarchy(filtered as AdminResourceRow[]),
-    [filtered],
+    () => buildSyllabusModuleTopicHierarchy(filteredForHierarchy as AdminResourceRow[]),
+    [filteredForHierarchy],
   );
 
   const moduleGroupCount = useMemo(
@@ -400,8 +408,8 @@ export default function SubjectResourceManager({
   );
 
   const hasWeakSyllabusLane = useMemo(
-    () => syllabusBuckets.some(b => b.syllabusSlug === 'unspecified'),
-    [syllabusBuckets],
+    () => resourcesNeedingRepair.length > 0,
+    [resourcesNeedingRepair],
   );
 
   const handleRepairDisciplineLinkage = () => {
@@ -1144,50 +1152,69 @@ export default function SubjectResourceManager({
               </tr>
             </tbody>
           ) : (
-            syllabusBuckets.map(bucket => (
-              <tbody
-                key={bucket.syllabusSlug}
-                className={`bg-[var(--bg-card)] divide-y divide-[var(--border-subtle)] ${adminSyllabusSectionClass(bucket.syllabusSlug)}`}
-              >
-                <tr className="section-label">
-                  <td colSpan={9} className="px-4 py-2 border-b border-[var(--border-color)]/60">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
-                      {adminSyllabusSectionLabel(bucket.syllabusSlug)}
-                    </span>
-                  </td>
-                </tr>
-                {bucket.modules.map(module => (
-                  <Fragment key={`${bucket.syllabusSlug}::${module.categoryId}`}>
-                    <tr className="bg-[var(--bg-surface)] border-t border-b border-[var(--border-color)]">
-                      <td colSpan={9} className="px-4 py-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <FolderOpen className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
-                          <span className="text-xs font-bold tracking-wide text-[var(--text-primary)]">
-                            {formatAdminModuleGroupHeader(disciplineName, bucket, module)}
-                          </span>
-                          <span className="text-xs text-[var(--text-muted)]">
-                            · {module.topicClusters.length} topic{module.topicClusters.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                    {module.topicClusters.map((cluster, topicIdx) => (
-                      <Fragment key={cluster.rootId}>
-                        {cluster.parts.map((part, partIdx) =>
-                          renderRow(
-                            part as Resource,
-                            topicIdx,
-                            cluster.parts.length > 1 ? partIdx : null,
-                            cluster.parts.length,
-                            bucket.syllabusSlug === 'unspecified',
-                          ),
-                        )}
-                      </Fragment>
-                    ))}
-                  </Fragment>
-                ))}
-              </tbody>
-            ))
+            <>
+              {resourcesNeedingRepair.length > 0 && (
+                <tbody className="bg-[var(--bg-card)] divide-y divide-[var(--border-subtle)] border-t-4 border-t-red-500/70">
+                  <tr className="section-label">
+                    <td colSpan={9} className="px-4 py-2 border-b border-red-500/40 bg-red-950/45">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-red-200">
+                        NEEDS REPAIR - Missing syllabus_id ({resourcesNeedingRepair.length})
+                      </span>
+                    </td>
+                  </tr>
+                  {resourcesNeedingRepair.map((row, idx) => (
+                    <Fragment key={`repair-${row.id}`}>
+                      {renderRow(row, idx, null, 1, true)}
+                    </Fragment>
+                  ))}
+                </tbody>
+              )}
+
+              {syllabusBuckets.map(bucket => (
+                <tbody
+                  key={bucket.syllabusSlug}
+                  className={`bg-[var(--bg-card)] divide-y divide-[var(--border-subtle)] ${adminSyllabusSectionClass(bucket.syllabusSlug)}`}
+                >
+                  <tr className="section-label">
+                    <td colSpan={9} className="px-4 py-2 border-b border-[var(--border-color)]/60">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                        {adminSyllabusSectionLabel(bucket.syllabusSlug)}
+                      </span>
+                    </td>
+                  </tr>
+                  {bucket.modules.map(module => (
+                    <Fragment key={`${bucket.syllabusSlug}::${module.categoryId}`}>
+                      <tr className="bg-[var(--bg-surface)] border-t border-b border-[var(--border-color)]">
+                        <td colSpan={9} className="px-4 py-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <FolderOpen className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
+                            <span className="text-xs font-bold tracking-wide text-[var(--text-primary)]">
+                              {formatAdminModuleGroupHeader(disciplineName, bucket, module)}
+                            </span>
+                            <span className="text-xs text-[var(--text-muted)]">
+                              · {module.topicClusters.length} topic{module.topicClusters.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {module.topicClusters.map((cluster, topicIdx) => (
+                        <Fragment key={cluster.rootId}>
+                          {cluster.parts.map((part, partIdx) =>
+                            renderRow(
+                              part as Resource,
+                              topicIdx,
+                              cluster.parts.length > 1 ? partIdx : null,
+                              cluster.parts.length,
+                              false,
+                            ),
+                          )}
+                        </Fragment>
+                      ))}
+                    </Fragment>
+                  ))}
+                </tbody>
+              ))}
+            </>
           )}
         </table>
       </div>

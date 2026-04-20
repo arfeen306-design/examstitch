@@ -94,8 +94,10 @@ const ResourceSchema = z.object({
   is_locked: z.boolean().default(false),
   source_type: z.string().optional(),
   subject: z.string().optional(),
-  subject_id: z.string().uuid('Invalid subject ID'),
+  /** Canonical subject is derived from selected category on the server. */
+  subject_id: z.string().uuid('Invalid subject ID').optional(),
   category_id: z.string().uuid('Invalid category ID'),
+  /** Canonical syllabus is derived from selected category on the server. */
   syllabus_id: z.string().uuid('Invalid syllabus ID').optional(),
   parent_resource_id: z.string().uuid('Invalid parent resource ID').optional(),
   description: z.string().max(2000).optional(),
@@ -148,16 +150,11 @@ export async function bulkInsertResources(
   if (!session) {
     return { success: false, error: 'Not authenticated.' };
   }
-  if (!session.isSuperAdmin) {
-    const requestedSubjects = new Set(parsed.data.map((r) => r.subject_id));
-    for (const sid of requestedSubjects) {
-      if (!session.managedSubjects.includes(sid)) {
-        return {
-          success: false,
-          error: `Access denied: you do not manage subject ${sid}.`,
-        };
-      }
-    }
+  if (!session.isSuperAdmin && options?.expectedSubjectId && !session.managedSubjects.includes(options.expectedSubjectId)) {
+    return {
+      success: false,
+      error: `Access denied: you do not manage subject ${options.expectedSubjectId}.`,
+    };
   }
 
   const supabase = createAdminClient();
@@ -210,8 +207,8 @@ export async function bulkInsertResources(
 
   const enriched = parsed.data.map((res, index) => {
     const categorySubjectId = categorySubjectById.get(res.category_id);
-    const subject_id = res.subject_id;
-    const syllabus_id = res.syllabus_id ?? categorySyllabusById.get(res.category_id);
+    const subject_id = categorySubjectId;
+    const syllabus_id = categorySyllabusById.get(res.category_id);
     return { ...res, subject_id, syllabus_id, _rowIndex: index };
   });
 
@@ -220,7 +217,7 @@ export async function bulkInsertResources(
     if (!res.subject_id) {
       return {
         success: false,
-        error: `Missing subject_id (row ${res._rowIndex + 1}): set subject_id on the resource or use a category linked to a subject.`,
+        error: `Row ${res._rowIndex + 1}: selected category is missing discipline subject linkage.`,
       };
     }
     if (!categorySubjectId) {
@@ -229,17 +226,23 @@ export async function bulkInsertResources(
         error: `Invalid category_id on row ${res._rowIndex + 1}: category not found or missing subject linkage.`,
       };
     }
-    if (categorySubjectId !== res.subject_id) {
-      return {
-        success: false,
-        error: `Row ${res._rowIndex + 1}: subject_id does not match selected category.`,
-      };
-    }
     if (options?.expectedSubjectId && res.subject_id !== options.expectedSubjectId) {
       return {
         success: false,
         error: `Row ${res._rowIndex + 1}: payload subject does not match active portal subject.`,
       };
+    }
+  }
+
+  if (!session.isSuperAdmin) {
+    const requestedSubjects = new Set(enriched.map((r) => r.subject_id).filter(Boolean) as string[]);
+    for (const sid of requestedSubjects) {
+      if (!session.managedSubjects.includes(sid)) {
+        return {
+          success: false,
+          error: `Access denied: you do not manage subject ${sid}.`,
+        };
+      }
     }
   }
 
