@@ -3,13 +3,14 @@ import { MODULE_TYPES } from '@/lib/constants';
 
 /**
  * **Single source of truth** for public subject portals: every provisioned subject
- * (Mathematics, Physics, Chemistry, CS, …) exposes exactly these two `resources.module_type` lanes.
+ * (Mathematics, Physics, Chemistry, CS, …) uses exactly these two `resources.module_type` lanes.
  *
- * - Use `PORTAL_RESOURCE_STREAMS.videoLectures` for topic video + worksheet streams (routes like `…/video-lectures`).
- * - Use `PORTAL_RESOURCE_STREAMS.solvedPastPapers` for past-paper streams (routes like `…/past-papers`).
+ * - {@link PORTAL_RESOURCE_STREAMS.videoLectures} — topic video + worksheet stream (`…/video-lectures`).
+ * - {@link PORTAL_RESOURCE_STREAMS.solvedPastPapers} — past-paper stream (`…/past-papers`).
  *
- * Provisioning (`initSubjectHierarchy` below) does not duplicate these strings — imports should
- * reference this object so new subjects inherit the same dual-lane contract automatically.
+ * After **Quick Setup** ({@link initSubject}), the category tree exists for both URL families;
+ * admins still choose the lane per resource at insert time by setting `module_type` to one of
+ * the values above (see admin modals / bulk insert). Import this object instead of string literals.
  */
 export const PORTAL_RESOURCE_STREAMS = {
   videoLectures: MODULE_TYPES.VIDEO_TOPICAL,
@@ -88,13 +89,18 @@ async function upsertCategory(payload: {
 }
 
 /**
- * One-click subject bootstrap for empty portals.
+ * One-click subject bootstrap (**Quick Setup**) for empty portals.
  *
  * Creates the **category** tree (O-Level grades, AS/A2 shells, paper slugs) so both
- * public URL families exist: `…/video-lectures` and `…/past-papers`. Those routes
- * load resources filtered by `module_type`; new resources must use
- * {@link PORTAL_RESOURCE_STREAMS} at insert time — provisioning does not insert
- * resource rows or duplicate lane strings.
+ * public URL families resolve (e.g. `…/video-lectures` and `…/past-papers` under each paper slug).
+ * Expect an empty grid until resources exist — not a 404 if the slug was provisioned.
+ *
+ * **Parameters:** `subjectId` is the UUID from the `subjects` table (not the public URL slug).
+ * Public paths use slugs such as `physics-9702` from navigation config, not bare `physics`.
+ *
+ * **Lanes:** Routes load rows by `module_type`. New resources must set `module_type` to
+ * {@link PORTAL_RESOURCE_STREAMS.videoLectures} or {@link PORTAL_RESOURCE_STREAMS.solvedPastPapers};
+ * this function does not insert resource rows.
  */
 export async function initSubject(subjectId: string): Promise<InitResult> {
   try {
