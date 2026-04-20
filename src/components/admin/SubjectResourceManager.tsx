@@ -24,6 +24,7 @@ import {
   updateResource,
   bulkInsertResources,
   listMergedCategoriesForSubjectAdmin,
+  repairDisciplineResourceLinkage,
 } from '@/app/admin/actions';
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
@@ -391,6 +392,26 @@ export default function SubjectResourceManager({
     () => syllabusBuckets.reduce((n, b) => n + b.modules.length, 0),
     [syllabusBuckets],
   );
+
+  const hasWeakSyllabusLane = useMemo(
+    () => syllabusBuckets.some(b => b.syllabusSlug === 'unspecified'),
+    [syllabusBuckets],
+  );
+
+  const handleRepairDisciplineLinkage = () => {
+    startTransition(async () => {
+      const res = await repairDisciplineResourceLinkage(subjectId);
+      if (!res.success) {
+        showToast({ message: res.error, type: 'error' });
+        return;
+      }
+      showToast({
+        message: `Repair complete: ${res.stats.rehomedFromPapers} from papers id, ${res.stats.alignedSubject} subject aligned, ${res.stats.syncedSyllabus} syllabus synced.`,
+        type: 'success',
+      });
+      router.refresh();
+    });
+  };
 
   // ── Toggle flags ──────────────────────────────────────────────────────────
 
@@ -863,6 +884,28 @@ export default function SubjectResourceManager({
           </button>
         )}
       </div>
+
+      {hasWeakSyllabusLane && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <div className="flex items-start gap-2 min-w-0">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+            <p className="min-w-0 leading-snug">
+              Some resources are grouped under <strong className="font-semibold">Syllabus not set</strong> because their
+              category or row is missing a resolved syllabus paper. You can sync <code className="text-xs bg-black/20 px-1 rounded">subject_id</code> and{' '}
+              <code className="text-xs bg-black/20 px-1 rounded">syllabus_id</code> from the taxonomy (requires DB migration{' '}
+              <code className="text-xs">20260422_resources_discipline_linkage_repair.sql</code>).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRepairDisciplineLinkage}
+            disabled={isPending}
+            className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-md bg-amber-600/90 text-white hover:bg-amber-500 disabled:opacity-50 transition"
+          >
+            {isPending ? 'Repairing…' : 'Sync from categories'}
+          </button>
+        </div>
+      )}
 
       {/* ── Inline New Resource Form ─────────────────────────────────────── */}
       {showNewResource && (

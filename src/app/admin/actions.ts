@@ -562,6 +562,63 @@ export async function deleteBlogPost(id: string) {
   return { success: true };
 }
 
+type RepairLinkageRpcRow = {
+  rehomed_from_subject_papers_id?: number;
+  aligned_subject_from_category?: number;
+  synced_syllabus_from_category?: number;
+  error?: string;
+};
+
+/**
+ * Re-home `resources.subject_id` (via `subject_papers` bridge + category truth) and
+ * sync `resources.syllabus_id` from `categories` for one discipline (`subjects.id`).
+ * Requires migration `20260422_resources_discipline_linkage_repair.sql` (RPC).
+ */
+export async function repairDisciplineResourceLinkage(subjectId: string): Promise<
+  | { success: true; stats: { rehomedFromPapers: number; alignedSubject: number; syncedSyllabus: number } }
+  | { success: false; error: string }
+> {
+  const session = await requireSubjectAdmin(subjectId);
+  if (!session) {
+    return { success: false, error: 'Not authorised for this subject.' };
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.rpc('repair_discipline_resource_linkage', {
+    p_subject_id: subjectId,
+  });
+
+  if (error) {
+    const msg = error.message ?? String(error);
+    const missingFn =
+      /repair_discipline_resource_linkage|function .* does not exist|42883/i.test(msg) ||
+      (error as { code?: string }).code === '42883';
+    return {
+      success: false,
+      error: missingFn
+        ? 'Repair function is not installed. Apply migration 20260422_resources_discipline_linkage_repair.sql in Supabase, then retry.'
+        : msg,
+    };
+  }
+
+  const row = (data ?? {}) as RepairLinkageRpcRow;
+  if (row.error) {
+    return { success: false, error: String(row.error) };
+  }
+
+  invalidatePublicResourceCaches();
+  revalidatePath('/', 'layout');
+
+  return {
+    success: true,
+    stats: {
+      rehomedFromPapers: Number(row.rehomed_from_subject_papers_id ?? 0),
+      alignedSubject: Number(row.aligned_subject_from_category ?? 0),
+      syncedSyllabus: Number(row.synced_syllabus_from_category ?? 0),
+    },
+  };
+}
+
 /** Subject-scoped merged categories (service role). Use from client admin UIs instead of anon Supabase queries. */
 export async function listMergedCategoriesForSubjectAdmin(subjectId: string): Promise<
   | {

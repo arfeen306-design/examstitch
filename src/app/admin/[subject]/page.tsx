@@ -120,7 +120,10 @@ export default async function SubjectAdminPage({
     .eq('subject_papers.parent_subject_id', subject.id);
   const isUnconfiguredSubject = (topics ?? []).length === 0;
 
-  // Fetch all resources for this subject
+  // Fetch all resources for this discipline (`subjects.id`). With FK `resources_subject_id_fkey`
+  // → `subjects`, rows cannot legitimately use `subject_papers.id` here; an empty grid while
+  // Supabase still has rows usually means `subject_id` ≠ this parent or RLS/service path issues.
+  // Use `scripts/diagnose-resource-subject-linkage.sql` + migration `20260422_resources_discipline_linkage_repair.sql`.
   const { data: resources, count } = await supabase
     .from('resources')
     .select(
@@ -143,6 +146,12 @@ export default async function SubjectAdminPage({
 
   const allResources = (resources ?? []) as any[];
   const totalCount = count ?? 0;
+
+  if (process.env.NODE_ENV === 'development') {
+    console.info(
+      `[admin/${params.subject}] discipline subject_id=${subject.id} resources fetched=${allResources.length} (count header=${totalCount})`,
+    );
+  }
 
   const pdfCount = allResources.filter(r => r.content_type === 'pdf').length;
   const videoCount = allResources.filter(r => r.content_type === 'video').length;
