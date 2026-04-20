@@ -426,6 +426,10 @@ export interface MergedCategoryRow {
   slug: string;
   parent_id: string | null;
   sort_order: number | null;
+  /** `subject_papers.id` — O vs A (9709 vs 4024) lane for admin validation */
+  syllabus_id?: string | null;
+  /** `syllabi.id` — tier row for O-Level vs A-Level */
+  syllabus_tier_id?: string | null;
 }
 
 /**
@@ -442,7 +446,7 @@ export async function fetchMergedCategoriesForSubject(
   const [{ data: bySubject, error: e1 }, papersRes] = await Promise.all([
     supabase
       .from('categories')
-      .select('id, name, slug, parent_id, sort_order')
+      .select('id, name, slug, parent_id, sort_order, syllabus_id, syllabus_tier_id')
       .eq('subject_id', subjectId)
       .order('sort_order'),
     supabase.from('subject_papers').select('id').eq('parent_subject_id', subjectId),
@@ -458,12 +462,12 @@ export async function fetchMergedCategoriesForSubject(
     const [sylRes, legRes] = await Promise.all([
       supabase
         .from('categories')
-        .select('id, name, slug, parent_id, sort_order')
+        .select('id, name, slug, parent_id, sort_order, syllabus_id, syllabus_tier_id')
         .in('syllabus_id', paperIds)
         .order('sort_order'),
       supabase
         .from('categories')
-        .select('id, name, slug, parent_id, sort_order')
+        .select('id, name, slug, parent_id, sort_order, syllabus_id, syllabus_tier_id')
         .in('subject_id', paperIds)
         .order('sort_order'),
     ]);

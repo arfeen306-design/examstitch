@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getAdminSession } from '@/lib/supabase/guards';
 import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
 import { provisionSubjectPortal, fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
+import { oLevelToALevelSlug } from '@/config/navigation';
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
 import SubjectResourceManager from '@/components/admin/SubjectResourceManager';
 import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
@@ -92,7 +93,27 @@ export default async function SubjectAdminPage({
   if (mergeCatErr) {
     console.error('[admin subject portal] fetchMergedCategoriesForSubject:', mergeCatErr);
   }
-  const initialCategoryOptions = (mergedCategories ?? []).map((c) => ({ id: c.id, name: c.name }));
+  const initialCategoryOptions = (mergedCategories ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    parent_id: c.parent_id ?? null,
+    syllabus_id: c.syllabus_id ?? null,
+    syllabus_tier_id: c.syllabus_tier_id ?? null,
+  }));
+
+  const { data: subjectPapers } = await supabase
+    .from('subject_papers')
+    .select('id, slug')
+    .eq('parent_subject_id', subject.id);
+  const oLevelPaperId =
+    subjectPapers?.find((p) => p.slug === portal.taxonomyOLevelPaperSlug)?.id ?? null;
+  const aLevelSlug = oLevelToALevelSlug[portal.taxonomyOLevelPaperSlug];
+  const aLevelPaperId =
+    aLevelSlug && subjectPapers?.length
+      ? subjectPapers.find((p) => p.slug === aLevelSlug)?.id ?? null
+      : null;
+
   const { data: topics } = await supabase
     .from('topics')
     .select('id, subject_papers!inner(parent_subject_id)')
@@ -102,8 +123,21 @@ export default async function SubjectAdminPage({
   // Fetch all resources for this subject
   const { data: resources, count } = await supabase
     .from('resources')
-    .select('*, category:categories(id, name, slug)', { count: 'exact' })
+    .select(
+      `
+      *,
+      category:categories(
+        id, name, slug, parent_id, subject_id, syllabus_id, syllabus_tier_id,
+        parent:categories!categories_parent_id_fkey(id, name, slug),
+        syllabus:subject_papers(slug, code, name),
+        syllabus_tier:syllabi(id, tier, name)
+      )
+    `,
+      { count: 'exact' },
+    )
     .eq('subject_id', subject.id)
+    .order('syllabus_id', { ascending: true, nullsFirst: true })
+    .order('category_id', { ascending: true })
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
@@ -171,6 +205,9 @@ export default async function SubjectAdminPage({
           initialCategories={initialCategoryOptions}
           subjectSlug={portal.taxonomyOLevelPaperSlug}
           subjectId={subject.id}
+          disciplineName={subject.name}
+          oLevelPaperId={oLevelPaperId}
+          aLevelPaperId={aLevelPaperId}
           accentColor={portal.accentColor}
           showModuleTypeFilter={true}
         />

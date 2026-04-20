@@ -16,7 +16,7 @@
  *   />
  */
 
-import { useState, useTransition, useEffect } from 'react';
+import { Fragment, useState, useTransition, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   toggleResourceFlag,
@@ -32,7 +32,14 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { MODULE_TYPES } from '@/lib/constants';
-import { getSubjectLabel } from '@/config/navigation';
+import {
+  buildSyllabusModuleTopicHierarchy,
+  formatAdminModuleGroupHeader,
+  adminSyllabusSectionClass,
+  adminSyllabusSectionLabel,
+  getBaseTitle,
+  type AdminResourceRow,
+} from '@/lib/admin/resource-admin-hierarchy';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -52,7 +59,17 @@ export interface Resource {
   sort_order?: number | null;
   question_mapping?: any[] | null;
   topic: string | null;
-  category: { name: string; slug: string; id: string } | null;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    parent_id?: string | null;
+    syllabus_id?: string | null;
+    syllabus_tier_id?: string | null;
+    syllabus?: { slug: string; code: string; name?: string } | null;
+    syllabus_tier?: { id: string; tier: string; name: string } | null;
+    parent?: { id: string; name: string; slug: string } | null;
+  } | null;
   is_published: boolean;
   is_locked: boolean;
   is_watermarked: boolean;
@@ -80,98 +97,25 @@ interface Props {
   subjectId: string;
   accentColor?: string;
   showModuleTypeFilter?: boolean;
-  /** Server-resolved modules (parent + syllabus + legacy paper subject_id). */
-  initialCategories?: { id: string; name: string }[];
+  /** Server-resolved modules (merged categories with syllabus linkage). */
+  initialCategories?: Array<{
+    id: string;
+    name: string;
+    slug?: string;
+    parent_id?: string | null;
+    syllabus_id?: string | null;
+    syllabus_tier_id?: string | null;
+  }>;
+  /** Discipline display name from `subjects.name` (e.g. "Mathematics") — used in group headers */
+  disciplineName: string;
+  /** `subject_papers.id` for the portal's O-Level syllabus row — lane validation */
+  oLevelPaperId?: string | null;
+  /** `subject_papers.id` for the paired A-Level syllabus row */
+  aLevelPaperId?: string | null;
   /** Optional slot for a "New Resource" modal trigger — rendered in toolbar */
   renderAddButton?: (open: () => void) => React.ReactNode;
   /** Optional extra toolbar content (e.g. subject filter dropdown for Maths) */
   toolbarPrefix?: React.ReactNode;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Grouping helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function getBaseTitle(title: string): string {
-  return title
-    .replace(/\s*[—–-]\s*Part\s+\d+\s*$/i, '')
-    .replace(/\s*\(Part\s+\d+\)\s*$/i, '')
-    .replace(/\s+Part\s+\d+\s*$/i, '')
-    .trim();
-}
-
-interface TopicGroup {
-  baseTitle: string;
-  parts: Resource[];
-}
-
-interface PaperGroup {
-  subjectKey: string;
-  subjectLabel: string;
-  categoryId: string;
-  categoryName: string;
-  topicGroups: TopicGroup[];
-}
-
-const SUBJECT_ALIASES: Record<string, string> = {
-  maths: 'mathematics-4024',
-  mathematics: 'mathematics-4024',
-  math: 'mathematics-4024',
-  cs: 'computer-science-0478',
-};
-
-function normalizeSubjectSlug(raw: string): string {
-  const key = raw.trim().toLowerCase();
-  return SUBJECT_ALIASES[key] ?? key;
-}
-
-function resolveSubjectLabel(raw: string): string {
-  const normalized = normalizeSubjectSlug(raw);
-  return getSubjectLabel(normalized);
-}
-
-function buildHierarchy(resources: Resource[]): PaperGroup[] {
-  const paperMap = new Map<string, { subjectKey: string; subjectLabel: string; categoryId: string; categoryName: string; resources: Resource[] }>();
-  for (const r of resources) {
-    const subjectKey = normalizeSubjectSlug(r.subject || 'unknown-subject');
-    const subjectLabel = resolveSubjectLabel(r.subject || 'Unknown Subject');
-    const catId = r.category?.id ?? '__none__';
-    const catName = r.category?.name ?? 'Uncategorised';
-    const groupKey = `${subjectKey}::${catId}`;
-    if (!paperMap.has(groupKey)) {
-      paperMap.set(groupKey, {
-        subjectKey,
-        subjectLabel,
-        categoryId: catId,
-        categoryName: catName,
-        resources: [],
-      });
-    }
-    paperMap.get(groupKey)!.resources.push(r);
-  }
-
-  return Array.from(paperMap.values()).map(({ subjectKey, subjectLabel, categoryId, categoryName, resources: catResources }) => {
-    const sorted = [...catResources].sort((a, b) => {
-      const ao = a.sort_order ?? 9999;
-      const bo = b.sort_order ?? 9999;
-      if (ao !== bo) return ao - bo;
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    });
-
-    const groupMap = new Map<string, Resource[]>();
-    for (const r of sorted) {
-      const base = getBaseTitle(r.title);
-      if (!groupMap.has(base)) groupMap.set(base, []);
-      groupMap.get(base)!.push(r);
-    }
-
-    const topicGroups: TopicGroup[] = Array.from(groupMap.entries()).map(([baseTitle, parts]) => ({
-      baseTitle,
-      parts,
-    }));
-
-    return { subjectKey, subjectLabel, categoryId, categoryName, topicGroups };
-  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -216,8 +160,11 @@ function EditForm({ state, onChange }: { state: EditState; onChange: (s: EditSta
 
 export default function SubjectResourceManager({
   initialResources,
-  subjectSlug,
+  subjectSlug: _subjectSlug,
   subjectId,
+  disciplineName,
+  oLevelPaperId = null,
+  aLevelPaperId = null,
   accentColor = '#FF6B35',
   showModuleTypeFilter = true,
   initialCategories = [],
@@ -246,18 +193,20 @@ export default function SubjectResourceManager({
 
   // ── New Resource form state ───────────────────────────────────────────────
   const [showNewResource, setShowNewResource] = useState(false);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>(initialCategories);
+  const [categories, setCategories] = useState(initialCategories);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [newRes, setNewRes] = useState({
     title: '', source_url: '', worksheet_url: '', content_type: 'video' as 'video' | 'pdf' | 'worksheet',
-    category_id: '', module_type: '' as '' | typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
+    category_id: '',
+    syllabus_id: null as string | null,
+    module_type: '' as '' | typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
   });
 
   // Server already merged categories for this subject; only hit the network when empty (e.g. new portal).
   useEffect(() => {
     if (!showNewResource) return;
     if (initialCategories.length > 0) {
-      setCategories(initialCategories.map((c) => ({ id: c.id, name: c.name })));
+      setCategories(initialCategories);
       setCategoriesLoading(false);
       return;
     }
@@ -270,7 +219,14 @@ export default function SubjectResourceManager({
           showToast({ message: `Could not load modules: ${res.error}`, type: 'error' });
           return;
         }
-        const mapped = res.categories.map((c) => ({ id: c.id, name: c.name }));
+        const mapped = res.categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          parent_id: c.parent_id,
+          syllabus_id: c.syllabus_id,
+          syllabus_tier_id: c.syllabus_tier_id,
+        }));
         setCategories((prev) => (mapped.length > 0 ? mapped : prev));
       })
       .catch((e: unknown) => {
@@ -289,14 +245,14 @@ export default function SubjectResourceManager({
   }, [showNewResource, subjectId, showToast, initialCategories]);
 
   const openNewResourceForm = () => {
-    if (showModuleTypeFilter) setNewRes((s) => ({ ...s, module_type: '' }));
+    if (showModuleTypeFilter) setNewRes((s) => ({ ...s, module_type: '', syllabus_id: null }));
     setShowNewResource(true);
   };
 
   const toggleNewResourceForm = () => {
     setShowNewResource((open) => {
       if (open) return false;
-      if (showModuleTypeFilter) setNewRes((s) => ({ ...s, module_type: '' }));
+      if (showModuleTypeFilter) setNewRes((s) => ({ ...s, module_type: '', syllabus_id: null }));
       return true;
     });
   };
@@ -314,6 +270,28 @@ export default function SubjectResourceManager({
       showToast({ message: 'Select a module type (Video Topical or Solved Past Paper).', type: 'error' });
       return;
     }
+
+    const selectedCat = categories.find((c) => c.id === newRes.category_id);
+    const catSyllabusId = selectedCat?.syllabus_id ?? null;
+    if (oLevelPaperId && aLevelPaperId) {
+      if (!catSyllabusId) {
+        showToast({
+          message:
+            'This category has no syllabus paper link. Run Quick Setup or provision the portal so Paper/Grade rows carry syllabus_id.',
+          type: 'error',
+        });
+        return;
+      }
+      if (catSyllabusId !== oLevelPaperId && catSyllabusId !== aLevelPaperId) {
+        showToast({
+          message:
+            'This category is not linked to the O-Level or A-Level syllabus paper for this portal. Fix the category in Taxonomy Manager.',
+          type: 'error',
+        });
+        return;
+      }
+    }
+
     startTransition(() => {
       void (async () => {
         try {
@@ -329,6 +307,8 @@ export default function SubjectResourceManager({
             is_locked: false,
             module_type: moduleType,
           };
+          const resolvedSyllabusId = newRes.syllabus_id ?? catSyllabusId;
+          if (resolvedSyllabusId) payload.syllabus_id = resolvedSyllabusId;
           if (newRes.worksheet_url.trim()) payload.worksheet_url = newRes.worksheet_url.trim();
           payload.is_published = true;
 
@@ -342,6 +322,7 @@ export default function SubjectResourceManager({
               worksheet_url: '',
               content_type: 'video',
               category_id: '',
+              syllabus_id: null,
               module_type: '',
             });
             router.refresh();
@@ -386,20 +367,30 @@ export default function SubjectResourceManager({
 
   // ── Filtering ─────────────────────────────────────────────────────────────
 
-  const filtered = resources.filter(r => {
-    if (filterModuleType !== 'all' && r.module_type !== filterModuleType) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matches =
-        r.title.toLowerCase().includes(q) ||
-        r.category?.name.toLowerCase().includes(q) ||
-        r.topic?.toLowerCase().includes(q);
-      if (!matches) return false;
-    }
-    return true;
-  });
+  const filtered = useMemo(() => {
+    return resources.filter((r) => {
+      if (filterModuleType !== 'all' && r.module_type !== filterModuleType) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          r.title.toLowerCase().includes(q) ||
+          r.category?.name.toLowerCase().includes(q) ||
+          r.topic?.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [resources, filterModuleType, searchQuery]);
 
-  const paperGroups = buildHierarchy(filtered);
+  const syllabusBuckets = useMemo(
+    () => buildSyllabusModuleTopicHierarchy(filtered as AdminResourceRow[]),
+    [filtered],
+  );
+
+  const moduleGroupCount = useMemo(
+    () => syllabusBuckets.reduce((n, b) => n + b.modules.length, 0),
+    [syllabusBuckets],
+  );
 
   // ── Toggle flags ──────────────────────────────────────────────────────────
 
@@ -539,9 +530,8 @@ export default function SubjectResourceManager({
     const subLabel = isSub ? baseTitle : r.title;
 
     return (
-      <>
+      <Fragment key={r.id}>
         <tr
-          key={r.id}
           className={`transition-colors group
             ${editingId === r.id ? 'bg-gold-500/10' : isSub ? 'bg-blue-500/10 hover:bg-blue-500/15' : 'hover:bg-[var(--bg-elevated)]'}
             ${isSub ? 'border-l-4 border-blue-500/30' : ''}`}
@@ -803,7 +793,7 @@ export default function SubjectResourceManager({
             </td>
           </tr>
         )}
-      </>
+      </Fragment>
     );
   };
 
@@ -858,7 +848,8 @@ export default function SubjectResourceManager({
           )}
 
           <span className="text-sm text-[var(--text-muted)]">
-            {filtered.length} resource{filtered.length !== 1 ? 's' : ''} · {paperGroups.length} group{paperGroups.length !== 1 ? 's' : ''}
+            {filtered.length} resource{filtered.length !== 1 ? 's' : ''} · {moduleGroupCount} module
+            {moduleGroupCount !== 1 ? 's' : ''}
           </span>
         </div>
 
@@ -935,7 +926,15 @@ export default function SubjectResourceManager({
             ) : (
               <select
                 value={newRes.category_id}
-                onChange={e => setNewRes(s => ({ ...s, category_id: e.target.value }))}
+                onChange={e => {
+                  const id = e.target.value;
+                  const cat = categories.find(c => c.id === id);
+                  setNewRes(s => ({
+                    ...s,
+                    category_id: id,
+                    syllabus_id: cat?.syllabus_id ?? null,
+                  }));
+                }}
                 className="px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] focus:ring-2 outline-none"
               >
                 <option value="">Category *</option>
@@ -1005,41 +1004,59 @@ export default function SubjectResourceManager({
               <th className="w-32 px-3 py-3 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-[var(--bg-card)] divide-y divide-[var(--border-subtle)]">
-            {paperGroups.length === 0 ? (
+          {filtered.length === 0 ? (
+            <tbody className="bg-[var(--bg-card)] divide-y divide-[var(--border-subtle)]">
               <tr>
-                <td colSpan={9} className="py-12 text-center text-[var(--text-muted)] text-sm">No resources found.</td>
+                <td colSpan={9} className="py-12 text-center text-[var(--text-muted)] text-sm">
+                  No resources found.
+                </td>
               </tr>
-            ) : (
-              paperGroups.map(paper => (
-                <>
-                  {/* Paper group header */}
-                  <tr key={`header-${paper.categoryId}`} className="bg-[var(--bg-surface)] border-t border-b border-[var(--border-color)]">
-                    <td colSpan={9} className="px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        <FolderOpen className="w-4 h-4" style={{ color: accentColor }} />
-                        <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                          {paper.subjectLabel} → {paper.categoryName}
-                        </span>
-                        <span className="text-xs text-[var(--text-muted)]">
-                          · {paper.topicGroups.length} topic{paper.topicGroups.length !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* Topic groups */}
-                  {paper.topicGroups.map((group, topicIdx) => (
-                    <>
-                      {group.parts.map((part, partIdx) =>
-                        renderRow(part, topicIdx, group.parts.length > 1 ? partIdx : null, group.parts.length)
-                      )}
-                    </>
-                  ))}
-                </>
-              ))
-            )}
-          </tbody>
+            </tbody>
+          ) : (
+            syllabusBuckets.map(bucket => (
+              <tbody
+                key={bucket.syllabusSlug}
+                className={`bg-[var(--bg-card)] divide-y divide-[var(--border-subtle)] ${adminSyllabusSectionClass(bucket.syllabusSlug)}`}
+              >
+                <tr className="section-label">
+                  <td colSpan={9} className="px-4 py-2 border-b border-[var(--border-color)]/60">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                      {adminSyllabusSectionLabel(bucket.syllabusSlug)}
+                    </span>
+                  </td>
+                </tr>
+                {bucket.modules.map(module => (
+                  <Fragment key={`${bucket.syllabusSlug}::${module.categoryId}`}>
+                    <tr className="bg-[var(--bg-surface)] border-t border-b border-[var(--border-color)]">
+                      <td colSpan={9} className="px-4 py-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <FolderOpen className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
+                          <span className="text-xs font-bold tracking-wide text-[var(--text-primary)]">
+                            {formatAdminModuleGroupHeader(disciplineName, bucket, module)}
+                          </span>
+                          <span className="text-xs text-[var(--text-muted)]">
+                            · {module.topicClusters.length} topic{module.topicClusters.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    {module.topicClusters.map((cluster, topicIdx) => (
+                      <Fragment key={cluster.rootId}>
+                        {cluster.parts.map((part, partIdx) =>
+                          renderRow(
+                            part as Resource,
+                            topicIdx,
+                            cluster.parts.length > 1 ? partIdx : null,
+                            cluster.parts.length,
+                          ),
+                        )}
+                      </Fragment>
+                    ))}
+                  </Fragment>
+                ))}
+              </tbody>
+            ))
+          )}
         </table>
       </div>
     </div>

@@ -572,6 +572,8 @@ export async function listMergedCategoriesForSubjectAdmin(subjectId: string): Pr
         slug: string;
         parent_id: string | null;
         sort_order: number | null;
+        syllabus_id: string | null;
+        syllabus_tier_id: string | null;
       }[];
     }
   | { ok: false; error: string }
@@ -593,6 +595,8 @@ export async function listMergedCategoriesForSubjectAdmin(subjectId: string): Pr
       slug: c.slug,
       parent_id: c.parent_id,
       sort_order: c.sort_order,
+      syllabus_id: c.syllabus_id ?? null,
+      syllabus_tier_id: c.syllabus_tier_id ?? null,
     })),
   };
 }

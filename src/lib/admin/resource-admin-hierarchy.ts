@@ -24,6 +24,8 @@ export interface AdminResourceRow {
     syllabus_tier_id?: string | null;
     syllabus?: { slug: string; code: string; name?: string } | null;
     syllabus_tier?: { id: string; tier: string; name: string } | null;
+    /** AS Level / A2 Level / Grade row when this category is a leaf paper or grade */
+    parent?: { id: string; name: string; slug: string } | null;
   } | null;
   is_published: boolean;
   is_locked: boolean;
@@ -154,16 +156,14 @@ export function buildSyllabusModuleTopicHierarchy(resources: AdminResourceRow[])
       });
     }
 
-    modules.sort((a, b) => a.categoryName.localeCompare(b.categoryName));
-
     result.push({
       syllabusSlug,
       syllabusLabel: label,
-      modules,
+      modules: sortModulesWithinSyllabusBucket(modules),
     });
   }
 
-  result.sort((a, b) => a.syllabusLabel.localeCompare(b.syllabusLabel));
+  result.sort(sortSyllabusBucketsForAdmin);
 
   return result;
 }
@@ -180,4 +180,92 @@ export function filterResourcesBySyllabusSlug(
     if (filter === 'tier:alevel' && r.category?.syllabus_tier?.tier === 'alevel') return true;
     return false;
   });
+}
+
+/** Sort O-Level programme buckets before A-Level / 9709-style papers for admin tables */
+export function sortSyllabusBucketsForAdmin(a: SyllabusBucket, b: SyllabusBucket): number {
+  const rank = (slug: string) => {
+    if (slug === 'tier:olevel') return 0;
+    if (/4024|0580|5054|5070|5090|0478|1123|2059|3248|5054/i.test(slug)) return 1;
+    if (slug === 'tier:alevel') return 2;
+    if (/9709|9702|9618|9701|9700/i.test(slug)) return 3;
+    if (slug === 'unspecified') return 99;
+    return 5;
+  };
+  const d = rank(a.syllabusSlug) - rank(b.syllabusSlug);
+  if (d !== 0) return d;
+  return a.syllabusLabel.localeCompare(b.syllabusLabel);
+}
+
+function moduleRank(slug: string): number {
+  if (/^grade-9$/i.test(slug)) return 1;
+  if (/^grade-10$/i.test(slug)) return 2;
+  if (/^grade-11$/i.test(slug)) return 3;
+  if (/^as-level$/i.test(slug)) return 10;
+  if (/^a2-level$/i.test(slug)) return 11;
+  return 50;
+}
+
+/** Within one syllabus bucket: grades → AS/A2 roots → paper leaves (by slug) */
+export function sortModulesWithinSyllabusBucket(modules: ModuleBucket[]): ModuleBucket[] {
+  return [...modules].sort((a, b) => {
+    const sa = a.topicClusters[0]?.parts[0]?.category?.slug ?? '';
+    const sb = b.topicClusters[0]?.parts[0]?.category?.slug ?? '';
+    const ra = moduleRank(sa) - moduleRank(sb);
+    if (ra !== 0) return ra;
+    return a.categoryName.localeCompare(b.categoryName);
+  });
+}
+
+/**
+ * One-line header mirroring public portal hierarchy:
+ * `Mathematics (9709) → AS Level → Paper 1 …` or `Mathematics (4024/0580) → Grade 11`.
+ */
+export function formatAdminModuleGroupHeader(
+  disciplineName: string,
+  syllabusBucket: SyllabusBucket,
+  module: ModuleBucket,
+): string {
+  const anchor = module.topicClusters[0]?.parts[0];
+  const cat = anchor?.category;
+  const paper = cat?.syllabus;
+  const parent = cat?.parent;
+
+  let programme = disciplineName;
+  const code = paper?.code?.trim();
+  if (code) {
+    programme = `${disciplineName} (${code})`;
+  } else if (paper?.slug) {
+    const digits = paper.slug.match(/(\d{4})/g);
+    const last = digits?.[digits.length - 1];
+    if (last === '9709') programme = `${disciplineName} (9709)`;
+    else if (last === '4024' || last === '0580') programme = `${disciplineName} (4024/0580)`;
+    else if (last) programme = `${disciplineName} (${last})`;
+    else programme = `${disciplineName} — ${paper.name ?? paper.slug}`;
+  } else if (syllabusBucket.syllabusSlug === 'tier:olevel') {
+    programme = `${disciplineName} (O-Level)`;
+  } else if (syllabusBucket.syllabusSlug === 'tier:alevel') {
+    programme = `${disciplineName} (A-Level)`;
+  }
+
+  const mid = parent?.name ? `${parent.name} → ` : '';
+  return `${programme} → ${mid}${module.categoryName}`;
+}
+
+/** Table section chrome: visually separate O-Level block from A-Level / 9709 block */
+export function adminSyllabusSectionClass(syllabusSlug: string): string {
+  const isOLane =
+    syllabusSlug === 'tier:olevel' ||
+    /4024|0580|5054|5070|5090|0478|1123|2059|3248/i.test(syllabusSlug);
+  if (isOLane) {
+    return 'border-t-4 border-t-cyan-500/50 bg-cyan-950/10 [&>tr.section-label>td]:bg-cyan-950/40';
+  }
+  return 'border-t-4 border-t-indigo-500/45 bg-indigo-950/10 [&>tr.section-label>td]:bg-indigo-950/35';
+}
+
+export function adminSyllabusSectionLabel(syllabusSlug: string): string {
+  const isOLane =
+    syllabusSlug === 'tier:olevel' ||
+    /4024|0580|5054|5070|5090|0478|1123|2059|3248/i.test(syllabusSlug);
+  return isOLane ? 'O-Level / IGCSE programme' : 'A-Level programme';
 }

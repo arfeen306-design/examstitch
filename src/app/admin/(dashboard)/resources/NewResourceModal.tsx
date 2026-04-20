@@ -255,6 +255,15 @@ export default function NewResourceModal({
       return;
     }
     const syllabusPaperId = selectedCategory?.syllabus_id ?? undefined;
+    if (!syllabusPaperId) {
+      showToast({
+        message:
+          'The selected category has no syllabus paper (syllabus_id). Pick a grade or paper row, or run portal provisioning / Quick Setup so categories are linked to 4024/0580 vs 9709 papers.',
+        type: 'error',
+      });
+      setLoading(false);
+      return;
+    }
 
     if (moduleType === MODULE_TYPES.VIDEO_TOPICAL) {
       // Must have at least a video URL

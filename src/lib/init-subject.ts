@@ -89,16 +89,16 @@ async function upsertCategory(payload: {
 }
 
 /**
- * One-click subject bootstrap (**Quick Setup**) for empty portals.
+ * Legacy category bootstrap: O-Level grades, AS/A2 roots, and generic `paper-1`…`paper-5` rows.
  *
- * Creates the **category** tree (O-Level grades, AS/A2 shells, paper slugs) so both
- * public URL families resolve (e.g. `…/video-lectures` and `…/past-papers` under each paper slug).
- * Expect an empty grid until resources exist — not a 404 if the slug was provisioned.
+ * **Quick Setup** in the subject admin calls `provisionSubjectPortal` (`subject-provisioner`)
+ * instead, which seeds the same structural tiers **and** links leaf categories to the correct
+ * `subject_papers` rows (`syllabus_id`) so the admin grid can split 4024/0580 vs 9709 lanes.
  *
- * **Parameters:** `subjectId` is the UUID from the `subjects` table (not the public URL slug).
- * Public paths use slugs such as `physics-9702` from navigation config, not bare `physics`.
+ * Prefer `provisionSubjectPortal` for new work; keep `initSubject` only where a
+ * minimal slug set is required without portal config.
  *
- * **Lanes:** Routes load rows by `module_type`. New resources must set `module_type` to
+ * **Lanes:** Public routes load rows by `module_type`. New resources must set `module_type` to
  * {@link PORTAL_RESOURCE_STREAMS.videoLectures} or {@link PORTAL_RESOURCE_STREAMS.solvedPastPapers};
  * this function does not insert resource rows.
  */

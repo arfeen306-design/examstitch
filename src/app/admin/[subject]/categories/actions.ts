@@ -4,12 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
 import { provisionSubjectPortal } from '@/lib/db/subject-provisioner';
-import { initSubject } from '@/lib/init-subject';
 import { requireSubjectAdmin } from '@/lib/supabase/guards';
 import {
   ROUTE_TO_PORTAL,
   getPortalDbSubjectSlug,
   PORTAL_ROUTE_SEGMENTS,
+  ADMIN_PORTALS,
 } from '@/config/admin-portals';
 
 function normalizeCategorySlug(raw: string): string {
@@ -187,36 +187,44 @@ export async function quickSetupSubjectPortal(
     return { success: false, error: 'Not authorised for this subject.' };
   }
 
-  const result = await initSubject(subjectId);
-  if (!result.success) {
-    return { success: false, error: result.error };
+  const portal = ADMIN_PORTALS.find((p) => p.routeSegment === portalRouteSegment);
+  if (!portal) {
+    return { success: false, error: 'Invalid subject portal.' };
   }
 
   const supabase = createAdminClient();
-  const expectedSlugs = [
-    'grade-9',
-    'grade-10',
-    'grade-11',
-    'as-level',
-    'a2-level',
-    'paper-1',
-    'paper-2',
-    'paper-3',
-    'paper-4',
-    'paper-5',
-  ];
+  const { data: portalSubject, error: portalSubjectErr } = await supabase
+    .from('subjects')
+    .select('id')
+    .eq('slug', getPortalDbSubjectSlug(portal))
+    .maybeSingle();
+
+  if (portalSubjectErr) {
+    return { success: false, error: portalSubjectErr.message };
+  }
+  if (!portalSubject?.id || portalSubject.id !== subjectId) {
+    return {
+      success: false,
+      error: 'This dashboard subject does not match the portal route. Open the correct subject admin.',
+    };
+  }
+
+  const result = await provisionSubjectPortal(supabase, portalRouteSegment);
+  if (!result.success) {
+    return { success: false, error: result.error ?? 'Provisioning failed.' };
+  }
 
   const { data: verificationRows, error: verificationError } = await supabase
     .from('categories')
     .select('id')
     .eq('subject_id', subjectId)
-    .in('slug', expectedSlugs);
+    .limit(1);
 
   if (verificationError) {
     return { success: false, error: verificationError.message };
   }
   if (!verificationRows || verificationRows.length === 0) {
-    return { success: false, error: 'Quick setup ran but no categories were created for this subject.' };
+    return { success: false, error: 'Quick setup ran but no categories were found for this subject.' };
   }
 
   revalidateTag('categories');
@@ -224,5 +232,5 @@ export async function quickSetupSubjectPortal(
   revalidatePath(`/admin/${portalRouteSegment}`);
   revalidatePath(`/admin/${portalRouteSegment}/categories`);
   revalidatePath('/', 'layout');
-  return { success: true, created: result.created };
+  return { success: true, created: result.categoriesCreated ?? 0 };
 }
