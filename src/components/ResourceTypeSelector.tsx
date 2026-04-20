@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * Card links use relative `href` segments (`video-lectures`, `past-papers`).
+ * Those paths load data filtered by `PORTAL_RESOURCE_STREAMS` in `@/lib/init-subject`
+ * (video_topical vs solved_past_paper) — keep this mapping when adding subjects.
+ */
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FileText, PlayCircle, ArrowRight, type LucideIcon } from 'lucide-react';

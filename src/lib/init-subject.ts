@@ -1,11 +1,26 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { MODULE_TYPES } from '@/lib/constants';
 
-/** Canonical portal streams — every provisioned subject inherits the same two module_type lanes. */
+/**
+ * **Single source of truth** for public subject portals: every provisioned subject
+ * (Mathematics, Physics, Chemistry, CS, …) exposes exactly these two `resources.module_type` lanes.
+ *
+ * - Use `PORTAL_RESOURCE_STREAMS.videoLectures` for topic video + worksheet streams (routes like `…/video-lectures`).
+ * - Use `PORTAL_RESOURCE_STREAMS.solvedPastPapers` for past-paper streams (routes like `…/past-papers`).
+ *
+ * Provisioning (`initSubjectHierarchy` below) does not duplicate these strings — imports should
+ * reference this object so new subjects inherit the same dual-lane contract automatically.
+ */
 export const PORTAL_RESOURCE_STREAMS = {
   videoLectures: MODULE_TYPES.VIDEO_TOPICAL,
   solvedPastPapers: MODULE_TYPES.SOLVED_PAST_PAPER,
 } as const;
+
+export type PortalResourceStreamKey = keyof typeof PORTAL_RESOURCE_STREAMS;
+
+/** Union of the two DB `module_type` values used on public STEM portals */
+export type PortalResourceStreamModuleType =
+  (typeof PORTAL_RESOURCE_STREAMS)[PortalResourceStreamKey];
 
 type InitResult =
   | { success: true; created: number }
@@ -74,7 +89,12 @@ async function upsertCategory(payload: {
 
 /**
  * One-click subject bootstrap for empty portals.
- * Creates Grade 9-11 + Paper 1-5 structure, grouped by O/A-level tiers.
+ *
+ * Creates the **category** tree (O-Level grades, AS/A2 shells, paper slugs) so both
+ * public URL families exist: `…/video-lectures` and `…/past-papers`. Those routes
+ * load resources filtered by `module_type`; new resources must use
+ * {@link PORTAL_RESOURCE_STREAMS} at insert time — provisioning does not insert
+ * resource rows or duplicate lane strings.
  */
 export async function initSubject(subjectId: string): Promise<InitResult> {
   try {

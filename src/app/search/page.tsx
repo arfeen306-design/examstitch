@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { Search, Play, FileText, BookOpen } from 'lucide-react';
 import { searchAllContent, getSuggestions } from '@/lib/supabase/queries';
 import type { Resource, MediaWidget, BlogPost, Skill, SkillLesson } from '@/lib/supabase/types';
-import { MODULE_TYPES, CONTENT_TYPES } from '@/lib/constants';
+import { CONTENT_TYPES, PORTAL_RESOURCE_CTA_PRIMARY, PORTAL_RESOURCE_CTA_SECONDARY } from '@/lib/constants';
+import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
 
 
 // ── Result card ────────────────────────────────────────────────────────────────
@@ -16,7 +17,7 @@ type SearchResource = Resource & {
 
 function ResultCard({ resource }: { resource: SearchResource }) {
   const isVideo = resource.content_type === CONTENT_TYPES.VIDEO;
-  const isPaper = resource.module_type === MODULE_TYPES.SOLVED_PAST_PAPER;
+  const isPaper = resource.module_type === PORTAL_RESOURCE_STREAMS.solvedPastPapers;
   const hasWorksheet = !!resource.worksheet_url;
 
   return (
@@ -44,34 +45,16 @@ function ResultCard({ resource }: { resource: SearchResource }) {
       {/* Right: action pills */}
       <div className="flex items-center gap-2 shrink-0 pl-11 sm:pl-0">
         {isPaper ? (
-          <Link
-            href={`/view/${resource.id}`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5
-                       bg-blue-600 hover:bg-blue-500 text-white
-                       text-xs font-semibold rounded-full shadow-sm transition-all"
-          >
+          <Link href={`/view/${resource.id}`} className={PORTAL_RESOURCE_CTA_PRIMARY}>
             <FileText className="w-3 h-3" /> View Paper
           </Link>
         ) : (
           <>
-            {/* Watch Video pill — always shown for video_topical */}
-            <Link
-              href={`/view/${resource.id}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5
-                         bg-gold-500 hover:bg-gold-400 text-navy-900
-                         text-xs font-semibold rounded-full shadow-sm transition-all whitespace-nowrap"
-            >
-              <Play className="w-3 h-3 fill-navy-900" /> Watch Video
+            <Link href={`/view/${resource.id}`} className={PORTAL_RESOURCE_CTA_PRIMARY}>
+              <Play className="w-3 h-3 fill-amber-400/90" /> Watch Video
             </Link>
-
-            {/* Worksheet pill — only shown if worksheet_url exists */}
             {hasWorksheet && (
-              <Link
-                href={`/view/${resource.id}?mode=worksheet`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5
-                border border-[var(--border-color)]
-                           text-xs font-semibold rounded-full shadow-sm transition-all whitespace-nowrap" style={{ backgroundColor: 'var(--bg-card)' }}
-              >
+              <Link href={`/view/${resource.id}?mode=worksheet`} className={PORTAL_RESOURCE_CTA_SECONDARY}>
                 <FileText className="w-3 h-3" /> Worksheet
               </Link>
             )}

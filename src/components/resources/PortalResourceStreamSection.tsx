@@ -5,10 +5,8 @@ import type { ResourceItem } from '@/components/resources/ResourceGrid';
 import { getCategoryBySlug, getPublishedResourcesByModuleStream } from '@/lib/supabase/queries';
 import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
 import type { Resource } from '@/lib/supabase/types';
-import { MODULE_TYPES } from '@/lib/constants';
 import { isAdminRequest } from '@/lib/admin-mode';
-
-type ModuleStream = typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
+import type { PortalResourceStreamModuleType } from '@/lib/init-subject';
 
 function toPastPaperItem(resource: Resource, basePath: string, adminBypass: boolean): ResourceItem {
   const examSeries = (resource as Resource & {
@@ -33,7 +31,7 @@ export type PortalResourceStreamLayout = 'video-modules' | 'past-paper-cards';
 interface PortalResourceStreamSectionProps {
   subjectSlug: string;
   categorySlug: string;
-  moduleType: ModuleStream;
+  moduleType: PortalResourceStreamModuleType;
   layout: PortalResourceStreamLayout;
   /** Base path for demo / legacy href construction on olevel past papers */
   basePath?: string;

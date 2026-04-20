@@ -17,6 +17,7 @@ import { createAnonClient } from './anon';
 import { createAdminClient } from './admin';
 import { unstable_cache } from 'next/cache';
 import { CACHE_TIMES, MODULE_TYPES, CONTENT_TYPES } from '@/lib/constants';
+import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
 import { oLevelGrades } from '@/config/navigation';
 
 // Cache aliases for readability
@@ -195,7 +196,7 @@ export async function getCategoryBySlug(
 export async function getResourcesByCategory(
   categoryId: string,
   contentType?: 'video' | 'pdf' | 'worksheet',
-  moduleType?: typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
+  moduleType?: (typeof PORTAL_RESOURCE_STREAMS)['videoLectures'] | (typeof PORTAL_RESOURCE_STREAMS)['solvedPastPapers'],
 ): Promise<Resource[]> {
   const cacheKey = `resources-${categoryId}-${contentType ?? 'all'}-${moduleType ?? 'all'}`;
   return unstable_cache(
@@ -228,7 +229,7 @@ export async function getResourcesByCategory(
  */
 export async function getPublishedResourcesByModuleStream(
   categoryId: string,
-  moduleType: typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
+  moduleType: (typeof PORTAL_RESOURCE_STREAMS)['videoLectures'] | (typeof PORTAL_RESOURCE_STREAMS)['solvedPastPapers'],
 ): Promise<Resource[]> {
   const cacheKey = `resources-stream-${categoryId}-${moduleType}`;
   return unstable_cache(
@@ -292,7 +293,7 @@ export async function getTopicsByCategory(
         .select('topic')
         .eq('category_id', categoryId)
         .eq('is_published', true)
-        .eq('module_type', MODULE_TYPES.VIDEO_TOPICAL)
+        .eq('module_type', PORTAL_RESOURCE_STREAMS.videoLectures)
         .not('topic', 'is', null);
       if (error) throw new Error(`getTopicsByCategory(${categoryId}): ${error.message}`);
 
@@ -708,8 +709,8 @@ export interface CategorisedResults {
 export async function searchResourcesCategorised(query: string): Promise<CategorisedResults> {
   const all = await searchResources(query, 80);
   return {
-    videoTopical: all.filter((r) => (r as { module_type?: string }).module_type === MODULE_TYPES.VIDEO_TOPICAL),
-    solvedPapers: all.filter((r) => (r as { module_type?: string }).module_type === MODULE_TYPES.SOLVED_PAST_PAPER),
+    videoTopical: all.filter((r) => (r as { module_type?: string }).module_type === PORTAL_RESOURCE_STREAMS.videoLectures),
+    solvedPapers: all.filter((r) => (r as { module_type?: string }).module_type === PORTAL_RESOURCE_STREAMS.solvedPastPapers),
     total: all.length,
   };
 }
@@ -928,10 +929,10 @@ export async function searchAllContent(query: string, limitPerSection = 20): Pro
         .map(({ _score, ...r }) => r as Resource);
 
       const videoTopical = rankedResources.filter(
-        (r) => (r as { module_type?: string }).module_type === MODULE_TYPES.VIDEO_TOPICAL,
+        (r) => (r as { module_type?: string }).module_type === PORTAL_RESOURCE_STREAMS.videoLectures,
       );
       const solvedPapers = rankedResources.filter(
-        (r) => (r as { module_type?: string }).module_type === MODULE_TYPES.SOLVED_PAST_PAPER,
+        (r) => (r as { module_type?: string }).module_type === PORTAL_RESOURCE_STREAMS.solvedPastPapers,
       );
 
       const rankedMedia = (mediaData as unknown as MediaWidget[])

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Play, FileText, BookOpen, ChevronDown, Layers, Lock } from 'lucide-react';
+import { PORTAL_RESOURCE_CTA_PRIMARY, PORTAL_RESOURCE_CTA_SECONDARY } from '@/lib/constants';
 
 export interface LearningModule {
   id: string;
@@ -40,17 +41,8 @@ const IDX_MAIN =
 
 const TITLE_MAIN = 'text-sm font-semibold text-slate-100 truncate flex items-center gap-2';
 
-const BTN_WATCH =
-  'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap ' +
-  'border border-amber-400/60 text-amber-400 bg-transparent ' +
-  'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/80 hover:text-amber-300 ' +
-  'hover:shadow-[0_0_18px_rgba(251,191,36,0.14)]';
-
-const BTN_WORKSHEET =
-  'inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap ' +
-  'border border-amber-400/55 text-amber-400 bg-transparent ' +
-  'transition-all duration-200 hover:bg-amber-400/10 hover:border-amber-300/75 hover:text-amber-300 ' +
-  'hover:shadow-[0_0_14px_rgba(251,191,36,0.1)]';
+const BTN_WATCH = PORTAL_RESOURCE_CTA_PRIMARY;
+const BTN_WORKSHEET = PORTAL_RESOURCE_CTA_SECONDARY;
 
 // ── Grouping logic ────────────────────────────────────────────────────────────
 
@@ -148,10 +140,7 @@ function ActionPills({ mod }: { mod: LearningModule }) {
   if (mod.isLocked) {
     return (
       <div className="flex flex-wrap items-center gap-2 shrink-0">
-        <Link
-          href={`/auth/login?redirectTo=${redirectTo}`}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap border border-amber-400/60 text-amber-400 bg-transparent hover:bg-amber-400/10 hover:text-amber-300 transition"
-        >
+        <Link href={`/auth/login?redirectTo=${redirectTo}`} className={PORTAL_RESOURCE_CTA_PRIMARY}>
           <Lock className="w-3 h-3" />
           Members Only
         </Link>
@@ -162,7 +151,7 @@ function ActionPills({ mod }: { mod: LearningModule }) {
   return (
     <div className="flex flex-wrap items-center gap-2 shrink-0">
       <Link href={`/view/${mod.id}`} className={BTN_WATCH}>
-        <Play className="w-3 h-3 fill-amber-200/90" />
+        <Play className="w-3 h-3 fill-amber-400/90" />
         Watch Video
       </Link>
       {mod.worksheetUrl && (

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { X, PlayCircle, FileText, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
-import { MODULE_TYPES, CONTENT_TYPES } from '@/lib/constants';
+import { MODULE_TYPES, CONTENT_TYPES, PORTAL_RESOURCE_CTA_PRIMARY_MD } from '@/lib/constants';
 
 interface SubjectRow {
   id: string;
@@ -637,7 +637,7 @@ export default function NewResourceModal({
               <button
                 type="submit"
                 disabled={loading || !moduleType}
-                className="px-4 py-2 text-sm font-medium text-[var(--text-primary)] rounded-lg transition disabled:opacity-50 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700"
+                className={PORTAL_RESOURCE_CTA_PRIMARY_MD}
               >
                 {loading ? 'Processing...' : keepOpen ? '✓ Save & Next' : moduleType === MODULE_TYPES.VIDEO_TOPICAL ? 'Link Video + Topical' : 'Link Past Paper'}
               </button>
