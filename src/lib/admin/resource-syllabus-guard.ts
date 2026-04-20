@@ -78,9 +78,17 @@ export type BatchRowForGuard = {
   _rowIndex: number;
 };
 
+export type AssertResourceSyllabusBatchOptions = {
+  /** When the caller already loaded the category tree (e.g. bulk insert). */
+  preloadedClosure?: Map<string, CategoryGuardRow>;
+  /** When the caller already resolved discipline subjects for that closure. */
+  precomputedDisciplineByCategoryId?: Map<string, string>;
+};
+
 export async function assertResourceSyllabusBatch(
   supabase: AdminSupabase,
   rows: BatchRowForGuard[],
+  options?: AssertResourceSyllabusBatchOptions,
 ): Promise<{ ok: true; resolvedSyllabusIds: Map<number, string> } | { ok: false; error: string }> {
   const resolvedSyllabusIds = new Map<number, string>();
 
@@ -91,7 +99,7 @@ export async function assertResourceSyllabusBatch(
 
   let byId: Map<string, CategoryGuardRow>;
   try {
-    byId = await loadCategoryClosure(supabase, catIds);
+    byId = options?.preloadedClosure ?? (await loadCategoryClosure(supabase, catIds));
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Failed to load categories.' };
   }
@@ -102,16 +110,18 @@ export async function assertResourceSyllabusBatch(
     }
   }
 
-  const disciplineByCatId = await resolveDisciplineSubjectIdByCategoryRow(
-    supabase,
-    [...byId.values()].map((c) => ({
-      id: c.id,
-      subject_id: c.subject_id,
-      syllabus_id: c.syllabus_id,
-      syllabus_tier_id: c.syllabus_tier_id,
-      parent_id: c.parent_id,
-    })),
-  );
+  const disciplineByCatId =
+    options?.precomputedDisciplineByCategoryId ??
+    (await resolveDisciplineSubjectIdByCategoryRow(
+      supabase,
+      [...byId.values()].map((c) => ({
+        id: c.id,
+        subject_id: c.subject_id,
+        syllabus_id: c.syllabus_id,
+        syllabus_tier_id: c.syllabus_tier_id,
+        parent_id: c.parent_id,
+      })),
+    ));
 
   const paperIds = new Set<string>();
   for (const row of rows) {

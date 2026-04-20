@@ -80,15 +80,30 @@ export default function CategoriesPage() {
       return;
     }
 
-    const withCounts: CategoryRow[] = await Promise.all(
-      cats.map(async (cat) => {
-        const { count } = await supabase
-          .from('resources')
-          .select('id', { count: 'exact', head: true })
-          .eq('category_id', cat.id);
-        return { ...cat, resource_count: count ?? 0 };
-      })
-    );
+    const catIds = cats.map((c) => c.id);
+    const { data: countRows, error: countErr } = await supabase
+      .from('resources')
+      .select('category_id')
+      .eq('subject_id', subject.id)
+      .in('category_id', catIds);
+
+    if (countErr) {
+      showToast({ message: `Could not load resource counts: ${countErr.message}`, type: 'error' });
+      setCategories(cats.map((c) => ({ ...c, resource_count: 0 })));
+      setLoading(false);
+      return;
+    }
+
+    const countByCategory = new Map<string, number>();
+    for (const row of countRows ?? []) {
+      if (row.category_id) {
+        countByCategory.set(row.category_id, (countByCategory.get(row.category_id) ?? 0) + 1);
+      }
+    }
+    const withCounts: CategoryRow[] = cats.map((cat) => ({
+      ...cat,
+      resource_count: countByCategory.get(cat.id) ?? 0,
+    }));
 
     setCategories(withCounts);
     setLoading(false);

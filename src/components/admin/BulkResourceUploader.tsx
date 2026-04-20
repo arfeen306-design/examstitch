@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef, useCallback } from 'react';
+import { useState, useTransition, useRef, useCallback, useMemo } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle, X, Loader2 } from 'lucide-react';
 import { CONTENT_TYPES, MODULE_TYPES } from '@/lib/constants';
 
@@ -100,7 +100,7 @@ export default function BulkResourceUploader({
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const validSlugs = new Set(categories.map(c => c.slug));
+  const validSlugs = useMemo(() => new Set(categories.map((c) => c.slug)), [categories]);
 
   const processFile = useCallback((file: File) => {
     setResult(null);

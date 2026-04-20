@@ -1,6 +1,7 @@
 'use client';
 
-import { Fragment, useMemo, useState, useTransition, useRef } from 'react';
+import { Fragment, useMemo, useState, useTransition, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toggleResourceFlag, deleteResource, updateResource, bulkInsertResources } from '../../actions';
 import {
   Plus, Trash2, Pencil, X, Check, ExternalLink, ListPlus,
@@ -92,7 +93,11 @@ function EditForm({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ResourceGridClient({ initialResources }: { initialResources: Resource[] }) {
+  const router = useRouter();
   const [resources, setResources] = useState<Resource[]>(initialResources);
+  useEffect(() => {
+    setResources(initialResources);
+  }, [initialResources]);
   const [filterSyllabus, setFilterSyllabus] = useState<string>('all');
   const [filterModuleType, setFilterModuleType] = useState<string>('all');
   const [collapsedSyllabi, setCollapsedSyllabi] = useState<Set<string>>(new Set());
@@ -317,7 +322,7 @@ export default function ResourceGridClient({ initialResources }: { initialResour
         if (result.success) {
           showToast({ message: 'Sub-topic added!', type: 'success' });
           cancelSubtopic();
-          window.location.reload();
+          router.refresh();
         } else showToast({ message: result.error || 'Failed to add sub-topic', type: 'error' });
       } catch (err: unknown) {
         showToast({ message: 'Failed: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });

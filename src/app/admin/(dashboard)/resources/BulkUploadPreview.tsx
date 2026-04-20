@@ -28,9 +28,9 @@ export default function BulkUploadPreview() {
       // Actually upload all data
       try {
         const fullData = JSON.parse(jsonInput);
-        const { success, error } = await bulkInsertResources(fullData);
-        if (!success) {
-          setError(error || 'Failed to bulk insert');
+        const insertResult = await bulkInsertResources(fullData);
+        if (!insertResult.success) {
+          setError(insertResult.error || 'Failed to bulk insert');
         } else {
           setJsonInput('');
           setParsedData([]);

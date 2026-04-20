@@ -11,6 +11,7 @@ import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-polic
 import {
   assertResourceSyllabusBatch,
   loadCategoryClosure,
+  type AssertResourceSyllabusBatchOptions,
   type CategoryGuardRow,
 } from '@/lib/admin/resource-syllabus-guard';
 import { resolveDisciplineSubjectIdByCategoryRow } from '@/lib/admin/resolve-category-discipline-subject';
@@ -24,32 +25,64 @@ function inferSourceTypeFromUrl(url: string): 'youtube' | 'google_drive' | 'exte
 }
 
 /**
- * Revalidate all public-facing resource pages so new/updated content
- * appears instantly without a manual rebuild.
+ * Public resource lists use `unstable_cache` / `fetch` tagged `resources` in
+ * `src/lib/supabase/queries.ts`. Tag invalidation updates all of them in one
+ * cheap step — avoid dozens of `revalidatePath` calls per toggle/insert (that
+ * was dominating admin latency).
  */
-function revalidateResourcePaths() {
+function invalidatePublicResourceCaches() {
   revalidateTag('resources');
-  // Admin pages
-  revalidatePath('/admin/resources');
-  revalidatePath('/admin/cs');
-  // O-Level resource pages
-  revalidatePath('/olevel/[subject]/[grade]/past-papers', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/video-lectures', 'page');
-  revalidatePath('/olevel/[subject]/[grade]/topical', 'page');
-  // A-Level resource pages
-  revalidatePath('/alevel/[subject]/as-level/[paper]/past-papers', 'page');
-  revalidatePath('/alevel/[subject]/as-level/[paper]/video-lectures', 'page');
-  revalidatePath('/alevel/[subject]/as-level/[paper]/topical', 'page');
-  revalidatePath('/alevel/[subject]/a2-level/[paper]/past-papers', 'page');
-  revalidatePath('/alevel/[subject]/a2-level/[paper]/video-lectures', 'page');
-  revalidatePath('/alevel/[subject]/a2-level/[paper]/topical', 'page');
-  // Subject landing pages (resource counts)
-  revalidatePath('/olevel/[subject]', 'page');
-  revalidatePath('/alevel/[subject]', 'page');
-  // Subject grid pages (resource counts via API)
-  revalidatePath('/olevel', 'page');
-  revalidatePath('/alevel', 'page');
 }
+
+/** Row shape returned after insert — matches SubjectResourceManager `Resource`. */
+export type AdminInsertedResourceRow = {
+  id: string;
+  title: string;
+  subject: string;
+  subject_id: string | null;
+  syllabus_id: string | null;
+  parent_resource_id: string | null;
+  content_type: string;
+  source_url: string | null;
+  worksheet_url: string | null;
+  module_type: string | null;
+  sort_order: number | null;
+  question_mapping: unknown[] | null;
+  topic: string | null;
+  category: { id: string; name: string; slug: string } | null;
+  is_published: boolean;
+  is_locked: boolean;
+  is_watermarked: boolean;
+  created_at: string;
+};
+
+function mapInsertedResourceRow(r: Record<string, unknown>): AdminInsertedResourceRow {
+  const cat = r.category as { id: string; name: string; slug: string } | null | undefined;
+  return {
+    id: String(r.id),
+    title: String(r.title ?? ''),
+    subject: String(r.subject ?? ''),
+    subject_id: (r.subject_id as string | null) ?? null,
+    syllabus_id: (r.syllabus_id as string | null) ?? null,
+    parent_resource_id: (r.parent_resource_id as string | null) ?? null,
+    content_type: String(r.content_type ?? ''),
+    source_url: (r.source_url as string | null) ?? null,
+    worksheet_url: (r.worksheet_url as string | null) ?? null,
+    module_type: (r.module_type as string | null) ?? null,
+    sort_order: (r.sort_order as number | null) ?? null,
+    question_mapping: (r.question_mapping as unknown[] | null) ?? null,
+    topic: (r.topic as string | null) ?? null,
+    category: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
+    is_published: Boolean(r.is_published ?? true),
+    is_locked: Boolean(r.is_locked ?? false),
+    is_watermarked: Boolean(r.is_watermarked ?? false),
+    created_at: String(r.created_at ?? new Date().toISOString()),
+  };
+}
+
+export type BulkInsertResourcesResult =
+  | { success: true; resources: AdminInsertedResourceRow[] }
+  | { success: false; error: string };
 
 const ResourceSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500),
@@ -92,14 +125,14 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
     return { success: false, error: error.message };
   }
 
-  revalidateResourcePaths();
+  invalidatePublicResourceCaches();
   return { success: true };
 }
 
 export async function bulkInsertResources(
   resources: unknown[],
   options?: { expectedSubjectId?: string },
-) {
+): Promise<BulkInsertResourcesResult> {
   // Validate every row before touching the database
   const parsed = z.array(ResourceSchema).safeParse(resources);
   if (!parsed.success) {
@@ -110,6 +143,22 @@ export async function bulkInsertResources(
     };
   }
 
+  const session = await getAdminSession();
+  if (!session) {
+    return { success: false, error: 'Not authenticated.' };
+  }
+  if (!session.isSuperAdmin) {
+    const requestedSubjects = new Set(parsed.data.map((r) => r.subject_id));
+    for (const sid of requestedSubjects) {
+      if (!session.managedSubjects.includes(sid)) {
+        return {
+          success: false,
+          error: `Access denied: you do not manage subject ${sid}.`,
+        };
+      }
+    }
+  }
+
   const supabase = createAdminClient();
 
   // Resolve subject_id + syllabus_id from category when omitted
@@ -117,6 +166,7 @@ export async function bulkInsertResources(
 
   const categorySubjectById = new Map<string, string>();
   const categorySyllabusById = new Map<string, string>();
+  let syllabusAssertOptions: AssertResourceSyllabusBatchOptions | undefined;
   if (allCategoryIds.length > 0) {
     let closureMap: Map<string, CategoryGuardRow>;
     try {
@@ -145,6 +195,10 @@ export async function bulkInsertResources(
       parent_id: row.parent_id,
     }));
     const disciplineByCategory = await resolveDisciplineSubjectIdByCategoryRow(supabase, closureRows);
+    syllabusAssertOptions = {
+      preloadedClosure: closureMap,
+      precomputedDisciplineByCategoryId: disciplineByCategory,
+    };
     for (const id of allCategoryIds) {
       const owner = disciplineByCategory.get(id);
       if (owner) categorySubjectById.set(id, owner);
@@ -197,6 +251,7 @@ export async function bulkInsertResources(
       parent_resource_id: r.parent_resource_id,
       _rowIndex: r._rowIndex,
     })),
+    syllabusAssertOptions,
   );
   if (!guard.ok) {
     return { success: false, error: guard.error };
@@ -241,24 +296,6 @@ export async function bulkInsertResources(
     }
   }
 
-  // ── Subject ownership guard ────────────────────────────────────────────
-  // Verify the calling admin has permission for every subject_id in the batch.
-  const session = await getAdminSession();
-  if (!session) {
-    return { success: false, error: 'Not authenticated.' };
-  }
-  if (!session.isSuperAdmin) {
-    const requestedSubjects = new Set(enriched.map(r => r.subject_id).filter(Boolean) as string[]);
-    for (const sid of requestedSubjects) {
-      if (!session.managedSubjects.includes(sid)) {
-        return {
-          success: false,
-          error: `Access denied: you do not manage subject ${sid}.`,
-        };
-      }
-    }
-  }
-
   // ── Validate module_type values ────────────────────────────────────────
   for (const res of enriched) {
     if (res.module_type && !isValidModuleType(res.module_type)) {
@@ -295,22 +332,30 @@ export async function bulkInsertResources(
   });
 
   try {
-    const { error } = await supabase.from('resources').insert(payload);
+    const { data: insertedRows, error } = await supabase
+      .from('resources')
+      .insert(payload)
+      .select(
+        'id, title, subject, subject_id, syllabus_id, parent_resource_id, content_type, source_url, worksheet_url, module_type, sort_order, question_mapping, topic, is_published, is_locked, is_watermarked, created_at, category:categories(id, name, slug)',
+      );
 
     if (error) {
       console.error('Bulk insert failed', error);
       return { success: false, error: `Insert failed: ${error.message}. Run the schema repair script in Supabase SQL Editor.` };
     }
 
-    revalidateResourcePaths();
-    return { success: true };
+    invalidatePublicResourceCaches();
+    const resources = (insertedRows ?? []).map((row) =>
+      mapInsertedResourceRow(row as unknown as Record<string, unknown>),
+    );
+    return { success: true, resources };
   } catch (err: unknown) {
     console.error('Bulk insert exception', err);
     return { success: false, error: 'Could not reach the database. Check your Supabase connection.' };
   }
 }
 
-export async function createResource(data: unknown) {
+export async function createResource(data: unknown): Promise<BulkInsertResourcesResult> {
   return bulkInsertResources([data]);
 }
 
@@ -324,7 +369,7 @@ export async function deleteResource(id: string) {
     return { success: false, error: error.message };
   }
 
-  revalidateResourcePaths();
+  invalidatePublicResourceCaches();
   return { success: true };
 }
 
@@ -338,7 +383,7 @@ export async function updateResource(id: string, updates: { title?: string; sour
     return { success: false, error: error.message };
   }
 
-  revalidateResourcePaths();
+  invalidatePublicResourceCaches();
   return { success: true };
 }
 

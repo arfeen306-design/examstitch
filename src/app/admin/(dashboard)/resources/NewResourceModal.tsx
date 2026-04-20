@@ -335,11 +335,11 @@ export default function NewResourceModal({
 
     try {
       const { bulkInsertResources } = await import('../../actions');
-      const { success, error } = await bulkInsertResources(payloads, {
+      const insertResult = await bulkInsertResources(payloads, {
         expectedSubjectId: subjectId,
       });
 
-      if (success) {
+      if (insertResult.success) {
         showToast({ message: `Saved! ${keepOpen ? 'Ready for next entry.' : ''}`, type: 'success' });
         if (keepOpen) {
           // Clear only the URL fields — keep subject, syllabus tier, category, module type, session
@@ -366,7 +366,7 @@ export default function NewResourceModal({
           }));
         }
       } else {
-        showToast({ message: error || 'Failed to link resources', type: 'error' });
+        showToast({ message: insertResult.error || 'Failed to link resources', type: 'error' });
       }
     } catch (err: any) {
       showToast({ message: err.message, type: 'error' });

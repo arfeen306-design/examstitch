@@ -17,6 +17,7 @@
  */
 
 import { useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   toggleResourceFlag,
   deleteResource,
@@ -223,11 +224,16 @@ export default function SubjectResourceManager({
   renderAddButton,
   toolbarPrefix,
 }: Props) {
+  const router = useRouter();
   const [resources, setResources] = useState<Resource[]>(initialResources);
   const [filterModuleType, setFilterModuleType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    setResources(initialResources);
+  }, [initialResources]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState>({ title: '', videoUrl: '', worksheetUrl: '', contentType: 'video', sortOrder: '' });
@@ -247,9 +253,14 @@ export default function SubjectResourceManager({
     category_id: '', module_type: '' as '' | typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER,
   });
 
-  // Refetch when opening the form via server action (service role — avoids empty anon RLS reads).
+  // Server already merged categories for this subject; only hit the network when empty (e.g. new portal).
   useEffect(() => {
     if (!showNewResource) return;
+    if (initialCategories.length > 0) {
+      setCategories(initialCategories.map((c) => ({ id: c.id, name: c.name })));
+      setCategoriesLoading(false);
+      return;
+    }
     let cancelled = false;
     setCategoriesLoading(true);
     listMergedCategoriesForSubjectAdmin(subjectId)
@@ -275,7 +286,7 @@ export default function SubjectResourceManager({
     return () => {
       cancelled = true;
     };
-  }, [showNewResource, subjectId, showToast]);
+  }, [showNewResource, subjectId, showToast, initialCategories]);
 
   const handleAddResource = () => {
     if (!newRes.title.trim() || !newRes.source_url.trim()) {
@@ -313,7 +324,7 @@ export default function SubjectResourceManager({
               category_id: '',
               module_type: '',
             });
-            window.location.reload();
+            router.refresh();
           } else {
             showToast({ message: result.error || 'Failed to add resource', type: 'error' });
           }
@@ -487,7 +498,7 @@ export default function SubjectResourceManager({
         if (result.success) {
           showToast({ message: 'Sub-topic added!', type: 'success' });
           cancelSubtopic();
-          window.location.reload();
+          router.refresh();
         } else showToast({ message: result.error || 'Failed to add sub-topic', type: 'error' });
       } catch (err: unknown) {
         showToast({ message: 'Failed: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
