@@ -191,6 +191,8 @@ export default function SubjectResourceManager({
 
   const [mappingEditId, setMappingEditId] = useState<string | null>(null);
   const [mappingDraft, setMappingDraft] = useState<any[]>([]);
+  const [movingLegacyId, setMovingLegacyId] = useState<string | null>(null);
+  const [legacyCategoryId, setLegacyCategoryId] = useState<string>('');
 
   // ── New Resource form state ───────────────────────────────────────────────
   const [showNewResource, setShowNewResource] = useState(false);
@@ -392,6 +394,10 @@ export default function SubjectResourceManager({
     () => syllabusBuckets.reduce((n, b) => n + b.modules.length, 0),
     [syllabusBuckets],
   );
+  const categoriesWithSyllabus = useMemo(
+    () => categories.filter((c) => Boolean(c.syllabus_id)),
+    [categories],
+  );
 
   const hasWeakSyllabusLane = useMemo(
     () => syllabusBuckets.some(b => b.syllabusSlug === 'unspecified'),
@@ -540,7 +546,13 @@ export default function SubjectResourceManager({
 
   // ── Render a single resource row ──────────────────────────────────────────
 
-  const renderRow = (r: Resource, topicIndex: number, partIndex: number | null, totalParts: number) => {
+  const renderRow = (
+    r: Resource,
+    topicIndex: number,
+    partIndex: number | null,
+    totalParts: number,
+    inUnspecifiedLane = false,
+  ) => {
     const isSub = partIndex !== null;
     const label = isSub ? `${topicIndex + 1}.${partIndex! + 1}` : `${topicIndex + 1}`;
 
@@ -694,6 +706,18 @@ export default function SubjectResourceManager({
                 </>
               ) : (
                 <>
+                  {inUnspecifiedLane && (
+                    <button
+                      onClick={() => {
+                        setMovingLegacyId((prev) => (prev === r.id ? null : r.id));
+                        setLegacyCategoryId('');
+                      }}
+                      className="text-[var(--text-muted)] hover:text-cyan-400 p-1 rounded hover:bg-cyan-500/10 transition"
+                      title="Move legacy row to mapped category"
+                    >
+                      <FolderOpen className="w-4 h-4" />
+                    </button>
+                  )}
                   <button onClick={() => startEdit(r)} className="text-[var(--text-muted)] hover:text-amber-400 p-1 rounded hover:bg-amber-500/10 transition" title="Edit"><Pencil className="w-4 h-4" /></button>
                   <button onClick={() => openTimestampEditor(r)} className="text-[var(--text-muted)] hover:text-purple-400 p-1 rounded hover:bg-purple-500/10 transition" title="Mapping"><Clock className="w-4 h-4" /></button>
                   <button onClick={() => openSubtopic(r)} className="text-[var(--text-muted)] hover:text-blue-400 p-1 rounded hover:bg-blue-500/10 transition" title="Add sub-topic"><ListPlus className="w-4 h-4" /></button>
@@ -810,6 +834,70 @@ export default function SubjectResourceManager({
                     <X className="w-3.5 h-3.5" /> Cancel
                   </button>
                 </div>
+              </div>
+            </td>
+          </tr>
+        )}
+
+        {movingLegacyId === r.id && (
+          <tr className="bg-cyan-500/10 border-l-4 border-cyan-500/40">
+            <td colSpan={9} className="px-4 py-3">
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="flex flex-col gap-1 min-w-[240px]">
+                  <label className="text-xs font-semibold text-[var(--text-muted)]">
+                    Move to mapped category
+                  </label>
+                  <select
+                    value={legacyCategoryId}
+                    onChange={(e) => setLegacyCategoryId(e.target.value)}
+                    className="px-2 py-1.5 text-sm border border-cyan-500/30 rounded-md bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  >
+                    <option value="">Choose category…</option>
+                    {categoriesWithSyllabus.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!legacyCategoryId) {
+                      showToast({ message: 'Pick a destination category first.', type: 'error' });
+                      return;
+                    }
+                    const target = categoriesWithSyllabus.find((c) => c.id === legacyCategoryId);
+                    if (!target) {
+                      showToast({ message: 'Selected category is invalid.', type: 'error' });
+                      return;
+                    }
+                    const result = await updateResource(r.id, {
+                      category_id: target.id,
+                      subject_id: subjectId,
+                      syllabus_id: target.syllabus_id ?? null,
+                    });
+                    if (!result.success) {
+                      showToast({ message: result.error || 'Failed to move resource.', type: 'error' });
+                      return;
+                    }
+                    showToast({ message: 'Resource moved to mapped category.', type: 'success' });
+                    setMovingLegacyId(null);
+                    setLegacyCategoryId('');
+                    router.refresh();
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-md bg-cyan-600/85 text-white hover:bg-cyan-500 transition"
+                >
+                  Move
+                </button>
+                <button
+                  onClick={() => {
+                    setMovingLegacyId(null);
+                    setLegacyCategoryId('');
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-md border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition"
+                >
+                  Cancel
+                </button>
               </div>
             </td>
           </tr>
@@ -1091,6 +1179,7 @@ export default function SubjectResourceManager({
                             topicIdx,
                             cluster.parts.length > 1 ? partIdx : null,
                             cluster.parts.length,
+                            bucket.syllabusSlug === 'unspecified',
                           ),
                         )}
                       </Fragment>

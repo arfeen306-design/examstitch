@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { X, PlayCircle, FileText, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
@@ -394,7 +394,25 @@ export default function NewResourceModal({
 
   if (!isOpen) return null;
 
-  const activeCategories = categories;
+  const activeCategories = useMemo(
+    () => categories.filter((c) => c.subject_id === formData.subject_id),
+    [categories, formData.subject_id],
+  );
+  const groupedActiveCategories = useMemo(() => {
+    const map = new Map<string, Category[]>();
+    for (const c of activeCategories) {
+      const code = c.syllabus?.code?.trim();
+      const tier = c.syllabus_tier?.name?.trim();
+      const label = code
+        ? `${c.syllabus?.name ?? 'Syllabus'} (${code})`
+        : tier
+          ? `${tier}`
+          : 'Unmapped syllabus';
+      if (!map.has(label)) map.set(label, []);
+      map.get(label)!.push(c);
+    }
+    return Array.from(map.entries());
+  }, [activeCategories]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -584,10 +602,14 @@ export default function NewResourceModal({
                   <option value="" disabled>
                     Select module…
                   </option>
-                  {activeCategories.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                  {groupedActiveCategories.map(([label, rows]) => (
+                    <optgroup key={label} label={label}>
+                      {rows.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               )}
