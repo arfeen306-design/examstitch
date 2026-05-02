@@ -120,4 +120,26 @@ describe('resolveManagedSubjectsToSlugs', () => {
     expect(result).toEqual([]);
     expect(fromMock).not.toHaveBeenCalled();
   });
+
+  it('Phase 2.1: resolves UUIDs known to taxonomy WITHOUT hitting the DB', async () => {
+    // Mathematics UUID was wired into SUBJECT_TAXONOMY in Phase 2.1.
+    const { resolveManagedSubjectsToSlugs } = await import('@/lib/admin/resolve-managed-subjects');
+    const mathUuid = '15a91306-cc84-456c-aeef-e04c610b9ec7';
+    const result = await resolveManagedSubjectsToSlugs([mathUuid]);
+    expect(result).toEqual(['maths']);
+    // Critically: zero DB round-trips when every UUID is taxonomy-known.
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('mixes taxonomy hits and DB fallback when only some UUIDs are known', async () => {
+    mockSubjectsLookup([{ slug: 'unknown-subject' }]);
+    const { resolveManagedSubjectsToSlugs } = await import('@/lib/admin/resolve-managed-subjects');
+    const knownUuid = '15a91306-cc84-456c-aeef-e04c610b9ec7'; // mathematics
+    const unknownUuid = '99999999-9999-9999-9999-999999999999';
+    const result = await resolveManagedSubjectsToSlugs([knownUuid, unknownUuid]);
+    expect(result).toContain('maths');
+    expect(result).toContain('unknown-subject');
+    // DB only consulted for the unresolved UUID, not the taxonomy-known one.
+    expect(fromMock).toHaveBeenCalledTimes(1);
+  });
 });
