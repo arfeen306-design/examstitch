@@ -7,7 +7,7 @@ import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 import AdminThemeButton from '@/components/admin/AdminThemeButton';
-import { ROUTE_TO_PORTAL, SHARED_ADMIN_ROUTES } from '@/config/admin-portals';
+import { ROUTE_TO_PORTAL, SHARED_ADMIN_ROUTES } from '@/config/taxonomy';
 import { resolveManagedSubjectsToSlugs } from '@/lib/admin/resolve-managed-subjects';
 
 export default async function SubjectAdminLayout({

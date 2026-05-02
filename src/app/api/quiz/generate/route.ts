@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import OpenAI from 'openai';
 import { YoutubeTranscript } from 'youtube-transcript';
+import { env, requireServerSecret } from '@/lib/env';
 import {
   mcqCountFromVideoMinutes,
   minutesFromTranscriptSegments,
@@ -16,7 +17,7 @@ import {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  return new OpenAI({ apiKey: requireServerSecret('OPENAI_API_KEY') });
 }
 
 interface QuizQuestion {
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
 
     // ── 4. Generate quiz via OpenAI ─────────────────────────────
     const completionMaxTokens = Math.min(16384, 400 + questionCount * 360);
-    if (!process.env.OPENAI_API_KEY) {
+    if (!env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
 

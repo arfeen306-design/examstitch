@@ -10,7 +10,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 import AdminThemeButton from '@/components/admin/AdminThemeButton';
-import { getPortalsForSubjects } from '@/config/admin-portals';
+import RefreshPermissionsButton from '@/components/admin/RefreshPermissionsButton';
+import { getPortalsForSubjects } from '@/config/taxonomy';
 import { resolveManagedSubjectsToSlugs } from '@/lib/admin/resolve-managed-subjects';
 
 async function getAdminProfile(userId: string) {
@@ -58,13 +59,19 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
   const cookieStore = await cookies();
   const adminCookie = cookieStore.get('admin_session');
-  const profile = adminCookie?.value ? await getAdminProfile(adminCookie.value) : null;
+  // Phase 2.1 perf: parallelize profile fetch + bookings count. Profile is
+  // needed before resolveManagedSubjectsToSlugs (which now does taxonomy
+  // lookup in-process and is a no-op for known UUIDs) but bookings is
+  // independent of both.
+  const [profile, newBookings] = await Promise.all([
+    adminCookie?.value ? getAdminProfile(adminCookie.value) : Promise.resolve(null),
+    getNewBookingsCount(),
+  ]);
   const isSuperAdmin = profile?.is_super_admin ?? false;
   const adminName = profile?.full_name || profile?.email?.split('@')[0] || 'Admin';
   const managedSubjects: string[] = (profile?.managed_subjects as string[]) ?? [];
   const resolvedManagedSlugs = await resolveManagedSubjectsToSlugs(managedSubjects);
   const subjectPortals = isSuperAdmin ? [] : subjectPortalNavEntries(resolvedManagedSlugs);
-  const newBookings = await getNewBookingsCount();
 
   const navSections = [
     {
@@ -236,6 +243,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             />
             <div className="flex flex-col gap-2 w-full min-w-0 [&>div]:w-full [&>form]:w-full [&_button]:min-h-[42px]">
               <AdminThemeButton tone="navy" />
+              <RefreshPermissionsButton />
               <form action={handleLogout} className="w-full flex">
                 <button
                   type="submit"

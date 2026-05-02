@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
+import { ROUTE_TO_PORTAL, getPortalDbSubjectSlugs } from '@/config/taxonomy';
 import { createClient } from '@/lib/supabase/client';
 import { listMergedCategoriesForSubjectAdmin } from '@/app/admin/actions';
 import BulkResourceUploader, { type ValidRow } from '@/components/admin/BulkResourceUploader';
@@ -21,11 +21,15 @@ export default function BulkUploadPage() {
     const supabase = createClient();
 
     async function load() {
-      const { data: subject } = await supabase
+      // Phase 2.1: walk every recognised legacy slug; first match wins.
+      const recognisedSlugs = getPortalDbSubjectSlugs(portal);
+      const { data: candidates } = await supabase
         .from('subjects')
-        .select('id')
-        .eq('slug', getPortalDbSubjectSlug(portal))
-        .single();
+        .select('id, slug')
+        .in('slug', recognisedSlugs as string[]);
+      const subject = recognisedSlugs
+        .map((slug) => candidates?.find((c) => c.slug === slug))
+        .find((c): c is { id: string; slug: string } => Boolean(c));
 
       if (!subject) { setLoading(false); return; }
       setSubjectId(subject.id);

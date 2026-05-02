@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAdminSession } from '@/lib/supabase/guards';
-import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
+import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/taxonomy';
+import { resolveDisciplineSubjectForPortal } from '@/lib/admin/portal-resolver';
 import { provisionSubjectPortal, fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import { oLevelToALevelSlug } from '@/config/navigation';
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
@@ -22,12 +23,12 @@ export default async function SubjectAdminPage({
 
   const supabase = createAdminClient();
 
-  // Resolve the parent subject from the subjects table
-  const { data: subject } = await supabase
-    .from('subjects')
-    .select('id, name, levels')
-    .eq('slug', getPortalDbSubjectSlug(portal))
-    .single();
+  // Resolve the parent subject. Phase 2.1: a portal may map to multiple legacy
+  // DB slugs (e.g. 'maths' AND 'math'); resolveDisciplineSubjectForPortal
+  // walks them in priority order. The dashboard then keys every downstream
+  // query off the resolved UUID — never a slug — so it is robust to whichever
+  // historic slug form actually exists in production.
+  const subject = await resolveDisciplineSubjectForPortal(supabase, portal);
 
   if (!subject) {
     const session = await getAdminSession();
@@ -77,22 +78,73 @@ export default async function SubjectAdminPage({
     );
   }
 
-  try {
-    const prov = await provisionSubjectPortal(supabase, params.subject);
-    if (!prov.success && prov.error) {
-      console.error('[admin subject portal] provisionSubjectPortal:', prov.error);
-    }
-  } catch (e) {
-    console.error('[admin subject portal] provisionSubjectPortal threw:', e);
+  // ── PARALLEL FETCH (Phase 2.1 perf fix) ─────────────────────────────────
+  // Was: 6 sequential awaits + provisionSubjectPortal on every render
+  // (~10-20 nested round-trips). Now: one Promise.all.
+  //
+  // Provisioner skipped on the hot path entirely — it only needs to run when
+  // a subject portal has no categories yet. We detect that AFTER the parallel
+  // fetch and only re-run if necessary, so the common case (subject already
+  // configured) pays zero provisioning cost.
+  const [
+    mergedRes,
+    papersRes,
+    topicsRes,
+    resourcesRes,
+  ] = await Promise.all([
+    fetchMergedCategoriesForSubject(supabase, subject.id),
+    supabase
+      .from('subject_papers')
+      .select('id, slug')
+      .eq('parent_subject_id', subject.id),
+    supabase
+      .from('topics')
+      .select('id, subject_papers!inner(parent_subject_id)')
+      .eq('subject_papers.parent_subject_id', subject.id),
+    supabase
+      .from('resources')
+      .select(
+        `
+        *,
+        category:categories(
+          id, name, slug, parent_id, subject_id, syllabus_id, syllabus_tier_id,
+          parent:categories!categories_parent_id_fkey(id, name, slug),
+          syllabus:subject_papers(slug, code, name),
+          syllabus_tier:syllabi(id, tier, name)
+        )
+      `,
+        { count: 'exact' },
+      )
+      .eq('subject_id', subject.id)
+      .order('syllabus_id', { ascending: true, nullsFirst: true })
+      .order('category_id', { ascending: true })
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false }),
+  ]);
+
+  let mergedCategories = mergedRes.data;
+  if (mergedRes.error) {
+    console.error('[admin subject portal] fetchMergedCategoriesForSubject:', mergedRes.error);
   }
 
-  const { data: mergedCategories, error: mergeCatErr } = await fetchMergedCategoriesForSubject(
-    supabase,
-    subject.id,
-  );
-  if (mergeCatErr) {
-    console.error('[admin subject portal] fetchMergedCategoriesForSubject:', mergeCatErr);
+  // Lazy provisioning: only run when zero categories exist. Idempotent — safe
+  // to call but expensive (~10-20 round-trips). Skipping when categories
+  // already exist drops common-case page load by ~1-2s.
+  if (!mergedCategories || mergedCategories.length === 0) {
+    try {
+      const prov = await provisionSubjectPortal(supabase, params.subject);
+      if (!prov.success && prov.error) {
+        console.error('[admin subject portal] provisionSubjectPortal:', prov.error);
+      } else if (prov.success && (prov.categoriesCreated ?? 0) > 0) {
+        // Refetch only after a real provisioning event populated rows.
+        const refetched = await fetchMergedCategoriesForSubject(supabase, subject.id);
+        if (!refetched.error) mergedCategories = refetched.data;
+      }
+    } catch (e) {
+      console.error('[admin subject portal] provisionSubjectPortal threw:', e);
+    }
   }
+
   const initialCategoryOptions = (mergedCategories ?? []).map((c) => ({
     id: c.id,
     name: c.name,
@@ -102,10 +154,7 @@ export default async function SubjectAdminPage({
     syllabus_tier_id: c.syllabus_tier_id ?? null,
   }));
 
-  const { data: subjectPapers } = await supabase
-    .from('subject_papers')
-    .select('id, slug')
-    .eq('parent_subject_id', subject.id);
+  const subjectPapers = papersRes.data;
   const oLevelPaperId =
     subjectPapers?.find((p) => p.slug === portal.taxonomyOLevelPaperSlug)?.id ?? null;
   const aLevelSlug = oLevelToALevelSlug[portal.taxonomyOLevelPaperSlug];
@@ -114,33 +163,10 @@ export default async function SubjectAdminPage({
       ? subjectPapers.find((p) => p.slug === aLevelSlug)?.id ?? null
       : null;
 
-  const { data: topics } = await supabase
-    .from('topics')
-    .select('id, subject_papers!inner(parent_subject_id)')
-    .eq('subject_papers.parent_subject_id', subject.id);
+  const topics = topicsRes.data;
   const isUnconfiguredSubject = (topics ?? []).length === 0;
 
-  // Canonical fetch: resources must be keyed by the parent discipline subject_id.
-  // If this query returns empty, treat it as a data-integrity issue and repair DB rows.
-  const { data: resources, count, error: resourcesError } = await supabase
-    .from('resources')
-    .select(
-      `
-      *,
-      category:categories(
-        id, name, slug, parent_id, subject_id, syllabus_id, syllabus_tier_id,
-        parent:categories!categories_parent_id_fkey(id, name, slug),
-        syllabus:subject_papers(slug, code, name),
-        syllabus_tier:syllabi(id, tier, name)
-      )
-    `,
-      { count: 'exact' },
-    )
-    .eq('subject_id', subject.id)
-    .order('syllabus_id', { ascending: true, nullsFirst: true })
-    .order('category_id', { ascending: true })
-    .order('sort_order', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: false });
+  const { data: resources, count, error: resourcesError } = resourcesRes;
   const resourceFetchWarning = resourcesError
     ? `Resource query failed: ${resourcesError.message}`
     : null;

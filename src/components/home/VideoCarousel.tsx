@@ -202,45 +202,10 @@ function SpotlightPlayer({
   );
 }
 
-/* ── Injected CSS: marquee keyframes + shimmer ───────────────────── */
+/* ── Layout constants (CSS for shimmer + marquee lives in globals.css) ── */
 
 const GAP = 32;
 const CARD_OUTER = 320 + GAP;
-
-const shimmerCSS = `
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-.shimmer-text {
-  background: linear-gradient(90deg, #6366f1 0%, #818cf8 25%, #c4b5fd 50%, #818cf8 75%, #6366f1 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimmer 3s linear infinite;
-}
-/* Transform marquee: works when the strip fits in the viewport (scrollLeft cannot). */
-@keyframes esHomeMarquee {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-50%, 0, 0); }
-}
-.es-home-marquee-track {
-  display: flex;
-  gap: 2rem;
-  width: max-content;
-  will-change: transform;
-  animation: esHomeMarquee var(--es-marquee-dur, 48s) linear infinite;
-}
-.es-home-marquee-paused {
-  animation-play-state: paused !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  .es-home-marquee-track {
-    animation: none !important;
-  }
-}
-`;
 
 /* ── Main Carousel ───────────────────────────────────────────────── */
 
@@ -274,8 +239,6 @@ export default function VideoCarousel({ widgets, isAdmin = false }: VideoCarouse
 
   return (
     <>
-      <style>{shimmerCSS}</style>
-
       <section className="relative w-full overflow-hidden py-12 lg:py-16">
         {/* ── Hook Section with shimmer ─────────────────────────── */}
         <div ref={hookRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 lg:mb-10">

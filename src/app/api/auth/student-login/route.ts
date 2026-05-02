@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyPassword } from '@/lib/password';
 import { cookies } from 'next/headers';
+import { env } from '@/lib/env';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 export async function POST(request: Request) {
@@ -82,8 +83,8 @@ export async function POST(request: Request) {
 
     const cookieStore = cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           getAll() {
@@ -113,7 +114,8 @@ export async function POST(request: Request) {
 
     // If sign-in failed, sync the Supabase Auth user and retry
     if (session.error) {
-      console.log('[student-login] Initial sign-in failed for', normalizedEmail, '— syncing auth user…');
+      // Don't log the email (PII, audit M-03). The action is the useful signal.
+      console.info('[student-login] Initial sign-in failed — syncing auth user…');
 
       try {
         await syncAuthUser(admin, student, normalizedEmail, password);

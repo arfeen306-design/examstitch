@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
-import { getRouteForSlug } from '@/config/admin-portals';
+import { env } from '@/lib/env';
+import { getRouteForSlug } from '@/config/taxonomy';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
+import { issueAdminSession } from '@/lib/admin/session-token';
 
 export async function POST(request: Request) {
   try {
@@ -11,8 +13,8 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required.' },
-        { status: 400 },
+        { error: 'Invalid email or password.' },
+        { status: 401 },
       );
     }
 
@@ -20,8 +22,8 @@ export async function POST(request: Request) {
 
     // Supabase client that writes auth tokens into response cookies
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           getAll() {
@@ -58,80 +60,65 @@ export async function POST(request: Request) {
       .single();
 
     if (profileError || !profile || !isStudentAccountAdminRole(profile.role)) {
-      // Revoke session immediately — non-admin must not retain tokens
+      // Revoke Supabase session immediately — non-admin must not retain tokens.
+      // Use the same generic error as bad-password to avoid leaking role info.
       await supabase.auth.signOut();
       return NextResponse.json(
-        { error: 'Access denied. Admin privileges required.' },
-        { status: 403 },
+        { error: 'Invalid email or password.' },
+        { status: 401 },
       );
     }
 
-    // ── Step 3: Set admin session cookie (value = user ID for middleware) ─────
-    cookieStore.set('admin_session', authData.user.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 1 week
+    // ── Step 3: Mint an opaque admin session token ───────────────────────────
+    // Replaces the legacy "cookie value = user.id" pattern. This token is the
+    // primary key in admin_sessions and can be revoked instantly on demotion.
+    const userAgent = request.headers.get('user-agent') ?? null;
+    const { token: sessionToken } = await issueAdminSession({
+      userId: authData.user.id,
+      userAgent,
     });
 
-    // ── Step 4: Determine smart redirect based on role ───────────────────────
-    let redirectTo = '/admin';
-    let landing = 'default'; // 'super' | 'cs' | 'default'
+    cookieStore.set('admin_session', sessionToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 1 week — server can revoke earlier via DB row delete
+    });
 
+    // ── Step 4: Compute one-shot redirect target (not durable state) ─────────
+    let redirectTo = '/admin';
     const managedSubjects = (profile.managed_subjects as string[]) ?? [];
 
-    // Resolve managed subject IDs → slugs for middleware isolation
-    let subjectSlugs: string[] = [];
-    if (managedSubjects.length > 0) {
+    if (profile.is_super_admin) {
+      redirectTo = '/admin/super';
+    } else if (managedSubjects.length > 0) {
       const { data: subjectRows } = await adminSupabase
         .from('subjects')
         .select('slug')
         .in('id', managedSubjects);
-      subjectSlugs = subjectRows?.map(s => s.slug) ?? [];
-    }
-
-    if (profile.is_super_admin) {
-      redirectTo = '/admin/super';
-      landing = 'super';
-    } else if (subjectSlugs.length > 0) {
-      // Find the primary portal for the first managed subject
-      const route = getRouteForSlug(subjectSlugs[0]);
-      if (route) {
-        redirectTo = `/admin/${route}`;
-        landing = route;
+      const firstSlug = subjectRows?.[0]?.slug;
+      if (firstSlug) {
+        const route = getRouteForSlug(firstSlug);
+        if (route) redirectTo = `/admin/${route}`;
       }
     }
 
     // Client-readable flag so front-end components can hide lock badges.
-    // NOT a security gate — actual content gating uses the httpOnly admin_session cookie.
+    // NOT a security gate — actual content gating uses the opaque admin_session
+    // cookie + DB role lookup.
     cookieStore.set('admin_mode', '1', {
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    // Store landing preference so middleware can enforce role-based routing
-    cookieStore.set('admin_landing', landing, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    // Store subject slugs for middleware subject isolation
-    if (subjectSlugs.length > 0) {
-      cookieStore.set('admin_subjects', subjectSlugs.join(','), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      });
-    }
+    // NOTE: We deliberately no longer set `admin_landing` or `admin_subjects`
+    // cookies. Middleware now reads role + managed_subjects from the live DB
+    // (cached 60s) so demotion takes effect within one TTL — not 7 days.
+    // The redirectTo response field below is a one-shot hint, not durable state.
 
     return NextResponse.json({ success: true, redirectTo });
   } catch (err) {

@@ -4,6 +4,9 @@ import { PlayCircle, Eye } from 'lucide-react';
 import { useRef, useEffect, useMemo } from 'react';
 import FramedPDFViewer from '@/components/resources/FramedPDFViewer';
 
+// YouTube IFrame API globals are declared once in src/global.d.ts so all three
+// players (MediaFrame, EmbeddedViewer, InteractiveSolver) share one shape.
+
 interface MediaFrameProps {
   id: string;
   mediaType: 'youtube' | 'pdf';
@@ -85,17 +88,14 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
     const containerId = `yt-player-${id}`;
 
     // Ensure the YT IFrame API script is loaded once globally
-    if (!(window as unknown as Record<string, unknown>).YT) {
+    if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       document.head.appendChild(tag);
     }
 
     function createPlayer() {
-      const YT = (window as unknown as Record<string, unknown>).YT as {
-        Player: new (id: string, opts: Record<string, unknown>) => unknown;
-        PlayerState: { PLAYING: number };
-      };
+      const YT = window.YT;
       if (!YT?.Player) return;
 
       playerRef.current = new YT.Player(containerId, {
@@ -112,11 +112,11 @@ export default function MediaFrame({ id, mediaType, title, url, permissions, vie
     }
 
     // YT API may already be loaded
-    if ((window as unknown as Record<string, unknown>).YT && (window as unknown as Record<string, { Player?: unknown }>).YT?.Player) {
+    if (window.YT?.Player) {
       createPlayer();
     } else {
-      const prev = (window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady as (() => void) | undefined;
-      (window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady = () => {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
         prev?.();
         createPlayer();
       };

@@ -7,10 +7,10 @@ import { provisionSubjectPortal } from '@/lib/db/subject-provisioner';
 import { requireSubjectAdmin } from '@/lib/supabase/guards';
 import {
   ROUTE_TO_PORTAL,
-  getPortalDbSubjectSlug,
   PORTAL_ROUTE_SEGMENTS,
   ADMIN_PORTALS,
-} from '@/config/admin-portals';
+} from '@/config/taxonomy';
+import { resolveDisciplineSubjectIdForPortal } from '@/lib/admin/portal-resolver';
 
 function normalizeCategorySlug(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, '-');
@@ -22,6 +22,15 @@ export async function createSubjectCategory(payload: {
   subject_id: string;
   parent_id?: string | null;
 }) {
+  if (!payload.subject_id) {
+    return { success: false, error: 'Unauthorized.' };
+  }
+
+  const auth = await requireSubjectAdmin(payload.subject_id);
+  if (!auth) {
+    return { success: false, error: 'Unauthorized.' };
+  }
+
   const supabase = createAdminClient();
 
   if (!payload.name.trim() || !payload.slug.trim()) {
@@ -101,16 +110,14 @@ export async function seedPortalDefaultCategories(portalRouteSegment: string): P
   }
   const portal = ROUTE_TO_PORTAL[portalRouteSegment];
   const supabase = createAdminClient();
-  const disciplineSlug = getPortalDbSubjectSlug(portal);
-  const { data: subject, error: subErr } = await supabase
-    .from('subjects')
-    .select('id')
-    .eq('slug', disciplineSlug)
-    .maybeSingle();
-  if (subErr || !subject?.id) {
+  // Phase 2.1: tolerate both 'maths' and 'math' (and any other configured
+  // legacy slug) so seedPortalDefaultCategories doesn't fail when the
+  // production row uses a non-primary form.
+  const disciplineSubjectId = await resolveDisciplineSubjectIdForPortal(supabase, portal);
+  if (!disciplineSubjectId) {
     return { success: false, error: 'Subject not found in the database.' };
   }
-  const auth = await requireSubjectAdmin(subject.id);
+  const auth = await requireSubjectAdmin(disciplineSubjectId);
   if (!auth) {
     return { success: false, error: 'Not authorised for this subject.' };
   }
@@ -128,10 +135,26 @@ export async function seedPortalDefaultCategories(portalRouteSegment: string): P
 }
 
 export async function renameCategory(categoryId: string, newName: string) {
+  if (!categoryId) return { success: false, error: 'Unauthorized.' };
+  if (!newName.trim()) return { success: false, error: 'Name is required.' };
+
   const supabase = createAdminClient();
 
-  if (!newName.trim()) {
-    return { success: false, error: 'Name is required.' };
+  // Resolve subject_id from the target row before any mutation. Fail closed if
+  // the row is missing or unlinked — never trust caller-supplied subject hints.
+  const { data: catRow, error: lookupErr } = await supabase
+    .from('categories')
+    .select('subject_id')
+    .eq('id', categoryId)
+    .single();
+
+  if (lookupErr || !catRow?.subject_id) {
+    return { success: false, error: 'Unauthorized.' };
+  }
+
+  const auth = await requireSubjectAdmin(catRow.subject_id);
+  if (!auth) {
+    return { success: false, error: 'Unauthorized.' };
   }
 
   const { error } = await supabase
@@ -147,7 +170,25 @@ export async function renameCategory(categoryId: string, newName: string) {
 }
 
 export async function deleteSubjectCategory(categoryId: string) {
+  if (!categoryId) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
+
+  // Resolve subject_id from the row, then verify the admin manages it.
+  const { data: catRow, error: lookupErr } = await supabase
+    .from('categories')
+    .select('subject_id')
+    .eq('id', categoryId)
+    .single();
+
+  if (lookupErr || !catRow?.subject_id) {
+    return { success: false, error: 'Unauthorized.' };
+  }
+
+  const auth = await requireSubjectAdmin(catRow.subject_id);
+  if (!auth) {
+    return { success: false, error: 'Unauthorized.' };
+  }
 
   const { count } = await supabase
     .from('resources')
@@ -193,16 +234,8 @@ export async function quickSetupSubjectPortal(
   }
 
   const supabase = createAdminClient();
-  const { data: portalSubject, error: portalSubjectErr } = await supabase
-    .from('subjects')
-    .select('id')
-    .eq('slug', getPortalDbSubjectSlug(portal))
-    .maybeSingle();
-
-  if (portalSubjectErr) {
-    return { success: false, error: portalSubjectErr.message };
-  }
-  if (!portalSubject?.id || portalSubject.id !== subjectId) {
+  const portalSubjectId = await resolveDisciplineSubjectIdForPortal(supabase, portal);
+  if (!portalSubjectId || portalSubjectId !== subjectId) {
     return {
       success: false,
       error: 'This dashboard subject does not match the portal route. Open the correct subject admin.',

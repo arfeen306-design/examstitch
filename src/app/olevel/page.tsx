@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
 import SubjectCard from '@/components/SubjectCard';
-import { O_LEVEL_SUBJECTS } from '@/config/subjects';
+import { O_LEVEL_SUBJECTS } from '@/config/taxonomy';
 import { useSubjectCounts } from '@/lib/useSubjectCounts';
 
 export default function OLevelPage() {

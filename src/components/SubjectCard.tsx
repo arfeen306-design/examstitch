@@ -4,7 +4,7 @@ import { memo, useCallback, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, Clock } from 'lucide-react';
-import type { SubjectEntry } from '@/config/subjects';
+import { type SubjectEntry, getSubjectIcon } from '@/config/taxonomy';
 
 interface SubjectCardProps {
   subject: SubjectEntry;
@@ -15,7 +15,7 @@ interface SubjectCardProps {
 }
 
 const SubjectCard = memo(function SubjectCard({ subject, index, basePath, resourceCount, onComingSoon }: SubjectCardProps) {
-  const Icon = subject.icon;
+  const Icon = getSubjectIcon(subject.iconKey);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const cardRef = useRef<HTMLDivElement>(null);

@@ -14,12 +14,7 @@ import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
 import { useViewTracking } from '@/hooks/useViewTracking';
 import FramedPDFViewer from './FramedPDFViewer';
 
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
+// YouTube IFrame API globals are declared once in src/global.d.ts.
 
 interface DualMediaViewerProps {
   title: string;
@@ -82,11 +77,13 @@ function DualVideoPlayer({
 
   useEffect(() => {
     if (!apiReady || !iframeRef.current) return;
+    const YT = window.YT;
+    if (!YT?.Player) return;
     try {
-      playerRef.current = new window.YT.Player(iframeRef.current, {
+      playerRef.current = new YT.Player(iframeRef.current, {
         events: {
-          onStateChange: (e: any) => {
-            if (e.data === window.YT.PlayerState.ENDED) updateProgress(true);
+          onStateChange: (e: { data: number }) => {
+            if (e.data === YT.PlayerState.ENDED) updateProgress(true);
           },
         },
       });

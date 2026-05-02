@@ -10,8 +10,10 @@
 
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { env } from '@/lib/env';
 import { createAdminClient } from './admin';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
+import { lookupAdminSession } from '@/lib/admin/session-token';
 
 export interface AdminSession {
   userId: string;
@@ -23,17 +25,28 @@ export interface AdminSession {
 
 /**
  * Verifies the current request has a valid admin session.
- * Returns the admin's profile or null if unauthorised.
+ *
+ * Trust chain (post-Phase-2):
+ *   1. admin_session cookie → opaque token
+ *   2. token → live admin_sessions row (instant revocation)
+ *   3. user_id → student_accounts.role re-checked (instant demotion)
+ *   4. Supabase JWT user must match the session row's user_id
+ *
+ * Returns the admin's profile or null if any step fails.
  */
 export async function getAdminSession(): Promise<AdminSession | null> {
   const cookieStore = cookies();
-  const adminCookie = cookieStore.get('admin_session');
-  if (!adminCookie?.value) return null;
+  const tokenCookie = cookieStore.get('admin_session');
+  if (!tokenCookie?.value) return null;
 
-  // Verify the Supabase auth session is still valid
+  // 1+2. Resolve the opaque token to a live session row.
+  const session = await lookupAdminSession(tokenCookie.value);
+  if (!session) return null;
+
+  // 4. Cross-check the Supabase JWT user matches the session.
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() { return cookieStore.getAll(); },
@@ -43,9 +56,9 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.id !== adminCookie.value) return null;
+  if (!user || user.id !== session.user_id) return null;
 
-  // Fetch the admin profile with subject permissions
+  // 3. Live role + managed_subjects (no cookie state).
   const admin = createAdminClient();
   const { data: profile, error } = await admin
     .from('student_accounts')

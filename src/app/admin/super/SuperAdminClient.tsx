@@ -12,7 +12,7 @@ import {
   toggleSuperAdmin,
   provisionPortalHierarchy,
 } from './actions';
-import { ADMIN_PORTALS } from '@/config/admin-portals';
+import { ADMIN_PORTALS } from '@/config/taxonomy';
 import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';

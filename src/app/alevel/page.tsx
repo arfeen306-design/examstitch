@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Award } from 'lucide-react';
 import SubjectCard from '@/components/SubjectCard';
-import { A_LEVEL_SUBJECTS } from '@/config/subjects';
+import { A_LEVEL_SUBJECTS } from '@/config/taxonomy';
 import { useSubjectCounts } from '@/lib/useSubjectCounts';
 
 export default function ALevelPage() {

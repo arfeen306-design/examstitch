@@ -3,11 +3,30 @@
 import { useState, useTransition } from 'react';
 import { bulkInsertResources } from '../../actions';
 
-export default function BulkUploadPreview() {
+export interface BulkUploadAvailableSubject {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface BulkUploadPreviewProps {
+  /**
+   * Subjects the current admin is allowed to write to. For non-super admins
+   * this is their `managed_subjects`; for super admins it is the full subject
+   * list. The widget refuses to upload until one is selected — `expectedSubjectId`
+   * is mandatory at the action layer (Phase 1.5, Finding H-13).
+   */
+  availableSubjects: BulkUploadAvailableSubject[];
+}
+
+export default function BulkUploadPreview({ availableSubjects }: BulkUploadPreviewProps) {
   const [jsonInput, setJsonInput] = useState('');
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [targetSubjectId, setTargetSubjectId] = useState<string>(
+    availableSubjects[0]?.id ?? '',
+  );
 
   const handleParse = () => {
     try {
@@ -23,12 +42,17 @@ export default function BulkUploadPreview() {
 
   const handleUpload = () => {
     if (!parsedData.length) return;
-    
+    if (!targetSubjectId) {
+      setError('Pick a target subject before committing.');
+      return;
+    }
+
     startTransition(async () => {
-      // Actually upload all data
       try {
         const fullData = JSON.parse(jsonInput);
-        const insertResult = await bulkInsertResources(fullData);
+        const insertResult = await bulkInsertResources(fullData, {
+          expectedSubjectId: targetSubjectId,
+        });
         if (!insertResult.success) {
           setError(insertResult.error || 'Failed to bulk insert');
         } else {
@@ -42,8 +66,34 @@ export default function BulkUploadPreview() {
     });
   };
 
+  if (availableSubjects.length === 0) {
+    return (
+      <p className="text-sm text-amber-300">
+        You have no managed subjects. Ask a super-admin to assign one before bulk-uploading.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="bulk-target-subject" className="text-xs uppercase tracking-wider text-slate-400">
+          Target subject (every row must belong to this subject)
+        </label>
+        <select
+          id="bulk-target-subject"
+          value={targetSubjectId}
+          onChange={(e) => setTargetSubjectId(e.target.value)}
+          className="w-full max-w-md p-2 text-sm rounded-lg bg-slate-900/40 border border-slate-700/50 text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400/35"
+        >
+          {availableSubjects.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <textarea
         className="w-full h-32 p-3 font-mono text-sm rounded-lg bg-slate-900/40 backdrop-blur-md border border-slate-700/50 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400/35 focus:border-amber-500/40"
         placeholder="Paste JSON array here..."
@@ -64,7 +114,7 @@ export default function BulkUploadPreview() {
           <button
             type="button"
             onClick={handleUpload}
-            disabled={isPending}
+            disabled={isPending || !targetSubjectId}
             className="px-4 py-2 text-sm font-medium rounded-lg border border-emerald-500/50 bg-transparent text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition"
           >
             {isPending ? 'Committing...' : `Commit to Production (${jsonInput.length ? JSON.parse(jsonInput).length : 0} items)`}
