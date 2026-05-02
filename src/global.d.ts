@@ -23,10 +23,13 @@ interface YouTubeIframePlayer {
 
 interface YouTubeIframeAPI {
   // The constructor accepts either a DOM element or its ID string per the
-  // upstream API; widening to `any` here matches reality without making each
-  // call site cast.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Player: new (target: any, options: Record<string, unknown>) => YouTubeIframePlayer;
+  // upstream API; HTMLElement | string covers both without resorting to `any`
+  // (the project's ESLint config doesn't load @typescript-eslint, so a
+  // disable-next-line for that rule itself becomes a build-failing error).
+  Player: new (
+    target: HTMLElement | string,
+    options: Record<string, unknown>,
+  ) => YouTubeIframePlayer;
   PlayerState: { PLAYING: number; ENDED: number; PAUSED: number };
 }
 
