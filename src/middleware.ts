@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { env } from '@/lib/env';
 import {
   PORTAL_ROUTE_SEGMENTS,
   SHARED_ADMIN_ROUTES,
-  getAllowedRouteSegments,
-} from '@/config/admin-portals';
+} from '@/config/taxonomy';
+import {
+  resolveAdminRoleForMiddleware,
+  isStillAdmin,
+  type CachedAdminRole,
+} from '@/lib/admin/middleware-role-cache';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -17,8 +22,8 @@ export async function middleware(request: NextRequest) {
   // ── Supabase session refresh + protected route guard ──────────────────────
   // Must run before the admin check so cookies are refreshed on every request.
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -76,57 +81,62 @@ export async function middleware(request: NextRequest) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ── Admin panel guard (Supabase Auth + role-verified cookie) ──────────────
-  // Requires BOTH a valid Supabase session AND an admin_session cookie whose
-  // value matches the authenticated user's ID. A student with a normal session
-  // cannot access /admin/* because they will never hold a matching cookie.
+  // ── Admin panel guard ─────────────────────────────────────────────────────
+  // Three layers of trust on every request:
+  //   1. Valid Supabase session JWT.
+  //   2. Opaque admin_session cookie that resolves to a live admin_sessions row.
+  //   3. Role re-fetched from student_accounts (cached 60s) — demoted admins
+  //      lose access within one TTL cycle, not 7 days.
   if (pathname.startsWith('/admin')) {
     if (pathname === '/admin/login' || pathname === '/admin/forbidden') return response;
 
-    const adminCookie = request.cookies.get('admin_session');
-
-    if (!user || !adminCookie || adminCookie.value !== user.id) {
-      // Redirect to admin login but preserve admin_session + admin_mode cookies.
-      // They'll still work for public content bypass even if the Supabase JWT expired.
-      // Re-login at /admin/login will refresh everything.
+    const adminToken = request.cookies.get('admin_session')?.value;
+    if (!user || !adminToken) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
-    // ── Role-based routing & subject isolation ─────────────────────────────
-    const landing = request.cookies.get('admin_landing')?.value ?? 'default';
+    // Resolve the token → {user_id, role, isSuperAdmin, managedSubjects}.
+    // The helper checks an in-process 60s cache first, then falls back to a
+    // service-role lookup against admin_sessions JOIN student_accounts.
+    let role: CachedAdminRole | null;
+    try {
+      role = await resolveAdminRoleForMiddleware(adminToken);
+    } catch {
+      role = null;
+    }
 
-    // Auto-redirect bare /admin to the user's landing page
+    if (!role || role.userId !== user.id || !isStillAdmin(role)) {
+      // Cookie is stale, role was revoked, or user mismatch → boot to login.
+      const redirect = NextResponse.redirect(new URL('/admin/login', request.url));
+      redirect.cookies.delete('admin_session');
+      redirect.cookies.delete('admin_mode');
+      redirect.cookies.delete('admin_landing');
+      redirect.cookies.delete('admin_subjects');
+      return redirect;
+    }
+
+    // ── Role-based routing & subject isolation (live data, not cookies) ────
+    const landing = role.isSuperAdmin
+      ? 'super'
+      : role.routeSegments[0] ?? 'default';
+
+    // Auto-redirect bare /admin to the resolved landing page
     if (pathname === '/admin' || pathname === '/admin/') {
       if (landing !== 'default') {
         return NextResponse.redirect(new URL(`/admin/${landing}`, request.url));
       }
-      // 'default' stays at /admin (Maths dashboard)
     }
 
     // /admin/super is restricted to super admins
-    if (pathname.startsWith('/admin/super') && landing !== 'super') {
+    if (pathname.startsWith('/admin/super') && !role.isSuperAdmin) {
       return NextResponse.redirect(new URL('/admin/forbidden', request.url));
     }
 
-    // ── Generic subject isolation ──────────────────────────────────────────
-    // Non-super admins can only access their assigned subject portals.
-    // `admin_subjects` (set in api/admin/login) contains comma-separated slugs from
-    // public.subjects.slug (e.g. maths, computer-science) and/or subject_papers.slug
-    // (e.g. mathematics-4024). See supabase/migrations/012_multi_subject.sql and
-    // src/config/admin-portals.ts (dbSubjectSlugs + subjectPaperSlugPrefixes).
-    if (landing !== 'super') {
-      const subjectsCookie = request.cookies.get('admin_subjects')?.value ?? '';
-      const assignedSlugs = subjectsCookie
-        ? subjectsCookie.split(',').map((s) => s.trim()).filter(Boolean)
-        : [];
-      const allowedRoutes = getAllowedRouteSegments(assignedSlugs);
-
-      // Check subject portal routes: /admin/cs, /admin/physics, etc.
+    if (!role.isSuperAdmin) {
+      const allowedRoutes = new Set(role.routeSegments);
       const subjectPortalMatch = pathname.match(/^\/admin\/([a-z-]+)/);
       if (subjectPortalMatch) {
         const segment = subjectPortalMatch[1];
-
-        // If it's a subject portal and admin doesn't have access → block
         if (PORTAL_ROUTE_SEGMENTS.has(segment) && !SHARED_ADMIN_ROUTES.has(segment) && !allowedRoutes.has(segment)) {
           return NextResponse.redirect(new URL('/admin/forbidden', request.url));
         }

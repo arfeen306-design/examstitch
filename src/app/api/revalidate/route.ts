@@ -1,25 +1,26 @@
 import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
+import { env } from '@/lib/env';
 
 /**
  * Cache revalidation endpoint.
  *
  * Accepts GET (manual) and POST (Supabase webhook).
  *
- * Authentication: secret via ?secret= query param OR Authorization: Bearer header.
+ * Authentication: Authorization: Bearer <REVALIDATION_SECRET> header only.
+ * The legacy ?secret= query parameter is no longer accepted because URL
+ * parameters leak through CDN/server logs and Referer headers
+ * (AUDIT_REPORT.md → Finding H-02).
  *
  * POST body from Supabase webhook contains:
  *   { type: 'INSERT'|'UPDATE'|'DELETE', table: 'resources'|'categories'|..., ... }
  */
 
 function authenticate(request: Request): boolean {
-  const url = new URL(request.url);
-  const paramSecret = url.searchParams.get('secret');
+  if (!env.REVALIDATION_SECRET) return false;
   const headerAuth = request.headers.get('authorization');
   const bearerSecret = headerAuth?.startsWith('Bearer ') ? headerAuth.slice(7) : null;
-
-  const secret = paramSecret || bearerSecret;
-  return !!secret && secret === process.env.REVALIDATION_SECRET;
+  return !!bearerSecret && bearerSecret === env.REVALIDATION_SECRET;
 }
 
 function revalidateForTable(table: string | undefined) {

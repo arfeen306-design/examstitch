@@ -10,7 +10,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 import AdminThemeButton from '@/components/admin/AdminThemeButton';
-import { getPortalsForSubjects } from '@/config/admin-portals';
+import RefreshPermissionsButton from '@/components/admin/RefreshPermissionsButton';
+import { getPortalsForSubjects } from '@/config/taxonomy';
 import { resolveManagedSubjectsToSlugs } from '@/lib/admin/resolve-managed-subjects';
 
 async function getAdminProfile(userId: string) {
@@ -236,6 +237,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             />
             <div className="flex flex-col gap-2 w-full min-w-0 [&>div]:w-full [&>form]:w-full [&_button]:min-h-[42px]">
               <AdminThemeButton tone="navy" />
+              <RefreshPermissionsButton />
               <form action={handleLogout} className="w-full flex">
                 <button
                   type="submit"

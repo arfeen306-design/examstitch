@@ -7,6 +7,7 @@ import {
   whenAdobeViewSdkReady,
   sanitizePdfFileName,
 } from '@/lib/adobe-pdf-embed';
+import { env } from '@/lib/env';
 
 interface FramedPDFViewerProps {
   embedUrl: string;
@@ -51,7 +52,7 @@ export default function FramedPDFViewer({
   /** After Adobe has mounted once, keep it alive if the user scrolls (avoid re-init flicker). */
   const adobeEverMountedRef = useRef(false);
 
-  const adobeClientId = process.env.NEXT_PUBLIC_ADOBE_CLIENT_ID;
+  const adobeClientId = env.NEXT_PUBLIC_ADOBE_CLIENT_ID;
   const canUseAdobeEmbed = Boolean(adobeClientId && resourceId);
 
   const inlinePdfQuery = (() => {

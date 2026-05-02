@@ -295,6 +295,31 @@ const AiFrame = memo(function AiFrame({
 export default function AskAnythingWidget() {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ProviderId>('desmos');
+  /**
+   * Lazy-mount registry: each iframe (Desmos / graphing / Gemini) is heavy —
+   * Desmos alone is ~3 MB of JS. We only mount a provider once the user has
+   * actually selected it AND the modal is open. Once mounted we keep the
+   * iframe alive for instant tab switches inside the same modal session, but
+   * the entire iframe tree unmounts when the modal closes — so the heavy
+   * processes are released, not just hidden.
+   *
+   * AUDIT_REPORT.md → Finding C-19.
+   */
+  const [mountedProviders, setMountedProviders] = useState<Set<ProviderId>>(() => new Set());
+
+  useEffect(() => {
+    if (!open) {
+      // Modal closed → drop all iframes so the browser can reclaim ~50–80 MB.
+      setMountedProviders(new Set());
+      return;
+    }
+    setMountedProviders((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [open, activeTab]);
 
   // ── FAB drag state ──────────────────────────────────────────────────────
   const fabRef = useRef<HTMLDivElement>(null);
@@ -486,7 +511,11 @@ export default function AskAnythingWidget() {
               {interacting && (
                 <div className="absolute inset-0 z-20" />
               )}
-              {PROVIDERS.map((p) => (
+              {/* Only mount providers the user has actually selected — see
+                  mountedProviders comment above. Inactive but already-mounted
+                  iframes stay alive (display:none) for instant tab switching;
+                  on modal close the whole tree unmounts. */}
+              {PROVIDERS.filter((p) => mountedProviders.has(p.id)).map((p) => (
                 <AiFrame
                   key={p.id}
                   url={p.url}

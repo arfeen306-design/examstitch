@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
+import { ROUTE_TO_PORTAL } from '@/config/taxonomy';
+import { resolveDisciplineSubjectForPortal } from '@/lib/admin/portal-resolver';
 import { BarChart3, Eye, FileText, Video, TrendingUp, Clock } from 'lucide-react';
 import { CONTENT_TYPES } from '@/lib/constants';
 
@@ -16,12 +17,10 @@ export default async function SubjectAnalyticsPage({
 
   const supabase = createAdminClient();
 
-  // Resolve subject
-  const { data: subject } = await supabase
-    .from('subjects')
-    .select('id, name')
-    .eq('slug', getPortalDbSubjectSlug(portal))
-    .single();
+  // Phase 2.1: walk every recognised legacy slug for this portal so analytics
+  // works even when the production row uses a non-primary slug ('math' vs
+  // 'maths' etc.).
+  const subject = await resolveDisciplineSubjectForPortal(supabase, portal);
 
   if (!subject) {
     return (

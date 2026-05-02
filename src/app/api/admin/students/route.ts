@@ -2,160 +2,149 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { generatePassword, hashPassword } from '@/lib/password';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
+import { getAdminSession } from '@/lib/supabase/guards';
+import { withApiHandler, ApiError, unauthorized, badRequest } from '@/lib/api/handler';
 
 // POST — Create a new student account with auto-generated password
-export async function POST(request: Request) {
-  try {
-    const { full_name, email, level } = await request.json() as {
-      full_name?: string;
-      email?: string;
-      level?: string;
-    };
+export const POST = withApiHandler(async (request) => {
+  const session = await getAdminSession();
+  if (!session) unauthorized();
 
-    if (!full_name?.trim()) return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
-    if (!email?.trim()) return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
-    if (!level?.trim()) return NextResponse.json({ error: 'Level is required.' }, { status: 400 });
+  const { full_name, email, level } = (await request.json()) as {
+    full_name?: string;
+    email?: string;
+    level?: string;
+  };
 
-    const supabase = createAdminClient();
+  if (!full_name?.trim()) badRequest('Name is required.');
+  if (!email?.trim()) badRequest('Email is required.');
+  if (!level?.trim()) badRequest('Level is required.');
 
-    // Check if email already exists
-    const { data: existing } = await supabase
-      .from('student_accounts')
-      .select('id')
-      .eq('email', email.trim().toLowerCase())
-      .single();
+  const supabase = createAdminClient();
 
-    if (existing) {
-      return NextResponse.json({ error: 'A student with this email already exists.' }, { status: 409 });
-    }
+  const { data: existing } = await supabase
+    .from('student_accounts')
+    .select('id')
+    .eq('email', email!.trim().toLowerCase())
+    .single();
 
+  if (existing) {
+    throw new ApiError('conflict', 'A student with this email already exists.');
+  }
+
+  const password = generatePassword();
+  const salt = crypto.randomUUID();
+  const password_hash = await hashPassword(password, salt);
+
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    email: email!.trim().toLowerCase(),
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: full_name!.trim(), role: 'student' },
+  });
+
+  if (authError || !authUser?.user) {
+    throw new ApiError('internal', 'Failed to create student auth account.', authError);
+  }
+
+  const { data: student, error } = await supabase
+    .from('student_accounts')
+    .insert({
+      id: authUser.user.id,
+      full_name: full_name!.trim(),
+      email: email!.trim().toLowerCase(),
+      level,
+      role: 'student',
+      password_hash,
+      salt,
+      is_active: true,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new ApiError('internal', 'Failed to create student.', error);
+  }
+
+  return NextResponse.json({ student, password });
+});
+
+// PATCH — Update student (toggle active, reset password)
+export const PATCH = withApiHandler(async (request) => {
+  const session = await getAdminSession();
+  if (!session) unauthorized();
+
+  const body = (await request.json()) as {
+    id: string;
+    is_active?: boolean;
+    reset_password?: boolean;
+  };
+
+  if (!body.id) badRequest('Student ID is required.');
+
+  const supabase = createAdminClient();
+  const { data: account } = await supabase
+    .from('student_accounts')
+    .select('role')
+    .eq('id', body.id)
+    .single();
+
+  if (!account || isStudentAccountAdminRole(account.role)) {
+    throw new ApiError('forbidden', 'Only student accounts can be changed here.');
+  }
+
+  if (body.reset_password) {
     const password = generatePassword();
     const salt = crypto.randomUUID();
     const password_hash = await hashPassword(password, salt);
 
-    // Create Supabase Auth user first to get a stable UUID
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: full_name.trim(), role: 'student' },
-    });
-
-    if (authError || !authUser?.user) {
-      console.error('[admin/students] Auth user creation failed:', authError);
-      return NextResponse.json({ error: 'Failed to create student auth account.' }, { status: 500 });
-    }
-
-    const { data: student, error } = await supabase
+    const { error } = await supabase
       .from('student_accounts')
-      .insert({
-        id: authUser.user.id,
-        full_name: full_name.trim(),
-        email: email.trim().toLowerCase(),
-        level,
-        role: 'student',
-        password_hash,
-        salt,
-        is_active: true,
-      })
-      .select('*')
-      .single();
+      .update({ password_hash, salt })
+      .eq('id', body.id);
 
-    if (error) {
-      console.error('[admin/students] Insert error:', error);
-      return NextResponse.json({ error: 'Failed to create student.' }, { status: 500 });
-    }
+    if (error) throw new ApiError('internal', 'Failed to reset password.', error);
 
-    return NextResponse.json({ student, password });
-  } catch (err) {
-    console.error('[admin/students] API error:', err);
-    return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
+    await supabase.auth.admin.updateUserById(body.id, { password }).catch(() => {});
+
+    return NextResponse.json({ success: true, password });
   }
-}
 
-// PATCH — Update student (toggle active, reset password)
-export async function PATCH(request: Request) {
-  try {
-    const body = await request.json() as {
-      id: string;
-      is_active?: boolean;
-      reset_password?: boolean;
-    };
-
-    if (!body.id) return NextResponse.json({ error: 'Student ID is required.' }, { status: 400 });
-
-    const supabase = createAdminClient();
-    const { data: account } = await supabase
+  if (typeof body.is_active === 'boolean') {
+    const { error } = await supabase
       .from('student_accounts')
-      .select('role')
-      .eq('id', body.id)
-      .single();
-    if (!account || isStudentAccountAdminRole(account.role)) {
-      return NextResponse.json({ error: 'Only student accounts can be changed here.' }, { status: 403 });
-    }
+      .update({ is_active: body.is_active })
+      .eq('id', body.id);
 
-    // Reset password
-    if (body.reset_password) {
-      const password = generatePassword();
-      const salt = crypto.randomUUID();
-      const password_hash = await hashPassword(password, salt);
-
-      const { error } = await supabase
-        .from('student_accounts')
-        .update({ password_hash, salt })
-        .eq('id', body.id);
-
-      if (error) return NextResponse.json({ error: 'Failed to reset password.' }, { status: 500 });
-
-      // Sync password to Supabase Auth (if auth user exists)
-      await supabase.auth.admin.updateUserById(body.id, { password }).catch(() => {});
-
-      return NextResponse.json({ success: true, password });
-    }
-
-    // Toggle active
-    if (typeof body.is_active === 'boolean') {
-      const { error } = await supabase
-        .from('student_accounts')
-        .update({ is_active: body.is_active })
-        .eq('id', body.id);
-
-      if (error) return NextResponse.json({ error: 'Failed to update student.' }, { status: 500 });
-      return NextResponse.json({ success: true });
-    }
-
-    return NextResponse.json({ error: 'No valid action provided.' }, { status: 400 });
-  } catch (err) {
-    console.error('[admin/students] PATCH error:', err);
-    return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
+    if (error) throw new ApiError('internal', 'Failed to update student.', error);
+    return NextResponse.json({ success: true });
   }
-}
+
+  badRequest('No valid action provided.');
+});
 
 // DELETE — Remove a student account
-export async function DELETE(request: Request) {
-  try {
-    const { id } = await request.json() as { id: string };
-    if (!id) return NextResponse.json({ error: 'Student ID is required.' }, { status: 400 });
+export const DELETE = withApiHandler(async (request) => {
+  const session = await getAdminSession();
+  if (!session) unauthorized();
 
-    const supabase = createAdminClient();
-    const { data: account } = await supabase
-      .from('student_accounts')
-      .select('role')
-      .eq('id', id)
-      .single();
-    if (!account || isStudentAccountAdminRole(account.role)) {
-      return NextResponse.json({ error: 'Only student accounts can be deleted here.' }, { status: 403 });
-    }
-    const { error } = await supabase.from('student_accounts').delete().eq('id', id);
+  const { id } = (await request.json()) as { id: string };
+  if (!id) badRequest('Student ID is required.');
 
-    if (error) return NextResponse.json({ error: 'Failed to delete student.' }, { status: 500 });
+  const supabase = createAdminClient();
+  const { data: account } = await supabase
+    .from('student_accounts')
+    .select('role')
+    .eq('id', id)
+    .single();
 
-    // Also remove the Supabase Auth user
-    await supabase.auth.admin.deleteUser(id).catch(() => {});
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('[admin/students] DELETE error:', err);
-    return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
+  if (!account || isStudentAccountAdminRole(account.role)) {
+    throw new ApiError('forbidden', 'Only student accounts can be deleted here.');
   }
-}
+
+  const { error } = await supabase.from('student_accounts').delete().eq('id', id);
+  if (error) throw new ApiError('internal', 'Failed to delete student.', error);
+
+  await supabase.auth.admin.deleteUser(id).catch(() => {});
+  return NextResponse.json({ success: true });
+});

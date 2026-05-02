@@ -11,7 +11,7 @@ import {
 } from './actions';
 import { useToast } from '@/components/ui/Toast';
 import { createClient } from '@/lib/supabase/client';
-import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
+import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug, getPortalDbSubjectSlugs } from '@/config/taxonomy';
 import { listMergedCategoriesForSubjectAdmin } from '@/app/admin/actions';
 import { oLevelGrades, aLevelPapersBySubject } from '@/config/navigation';
 import { PARENT_SUBJECT_SLUG_TO_ALEVEL_NAV_KEY, A_LEVEL_SECTION_SLUGS } from '@/lib/category-slug-policy';
@@ -52,11 +52,17 @@ export default function CategoriesPage() {
     setLoading(true);
     const supabase = createClient();
 
-    const { data: subject } = await supabase
+    // Phase 2.1: tolerate either 'maths' or 'math' (and any other recognised
+    // legacy form). We pull every candidate, then pick the first match in
+    // the configured priority order.
+    const recognisedSlugs = getPortalDbSubjectSlugs(portal);
+    const { data: candidates } = await supabase
       .from('subjects')
-      .select('id')
-      .eq('slug', getPortalDbSubjectSlug(portal))
-      .single();
+      .select('id, slug')
+      .in('slug', recognisedSlugs as string[]);
+    const subject = recognisedSlugs
+      .map((slug) => candidates?.find((c) => c.slug === slug))
+      .find((c): c is { id: string; slug: string } => Boolean(c));
 
     if (!subject) {
       setSubjectId(null);

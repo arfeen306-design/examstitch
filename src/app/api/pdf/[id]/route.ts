@@ -20,6 +20,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient }      from '@/lib/supabase/server';
+import { getAdminSession }   from '@/lib/supabase/guards';
 import { applyWatermark }    from '@/lib/pdf/watermark';
 import {
   parseSupabaseStorageObjectUrl,
@@ -191,11 +192,12 @@ async function resolvePdfResourceOrError(
   if (!resource.is_published) return { ok: false, response: errorResponse('Resource is not available.', 404) };
 
   if (resource.is_locked) {
-    const adminCookie = request.cookies.get('admin_session');
-    const adminMode = request.cookies.get('admin_mode');
-    const isAdmin = !!adminCookie?.value || adminMode?.value === '1';
+    // Verified admin bypass: requires a real Supabase session AND a matching
+    // admin row in student_accounts. The non-httpOnly `admin_mode` cookie is
+    // NEVER trusted server-side — it is only a UI hint for hiding lock badges.
+    const adminSession = await getAdminSession();
 
-    if (!isAdmin) {
+    if (!adminSession) {
       const userClient = createClient();
       const { data: { user } } = await userClient.auth.getUser();
       if (!user) {

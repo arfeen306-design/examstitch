@@ -8,6 +8,7 @@ import Footer from '@/components/layout/Footer';
 import WhatsAppFloat from '@/components/ui/WhatsAppFloat';
 import RouteProgress from '@/components/ui/RouteProgress';
 import dynamic from 'next/dynamic';
+import { createClient } from '@/lib/supabase/server';
 import './globals.css';
 
 const PlexusBackground = dynamic(() => import('@/components/ui/PlexusBackground'), { ssr: false });
@@ -56,6 +57,22 @@ export default async function RootLayout({
   const pathname = headersList.get('x-pathname') ?? '';
   const isAdmin = pathname.startsWith('/admin');
 
+  // Resolve the auth session server-side so the client Navbar can render the
+  // correct auth UI on first paint (no flicker between "Log In" and the
+  // account menu after hydration). AUDIT_REPORT.md → Finding H-33.
+  let initialUser: { id: string; email: string | null } | null = null;
+  if (!isAdmin) {
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        initialUser = { id: data.user.id, email: data.user.email ?? null };
+      }
+    } catch {
+      // Anon / cookie-less request — leave as null
+    }
+  }
+
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -81,7 +98,7 @@ export default async function RootLayout({
             // Public pages: full layout with Navbar, Footer, WhatsApp button
             <>
               <PlexusBackground />
-              <Navbar />
+              <Navbar initialUser={initialUser} />
               <main className="flex-1">{children}</main>
               <Footer />
               <WhatsAppFloat />

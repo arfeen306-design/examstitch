@@ -20,14 +20,7 @@ interface EmbeddedViewerProps {
   resourceId?: string;
 }
 
-// ── YouTube IFrame API types ───────────────────────────────────────────────
-
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
+// YouTube IFrame API globals are declared once in src/global.d.ts.
 
 // ── Premium VideoFrame ─────────────────────────────────────────────────────
 
@@ -94,9 +87,11 @@ function VideoFrame({
   // Init YT.Player
   useEffect(() => {
     if (!apiReady || !iframeRef.current) return;
-    playerRef.current = new window.YT.Player(iframeRef.current, {
+    const YT = window.YT;
+    if (!YT?.Player) return;
+    playerRef.current = new YT.Player(iframeRef.current, {
       events: {
-        onStateChange: (e: any) => {
+        onStateChange: (e: { data: number }) => {
           // YT.PlayerState.ENDED = 0
           if (e.data === 0) {
             setEnded(true);
@@ -105,7 +100,7 @@ function VideoFrame({
         },
       },
     });
-    return () => { try { playerRef.current?.destroy(); } catch (_) {} };
+    return () => { try { playerRef.current?.destroy?.(); } catch (_) {} };
   }, [apiReady, updateProgress]);
 
   // Periodically update progress (every 30s) while playing

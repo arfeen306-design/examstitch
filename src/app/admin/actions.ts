@@ -34,6 +34,37 @@ function invalidatePublicResourceCaches() {
   revalidateTag('resources');
 }
 
+/**
+ * Resolve the subject_id for a resource and verify the caller manages it.
+ * Returns the session if authorised, or an error object — caller may early-return.
+ *
+ * Fail-closed: an unlinked resource (no subject_id) or a missing row returns
+ * "Unauthorized" rather than leaking row existence.
+ */
+async function authorizeResourceMutation(
+  resourceId: string,
+): Promise<{ ok: true; subjectId: string } | { ok: false; error: string }> {
+  if (!resourceId) return { ok: false, error: 'Unauthorized.' };
+
+  const supabase = createAdminClient();
+  const { data: row, error } = await supabase
+    .from('resources')
+    .select('subject_id')
+    .eq('id', resourceId)
+    .single();
+
+  if (error || !row?.subject_id) {
+    return { ok: false, error: 'Unauthorized.' };
+  }
+
+  const auth = await requireSubjectAdmin(row.subject_id);
+  if (!auth) {
+    return { ok: false, error: 'Unauthorized.' };
+  }
+
+  return { ok: true, subjectId: row.subject_id };
+}
+
 /** Row shape returned after insert — matches SubjectResourceManager `Resource`. */
 export type AdminInsertedResourceRow = {
   id: string;
@@ -116,8 +147,11 @@ const ResourceSchema = z.object({
 export type InsertResourceInput = z.infer<typeof ResourceSchema>;
 
 export async function toggleResourceFlag(id: string, field: 'is_published' | 'is_locked' | 'is_watermarked', value: boolean) {
+  const authz = await authorizeResourceMutation(id);
+  if (!authz.ok) return { success: false, error: authz.error };
+
   const supabase = createAdminClient();
-  
+
   const { error } = await supabase
     .from('resources')
     .update({ [field]: value })
@@ -134,8 +168,18 @@ export async function toggleResourceFlag(id: string, field: 'is_published' | 'is
 
 export async function bulkInsertResources(
   resources: unknown[],
-  options?: { expectedSubjectId?: string },
+  options: { expectedSubjectId: string },
 ): Promise<BulkInsertResourcesResult> {
+  // Fail closed: expectedSubjectId is now mandatory. The /admin/(dashboard)
+  // bulk page must derive it from a UI selector or the active portal so
+  // every batch is bound to one subject the caller is authorised for.
+  if (!options?.expectedSubjectId) {
+    return {
+      success: false,
+      error: 'Unauthorized: a target subject is required for bulk uploads.',
+    };
+  }
+
   // Validate every row before touching the database
   const parsed = z.array(ResourceSchema).safeParse(resources);
   if (!parsed.success) {
@@ -146,14 +190,14 @@ export async function bulkInsertResources(
     };
   }
 
-  const session = await getAdminSession();
+  // Authorise once against the declared target subject. requireSubjectAdmin
+  // also returns null for non-admins, so this replaces the old getAdminSession
+  // path. Super-admins bypass the managed_subjects check inside the helper.
+  const session = await requireSubjectAdmin(options.expectedSubjectId);
   if (!session) {
-    return { success: false, error: 'Not authenticated.' };
-  }
-  if (!session.isSuperAdmin && options?.expectedSubjectId && !session.managedSubjects.includes(options.expectedSubjectId)) {
     return {
       success: false,
-      error: `Access denied: you do not manage subject ${options.expectedSubjectId}.`,
+      error: `Unauthorized: you do not manage subject ${options.expectedSubjectId}.`,
     };
   }
 
@@ -226,7 +270,9 @@ export async function bulkInsertResources(
         error: `Invalid category_id on row ${res._rowIndex + 1}: category not found or missing subject linkage.`,
       };
     }
-    if (options?.expectedSubjectId && res.subject_id !== options.expectedSubjectId) {
+    // Every resolved row subject MUST match the declared target. Mixed-subject
+    // batches are rejected before any insert.
+    if (res.subject_id !== options.expectedSubjectId) {
       return {
         success: false,
         error: `Row ${res._rowIndex + 1}: payload subject does not match active portal subject.`,
@@ -234,17 +280,9 @@ export async function bulkInsertResources(
     }
   }
 
-  if (!session.isSuperAdmin) {
-    const requestedSubjects = new Set(enriched.map((r) => r.subject_id).filter(Boolean) as string[]);
-    for (const sid of requestedSubjects) {
-      if (!session.managedSubjects.includes(sid)) {
-        return {
-          success: false,
-          error: `Access denied: you do not manage subject ${sid}.`,
-        };
-      }
-    }
-  }
+  // No additional managed_subjects loop needed: requireSubjectAdmin above
+  // already verified the caller (super-admin or scoped admin) is authorised
+  // for options.expectedSubjectId, and every row resolves to that subject.
 
   const guard = await assertResourceSyllabusBatch(
     supabase,
@@ -359,13 +397,19 @@ export async function bulkInsertResources(
   }
 }
 
-export async function createResource(data: unknown): Promise<BulkInsertResourcesResult> {
-  return bulkInsertResources([data]);
+export async function createResource(
+  data: unknown,
+  options: { expectedSubjectId: string },
+): Promise<BulkInsertResourcesResult> {
+  return bulkInsertResources([data], options);
 }
 
 export async function deleteResource(id: string) {
+  const authz = await authorizeResourceMutation(id);
+  if (!authz.ok) return { success: false, error: authz.error };
+
   const supabase = createAdminClient();
-  
+
   const { error } = await supabase.from('resources').delete().eq('id', id);
 
   if (error) {
@@ -391,8 +435,38 @@ export async function updateResource(
     syllabus_id?: string | null;
   },
 ) {
+  // Authorize the SOURCE subject (where the row currently lives).
+  const authz = await authorizeResourceMutation(id);
+  if (!authz.ok) return { success: false, error: authz.error };
+
   const supabase = createAdminClient();
-  
+
+  // If the caller is moving the row to a different subject (directly via
+  // subject_id, or indirectly via category_id), authorize the DESTINATION
+  // subject too — otherwise an admin could shove resources into another
+  // admin's namespace.
+  let destSubjectId: string | undefined;
+  if (updates.subject_id && updates.subject_id !== authz.subjectId) {
+    destSubjectId = updates.subject_id;
+  } else if (updates.category_id) {
+    const { data: catRow } = await supabase
+      .from('categories')
+      .select('subject_id')
+      .eq('id', updates.category_id)
+      .single();
+    if (!catRow?.subject_id) {
+      return { success: false, error: 'Unauthorized.' };
+    }
+    if (catRow.subject_id !== authz.subjectId) {
+      destSubjectId = catRow.subject_id;
+    }
+  }
+
+  if (destSubjectId) {
+    const destAuth = await requireSubjectAdmin(destSubjectId);
+    if (!destAuth) return { success: false, error: 'Unauthorized.' };
+  }
+
   const { error } = await supabase.from('resources').update(updates).eq('id', id);
 
   if (error) {
@@ -532,6 +606,9 @@ export async function deleteCategoryWithAction(categoryId: string, action: 'casc
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function createBlogPost(formData: FormData) {
+  const session = await getAdminSession();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   const title = formData.get('title')?.toString().trim() ?? '';
@@ -559,6 +636,9 @@ export async function createBlogPost(formData: FormData) {
 }
 
 export async function deleteBlogPost(id: string) {
+  const session = await getAdminSession();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   const { error } = await supabase

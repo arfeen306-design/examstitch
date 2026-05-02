@@ -57,12 +57,7 @@ interface InteractiveSolverProps {
 // YouTube Player (with seekTo exposed)
 // ─────────────────────────────────────────────────────────────────────────────
 
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
+// YouTube IFrame API globals are declared once in src/global.d.ts.
 
 function SolverYouTubePlayer({
   embedUrl,
@@ -130,7 +125,10 @@ function SolverYouTubePlayer({
     const vidMatch = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
     if (!vidMatch) return;
 
-    playerRef.current = new window.YT.Player(containerRef.current, {
+    const YT = window.YT;
+    if (!YT?.Player) return;
+
+    playerRef.current = new YT.Player(containerRef.current, {
       videoId: vidMatch[1],
       playerVars: {
         rel: 0,
@@ -142,7 +140,7 @@ function SolverYouTubePlayer({
       },
       events: {
         onReady: () => readyCbRef.current(playerRef.current),
-        onStateChange: (e: any) => {
+        onStateChange: (e: { data: number }) => {
           if (e.data === 0) { // ENDED
             setEnded(true);
             updateProgress(true);

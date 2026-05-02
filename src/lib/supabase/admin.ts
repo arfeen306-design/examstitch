@@ -4,24 +4,21 @@
  * NEVER expose SUPABASE_SERVICE_ROLE_KEY to the browser.
  */
 import { createClient } from '@supabase/supabase-js';
+import { env, requireServerSecret } from '@/lib/env';
 
 export function createAdminClient() {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set. Admin client cannot be created.');
-  }
+  // Force a typed runtime error if the service-role key is missing — caller
+  // can't accidentally fall back to anon credentials.
+  const serviceKey = requireServerSecret('SUPABASE_SERVICE_ROLE_KEY');
 
   // We do not pass a Database generic here because our hand-written types
   // use a simplified shape that doesn't include the Relationships/CompositeTypes
   // keys that supabase-js v2 requires at the generic level.
   // Queries in route handlers cast rows with explicit types for safety.
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
-  );
+  });
 }

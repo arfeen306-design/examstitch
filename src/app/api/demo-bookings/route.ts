@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { env } from '@/lib/env';
 
 // WhatsApp / phone validation — E.164 format: +[country][number], 8–15 digits total
 const WHATSAPP_REGEX = /^\+[1-9]\d{7,14}$/;
@@ -36,7 +37,7 @@ function generateBookingRef(): string {
 // Copy the /exec URL and set it as GOOGLE_SHEETS_WEBHOOK_URL in Vercel.
 // ──────────────────────────────────────────────────────────────────────────────
 async function syncToGoogleSheets(payload: Record<string, string>) {
-  const url = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  const url = env.GOOGLE_SHEETS_WEBHOOK_URL;
   if (!url) return; // silently skip if not configured
 
   try {

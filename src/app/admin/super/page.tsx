@@ -6,7 +6,7 @@ import {
   AlertTriangle, CheckCircle2, Clock,
 } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
-import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS } from '@/config/subjects';
+import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS } from '@/config/taxonomy';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 
 const SuperAdminClient = nextDynamic(() => import('./SuperAdminClient'), { ssr: false });

@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
-import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { getAdminSession } from '@/lib/supabase/guards';
 import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
 import PremiumGate from '@/components/resources/PremiumGate';
 import type { QuestionMapping } from '@/components/resources/InteractiveSolver';
@@ -102,12 +102,12 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
 
   // ── Auth gate for locked resources ───────────────────────────────────────
   if ((resource as any).is_locked) {
-    // Admin bypass: either httpOnly admin_session OR client admin_mode flag
-    const cookieStore = await cookies();
-    const isAdmin = !!cookieStore.get('admin_session')?.value
-                 || cookieStore.get('admin_mode')?.value === '1';
+    // Verified admin bypass: requires a real Supabase session AND a matching
+    // admin row in student_accounts. The client-readable `admin_mode` cookie
+    // is NEVER trusted server-side — it is only a UI hint.
+    const adminSession = await getAdminSession();
 
-    if (!isAdmin) {
+    if (!adminSession) {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 

@@ -681,11 +681,48 @@ function StudentReviews() {
     }
   }, [activeTab]);
 
-  // RAF auto-scroll loop
+  // RAF auto-scroll loop — gated by IntersectionObserver, page visibility,
+  // and prefers-reduced-motion so we don't burn CPU when the section is
+  // off-screen, the tab is backgrounded, or the user opted out of motion.
   useEffect(() => {
     const speed = 0.5; // px per frame
+
+    let visible = true;
+    let pageVisible = !document.hidden;
+    const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    let reducedMotion = motionQuery?.matches ?? false;
+
+    const onMotionChange = (e: MediaQueryListEvent) => {
+      reducedMotion = e.matches;
+    };
+    motionQuery?.addEventListener?.('change', onMotionChange);
+
+    const onVisibilityChange = () => {
+      pageVisible = !document.hidden;
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    let io: IntersectionObserver | null = null;
+    if (trackRef.current && 'IntersectionObserver' in window) {
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) visible = entry.isIntersecting;
+        },
+        { rootMargin: '50px' },
+      );
+      io.observe(trackRef.current);
+    }
+
     const tick = (timestamp: number) => {
-      if (timestamp >= pauseUntilRef.current && trackRef.current) {
+      // Cheap fall-through when paused — still requestAnimationFrame so we
+      // can resume immediately when the gate flips back to visible.
+      if (
+        visible &&
+        pageVisible &&
+        !reducedMotion &&
+        timestamp >= pauseUntilRef.current &&
+        trackRef.current
+      ) {
         posRef.current += speed;
         const half = trackRef.current.scrollWidth / 2;
         if (posRef.current >= half) posRef.current -= half;
@@ -694,7 +731,13 @@ function StudentReviews() {
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      motionQuery?.removeEventListener?.('change', onMotionChange);
+      io?.disconnect();
+    };
   }, [activeTab]);
 
   const handleNav = (dir: 'left' | 'right') => {
@@ -877,11 +920,37 @@ function StudentReviews() {
 export default function HomeClient({ feedItems }: { feedItems: FeedItem[] }) {
   const [subjectIndex, setSubjectIndex] = useState(0);
 
+  // Hero subject rotator — paused when the tab is backgrounded or the user
+  // prefers reduced motion. Avoids burning a setInterval forever in idle tabs.
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSubjectIndex((prev) => (prev + 1) % SUBJECTS.length);
-    }, 3000);
-    return () => clearInterval(interval);
+    const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (motionQuery?.matches) return; // user opted out → no rotation
+
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        setSubjectIndex((prev) => (prev + 1) % SUBJECTS.length);
+      }, 3000);
+    };
+    const stop = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    if (!document.hidden) start();
+    const onVisibilityChange = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   return (

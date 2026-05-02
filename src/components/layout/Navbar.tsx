@@ -11,12 +11,28 @@ import ThemeToggle from '@/components/ui/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-export default function Navbar() {
+/**
+ * The full Supabase User object is heavy and not needed in the navbar — the
+ * server resolver passes a slim shape so SSR stays cheap. The full object
+ * arrives via onAuthStateChange after hydration if needed.
+ */
+export interface NavbarInitialUser {
+  id: string;
+  email: string | null;
+}
+
+export interface NavbarProps {
+  initialUser?: NavbarInitialUser | null;
+}
+
+export default function Navbar({ initialUser = null }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  // Hydrate from the server-resolved user so first paint matches reality.
+  // The Supabase user shape is broader than NavbarInitialUser; in this
+  // component we only ever read .email, which both shapes guarantee.
+  const [user, setUser] = useState<SupabaseUser | NavbarInitialUser | null>(initialUser);
 
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
@@ -32,16 +48,13 @@ export default function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
+    // Server has already provided initialUser; we no longer need a blocking
+    // getSession() round-trip on first paint. Only subscribe to subsequent
+    // auth state changes (sign-in / sign-out within this tab).
     const supabase = createClient();
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      setAuthLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -174,7 +187,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            {!authLoading && (
+            {(
               user ? (
                 <div className="relative" ref={accountMenuRef}>
                   <button

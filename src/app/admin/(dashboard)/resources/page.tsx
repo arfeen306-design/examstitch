@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
 import ResourceGridClient from './ResourceGridClient';
-import BulkUploadPreview from './BulkUploadPreview';
+import BulkUploadPreview, { type BulkUploadAvailableSubject } from './BulkUploadPreview';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +51,25 @@ export default async function AdminResourcesPage() {
     console.error('Failed to fetch admin resources', error);
   }
 
+  // Subjects this admin is allowed to bulk-upload into. Super admins see every
+  // subject; scoped admins see only their managed_subjects. The bulk action
+  // re-verifies on the server (Phase 1.5 / Finding H-13).
+  let availableSubjects: BulkUploadAvailableSubject[] = [];
+  if (isSuperAdmin) {
+    const { data: allSubjects } = await supabase
+      .from('subjects')
+      .select('id, name, slug')
+      .order('name');
+    availableSubjects = (allSubjects ?? []) as BulkUploadAvailableSubject[];
+  } else if (managedSubjects.length > 0) {
+    const { data: scoped } = await supabase
+      .from('subjects')
+      .select('id, name, slug')
+      .in('id', managedSubjects)
+      .order('name');
+    availableSubjects = (scoped ?? []) as BulkUploadAvailableSubject[];
+  }
+
   return (
     <div className="admin-resources-page space-y-6">
       <div>
@@ -64,7 +83,7 @@ export default async function AdminResourcesPage() {
 
       <div className="rounded-xl p-6 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">
         <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Bulk JSON Upload</h3>
-        <BulkUploadPreview />
+        <BulkUploadPreview availableSubjects={availableSubjects} />
       </div>
 
       <div className="rounded-xl p-6 bg-slate-900/40 backdrop-blur-md border border-slate-700/50">

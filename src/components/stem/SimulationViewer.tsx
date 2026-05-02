@@ -191,26 +191,44 @@ export default function SimulationViewer({
   }, [theme]);
 
   // ── Auto-hide HUD top bar ──────────────────────────────────────────
+  // Read showInstructions from a ref so the listener can stay attached for
+  // the lifetime of the component — re-binding on every panel toggle was
+  // causing timer races at high mousemove rates.
+  const showInstructionsRef = useRef(showInstructions);
+  showInstructionsRef.current = showInstructions;
+
   useEffect(() => {
+    let rafQueued = false;
+    let latestY = -1;
+
     const startHideTimer = () => {
       if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
       hudTimerRef.current = setTimeout(() => setHudVisible(false), 2000);
     };
+
+    // Hot path: just record the latest Y and queue one rAF tick.
     const onMouseMove = (e: MouseEvent) => {
-      if (e.clientY < 60) {
-        setHudVisible(true);
-        if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
-      } else {
-        if (!showInstructions) startHideTimer();
-      }
+      latestY = e.clientY;
+      if (rafQueued) return;
+      rafQueued = true;
+      requestAnimationFrame(() => {
+        rafQueued = false;
+        if (latestY < 60) {
+          setHudVisible(true);
+          if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+        } else if (!showInstructionsRef.current) {
+          startHideTimer();
+        }
+      });
     };
+
     startHideTimer();
-    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
     };
-  }, [showInstructions]);
+  }, []);
 
   // ── Floating toolbar drag ───────────────────────────────────────────
   const ftRef = useRef<HTMLDivElement>(null);
@@ -287,14 +305,26 @@ export default function SimulationViewer({
   useEffect(() => {
     const canvas = doodleCanvasRef.current;
     if (!canvas) return;
+
+    // Debounce resize to ~150ms — burst resize events during window-edge drag
+    // were redrawing the whole stroke buffer hundreds of times per second.
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       redrawDoodle(strokesRef.current);
     };
+    const onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 150);
+    };
+
     resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
+    };
   }, [redrawDoodle]);
 
   // Redraw when strokes change (without resizing canvas)

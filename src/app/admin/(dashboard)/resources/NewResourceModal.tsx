@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@/lib/supabase/client';
 import { X, PlayCircle, FileText, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { MODULE_TYPES, CONTENT_TYPES, PORTAL_RESOURCE_CTA_PRIMARY_MD } from '@/lib/constants';
@@ -87,10 +87,7 @@ export default function NewResourceModal({
     setModuleType('');
     const fetchData = async () => {
       setCategoriesLoading(true);
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = createClient();
       // Fetch all subjects from the new subjects table (post-migration 012)
       const { data: subjectData } = await supabase
         .from('subjects')
@@ -119,10 +116,7 @@ export default function NewResourceModal({
       setSyllabiList([]);
       return;
     }
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    const supabase = createClient();
     supabase
       .from('syllabi')
       .select('id, tier, name')
@@ -137,10 +131,7 @@ export default function NewResourceModal({
       return;
     }
     setCategoriesLoading(true);
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    const supabase = createClient();
     supabase
       .from('categories')
       .select(
@@ -157,10 +148,7 @@ export default function NewResourceModal({
 
   useEffect(() => {
     if (!isOpen || !defaultSyllabusSlug || !formData.subject_id) return;
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    const supabase = createClient();
     (async () => {
       const { data: paper } = await supabase
         .from('subject_papers')

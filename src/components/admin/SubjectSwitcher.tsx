@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Globe, Database, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { ADMIN_PORTALS, getPortalsForSubjects } from '@/config/admin-portals';
+import { ADMIN_PORTALS, getPortalsForSubjects } from '@/config/taxonomy';
 
 interface Props {
   /** If true, show all links (super admin). If false, filter by managedSubjects. */

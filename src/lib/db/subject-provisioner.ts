@@ -1,6 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ADMIN_PORTALS, getPortalDbSubjectSlug, type AdminPortal } from '@/config/admin-portals';
-import { aLevelPapersBySubject, oLevelToALevelSlug } from '@/config/navigation';
+import {
+  ADMIN_PORTALS,
+  getPortalDbSubjectSlug,
+  getTaxonomyBySlug,
+  getProvisionerPapers,
+  type AdminPortal,
+  type ProvisionerPaperConfig,
+} from '@/config/taxonomy';
+import { resolveDisciplineSubjectForPortal } from '@/lib/admin/portal-resolver';
 
 /** Service-role client; avoid `SupabaseClient<Database>` here — hand-written Database omits supabase-js v2 schema keys, which collapses Insert/Row to `never`. */
 type AdminClient = SupabaseClient;
@@ -261,8 +268,23 @@ async function ensureAsA2RootCategoriesIfMissing(
 }
 
 /**
- * Idempotent: A-Level paper categories under as-level / a2-level using the same
- * slugs as `aLevelPapersBySubject` (HierarchyPicker + public nav). Skips CS (custom tree).
+ * Resolve the A-Level paper config for a portal, derived from the canonical
+ * taxonomy entry. Every active subject — including History, Business, and
+ * anything added to SUBJECT_TAXONOMY in future — produces the same shape.
+ *
+ * Phase 4 Task 2: this replaces the previous lookup against navigation.ts'
+ * hardcoded `aLevelPapersBySubject`, which only knew Math/CS/Physics/Chem/Bio.
+ */
+function getPortalALevelPapers(portal: AdminPortal): ProvisionerPaperConfig | null {
+  const tax = getTaxonomyBySlug(portal.taxonomyOLevelPaperSlug);
+  if (!tax) return null;
+  return getProvisionerPapers(tax);
+}
+
+/**
+ * Idempotent: A-Level paper categories under as-level / a2-level. Skips CS
+ * (custom tree handled by provisionComputerScience). For every other A-Level
+ * subject the paper definitions come from SUBJECT_TAXONOMY.
  */
 async function ensureSciencePaperCategories(
   supabase: AdminClient,
@@ -271,9 +293,7 @@ async function ensureSciencePaperCategories(
   alevelId: string | null,
   aPaperId: string | null,
 ): Promise<number> {
-  const aLevelNavSlug = oLevelToALevelSlug[portal.taxonomyOLevelPaperSlug];
-  if (!aLevelNavSlug) return 0;
-  const papersCfg = aLevelPapersBySubject[aLevelNavSlug];
+  const papersCfg = getPortalALevelPapers(portal);
   if (!papersCfg) return 0;
 
   const { data: asParent } = await supabase
@@ -366,11 +386,13 @@ export async function provisionSubjectPortal(
     return { success: false, error: `Unknown portal segment "${portalRouteSegment}".` };
   }
 
-  const slug = getPortalDbSubjectSlug(portal);
-  const { data: subj, error: sErr } = await supabase.from('subjects').select('id').eq('slug', slug).maybeSingle();
-  if (sErr) return { success: false, error: sErr.message };
+  // Phase 2.1: walk every recognised legacy slug for this portal so
+  // provisioning succeeds whether the production row was created under
+  // 'maths', 'math', or any other configured form.
+  const subj = await resolveDisciplineSubjectForPortal(supabase, portal);
   if (!subj) {
-    return { success: false, error: `Subject "${slug}" is not in the database. Create it in Subject Factory first.` };
+    const primary = getPortalDbSubjectSlug(portal);
+    return { success: false, error: `Subject "${primary}" is not in the database. Create it in Subject Factory first.` };
   }
 
   const includeALevel = portal.hasALevelSyllabus !== false;

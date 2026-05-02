@@ -1,12 +1,15 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getAdminSession } from '@/lib/supabase/guards';
+import { requireSuperAdmin } from '@/lib/supabase/guards';
 import { provisionSubjectPortal } from '@/lib/db-init';
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { PORTAL_ROUTE_SEGMENTS } from '@/config/admin-portals';
+import { PORTAL_ROUTE_SEGMENTS, SUBJECT_TAXONOMY, getPortalDbSubjectSlug } from '@/config/taxonomy';
 
 export async function createSubject(payload: { name: string; slug: string; levels: string[] }) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   if (!payload.name.trim() || !payload.slug.trim() || payload.levels.length === 0) {
@@ -38,6 +41,9 @@ export async function createSubject(payload: { name: string; slug: string; level
 }
 
 export async function assignSubjectToAdmin(userId: string, subjectId: string) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   const { data: user } = await supabase
@@ -73,6 +79,9 @@ export async function assignSubjectToAdmin(userId: string, subjectId: string) {
 }
 
 export async function removeSubjectFromAdmin(userId: string, subjectId: string) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   const { data: user } = await supabase
@@ -106,6 +115,9 @@ export async function createAdminAccount(payload: {
   managed_subjects: string[];
   is_super_admin: boolean;
 }) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createAdminClient();
 
   if (!payload.email.trim() || !payload.full_name.trim() || !payload.password) {
@@ -167,6 +179,14 @@ export async function createAdminAccount(payload: {
 // ── Delete an admin account ─────────────────────────────────────────────────
 
 export async function deleteAdminAccount(userId: string) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
+  // Self-delete is irrecoverable from the current session — block it.
+  if (session.userId === userId) {
+    return { success: false, error: 'You cannot delete your own account.' };
+  }
+
   const supabase = createAdminClient();
 
   // Safety: prevent deleting yourself (arfeen306)
@@ -205,6 +225,15 @@ export async function deleteAdminAccount(userId: string) {
 // ── Toggle super admin status ───────────────────────────────────────────────
 
 export async function toggleSuperAdmin(userId: string, makeSuperAdmin: boolean) {
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
+  // Block self-toggle: a super-admin cannot demote themselves (lockout risk),
+  // and any non-super caller would already have been rejected above.
+  if (session.userId === userId) {
+    return { success: false, error: 'You cannot change your own super-admin status.' };
+  }
+
   const supabase = createAdminClient();
 
   const { data: target } = await supabase
@@ -244,10 +273,8 @@ export async function toggleSuperAdmin(userId: string, makeSuperAdmin: boolean) 
 
 /** Super-admin: provision syllabi + default category tree for a portal (Physics, CS, …). */
 export async function provisionPortalHierarchy(portalRouteSegment: string) {
-  const session = await getAdminSession();
-  if (!session?.isSuperAdmin) {
-    return { success: false as const, error: 'Super admin only.' };
-  }
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false as const, error: 'Unauthorized.' };
   if (!PORTAL_ROUTE_SEGMENTS.has(portalRouteSegment)) {
     return { success: false as const, error: 'Invalid portal segment.' };
   }
@@ -264,24 +291,46 @@ export async function provisionPortalHierarchy(portalRouteSegment: string) {
   return result;
 }
 
-const DISCIPLINE_SUBJECT_SEED: { name: string; slug: string; levels: string[] }[] = [
-  { name: 'Physics', slug: 'physics', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
-  { name: 'Chemistry', slug: 'chemistry', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
-  { name: 'Biology', slug: 'biology', levels: ['O Level', 'A Level', 'AS Level', 'A2 Level'] },
-  { name: 'English', slug: 'english', levels: ['O Level', 'IGCSE'] },
-  { name: 'Urdu', slug: 'urdu', levels: ['O Level', 'IGCSE'] },
-  { name: 'Pakistan Studies', slug: 'pakistan-studies', levels: ['O Level', 'IGCSE'] },
-];
+/**
+ * Phase 4 Task 2: derive the seed list from SUBJECT_TAXONOMY so adding a new
+ * subject (History, Business, Psychology, …) is a one-file edit. The 'maths'
+ * primary slug is excluded because mathematics is seeded via a separate
+ * historical path that long predates this list; it stays out to avoid double-
+ * upsert conflicts. 'computer-science' similarly has its own provisioning
+ * branch (provisionComputerScience). Every other subject in the taxonomy
+ * comes through this seed.
+ */
+const DISCIPLINE_SUBJECT_SEED_EXCLUDED = new Set(['mathematics', 'computer-science']);
+
+const DISCIPLINE_SUBJECT_SEED: { name: string; slug: string; levels: string[] }[] = Object
+  .entries(SUBJECT_TAXONOMY)
+  .filter(([key]) => !DISCIPLINE_SUBJECT_SEED_EXCLUDED.has(key))
+  .map(([, tax]) => ({
+    name: tax.name,
+    // Use the canonical primary DB slug (not the URL slug or admin route segment).
+    slug: getPortalDbSubjectSlug({
+      routeSegment: tax.adminPortal.routeSegment,
+      label: tax.adminPortal.label,
+      gradient: tax.adminPortal.gradient,
+      accentColor: tax.accentColor,
+      dbSubjectSlugs: tax.adminPortal.dbSubjectSlugs,
+      subjectPaperSlugPrefixes: tax.adminPortal.subjectPaperSlugPrefixes,
+      taxonomyOLevelPaperSlug: tax.oLevelSlug,
+      hasALevelSyllabus: tax.adminPortal.hasALevelSyllabus,
+      active: tax.active,
+    }),
+    levels: tax.adminPortal.hasALevelSyllabus
+      ? ['O Level', 'A Level', 'AS Level', 'A2 Level']
+      : ['O Level', 'IGCSE'],
+  }));
 
 /**
  * Super-admin: upsert Physics, Chemistry, … parent rows in public.subjects
  * (same as migration 20260414). Use when the DB was never migrated remotely.
  */
 export async function seedDisciplineSubjectsFromApp() {
-  const session = await getAdminSession();
-  if (!session?.isSuperAdmin) {
-    return { success: false as const, error: 'Super admin only.' };
-  }
+  const session = await requireSuperAdmin();
+  if (!session) return { success: false as const, error: 'Unauthorized.' };
 
   const supabase = createAdminClient();
   const { error } = await supabase.from('subjects').upsert(DISCIPLINE_SUBJECT_SEED, { onConflict: 'slug' });

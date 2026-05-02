@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAdminSession } from '@/lib/supabase/guards';
-import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/admin-portals';
+import { ROUTE_TO_PORTAL, getPortalDbSubjectSlug } from '@/config/taxonomy';
+import { resolveDisciplineSubjectForPortal } from '@/lib/admin/portal-resolver';
 import { provisionSubjectPortal, fetchMergedCategoriesForSubject } from '@/lib/db/subject-provisioner';
 import { oLevelToALevelSlug } from '@/config/navigation';
 import { FileText, Video, BookOpen, TrendingUp, Database } from 'lucide-react';
@@ -22,12 +23,12 @@ export default async function SubjectAdminPage({
 
   const supabase = createAdminClient();
 
-  // Resolve the parent subject from the subjects table
-  const { data: subject } = await supabase
-    .from('subjects')
-    .select('id, name, levels')
-    .eq('slug', getPortalDbSubjectSlug(portal))
-    .single();
+  // Resolve the parent subject. Phase 2.1: a portal may map to multiple legacy
+  // DB slugs (e.g. 'maths' AND 'math'); resolveDisciplineSubjectForPortal
+  // walks them in priority order. The dashboard then keys every downstream
+  // query off the resolved UUID — never a slug — so it is robust to whichever
+  // historic slug form actually exists in production.
+  const subject = await resolveDisciplineSubjectForPortal(supabase, portal);
 
   if (!subject) {
     const session = await getAdminSession();

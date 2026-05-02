@@ -1,8 +1,10 @@
-import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS } from '@/config/subjects';
-import { ADMIN_PORTALS } from '@/config/admin-portals';
+import { O_LEVEL_SUBJECTS, A_LEVEL_SUBJECTS } from '@/config/taxonomy';
+import { ADMIN_PORTALS } from '@/config/taxonomy';
+import { SUBJECT_TAXONOMY, getProvisionerPapers } from '@/config/taxonomy';
 
 // ─── Subject Metadata ────────────────────────────────────────────────────────
-// Maps URL slugs to display info. Used by breadcrumbs and page headers.
+// Maps URL slugs to display info. Derived from SUBJECT_TAXONOMY — adding a
+// new subject is a one-file edit in taxonomy.ts (Layer 3 of Phase 2).
 
 export type SubjectMeta = {
   name: string;
@@ -12,101 +14,43 @@ export type SubjectMeta = {
   color: string;         // gradient classes for subject cards
 };
 
-export const subjectMeta: Record<string, SubjectMeta> = {
-  // ── O-Level / IGCSE ──
-  'mathematics-4024': {
-    name: 'Mathematics',
-    code: '4024',
-    displayCode: '4024/0580',
-    slug: 'mathematics-4024',
-    color: 'from-blue-500 to-indigo-600',
-  },
-  'computer-science-0478': {
-    name: 'Computer Science',
-    code: '0478',
-    displayCode: '0478',
-    slug: 'computer-science-0478',
-    color: 'from-emerald-500 to-teal-600',
-  },
-  'english-1123': {
-    name: 'English Language',
-    code: '1123',
-    displayCode: '1123/0500',
-    slug: 'english-1123',
-    color: 'from-purple-500 to-violet-600',
-  },
-  'physics-5054': {
-    name: 'Physics',
-    code: '5054',
-    displayCode: '5054/0625',
-    slug: 'physics-5054',
-    color: 'from-amber-500 to-orange-600',
-  },
-  'chemistry-5070': {
-    name: 'Chemistry',
-    code: '5070',
-    displayCode: '5070/0620',
-    slug: 'chemistry-5070',
-    color: 'from-rose-500 to-pink-600',
-  },
-  'biology-5090': {
-    name: 'Biology',
-    code: '5090',
-    displayCode: '5090/0610',
-    slug: 'biology-5090',
-    color: 'from-lime-500 to-green-600',
-  },
-  'urdu-3248': {
-    name: 'Urdu',
-    code: '3248',
-    displayCode: '3248',
-    slug: 'urdu-3248',
-    color: 'from-cyan-500 to-sky-600',
-  },
-  'pakistan-studies-2059': {
-    name: 'Pakistan Studies',
-    code: '2059',
-    displayCode: '2059',
-    slug: 'pakistan-studies-2059',
-    color: 'from-yellow-500 to-amber-600',
-  },
-  // ── A-Level ──
-  'mathematics-9709': {
-    name: 'Mathematics',
-    code: '9709',
-    displayCode: '9709',
-    slug: 'mathematics-9709',
-    color: 'from-yellow-500 to-amber-600',
-  },
-  'computer-science-9618': {
-    name: 'Computer Science',
-    code: '9618',
-    displayCode: '9618',
-    slug: 'computer-science-9618',
-    color: 'from-emerald-500 to-teal-600',
-  },
-  'physics-9702': {
-    name: 'Physics',
-    code: '9702',
-    displayCode: '9702',
-    slug: 'physics-9702',
-    color: 'from-amber-500 to-orange-600',
-  },
-  'chemistry-9701': {
-    name: 'Chemistry',
-    code: '9701',
-    displayCode: '9701',
-    slug: 'chemistry-9701',
-    color: 'from-rose-500 to-pink-600',
-  },
-  'biology-9700': {
-    name: 'Biology',
-    code: '9700',
-    displayCode: '9700',
-    slug: 'biology-9700',
-    color: 'from-lime-500 to-green-600',
-  },
+/**
+ * Historical: A-Level Mathematics used a gold gradient distinct from the blue
+ * O-Level Mathematics gradient. Preserved here as an explicit override so SEO
+ * pages don't shift colors after the consolidation refactor.
+ */
+const A_LEVEL_GRADIENT_OVERRIDES: Record<string, string> = {
+  'mathematics-9709': 'from-yellow-500 to-amber-600',
 };
+
+/**
+ * Build the {slug → meta} dict from SUBJECT_TAXONOMY. Each taxonomy entry
+ * yields up to two slugs (oLevelSlug + aLevelSlug). We deliberately use the
+ * O-Level `displayCode` (e.g. "4024/0580") for the O-Level slug and the bare
+ * A-Level code for the A-Level slug — matches the previous hand-rolled table.
+ */
+export const subjectMeta: Record<string, SubjectMeta> = (() => {
+  const map: Record<string, SubjectMeta> = {};
+  for (const tax of Object.values(SUBJECT_TAXONOMY)) {
+    map[tax.oLevelSlug] = {
+      name: tax.name,
+      code: tax.oLevelCode,
+      displayCode: tax.displayCode,
+      slug: tax.oLevelSlug,
+      color: tax.gradient,
+    };
+    if (tax.aLevelSlug && tax.aLevelCode) {
+      map[tax.aLevelSlug] = {
+        name: tax.name,
+        code: tax.aLevelCode,
+        displayCode: tax.aLevelCode,
+        slug: tax.aLevelSlug,
+        color: A_LEVEL_GRADIENT_OVERRIDES[tax.aLevelSlug] ?? tax.gradient,
+      };
+    }
+  }
+  return map;
+})();
 
 /** Resolve display name from a URL slug, e.g. "Mathematics (4024/0580)" */
 export function getSubjectLabel(slug: string): string {
@@ -228,6 +172,17 @@ export const aLevelPapersBySubject: Record<string, { 'as-level': PaperConfig[]; 
   },
 };
 
+// Phase 4: backfill paper config for any taxonomy entry not explicitly listed
+// in the literal above (History, Business, future subjects). Existing literal
+// entries take precedence so legacy Math/CS/Physics/Chem/Bio URLs are byte-
+// for-byte stable; new subjects pick up taxonomy-derived papers automatically.
+for (const tax of Object.values(SUBJECT_TAXONOMY)) {
+  if (!tax.aLevelSlug) continue;
+  if (aLevelPapersBySubject[tax.aLevelSlug]) continue;
+  const cfg = getProvisionerPapers(tax);
+  if (cfg) aLevelPapersBySubject[tax.aLevelSlug] = cfg;
+}
+
 /** Backward-compatible: return papers for a subject (defaults to Maths) */
 export const aLevelPapers = aLevelPapersBySubject['mathematics-9709'];
 
@@ -235,14 +190,21 @@ export const aLevelPapers = aLevelPapersBySubject['mathematics-9709'];
 
 export type FooterNavLink = { label: string; href: string };
 
-/** O-Level site slug → paired A-Level slug (Cambridge progression on ExamStitch) */
-export const oLevelToALevelSlug: Record<string, string> = {
-  'mathematics-4024': 'mathematics-9709',
-  'computer-science-0478': 'computer-science-9618',
-  'physics-5054': 'physics-9702',
-  'chemistry-5070': 'chemistry-9701',
-  'biology-5090': 'biology-9700',
-};
+/**
+ * O-Level site slug → paired A-Level slug (Cambridge progression).
+ * Derived from SUBJECT_TAXONOMY so a new subject with both syllabi (e.g.
+ * History 2147 → 9489, Business 7115 → 9609) is paired automatically — no
+ * manual edits needed when adding to taxonomy.ts. Phase 4 Task 1.
+ */
+export const oLevelToALevelSlug: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const tax of Object.values(SUBJECT_TAXONOMY)) {
+    if (tax.oLevelSlug && tax.aLevelSlug) {
+      map[tax.oLevelSlug] = tax.aLevelSlug;
+    }
+  }
+  return map;
+})();
 
 export const aLevelToOLevelSlug: Record<string, string> = Object.fromEntries(
   Object.entries(oLevelToALevelSlug).map(([o, a]) => [a, o]),
