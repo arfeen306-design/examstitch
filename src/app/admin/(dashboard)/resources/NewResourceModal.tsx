@@ -374,8 +374,9 @@ export default function NewResourceModal({
     }
   };
 
-  if (!isOpen) return null;
-
+  // ── Hook calls MUST come before any early-return — React rules-of-hooks.
+  // Commit 6d9ee82 introduced these useMemo calls after `if (!isOpen) return null`,
+  // which is illegal and has been failing every Vercel build since 2026-04-20.
   const activeCategories = useMemo(
     () => categories.filter((c) => c.subject_id === formData.subject_id),
     [categories, formData.subject_id],
@@ -395,6 +396,9 @@ export default function NewResourceModal({
     }
     return Array.from(map.entries());
   }, [activeCategories]);
+
+  // Early return is now safe (after all hooks have been called).
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
