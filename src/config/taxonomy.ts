@@ -216,16 +216,12 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     // legacy form some old rows/URLs use. Both resolve to this entry via
     // getTaxonomyBySlug.
     aliases: ['math'],
-    // ── Production subject_id (UUID) ───────────────────────────────────────
-    // TODO(operator): paste your production `public.subjects.id` for the
-    // Mathematics row here. Once set, every dashboard/Server-Action query
-    // for the math portal uses this UUID directly — no slug lookup, no
-    // ambiguity between 'math' / 'maths'. Until set, the system falls back
-    // to slug-based resolution (which already handles the alias).
-    //
-    // To find it:
-    //   SELECT id, slug FROM public.subjects WHERE slug IN ('maths','math');
-    subjectId: undefined,
+    // Canonical public.subjects.id from production. Verified via the live
+    // DB on 2026-05-02 — there is exactly ONE row for Mathematics
+    // (slug='maths') and zero duplicates. Setting this UUID makes every
+    // dashboard / Server-Action query for the math portal go straight to
+    // .eq('id', subjectId) — no slug lookup, no ambiguity, immune to drift.
+    subjectId: '15a91306-cc84-456c-aeef-e04c610b9ec7',
     adminPortal: {
       routeSegment: 'math',
       label: 'Math Resources',
@@ -264,6 +260,8 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     colorKey: 'emerald',
     iconKey: 'monitor',
     active: true,
+    aliases: ['cs'],
+    subjectId: '28ba9830-b8d6-45b0-9746-fa5e124941e7',
     adminPortal: {
       routeSegment: 'cs',
       label: 'CS Resources',
@@ -297,6 +295,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     colorKey: 'amber',
     iconKey: 'atom',
     active: true,
+    subjectId: '6c79d950-8ecb-40db-a32f-4b694295eb28',
     adminPortal: {
       routeSegment: 'physics',
       label: 'Physics Resources',
@@ -331,6 +330,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     colorKey: 'rose',
     iconKey: 'flask',
     active: true,
+    subjectId: 'b24b1de0-a121-4875-9921-a3319ecf1ef9',
     adminPortal: {
       routeSegment: 'chemistry',
       label: 'Chemistry Resources',
@@ -365,6 +365,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     colorKey: 'lime',
     iconKey: 'microscope',
     active: true,
+    subjectId: '160357b6-58fb-435d-9175-ed15b9c6516b',
     adminPortal: {
       routeSegment: 'biology',
       label: 'Biology Resources',
@@ -399,6 +400,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     colorKey: 'purple',
     iconKey: 'bookOpen',
     active: true,
+    subjectId: '3e575e44-9b60-4d3c-a868-47a1b13fe637',
     adminPortal: {
       routeSegment: 'english',
       label: 'English Resources',
@@ -423,6 +425,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     colorKey: 'cyan',
     iconKey: 'languages',
     active: true,
+    subjectId: 'df8a79f0-f2fa-40ae-ad26-a450ad6890d9',
     adminPortal: {
       routeSegment: 'urdu',
       label: 'Urdu Resources',
@@ -447,6 +450,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     colorKey: 'gold',
     iconKey: 'globe',
     active: true,
+    subjectId: '840d7caf-ad6a-4c1c-a7ce-2762b491139b',
     adminPortal: {
       routeSegment: 'pakistan-studies',
       label: 'Pak Studies Resources',
