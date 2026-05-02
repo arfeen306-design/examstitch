@@ -101,20 +101,20 @@ export default async function SubjectAdminPage({
       .from('topics')
       .select('id, subject_papers!inner(parent_subject_id)')
       .eq('subject_papers.parent_subject_id', subject.id),
+    // Resources query: NO categories self-join. We embed the direct
+    // category + syllabus + syllabus_tier (FKs from resources/categories
+    // outward to OTHER tables — never back to categories itself). Parent
+    // category lookup is resolved client-side from `mergedCategories` after
+    // the parallel fetch returns. Eliminates the entire class of
+    // "could not find relationship between 'categories' and 'categories'"
+    // PostgREST schema-cache failures.
     supabase
       .from('resources')
       .select(
-        // Column-based hint (`!parent_id`) for the categories self-join is
-        // more resilient than the FK-constraint name (`!categories_parent_id_fkey`):
-        // PostgREST resolves it directly from the column without needing the
-        // constraint to be in its schema cache. The cache occasionally goes
-        // stale after DDL and the named form throws a runtime relationship
-        // error on every dashboard load until reload.
         `
         *,
         category:categories(
           id, name, slug, parent_id, subject_id, syllabus_id, syllabus_tier_id,
-          parent:categories!parent_id(id, name, slug),
           syllabus:subject_papers(slug, code, name),
           syllabus_tier:syllabi(id, tier, name)
         )
