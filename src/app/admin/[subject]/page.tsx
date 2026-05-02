@@ -101,6 +101,14 @@ export default async function SubjectAdminPage({
       .from('topics')
       .select('id, subject_papers!inner(parent_subject_id)')
       .eq('subject_papers.parent_subject_id', subject.id),
+    // Resources query: NO categories self-join. The previous embed
+    // `parent:categories!categories_parent_id_fkey(...)` triggered PostgREST
+    // schema-cache failures ("Could not find a relationship between
+    // 'categories' and 'categories' in the schema cache") on every dashboard
+    // load. The downstream code (SubjectResourceManager + ResourceGridClient)
+    // only reads `category.parent_id` (the FK column), never the nested
+    // `category.parent.{name,slug}`, so the embed was always dead weight.
+    // Drop it entirely → no self-reference → no cache fragility.
     supabase
       .from('resources')
       .select(
@@ -108,7 +116,6 @@ export default async function SubjectAdminPage({
         *,
         category:categories(
           id, name, slug, parent_id, subject_id, syllabus_id, syllabus_tier_id,
-          parent:categories!categories_parent_id_fkey(id, name, slug),
           syllabus:subject_papers(slug, code, name),
           syllabus_tier:syllabi(id, tier, name)
         )
