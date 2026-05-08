@@ -1,104 +1,100 @@
-import Link from 'next/link';
-import { ArrowRight, FileText, PlayCircle, PenTool } from 'lucide-react';
-import { aLevelPapersBySubject, aLevelPapers, getSubjectLabel, getSubjectHeading } from '@/config/navigation';
-import NotifyMeBox from '@/components/lead-gen/NotifyMeBox';
+import { aLevelPapersBySubject, aLevelPapers, getSubjectLabel, getSubjectHeading, type PaperConfig } from '@/config/navigation';
+import { getCategoryBySlug, getPublishedResourcesByModuleStream } from '@/lib/supabase/queries';
+import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
+import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
+import type { LearningModule } from '@/components/resources/UnifiedModuleGrid';
+import type { ResourceItem } from '@/components/resources/ResourceGrid';
+import ALevelSPADashboard, { type PaperSpaData } from '@/components/alevel/ALevelSPADashboard';
+import type { Resource } from '@/lib/supabase/types';
 
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
-  return [
-    { subject: 'mathematics-9709' },
-  ];
+  return [{ subject: 'mathematics-9709' }];
 }
 
-function PaperCard({ paper, href }: { paper: { label: string; slug: string; description: string }; href: string }) {
-  return (
-    <Link href={href} className="block group">
-      <div className="relative overflow-hidden rounded-2xl portal-glass-card portal-glass-card--interactive">
-        <div className="p-5">
-          <h3 className="text-base font-bold text-slate-100 group-hover:text-amber-200 transition-colors">{paper.label}</h3>
-          <p className="text-xs text-slate-400 mt-1 mb-4">{paper.description}</p>
-          <div className="flex items-center gap-3 text-xs text-slate-400">
-            <span className="flex items-center gap-1"><PlayCircle className="w-3.5 h-3.5 text-red-400" /> Videos</span>
-            <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-blue-400" /> Papers</span>
-            <span className="flex items-center gap-1"><PenTool className="w-3.5 h-3.5 text-emerald-400" /> Topical</span>
-          </div>
-          <div className="flex justify-end mt-3">
-            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-300 group-hover:translate-x-1 transition-all" />
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
+// Demo past papers shown when Supabase is not configured
+const DEMO_PAPERS: ResourceItem[] = [
+  { id: 'd1', title: 'May/June 2024 — Variant 1', contentType: 'pdf', href: '#', year: 2024, session: 'May/June', variant: 1 },
+  { id: 'd2', title: 'May/June 2024 — Variant 2', contentType: 'pdf', href: '#', year: 2024, session: 'May/June', variant: 2 },
+  { id: 'd3', title: 'Oct/Nov 2023 — Variant 2',  contentType: 'pdf', href: '#', year: 2023, session: 'Oct/Nov',  variant: 2 },
+  { id: 'd4', title: 'May/June 2023 — Variant 1', contentType: 'pdf', href: '#', year: 2023, session: 'May/June', variant: 1 },
+];
+
+async function fetchPaperData(
+  subject: string,
+  paper: PaperConfig,
+  level: 'as-level' | 'a2-level',
+): Promise<PaperSpaData> {
+  const base: PaperSpaData = {
+    slug: paper.slug,
+    label: paper.label,
+    description: paper.description,
+    level,
+    videoModules: [],
+    pastPapers: [],
+  };
+
+  if (!isSupabaseConfigured()) {
+    return { ...base, pastPapers: DEMO_PAPERS };
+  }
+
+  try {
+    const category = await getCategoryBySlug(subject, paper.slug);
+    if (!category) return base;
+
+    const [videoResources, paperResources] = await Promise.all([
+      getPublishedResourcesByModuleStream(category.id, PORTAL_RESOURCE_STREAMS.videoLectures),
+      getPublishedResourcesByModuleStream(category.id, PORTAL_RESOURCE_STREAMS.solvedPastPapers),
+    ]);
+
+    const videoModules: LearningModule[] = videoResources.map((r) => ({
+      id: r.id,
+      title: r.title,
+      videoUrl: r.source_url,
+      worksheetUrl: (r as Resource & { worksheet_url?: string | null }).worksheet_url ?? null,
+      isLocked: (r as Resource & { is_locked?: boolean }).is_locked ?? false,
+      parentResourceId: (r as Resource & { parent_resource_id?: string | null }).parent_resource_id ?? null,
+    }));
+
+    const pastPapers: ResourceItem[] = paperResources.map((r) => {
+      const es = (r as Resource & {
+        exam_series?: { year: number; session: string; variant: number } | null;
+      }).exam_series;
+      return {
+        id: r.id,
+        title: r.title,
+        description: r.description ?? undefined,
+        contentType: r.content_type,
+        href: `/view/${r.id}`,
+        year: es?.year,
+        session: es?.session,
+        variant: es?.variant,
+        isLocked: (r as Resource & { is_locked?: boolean }).is_locked ?? false,
+      };
+    });
+
+    return { ...base, videoModules, pastPapers };
+  } catch {
+    return base;
+  }
 }
 
-export default function ALevelSubjectPage({ params }: { params: { subject: string } }) {
-  const label = getSubjectLabel(params.subject);
-  const heading = getSubjectHeading(params.subject);
-  const papers = aLevelPapersBySubject[params.subject] ?? aLevelPapers;
+export default async function ALevelSubjectPage({ params }: { params: { subject: string } }) {
+  const papersBySub = aLevelPapersBySubject[params.subject] ?? aLevelPapers;
+
+  const [asPapers, a2Papers] = await Promise.all([
+    Promise.all(papersBySub['as-level'].map((p) => fetchPaperData(params.subject, p, 'as-level'))),
+    Promise.all(papersBySub['a2-level'].map((p) => fetchPaperData(params.subject, p, 'a2-level'))),
+  ]);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      <div className="gradient-hero pt-32 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-sm mb-3">
-            <Link href="/alevel" className="text-white/50 hover:text-white/70 transition-colors">A-Level</Link>
-            <span className="text-white/30">/</span>
-            <span className="text-gold-500 font-medium">{label}</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{heading}</h1>
-          <p className="text-white/60 max-w-xl">Select your level and paper to access past papers, video solutions, and topical worksheets.</p>
-        </div>
-      </div>
-
-      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="flex-1 space-y-10">
-            {/* AS Level Section */}
-            <div>
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-500/20 border border-blue-400/30 rounded-lg flex items-center justify-center">
-                  <span className="text-xs font-bold text-blue-300">AS</span>
-                </div>
-                AS Level
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {papers['as-level'].map((paper) => (
-                  <PaperCard
-                    key={paper.slug}
-                    paper={paper}
-                    href={`/alevel/${params.subject}/as-level/${paper.slug}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* A2 Level Section */}
-            <div>
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <div className="w-8 h-8 bg-purple-500/20 border border-purple-400/30 rounded-lg flex items-center justify-center">
-                  <span className="text-xs font-bold text-purple-300">A2</span>
-                </div>
-                A2 Level
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {papers['a2-level'].map((paper) => (
-                  <PaperCard
-                    key={paper.slug}
-                    paper={paper}
-                    href={`/alevel/${params.subject}/a2-level/${paper.slug}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:w-80">
-            <NotifyMeBox level="alevel" sourcePage={`/alevel/${params.subject}`} />
-          </div>
-        </div>
-      </div>
-    </div>
+    <ALevelSPADashboard
+      subject={params.subject}
+      heading={getSubjectHeading(params.subject)}
+      label={getSubjectLabel(params.subject)}
+      asPapers={asPapers}
+      a2Papers={a2Papers}
+    />
   );
 }
