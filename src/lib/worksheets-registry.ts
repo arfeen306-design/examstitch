@@ -1,4 +1,7 @@
-import 'server-only';
+// Server-only module: imports `node:fs` and reads from disk, so this file
+// must never be imported from a client component. (We rely on convention
+// rather than the `server-only` package because its lack of TS types
+// would force a //@ts-ignore.)
 import fs from 'node:fs';
 import path from 'node:path';
 
