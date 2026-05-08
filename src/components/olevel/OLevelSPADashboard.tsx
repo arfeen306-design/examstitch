@@ -169,11 +169,47 @@ function GradeRow({
   const cfg = GRADE_CONFIG[grade.slug] ?? DEFAULT_GRADE_CFG;
   const topicalBasePath = `/olevel/${subject}/${grade.slug}/topical`;
 
-  const tabs: { key: ActiveTab; label: string; shortLabel: string; Icon: typeof PlayCircle; highlight?: boolean }[] = [
-    { key: 'videos',  label: 'Video Lectures',       shortLabel: 'Videos',  Icon: PlayCircle },
-    { key: 'topical', label: 'Topical Worksheets',   shortLabel: 'Topics',  Icon: PenTool    },
+  type TabConfig = {
+    key: ActiveTab;
+    label: string;
+    shortLabel: string;
+    Icon: typeof PlayCircle;
+    activeText: string;
+    underline: string;
+    glow: string;
+    highlight?: boolean;
+  };
+
+  const tabs: TabConfig[] = [
+    {
+      key: 'videos',
+      label: 'Video Lectures',
+      shortLabel: 'Videos',
+      Icon: PlayCircle,
+      activeText: 'text-rose-300',
+      underline: 'linear-gradient(90deg, transparent, #f87171, #ef4444, transparent)',
+      glow: 'rgba(239,68,68,0.18)',
+    },
+    {
+      key: 'topical',
+      label: 'Topical Worksheets',
+      shortLabel: 'Topics',
+      Icon: PenTool,
+      activeText: 'text-emerald-300',
+      underline: 'linear-gradient(90deg, transparent, #34d399, #10b981, transparent)',
+      glow: 'rgba(16,185,129,0.18)',
+    },
     ...(grade.hasPastPapers
-      ? [{ key: 'papers' as ActiveTab, label: 'Solved Past Papers', shortLabel: 'Papers', Icon: FileText, highlight: true }]
+      ? [{
+          key: 'papers' as ActiveTab,
+          label: 'Solved Past Papers',
+          shortLabel: 'Papers',
+          Icon: FileText,
+          activeText: 'text-amber-300',
+          underline: 'linear-gradient(90deg, transparent, #fbbf24, #f59e0b, transparent)',
+          glow: 'rgba(245,158,11,0.22)',
+          highlight: true,
+        }]
       : []),
   ];
 
@@ -285,8 +321,8 @@ function GradeRow({
                 boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.3)`,
               }}
             >
-              {/* Tab bar */}
-              <div className="flex border-b border-white/[0.07] relative bg-black/20">
+              {/* Tab bar — distinct colour per content stream */}
+              <div className="flex border-b border-white/[0.07] relative bg-black/[0.22]">
                 {tabs.map((tab) => {
                   const TabIcon = tab.Icon;
                   const selected = activeTab === tab.key;
@@ -294,13 +330,14 @@ function GradeRow({
                     <button
                       key={tab.key}
                       onClick={() => onTabChange(tab.key)}
-                      className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-semibold transition-all duration-150 ${
-                        selected
-                          ? tab.highlight ? 'text-amber-300' : 'text-white'
-                          : 'text-slate-400 hover:text-slate-200'
+                      className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-semibold transition-all duration-200 ${
+                        selected ? tab.activeText : 'text-slate-400 hover:text-slate-200'
                       }`}
+                      style={selected ? {
+                        background: `radial-gradient(120% 100% at 50% 100%, ${tab.glow} 0%, transparent 70%)`,
+                      } : undefined}
                     >
-                      <TabIcon className={`w-3.5 h-3.5 shrink-0 ${selected && tab.highlight ? 'text-amber-400' : ''}`} />
+                      <TabIcon className="w-3.5 h-3.5 shrink-0" />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.shortLabel}</span>
                       {tab.highlight && !selected && (
@@ -310,11 +347,7 @@ function GradeRow({
                         <motion.div
                           layoutId={`tab-line-olevel-${grade.slug}`}
                           className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-                          style={{
-                            background: tab.highlight
-                              ? 'linear-gradient(90deg, transparent, #fbbf24, #f59e0b, transparent)'
-                              : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.7), rgba(255,255,255,0.5), transparent)',
-                          }}
+                          style={{ background: tab.underline }}
                           transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                         />
                       )}
