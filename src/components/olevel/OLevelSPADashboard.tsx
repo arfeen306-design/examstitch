@@ -18,7 +18,12 @@ export interface GradeSpaData {
   label: string;
   description: string;
   videoModules: LearningModule[];
-  topics: { topic: string; count: number }[];
+  /**
+   * Topical worksheet entries. `slug` is the explicit URL segment for the
+   * topic detail route. When omitted (legacy DB-only entries), the slug
+   * is derived from the topic name.
+   */
+  topics: { topic: string; count: number; slug?: string }[];
   pastPapers: ResourceItem[];
   hasPastPapers: boolean;
 }
@@ -90,7 +95,7 @@ function TopicGrid({
   topics,
   basePath,
 }: {
-  topics: { topic: string; count: number }[];
+  topics: { topic: string; count: number; slug?: string }[];
   basePath: string;
 }) {
   if (!topics.length) {
@@ -113,7 +118,9 @@ function TopicGrid({
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
     >
       {topics.map((item) => {
-        const slug = item.topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        const slug =
+          item.slug ??
+          item.topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         return (
           <motion.div key={item.topic} variants={itemVariants}>
             <Link href={`${basePath}/${slug}`} className="block group">
@@ -137,7 +144,9 @@ function TopicGrid({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white/80 group-hover:text-white transition-colors truncate">{item.topic}</p>
-                  <p className="text-xs text-white/30">{item.count} worksheet{item.count !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-white/30">
+                    {item.count} {item.slug ? `question${item.count !== 1 ? 's' : ''}` : `worksheet${item.count !== 1 ? 's' : ''}`}
+                  </p>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-amber-300/70 group-hover:translate-x-0.5 transition-all shrink-0" />
               </div>

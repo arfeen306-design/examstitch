@@ -334,6 +334,104 @@
     background: var(--portal-skeleton-shine);
   }
 
+  /* ── Topical worksheet typography (MD → HTML rendered output) ───────────── */
+  .prose-worksheet {
+    color: rgba(241, 245, 249, 0.92);
+    line-height: 1.7;
+    font-size: 0.96rem;
+  }
+  .prose-worksheet h1 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin-top: 0;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+  }
+  .prose-worksheet h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fde68a;
+    margin-top: 2rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.18);
+  }
+  .prose-worksheet h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #93c5fd;
+    margin-top: 1.6rem;
+    margin-bottom: 0.6rem;
+  }
+  .prose-worksheet hr {
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 1.4rem 0;
+  }
+  .prose-worksheet p { margin: 0.7rem 0; }
+  .prose-worksheet strong { color: #fef3c7; font-weight: 700; }
+  .prose-worksheet em { color: #cbd5e1; }
+  .prose-worksheet ul, .prose-worksheet ol {
+    padding-left: 1.5rem;
+    margin: 0.7rem 0;
+  }
+  .prose-worksheet li { margin: 0.2rem 0; }
+  .prose-worksheet table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+  .prose-worksheet thead th {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fde68a;
+    font-weight: 700;
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .prose-worksheet tbody td {
+    padding: 0.5rem 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .prose-worksheet code {
+    background: rgba(255, 255, 255, 0.07);
+    color: #f9fafb;
+    padding: 0.12rem 0.4rem;
+    border-radius: 0.3rem;
+    font-size: 0.88em;
+  }
+  .prose-worksheet pre {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 0.85rem 1rem;
+    border-radius: 0.6rem;
+    overflow-x: auto;
+    margin: 0.9rem 0;
+  }
+  .prose-worksheet blockquote {
+    border-left: 3px solid rgba(251, 191, 36, 0.4);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: rgba(241, 245, 249, 0.78);
+    font-style: italic;
+  }
+  /* KaTeX overrides — match the worksheet body colour and improve display math spacing */
+  .prose-worksheet .katex { color: #f1f5f9; font-size: 1.04em; }
+  .prose-worksheet .katex-display {
+    margin: 1rem 0;
+    padding: 0.6rem 0.8rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.5rem;
+    overflow-x: auto;
+  }
+
   .card-hover {
     @apply transition-all duration-300 ease-out;
   }
