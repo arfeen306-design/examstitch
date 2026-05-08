@@ -6,6 +6,7 @@ import type { LearningModule } from '@/components/resources/UnifiedModuleGrid';
 import type { ResourceItem } from '@/components/resources/ResourceGrid';
 import OLevelSPADashboard, { type GradeSpaData } from '@/components/olevel/OLevelSPADashboard';
 import type { Resource } from '@/lib/supabase/types';
+import { getWorksheetsForGrade } from '@/lib/worksheets-registry';
 
 export const revalidate = 86400;
 
@@ -45,12 +46,26 @@ async function fetchGradeData(
 ): Promise<GradeSpaData> {
   const hasPastPapers = GRADES_WITH_PAST_PAPERS.has(grade.slug);
 
+  // Filesystem-backed worksheet topics — the source of truth for the
+  // Topical Worksheets tab. Each markdown file under
+  // docs/worksheets/olevel-math/<grade>/ becomes a clickable topic card
+  // and the topic detail page renders the markdown via KaTeX.
+  // We only include these for the Mathematics subject for now.
+  const fsTopics =
+    subject === 'mathematics-4024'
+      ? getWorksheetsForGrade(grade.slug).map((w) => ({
+          topic: w.topic,
+          slug: w.slug,
+          count: w.questionCount,
+        }))
+      : [];
+
   const base: GradeSpaData = {
     slug: grade.slug,
     label: grade.label,
     description: grade.description,
     videoModules: [],
-    topics: [],
+    topics: fsTopics,
     pastPapers: [],
     hasPastPapers,
   };
@@ -58,7 +73,7 @@ async function fetchGradeData(
   if (!isSupabaseConfigured()) {
     return {
       ...base,
-      topics: DEMO_TOPICS,
+      topics: fsTopics.length > 0 ? fsTopics : DEMO_TOPICS,
       pastPapers: hasPastPapers ? DEMO_PAST_PAPERS : [],
     };
   }
@@ -109,12 +124,23 @@ async function fetchGradeData(
       };
     });
 
-    // Real DB topics only — never fall back to DEMO_TOPICS in production.
-    // The empty state in TopicGrid handles "no worksheets yet" gracefully.
-    return { ...base, videoModules, topics, pastPapers };
+    // Merge filesystem worksheet topics with any DB-driven topics.
+    // FS entries come first (they have explicit slugs and content); DB
+    // entries are appended only if they don't duplicate an FS slug.
+    const fsSlugs = new Set(fsTopics.map((t) => t.slug));
+    const dbExtras = topics
+      .filter((t) => !fsSlugs.has(t.topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')))
+      .map((t) => ({ topic: t.topic, count: t.count }));
+
+    return {
+      ...base,
+      videoModules,
+      topics: [...fsTopics, ...dbExtras],
+      pastPapers,
+    };
   } catch {
-    // On a real query error, leave the grade empty so the empty-state UI
-    // renders rather than showing demo links that 404.
+    // On a real query error, fall back to FS-only topics so the page
+    // still renders something useful.
     return base;
   }
 }
