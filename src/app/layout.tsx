@@ -7,6 +7,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import WhatsAppFloat from '@/components/ui/WhatsAppFloat';
 import RouteProgress from '@/components/ui/RouteProgress';
+import SuperAdminBridge from '@/components/ui/SuperAdminBridge';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/server';
 import './globals.css';
@@ -103,6 +104,7 @@ export default async function RootLayout({
               <Footer />
               <WhatsAppFloat />
               <AskAnythingWidget />
+              <SuperAdminBridge />
             </>
           )}
         </ThemeProvider>

@@ -142,6 +142,18 @@ export async function middleware(request: NextRequest) {
         }
       }
     }
+
+    // Set super_admin_mode UI hint cookie (httpOnly:false so client components on
+    // public pages can read it and show the "Open Super Admin Panel" bridge button).
+    if (role.isSuperAdmin && !request.cookies.get('super_admin_mode')?.value) {
+      response.cookies.set('super_admin_mode', '1', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
   }
   // ─────────────────────────────────────────────────────────────────────────
 

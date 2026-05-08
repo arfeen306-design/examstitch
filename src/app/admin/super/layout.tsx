@@ -11,6 +11,7 @@ import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 import AdminThemeButton from '@/components/admin/AdminThemeButton';
+import PublicSiteBridge from '@/components/admin/PublicSiteBridge';
 
 async function getNewBookingsCount(): Promise<number> {
   try {
@@ -35,6 +36,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
     jar.delete('admin_session');
     jar.delete('admin_mode');
     jar.delete('admin_landing');
+    jar.delete('super_admin_mode');
     redirect('/admin/login');
   }
 
@@ -227,6 +229,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
             {children}
           </div>
         </main>
+        <PublicSiteBridge />
       </div>
     </ToastProvider>
   );
