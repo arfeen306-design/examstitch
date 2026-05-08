@@ -144,8 +144,10 @@ export interface AdminPortalConfig {
 export interface SubjectTaxonomy {
   /** Subject display name */
   name: string;
-  /** One-line public-facing description (used in subject grids) */
+  /** One-line public-facing description (used in subject grids — O-Level card by default) */
   description: string;
+  /** Optional override description for the A-Level card (falls back to `description`) */
+  aLevelDescription?: string;
   /** Cambridge subject code for the O-Level variant */
   oLevelCode: string;
   /** Cambridge subject code for the A-Level variant (null if A-Level doesn't exist) */
@@ -201,7 +203,8 @@ export interface SubjectTaxonomy {
 export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
   'mathematics': {
     name: 'Mathematics',
-    description: 'Extended & Core Mathematics — Grades 9, 10 & 11, plus AS/A2 Pure & Mechanics',
+    description: 'Core & Extended Mathematics for Cambridge O-Level / IGCSE — Grades 9 to 11.',
+    aLevelDescription: 'Comprehensive coverage of Pure Mathematics and Mechanics for Cambridge AS & A-Level.',
     oLevelCode: '4024',
     aLevelCode: '9709',
     oLevelSlug: 'mathematics-4024',
@@ -776,7 +779,7 @@ function entryFromTaxonomy(
     iconKey: tax.iconKey,
     // A-Level Mathematics historically used a gold scheme; preserve the swap.
     colorScheme: tax.oLevelSlug === 'mathematics-4024' ? COLOR_SCHEMES.gold : COLOR_SCHEMES[tax.colorKey],
-    description: tax.description,
+    description: tax.aLevelDescription ?? tax.description,
     active: tax.active,
   };
 }

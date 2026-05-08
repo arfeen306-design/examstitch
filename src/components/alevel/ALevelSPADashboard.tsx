@@ -73,9 +73,36 @@ const DEFAULT_CFG = {
   accent: '#94a3b8',
 };
 
-const TABS: { key: ActiveTab; label: string; shortLabel: string; Icon: typeof PlayCircle }[] = [
-  { key: 'videos',  label: 'Video Lectures & Worksheets', shortLabel: 'Videos',  Icon: PlayCircle },
-  { key: 'papers',  label: 'Solved Past Papers',          shortLabel: 'Papers',  Icon: FileText   },
+const TABS: {
+  key: ActiveTab;
+  label: string;
+  shortLabel: string;
+  Icon: typeof PlayCircle;
+  /** Active text colour (tailwind class) */
+  activeText: string;
+  /** Active underline gradient (CSS string) */
+  underline: string;
+  /** Glow behind the active tab (CSS rgba) */
+  glow: string;
+}[] = [
+  {
+    key: 'videos',
+    label: 'Video Lectures & Worksheets',
+    shortLabel: 'Videos',
+    Icon: PlayCircle,
+    activeText: 'text-rose-300',
+    underline: 'linear-gradient(90deg, transparent, #f87171, #ef4444, transparent)',
+    glow: 'rgba(239,68,68,0.18)',
+  },
+  {
+    key: 'papers',
+    label: 'Solved Past Papers',
+    shortLabel: 'Papers',
+    Icon: FileText,
+    activeText: 'text-sky-300',
+    underline: 'linear-gradient(90deg, transparent, #60a5fa, #3b82f6, transparent)',
+    glow: 'rgba(59,130,246,0.18)',
+  },
 ];
 
 // ── Animation variants ────────────────────────────────────────────────────────
@@ -199,8 +226,8 @@ function PaperRow({
                 boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.2)`,
               }}
             >
-              {/* Tab bar */}
-              <div className="flex border-b border-white/[0.07] relative bg-black/[0.15]">
+              {/* Tab bar — each tab has its own colour so the active stream is unmistakable */}
+              <div className="flex border-b border-white/[0.07] relative bg-black/[0.18]">
                 {TABS.map((tab) => {
                   const TabIcon = tab.Icon;
                   const selected = activeTab === tab.key;
@@ -208,18 +235,21 @@ function PaperRow({
                     <button
                       key={tab.key}
                       onClick={() => onTabChange(tab.key)}
-                      className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-semibold transition-all duration-150 ${
-                        selected ? 'text-amber-300' : 'text-slate-400 hover:text-slate-200'
+                      className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-semibold transition-all duration-200 ${
+                        selected ? tab.activeText : 'text-slate-400 hover:text-slate-200'
                       }`}
+                      style={selected ? {
+                        background: `radial-gradient(120% 100% at 50% 100%, ${tab.glow} 0%, transparent 70%)`,
+                      } : undefined}
                     >
-                      <TabIcon className={`w-3.5 h-3.5 ${selected ? 'text-amber-400' : ''}`} />
+                      <TabIcon className="w-3.5 h-3.5 shrink-0" />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.shortLabel}</span>
                       {selected && (
                         <motion.div
                           layoutId={`tab-line-${paper.slug}`}
                           className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-                          style={{ background: 'linear-gradient(90deg, transparent, #fbbf24, #f59e0b, transparent)' }}
+                          style={{ background: tab.underline }}
                           transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                         />
                       )}

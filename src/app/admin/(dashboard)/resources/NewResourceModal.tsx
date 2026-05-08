@@ -23,12 +23,6 @@ interface Category {
   syllabus_tier?: { id: string; tier: string; name: string } | null;
 }
 
-interface SyllabusTierRow {
-  id: string;
-  tier: string;
-  name: string;
-}
-
 type ModuleType = typeof MODULE_TYPES.VIDEO_TOPICAL | typeof MODULE_TYPES.SOLVED_PAST_PAPER;
 type ModuleTypeChoice = ModuleType | '';
 
@@ -59,7 +53,6 @@ export default function NewResourceModal({
   defaultSyllabusSlug?: string | null;
 }) {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [syllabiList, setSyllabiList] = useState<SyllabusTierRow[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
@@ -111,22 +104,10 @@ export default function NewResourceModal({
     setTimeout(() => titleRef.current?.focus(), 80);
   }, [isOpen]);
 
+  // Fetch ALL categories for the subject — the dropdown groups them itself by
+  // O Level / A Level (syllabus_tier.tier), so no separate tier filter is needed.
   useEffect(() => {
     if (!isOpen || !formData.subject_id) {
-      setSyllabiList([]);
-      return;
-    }
-    const supabase = createClient();
-    supabase
-      .from('syllabi')
-      .select('id, tier, name')
-      .eq('subject_id', formData.subject_id)
-      .order('sort_order', { ascending: true })
-      .then(({ data }) => setSyllabiList((data ?? []) as SyllabusTierRow[]));
-  }, [isOpen, formData.subject_id]);
-
-  useEffect(() => {
-    if (!isOpen || !formData.subject_id || !formData.syllabus_tier_id) {
       setCategories([]);
       return;
     }
@@ -138,13 +119,12 @@ export default function NewResourceModal({
         'id, name, subject_id, syllabus_id, syllabus_tier_id, syllabus:subject_papers(slug, code, name), syllabus_tier:syllabi(id, tier, name)',
       )
       .eq('subject_id', formData.subject_id)
-      .eq('syllabus_tier_id', formData.syllabus_tier_id)
       .order('sort_order')
       .then(({ data }) => {
         setCategories((data ?? []) as unknown as Category[]);
         setCategoriesLoading(false);
       });
-  }, [isOpen, formData.subject_id, formData.syllabus_tier_id]);
+  }, [isOpen, formData.subject_id]);
 
   useEffect(() => {
     if (!isOpen || !defaultSyllabusSlug || !formData.subject_id) return;
@@ -193,14 +173,17 @@ export default function NewResourceModal({
       return;
     }
 
-    if (!formData.syllabus_tier_id) {
-      showToast({ message: 'Please select O-Level or A-Level (syllabus tier).', type: 'error' });
+    if (!formData.category_id) {
+      showToast({ message: 'Please select a Grade or Paper.', type: 'error' });
       setLoading(false);
       return;
     }
 
-    if (!formData.category_id) {
-      showToast({ message: 'Please select a grade, paper, or module (category).', type: 'error' });
+    if (!formData.syllabus_tier_id) {
+      showToast({
+        message: 'The selected category is missing its syllabus tier link. Run portal provisioning to repair the taxonomy.',
+        type: 'error',
+      });
       setLoading(false);
       return;
     }
@@ -381,20 +364,33 @@ export default function NewResourceModal({
     () => categories.filter((c) => c.subject_id === formData.subject_id),
     [categories, formData.subject_id],
   );
-  const groupedActiveCategories = useMemo(() => {
-    const map = new Map<string, Category[]>();
+
+  // Strip redundant "AS Level" / "A2 Level" tags from category names — the
+  // paper number (e.g. "Paper 1", "Paper 3") already conveys the level.
+  function cleanCategoryName(name: string): string {
+    return name
+      .replace(/\s*[—–-]?\s*(AS\s*Level|A2\s*Level|A-Level|O-Level)\s*$/i, '')
+      .replace(/^\s*(AS\s*Level|A2\s*Level)\s*[—–-]?\s*/i, '')
+      .trim();
+  }
+
+  // Group categories into O Level / A Level buckets via syllabi.tier
+  // (the canonical 'olevel' | 'alevel' field — never AS/A2).
+  const groupedActiveCategories = useMemo<[string, Category[]][]>(() => {
+    const olevel: Category[] = [];
+    const alevel: Category[] = [];
+    const other: Category[] = [];
     for (const c of activeCategories) {
-      const code = c.syllabus?.code?.trim();
-      const tier = c.syllabus_tier?.name?.trim();
-      const label = code
-        ? `${c.syllabus?.name ?? 'Syllabus'} (${code})`
-        : tier
-          ? `${tier}`
-          : 'Unmapped syllabus';
-      if (!map.has(label)) map.set(label, []);
-      map.get(label)!.push(c);
+      const tier = c.syllabus_tier?.tier?.toLowerCase().trim();
+      if (tier === 'alevel') alevel.push(c);
+      else if (tier === 'olevel') olevel.push(c);
+      else other.push(c);
     }
-    return Array.from(map.entries());
+    const groups: [string, Category[]][] = [];
+    if (olevel.length) groups.push(['🎓  O Level', olevel]);
+    if (alevel.length) groups.push(['🏆  A Level', alevel]);
+    if (other.length) groups.push(['Unmapped syllabus', other]);
+    return groups;
   }, [activeCategories]);
 
   // Early return is now safe (after all hooks have been called).
@@ -536,69 +532,60 @@ export default function NewResourceModal({
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Syllabus</label>
-              <select
-                value={formData.syllabus_tier_id}
-                onChange={e => setFormData({ ...formData, syllabus_tier_id: e.target.value, category_id: '' })}
-                className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
-                required
-              >
-                <option value="" disabled>
-                  Select O-Level or A-Level…
-                </option>
-                {syllabiList.length === 0 && formData.subject_id ? (
-                  <option value="" disabled>
-                    No syllabus tiers — run DB migration or provision portal
-                  </option>
-                ) : (
-                  syllabiList.map(sy => (
-                    <option key={sy.id} value={sy.id}>
-                      {sy.name}
-                    </option>
-                  ))
-                )}
-              </select>
-              <p className="text-[10px] text-[var(--text-muted)] mt-1">Filters grades vs papers by Cambridge level.</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Grade / paper / module</label>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                Category <span className="text-amber-400/90">*</span>
+              </label>
               {categoriesLoading ? (
                 <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-muted)] border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Loading modules…
+                  Loading categories…
                 </div>
-              ) : !formData.syllabus_tier_id ? (
+              ) : !formData.subject_id ? (
                 <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-muted)] border border-[var(--border-color)] rounded-lg bg-[var(--bg-surface)]">
-                  Choose a syllabus tier first.
+                  Pick a subject first.
                 </div>
-              ) : activeCategories.length === 0 && formData.subject_id ? (
+              ) : activeCategories.length === 0 ? (
                 <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-amber-400 border border-amber-500/20 rounded-lg bg-amber-500/10">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>No modules for this tier. Use Super Admin → Provision portal or Taxonomy Manager.</span>
+                  <span>No categories yet. Use Super Admin → Provision portal or Taxonomy Manager.</span>
                 </div>
               ) : (
                 <select
                   required
                   value={formData.category_id}
-                  onChange={e => setFormData({ ...formData, category_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  onChange={(e) => {
+                    const newCategoryId = e.target.value;
+                    const cat = activeCategories.find((c) => c.id === newCategoryId);
+                    setFormData({
+                      ...formData,
+                      category_id: newCategoryId,
+                      // Derive syllabus tier from the chosen category so the
+                      // submit-time validation still has a tier ID.
+                      syllabus_tier_id: cat?.syllabus_tier_id ?? '',
+                    });
+                  }}
+                  className="w-full px-3 py-2.5 border border-[var(--border-color)] rounded-lg focus:ring-orange-500/50 focus:border-orange-500/50 bg-[var(--bg-card)] text-[var(--text-primary)] font-medium"
                 >
                   <option value="" disabled>
-                    Select module…
+                    Select Grade or Paper…
                   </option>
                   {groupedActiveCategories.map(([label, rows]) => (
                     <optgroup key={label} label={label}>
                       {rows.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.name}
+                          {cleanCategoryName(c.name)}
                         </option>
                       ))}
                     </optgroup>
                   ))}
                 </select>
               )}
+              <p className="text-[10px] text-[var(--text-muted)] mt-1.5 flex items-center gap-2">
+                <span>🎓 O Level → Grades 9, 10, 11</span>
+                <span className="text-[var(--border-color)]">·</span>
+                <span>🏆 A Level → Paper 1, 3, 4, 5</span>
+              </p>
             </div>
 
             {/* Dynamic Link Inputs */}
