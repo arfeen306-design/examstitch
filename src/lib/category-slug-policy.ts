@@ -18,10 +18,6 @@ export const A_LEVEL_SECTION_SLUGS = new Set(['as-level', 'a2-level']);
 /** Maps public.subjects.slug (parent discipline) → aLevelPapersBySubject key. */
 export const PARENT_SUBJECT_SLUG_TO_ALEVEL_NAV_KEY: Record<string, string> = {
   maths: 'mathematics-9709',
-  'computer-science': 'computer-science-9618',
-  physics: 'physics-9702',
-  chemistry: 'chemistry-9701',
-  biology: 'biology-9700',
 };
 
 function papersForSection(navKey: string, sectionSlug: 'as-level' | 'a2-level'): PaperConfig[] {
