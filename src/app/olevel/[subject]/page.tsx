@@ -65,7 +65,10 @@ async function fetchGradeData(
 
   try {
     const category = await getCategoryBySlug(subject, grade.slug);
-    if (!category) return { ...base, topics: DEMO_TOPICS };
+    // No category = nothing in the DB yet for this grade. Return an empty
+    // grade rather than DEMO_TOPICS — those slugs don't resolve at the
+    // /topical/[topic] route and would 404 on click.
+    if (!category) return base;
 
     const fetches: Promise<unknown>[] = [
       getPublishedResourcesByModuleStream(category.id, PORTAL_RESOURCE_STREAMS.videoLectures),
@@ -106,9 +109,13 @@ async function fetchGradeData(
       };
     });
 
-    return { ...base, videoModules, topics: topics.length ? topics : DEMO_TOPICS, pastPapers };
+    // Real DB topics only — never fall back to DEMO_TOPICS in production.
+    // The empty state in TopicGrid handles "no worksheets yet" gracefully.
+    return { ...base, videoModules, topics, pastPapers };
   } catch {
-    return { ...base, topics: DEMO_TOPICS, pastPapers: hasPastPapers ? DEMO_PAST_PAPERS : [] };
+    // On a real query error, leave the grade empty so the empty-state UI
+    // renders rather than showing demo links that 404.
+    return base;
   }
 }
 
