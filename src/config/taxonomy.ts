@@ -259,7 +259,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     gradient: 'from-emerald-500 to-teal-600',
     colorKey: 'emerald',
     iconKey: 'monitor',
-    active: true,
+    active: false,
     aliases: ['cs'],
     subjectId: '28ba9830-b8d6-45b0-9746-fa5e124941e7',
     adminPortal: {
@@ -285,7 +285,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     gradient: 'from-amber-500 to-orange-600',
     colorKey: 'amber',
     iconKey: 'atom',
-    active: true,
+    active: false,
     subjectId: '6c79d950-8ecb-40db-a32f-4b694295eb28',
     adminPortal: {
       routeSegment: 'physics',
@@ -310,7 +310,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     gradient: 'from-rose-500 to-pink-600',
     colorKey: 'rose',
     iconKey: 'flask',
-    active: true,
+    active: false,
     subjectId: 'b24b1de0-a121-4875-9921-a3319ecf1ef9',
     adminPortal: {
       routeSegment: 'chemistry',
@@ -335,7 +335,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     gradient: 'from-lime-500 to-green-600',
     colorKey: 'lime',
     iconKey: 'microscope',
-    active: true,
+    active: false,
     subjectId: '160357b6-58fb-435d-9175-ed15b9c6516b',
     adminPortal: {
       routeSegment: 'biology',
@@ -360,7 +360,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     gradient: 'from-purple-500 to-violet-600',
     colorKey: 'purple',
     iconKey: 'bookOpen',
-    active: true,
+    active: false,
     subjectId: '3e575e44-9b60-4d3c-a868-47a1b13fe637',
     adminPortal: {
       routeSegment: 'english',
@@ -385,7 +385,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     gradient: 'from-cyan-500 to-sky-600',
     colorKey: 'cyan',
     iconKey: 'languages',
-    active: true,
+    active: false,
     subjectId: 'df8a79f0-f2fa-40ae-ad26-a450ad6890d9',
     adminPortal: {
       routeSegment: 'urdu',
@@ -410,7 +410,7 @@ export const SUBJECT_TAXONOMY: Record<string, SubjectTaxonomy> = {
     gradient: 'from-yellow-500 to-amber-600',
     colorKey: 'gold',
     iconKey: 'globe',
-    active: true,
+    active: false,
     subjectId: '840d7caf-ad6a-4c1c-a7ce-2762b491139b',
     adminPortal: {
       routeSegment: 'pakistan-studies',

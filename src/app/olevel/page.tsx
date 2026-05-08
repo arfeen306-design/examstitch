@@ -54,13 +54,13 @@ export default function OLevelPage() {
       {/* ─── Subject Grid ─── */}
       <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {O_LEVEL_SUBJECTS.map((subject, i) => (
+          {O_LEVEL_SUBJECTS.filter(s => s.active).map((subject, i) => (
             <SubjectCard
               key={subject.id}
               subject={subject}
               index={i}
               basePath="/olevel"
-              resourceCount={subject.active ? counts[subject.id] : undefined}
+              resourceCount={counts[subject.id]}
               onComingSoon={showComingSoon}
             />
           ))}
