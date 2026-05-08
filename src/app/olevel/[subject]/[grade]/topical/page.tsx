@@ -4,7 +4,6 @@ import { ArrowRight, BookOpen, Layers } from 'lucide-react';
 import { getCategoryBySlug, getTopicsByCategory } from '@/lib/supabase/queries';
 import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
 import { getSubjectLabel } from '@/config/navigation';
-import { getWorksheetsForGrade } from '@/lib/worksheets-registry';
 
 function formatGrade(slug: string): string {
   return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -29,7 +28,7 @@ function TopicList({
   topics,
   basePath,
 }: {
-  topics: { topic: string; count: number; slug?: string }[];
+  topics: { topic: string; count: number }[];
   basePath: string;
 }) {
   if (!topics.length) {
@@ -47,9 +46,7 @@ function TopicList({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {topics.map((item) => {
-        const slug =
-          item.slug ??
-          item.topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        const slug = item.topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         return (
           <Link key={item.topic} href={`${basePath}/${slug}`} className="block group portal-topic-link">
             <div className="portal-topic-card rounded-2xl p-5 flex items-center gap-4 transition-all duration-300
@@ -74,35 +71,18 @@ function TopicList({
 }
 
 async function TopicsGrid({ subject, grade, basePath }: { subject: string; grade: string; basePath: string }) {
-  // Filesystem-backed worksheet topics (Mathematics only for now)
-  const fsTopics =
-    subject === 'mathematics-4024'
-      ? getWorksheetsForGrade(grade).map((w) => ({
-          topic: w.topic,
-          count: w.questionCount,
-          slug: w.slug,
-        }))
-      : [];
-
   if (!isSupabaseConfigured()) {
-    return <TopicList topics={fsTopics.length ? fsTopics : DEMO_TOPICS} basePath={basePath} />;
+    return <TopicList topics={DEMO_TOPICS} basePath={basePath} />;
   }
 
   try {
     const category = await getCategoryBySlug(subject, grade);
-    if (!category) return <TopicList topics={fsTopics} basePath={basePath} />;
+    if (!category) return <TopicList topics={[]} basePath={basePath} />;
     const topics = await getTopicsByCategory(category.id);
-
-    // Merge — fs entries first, then DB extras whose slug doesn't collide.
-    const fsSlugs = new Set(fsTopics.map((t) => t.slug));
-    const dbExtras = topics
-      .filter((t) => !fsSlugs.has(t.topic.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')))
-      .map((t) => ({ topic: t.topic, count: t.count }));
-
-    return <TopicList topics={[...fsTopics, ...dbExtras]} basePath={basePath} />;
+    return <TopicList topics={topics} basePath={basePath} />;
   } catch (err) {
     console.error('TopicsGrid error:', err);
-    return <TopicList topics={fsTopics} basePath={basePath} />;
+    return <TopicList topics={DEMO_TOPICS} basePath={basePath} />;
   }
 }
 

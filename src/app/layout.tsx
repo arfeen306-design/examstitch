@@ -10,7 +10,6 @@ import RouteProgress from '@/components/ui/RouteProgress';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/server';
 import './globals.css';
-import 'katex/dist/katex.min.css';
 
 const PlexusBackground = dynamic(() => import('@/components/ui/PlexusBackground'), { ssr: false });
 const AskAnythingWidget = dynamic(() => import('@/components/ui/AskAnythingWidget'), { ssr: false });
