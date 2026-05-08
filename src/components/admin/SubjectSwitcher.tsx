@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Globe, Database, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { ADMIN_PORTALS, getPortalsForSubjects } from '@/config/taxonomy';
+import { ACTIVE_ADMIN_PORTALS, getPortalsForSubjects } from '@/config/taxonomy';
 
 interface Props {
   /** If true, show all links (super admin). If false, filter by managedSubjects. */
@@ -57,7 +57,7 @@ export default function SubjectSwitcher({ isSuperAdmin = true, managedSubjects =
 
     // Subject portals — dynamically from ADMIN_PORTALS
     const portals = isSuperAdmin
-      ? ADMIN_PORTALS
+      ? ACTIVE_ADMIN_PORTALS
       : getPortalsForSubjects(managedSubjects);
 
     for (const portal of portals) {

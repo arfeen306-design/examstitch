@@ -12,7 +12,7 @@ import {
   toggleSuperAdmin,
   provisionPortalHierarchy,
 } from './actions';
-import { ADMIN_PORTALS } from '@/config/taxonomy';
+import { ACTIVE_ADMIN_PORTALS } from '@/config/taxonomy';
 import SeedDisciplineSubjectsButton from '@/components/admin/SeedDisciplineSubjectsButton';
 import { createMediaWidget, deleteMediaWidget, toggleMediaWidget } from './media-actions';
 import { useToast } from '@/components/ui/Toast';
@@ -148,7 +148,7 @@ const SubjectFactory = memo(function SubjectFactory({ subjects }: { subjects: Su
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', slug: '', levels: [] as string[] });
-  const [provisionSegment, setProvisionSegment] = useState(ADMIN_PORTALS[0]?.routeSegment ?? 'math');
+  const [provisionSegment, setProvisionSegment] = useState(ACTIVE_ADMIN_PORTALS[0]?.routeSegment ?? 'math');
   const [provisionPending, setProvisionPending] = useState(false);
 
   function toggleLevel(level: string) {
@@ -229,7 +229,7 @@ const SubjectFactory = memo(function SubjectFactory({ subjects }: { subjects: Su
               onChange={e => setProvisionSegment(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
             >
-              {ADMIN_PORTALS.map(p => (
+              {ACTIVE_ADMIN_PORTALS.map(p => (
                 <option key={p.routeSegment} value={p.routeSegment}>
                   {p.label} ({p.routeSegment})
                 </option>
