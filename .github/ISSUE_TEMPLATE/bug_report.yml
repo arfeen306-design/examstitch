@@ -1,0 +1,44 @@
+name: Bug Report
+description: Something is broken on the site
+labels: [bug]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: What is broken?
+      placeholder: e.g. A-Level page shows wrong subjects
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to /alevel
+        2. Click on ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: What should happen instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - A-Level
+        - O-Level
+        - Admin Panel
+        - Auth / Login
+        - Tutors
+        - Other
+    validations:
+      required: true
