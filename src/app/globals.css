@@ -136,16 +136,16 @@
     --wave-fill:     #020617;
     --cta-orange:    #FF6B35;
 
-    --portal-glass-bg: rgba(15, 23, 42, 0.52);
-    --portal-glass-bg-hover: rgba(30, 41, 59, 0.7);
-    --portal-glass-border: rgba(148, 163, 184, 0.22);
+    --portal-glass-bg: rgba(8, 14, 28, 0.68);
+    --portal-glass-bg-hover: rgba(14, 24, 48, 0.84);
+    --portal-glass-border: rgba(148, 163, 184, 0.14);
     --portal-glass-border-hover: rgba(251, 191, 36, 0.38);
-    --portal-glass-inset-bg: rgba(2, 6, 23, 0.45);
-    --portal-glass-inset-bg-hover: rgba(15, 23, 42, 0.62);
-    --portal-glass-inset-border: rgba(148, 163, 184, 0.2);
-    --portal-skeleton-surface: rgba(15, 23, 42, 0.4);
-    --portal-skeleton-border: rgba(148, 163, 184, 0.14);
-    --portal-skeleton-shine: rgba(148, 163, 184, 0.18);
+    --portal-glass-inset-bg: rgba(4, 8, 20, 0.58);
+    --portal-glass-inset-bg-hover: rgba(10, 18, 40, 0.72);
+    --portal-glass-inset-border: rgba(148, 163, 184, 0.14);
+    --portal-skeleton-surface: rgba(8, 14, 28, 0.5);
+    --portal-skeleton-border: rgba(148, 163, 184, 0.1);
+    --portal-skeleton-shine: rgba(148, 163, 184, 0.14);
   }
 
   /* ── Forest Green (#062C22 / Gold-Mint) ─────────────────────────────── */
@@ -241,7 +241,7 @@
     height: 200%;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.07;
+    opacity: 0.035;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 450' fill='none'%3E%3Cstyle%3Etext%7Bfill:rgba(255,255,255,1);font-family:Georgia,serif;font-weight:400%7Dline,path,circle%7Bstroke:rgba(255,255,255,1)%7D%3C/style%3E%3Ctext x='30' y='55' font-size='22' transform='rotate(-12 30 55)'%3Ex %3D (-b %C2%B1 %E2%88%9A(b%C2%B2%E2%88%924ac)) / 2a%3C/text%3E%3Ctext x='620' y='42' font-size='20' transform='rotate(8 620 42)'%3E1 %2B cot%C2%B2%CE%B8 %3D csc%C2%B2%CE%B8%3C/text%3E%3Ctext x='520' y='370' font-size='20' transform='rotate(-6 520 370)'%3Ed/dx sin(x) %3D cos(x)%3C/text%3E%3Ctext x='780' y='200' font-size='24' transform='rotate(15 780 200)'%3Ee%5E(i%CF%80) %2B 1 %3D 0%3C/text%3E%3Ctext x='40' y='320' font-size='21' transform='rotate(5 40 320)'%3E%E2%88%AB x%C2%B2 dx %3D x%C2%B3/3 %2B C%3C/text%3E%3Ctext x='320' y='420' font-size='19' transform='rotate(-8 320 420)'%3Ea%C2%B2 %2B b%C2%B2 %3D c%C2%B2%3C/text%3E%3Ctext x='200' y='150' font-size='17' transform='rotate(12 200 150)'%3E%CE%A3 1/n%C2%B2 %3D %CF%80%C2%B2/6%3C/text%3E%3Ctext x='700' y='320' font-size='17' transform='rotate(-4 700 320)'%3E(a%2Bb)%E2%81%BF %3D %CE%A3 C(n%2Ck)%3C/text%3E%3Ctext x='380' y='28' font-size='19' transform='rotate(-15 380 28)'%3Elim sin(x)/x %3D 1%3C/text%3E%3Ctext x='100' y='215' font-size='17' transform='rotate(7 100 215)'%3Ef%E2%80%B2(g(x))%C2%B7g%E2%80%B2(x)%3C/text%3E%3Ctext x='460' y='190' font-size='18' transform='rotate(-10 460 190)'%3Eln(ab) %3D ln(a) %2B ln(b)%3C/text%3E%3Ctext x='860' y='100' font-size='26' transform='rotate(18 860 100)'%3EA %3D %CF%80r%C2%B2%3C/text%3E%3Cg transform='translate(80 340) rotate(-5) scale(0.7)'%3E%3Cpath d='M0,0 L80,0 L80,120 Z' stroke-width='2' fill='none'/%3E%3Ctext x='85' y='65' font-size='14'%3E60%C2%B0%3C/text%3E%3Ctext x='30' y='-5' font-size='14'%3E30%C2%B0%3C/text%3E%3C/g%3E%3Cg transform='translate(580 75) rotate(3) scale(0.65)'%3E%3Cpath d='M0,30 Q25,0 50,30 Q75,60 100,30 Q125,0 150,30 Q175,60 200,30' stroke-width='2' fill='none'/%3E%3C/g%3E%3Cg transform='translate(800 360) rotate(-8) scale(0.6)'%3E%3Cline x1='0' y1='50' x2='100' y2='50' stroke-width='1.5'/%3E%3Cline x1='50' y1='0' x2='50' y2='100' stroke-width='1.5'/%3E%3Cpath d='M20,15 Q50,85 80,15' stroke-width='2' fill='none'/%3E%3Ctext x='104' y='54' font-size='13'%3Ex%3C/text%3E%3Ctext x='53' y='-4' font-size='13'%3Ey%3C/text%3E%3C/g%3E%3Cg transform='translate(350 260) rotate(6) scale(0.55)'%3E%3Ccircle cx='40' cy='40' r='38' stroke-width='1.5' fill='none'/%3E%3Cline x1='40' y1='40' x2='78' y2='40' stroke-width='1.5'/%3E%3Ctext x='52' y='35' font-size='14'%3Er%3C/text%3E%3C/g%3E%3C/svg%3E");
     background-size: 1000px 450px;
     background-repeat: repeat;
@@ -288,7 +288,7 @@
     border: 1px solid var(--portal-glass-border);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.14);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
   .portal-glass-card--interactive {

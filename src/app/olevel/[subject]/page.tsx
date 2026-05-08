@@ -1,85 +1,128 @@
-import Link from 'next/link';
-import { ArrowRight, FileText, PlayCircle, PenTool } from 'lucide-react';
 import { oLevelGrades, getSubjectLabel, getSubjectHeading } from '@/config/navigation';
-import NotifyMeBox from '@/components/lead-gen/NotifyMeBox';
+import { getCategoryBySlug, getPublishedResourcesByModuleStream, getTopicsByCategory } from '@/lib/supabase/queries';
+import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
+import { isSupabaseConfigured } from '@/lib/supabase/is-configured';
+import type { LearningModule } from '@/components/resources/UnifiedModuleGrid';
+import type { ResourceItem } from '@/components/resources/ResourceGrid';
+import OLevelSPADashboard, { type GradeSpaData } from '@/components/olevel/OLevelSPADashboard';
+import type { Resource } from '@/lib/supabase/types';
 
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
-  return [
-    { subject: 'mathematics-4024' },
-  ];
+  return [{ subject: 'mathematics-4024' }];
 }
 
-export default function OLevelSubjectPage({ params }: { params: { subject: string } }) {
-  const label = getSubjectLabel(params.subject);
-  const heading = getSubjectHeading(params.subject);
+// Grades that include solved past papers in the SPA
+const GRADES_WITH_PAST_PAPERS = new Set(['grade-11']);
+
+// Demo fallbacks for when Supabase is not configured
+const DEMO_TOPICS = [
+  { topic: 'Number & Operations',       count: 12 },
+  { topic: 'Algebra',                   count: 18 },
+  { topic: 'Geometry',                  count: 15 },
+  { topic: 'Trigonometry',              count: 10 },
+  { topic: 'Statistics',                count: 8  },
+  { topic: 'Probability',               count: 9  },
+  { topic: 'Mensuration',               count: 11 },
+  { topic: 'Coordinate Geometry',       count: 7  },
+  { topic: 'Functions & Graphs',        count: 14 },
+  { topic: 'Sets & Venn Diagrams',      count: 6  },
+  { topic: 'Matrices & Transformations',count: 8  },
+  { topic: 'Vectors',                   count: 5  },
+];
+
+const DEMO_PAST_PAPERS: ResourceItem[] = [
+  { id: 'd1', title: 'May/June 2024 — Paper 1 Variant 1', contentType: 'pdf', href: '#', year: 2024, session: 'May/June', variant: 1 },
+  { id: 'd2', title: 'May/June 2024 — Paper 2 Variant 1', contentType: 'pdf', href: '#', year: 2024, session: 'May/June', variant: 1 },
+  { id: 'd3', title: 'Oct/Nov 2023 — Paper 1 Variant 2',  contentType: 'pdf', href: '#', year: 2023, session: 'Oct/Nov',  variant: 2 },
+  { id: 'd4', title: 'May/June 2023 — Paper 1 Variant 1', contentType: 'pdf', href: '#', year: 2023, session: 'May/June', variant: 1 },
+];
+
+async function fetchGradeData(
+  subject: string,
+  grade: { label: string; slug: string; description: string },
+): Promise<GradeSpaData> {
+  const hasPastPapers = GRADES_WITH_PAST_PAPERS.has(grade.slug);
+
+  const base: GradeSpaData = {
+    slug: grade.slug,
+    label: grade.label,
+    description: grade.description,
+    videoModules: [],
+    topics: [],
+    pastPapers: [],
+    hasPastPapers,
+  };
+
+  if (!isSupabaseConfigured()) {
+    return {
+      ...base,
+      topics: DEMO_TOPICS,
+      pastPapers: hasPastPapers ? DEMO_PAST_PAPERS : [],
+    };
+  }
+
+  try {
+    const category = await getCategoryBySlug(subject, grade.slug);
+    if (!category) return { ...base, topics: DEMO_TOPICS };
+
+    const fetches: Promise<unknown>[] = [
+      getPublishedResourcesByModuleStream(category.id, PORTAL_RESOURCE_STREAMS.videoLectures),
+      getTopicsByCategory(category.id),
+    ];
+    if (hasPastPapers) {
+      fetches.push(getPublishedResourcesByModuleStream(category.id, PORTAL_RESOURCE_STREAMS.solvedPastPapers));
+    }
+
+    const results = await Promise.all(fetches);
+    const videoResources = results[0] as Resource[];
+    const topics          = results[1] as { topic: string; count: number }[];
+    const paperResources  = hasPastPapers ? (results[2] as Resource[]) : [];
+
+    const videoModules: LearningModule[] = videoResources.map((r) => ({
+      id: r.id,
+      title: r.title,
+      videoUrl: r.source_url,
+      worksheetUrl: (r as Resource & { worksheet_url?: string | null }).worksheet_url ?? null,
+      isLocked: (r as Resource & { is_locked?: boolean }).is_locked ?? false,
+      parentResourceId: (r as Resource & { parent_resource_id?: string | null }).parent_resource_id ?? null,
+    }));
+
+    const pastPapers: ResourceItem[] = paperResources.map((r) => {
+      const es = (r as Resource & {
+        exam_series?: { year: number; session: string; variant: number } | null;
+      }).exam_series;
+      return {
+        id: r.id,
+        title: r.title,
+        description: r.description ?? undefined,
+        contentType: r.content_type,
+        href: `/view/${r.id}`,
+        year: es?.year,
+        session: es?.session,
+        variant: es?.variant,
+        isLocked: (r as Resource & { is_locked?: boolean }).is_locked ?? false,
+      };
+    });
+
+    return { ...base, videoModules, topics: topics.length ? topics : DEMO_TOPICS, pastPapers };
+  } catch {
+    return { ...base, topics: DEMO_TOPICS, pastPapers: hasPastPapers ? DEMO_PAST_PAPERS : [] };
+  }
+}
+
+export default async function OLevelSubjectPage({ params }: { params: { subject: string } }) {
+  const grades = await Promise.all(
+    oLevelGrades.map((g) => fetchGradeData(params.subject, g)),
+  );
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      {/* Header */}
-      <div className="gradient-hero pt-32 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-sm mb-3">
-            <Link href="/olevel" className="text-white/50 hover:text-white/70 transition-colors">O-Level / IGCSE</Link>
-            <span className="text-white/30">/</span>
-            <span className="text-gold-500 font-medium">{label}</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{heading}</h1>
-          <p className="text-white/60 max-w-xl">Select your grade to access past papers, video solutions, and topical worksheets.</p>
-        </div>
-      </div>
-
-      <div className="portal-page-body portal-surface-navy max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main: Grade Cards */}
-          <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {oLevelGrades.map((grade) => (
-                <Link key={grade.slug} href={`/olevel/${params.subject}/${grade.slug}`} className="block group">
-                  <div className="relative overflow-hidden rounded-2xl portal-glass-card portal-glass-card--interactive">
-                    {/* Top accent */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-blue-700 p-5">
-                      <h3 className="text-lg font-bold text-white group-hover:text-gold-300 transition-colors">{grade.label}</h3>
-                      <p className="text-xs text-white/50 mt-1">{grade.description}</p>
-                    </div>
-                    <div className="p-5 space-y-3">
-                      <div className="flex items-center gap-3 text-sm text-slate-300">
-                        <PlayCircle className="w-4 h-4 text-red-400" /><span>Video Lectures</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-slate-300">
-                        <FileText className="w-4 h-4 text-blue-400" /><span>Solved Past Papers</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-slate-300">
-                        <PenTool className="w-4 h-4 text-emerald-400" /><span>Topical Worksheets</span>
-                      </div>
-                      <div className="pt-2 flex items-center justify-end">
-                        <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-300 group-hover:translate-x-1 transition-all" />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:w-80 space-y-6">
-            <div className="rounded-2xl p-5 portal-glass-card">
-              <h3 className="text-sm font-semibold text-slate-100 mb-4">Quick Filter</h3>
-              <div className="space-y-2">
-                {['Topical Questions', 'Solved Past Papers by Year', 'Video Lectures'].map(label => (
-                  <button key={label} type="button" className="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors
-                                                  text-slate-300 portal-glass-inset portal-glass-inset--interactive hover:text-slate-100">
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <NotifyMeBox level="olevel" sourcePage={`/olevel/${params.subject}`} />
-          </div>
-        </div>
-      </div>
-    </div>
+    <OLevelSPADashboard
+      subject={params.subject}
+      heading={getSubjectHeading(params.subject)}
+      label={getSubjectLabel(params.subject)}
+      grades={grades}
+    />
   );
 }
