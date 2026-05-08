@@ -82,7 +82,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
     {
       label: 'Subject Portals',
       items: [
-        { label: 'CS Admin', href: '/admin/cs', icon: Monitor },
+        { label: 'Math Admin', href: '/admin/math', icon: Monitor },
       ],
     },
   ];
