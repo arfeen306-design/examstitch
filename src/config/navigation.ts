@@ -91,10 +91,6 @@ export const mainNavItems = [
     href: '/tutors',
   },
   {
-    label: 'Virtual Lab',
-    href: '/stem',
-  },
-  {
     label: 'Blogs',
     href: '/blog',
   },
@@ -188,7 +184,7 @@ export type FooterContext =
     };
 
 const GENERAL_BRAND =
-  'Free O-Level, A-Level & STEM resources — past papers, video lectures, and topical worksheets.';
+  'Free O-Level and A-Level resources — past papers, video lectures, and topical worksheets.';
 
 function buildGradeLinks(olevelSlug: string): FooterNavLink[] {
   return oLevelGrades.map((g) => ({
