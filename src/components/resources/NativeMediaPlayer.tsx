@@ -164,7 +164,25 @@ export default function NativeMediaPlayer({
             referrerPolicy="no-referrer"
             loading="lazy"
             onLoad={handleLoad}
-            className="block w-full h-full border-0"
+            className="block w-full h-full border-0 relative z-0"
+          />
+          {/*
+            Invisible "shield" that masks Drive's pop-out arrow in the
+            top-right corner of the /preview UI. The shield sits above
+            the iframe (z-10 vs iframe's z-0) and captures pointer events
+            so clicks land here instead of on Drive's open-in-new-tab
+            icon. 60×60 covers both the icon and its surrounding tap
+            target without intruding into Drive's playback controls.
+          */}
+          <div
+            aria-hidden="true"
+            className="absolute top-0 right-0 z-10"
+            style={{
+              width: 60,
+              height: 60,
+              background: 'transparent',
+              pointerEvents: 'auto',
+            }}
           />
         </div>
         {/* Permanent escape-hatch: even when the iframe loads correctly,
@@ -212,8 +230,20 @@ export default function NativeMediaPlayer({
           referrerPolicy="no-referrer"
           loading="lazy"
           onLoad={handleLoad}
-          className="block w-full border-0"
+          className="block w-full border-0 relative z-0"
           style={{ minHeight: pdfMinHeight, height: '100%' }}
+        />
+        {/* Same corner shield as the video branch — masks Drive's
+            "Open in new tab" icon in the PDF /preview UI. */}
+        <div
+          aria-hidden="true"
+          className="absolute top-0 right-0 z-10"
+          style={{
+            width: 60,
+            height: 60,
+            background: 'transparent',
+            pointerEvents: 'auto',
+          }}
         />
       </div>
       <p className="text-[11px] text-right" style={{ color: '#64748b' }}>
