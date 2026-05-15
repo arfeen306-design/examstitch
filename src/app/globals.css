@@ -29,6 +29,11 @@
     --brand-accent-rgb:    230 213 184;  /* #E6D5B8 beach sand */
     --brand-highlight-rgb: 245 241 227;  /* #F5F1E3 cream */
 
+    /* Foreground RGB — text color that contrasts with the page chrome.
+       Dark theme: light cream (against dark bg). Light theme: deep
+       indigo (against white bg). Used by the `text-fg` Tailwind class. */
+    --text-primary-rgb:    245 241 227;
+
     /* ── Surfaces ─────────────────────────────────────────────────────── */
     --bg-primary:    #0B201D;
     --bg-surface:    #122B25;
@@ -92,6 +97,9 @@
     --brand-secondary-rgb: 245 243 255;  /* #F5F3FF light lavender */
     --brand-accent-rgb:    139 92 246;   /* #8B5CF6 violet-500 (lighter than 600) */
     --brand-highlight-rgb: 109 40 217;   /* #6D28D9 violet-700 (still readable on white) */
+
+    /* Foreground RGB — deep indigo for body text on white surfaces. */
+    --text-primary-rgb:    30 27 75;     /* #1E1B4B */
 
     --bg-primary:    #FFFFFF;            /* page chrome */
     --bg-surface:    #F5F3FF;            /* one-shade-lifted lavender */
