@@ -3,16 +3,35 @@
 import { useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, ImagePlus, Loader2, Plus, Save, Trash2, UserPlus, X } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 import { useToast } from '@/components/ui/Toast';
 import { assignTutorToAdminUser, deleteTutorProfile, upsertTutorProfile } from './tutor-actions';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 import { createClient } from '@/lib/supabase/client';
 
-/** Supabase Storage bucket dedicated to tutor avatar uploads. */
-const TUTOR_AVATARS_BUCKET = 'tutor-avatars';
+/**
+ * Supabase Storage bucket. **Must exist** and be configured public-read
+ * + authenticated-write before uploads will work:
+ *   Studio → Storage → New bucket → name: 'tutors' → public ✓
+ */
+const TUTOR_AVATARS_BUCKET = 'tutors';
 
-/** Hard cap on tutor avatar uploads — anything bigger is almost certainly an unedited camera-roll JPEG. */
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
+/** Object-path prefix inside the bucket. */
+const AVATARS_PREFIX = 'avatars';
+
+/**
+ * Pre-compression upload guard. Compression brings every image down to
+ * ~0.5 MB regardless of input, so this is just a sanity check to reject
+ * absurdly large camera dumps before we spend time decoding them.
+ */
+const MAX_PRE_COMPRESSION_BYTES = 10 * 1024 * 1024; // 10 MB
+
+/** Compression targets — matches the spec. */
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 0.5,
+  maxWidthOrHeight: 1024,
+  useWebWorker: true,
+} as const;
 
 /**
  * Sanitises a filename so the Supabase Storage path is predictable and
@@ -90,49 +109,85 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<TutorFormState>(emptyForm());
   const [showForm, setShowForm] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPhase, setAvatarPhase] = useState<'idle' | 'compressing' | 'uploading'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [assignment, setAssignment] = useState<Record<string, string>>(() =>
     Object.fromEntries(admins.map((a) => [a.id, a.tutor_id ?? '']))
   );
 
   /**
-   * Uploads a file to the `tutor-avatars` Supabase Storage bucket, then
-   * resolves its public URL and writes it back into form state.
+   * Compresses the chosen image, uploads it to the `tutors` Supabase
+   * Storage bucket under `avatars/`, and writes the public URL back
+   * into form state.
    *
-   * Path shape:  `{timestamp}-{sanitised-filename}`
-   * Bucket:      `tutor-avatars` (must be public read; admin write)
-   * Side effect: shows a toast on success/failure, never throws to the UI
+   * Pipeline:
+   *   1. Guard MIME + raw size (≤ 10 MB pre-compression)
+   *   2. browser-image-compression → 0.5 MB / 1024 px ceiling
+   *   3. supabase.storage.upload(objectKey, compressed, upsert: true)
+   *   4. getPublicUrl → setForm({ thumbnail_url })
+   *
+   * Failure modes are surfaced as toasts; "Bucket not found" gets an
+   * extra console.error pointing the admin at the fix.
    */
   async function handleFileUpload(file: File) {
     if (!file) return;
-    if (file.size > MAX_AVATAR_BYTES) {
-      showToast({
-        message: `File is ${(file.size / 1024 / 1024).toFixed(1)} MB — please keep avatars under 5 MB.`,
-        type: 'error',
-      });
-      return;
-    }
     if (!file.type.startsWith('image/')) {
       showToast({ message: 'Please choose an image file.', type: 'error' });
       return;
     }
+    if (file.size > MAX_PRE_COMPRESSION_BYTES) {
+      showToast({
+        message: `File is ${(file.size / 1024 / 1024).toFixed(1)} MB — please keep the original under 10 MB.`,
+        type: 'error',
+      });
+      return;
+    }
 
-    setUploadingAvatar(true);
+    // ── Phase: compressing ────────────────────────────────────────────────
+    setAvatarPhase('compressing');
+    let compressed: File;
+    try {
+      compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Compression failed.';
+      showToast({ message: `Couldn't compress image: ${message}`, type: 'error' });
+      setAvatarPhase('idle');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // ── Phase: uploading ──────────────────────────────────────────────────
+    setAvatarPhase('uploading');
     try {
       const supabase = createClient();
-      const objectKey = `${Date.now()}-${safeFilename(file.name)}`;
+      const objectKey = `${AVATARS_PREFIX}/${Date.now()}-${safeFilename(file.name)}`;
 
       const { error: uploadErr } = await supabase.storage
         .from(TUTOR_AVATARS_BUCKET)
-        .upload(objectKey, file, {
+        .upload(objectKey, compressed, {
           cacheControl: '3600',
-          upsert: false,
-          contentType: file.type,
+          upsert: true,
+          contentType: compressed.type || file.type,
         });
 
       if (uploadErr) {
-        showToast({ message: `Upload failed: ${uploadErr.message}`, type: 'error' });
+        // Surface a specific, actionable hint for the most common
+        // misconfiguration. Supabase's error message text is "Bucket
+        // not found" (sometimes wrapped in JSON-like detail strings),
+        // so a case-insensitive match catches the variants.
+        if (/bucket not found/i.test(uploadErr.message)) {
+          console.error(
+            `[TutorProfileManager] Supabase Storage bucket "${TUTOR_AVATARS_BUCKET}" is missing. ` +
+              `Create it in Supabase Studio → Storage → New bucket → name: "${TUTOR_AVATARS_BUCKET}" ` +
+              `→ Public bucket: ON. Then add an INSERT policy for authenticated users.`,
+          );
+          showToast({
+            message: `Upload failed: bucket "${TUTOR_AVATARS_BUCKET}" is missing. See the browser console for setup instructions.`,
+            type: 'error',
+          });
+        } else {
+          showToast({ message: `Upload failed: ${uploadErr.message}`, type: 'error' });
+        }
         return;
       }
 
@@ -147,12 +202,18 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
       }
 
       setForm((s) => ({ ...s, thumbnail_url: publicUrl }));
-      showToast({ message: 'Avatar uploaded.', type: 'success' });
+      const savedKb = Math.max(0, Math.round((file.size - compressed.size) / 1024));
+      showToast({
+        message: savedKb > 0
+          ? `Avatar uploaded (compressed, saved ${savedKb} KB).`
+          : 'Avatar uploaded.',
+        type: 'success',
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown upload error.';
       showToast({ message: `Upload failed: ${message}`, type: 'error' });
     } finally {
-      setUploadingAvatar(false);
+      setAvatarPhase('idle');
       // Reset the input so picking the same file twice still fires onChange
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -309,10 +370,15 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar}
+                    disabled={avatarPhase !== 'idle'}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 disabled:opacity-50 transition"
                   >
-                    {uploadingAvatar ? (
+                    {avatarPhase === 'compressing' ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Compressing…
+                      </>
+                    ) : avatarPhase === 'uploading' ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         Uploading…
@@ -328,7 +394,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
                     <button
                       type="button"
                       onClick={clearThumbnail}
-                      disabled={uploadingAvatar}
+                      disabled={avatarPhase !== 'idle'}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 disabled:opacity-50 transition"
                     >
                       <X className="w-3 h-3" />
