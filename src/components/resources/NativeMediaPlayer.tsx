@@ -3,95 +3,103 @@
 /**
  * NativeMediaPlayer
  * ─────────────────
- * Renders Google Drive media (videos + PDFs) through **native HTML5 elements**
- * rather than the slow `/preview` iframe. Buffers faster, scales better on
- * mobile, and never triggers Drive's 100 MB virus-scan interstitial because
- * the stream URL is built by `toDriveStreamUrl` which always appends
- * `&confirm=t`.
+ * Renders Google Drive media through the Drive **`/preview`** iframe,
+ * which is the only embed shape that survives Drive's cross-origin
+ * policy reliably (the `uc?export=download` route fails browser CORS
+ * even with `&confirm=t`).
  *
- * For non-Drive URLs (YouTube, direct CDN, Vimeo) the parent component
- * should use its existing renderer — this player is the Drive-specific path.
+ * - **Video kind** → `<iframe src=".../preview" allow="autoplay; encrypted-media" allowFullScreen>`
+ * - **PDF kind**   → same `/preview` shape (Drive renders the PDF viewer inline)
+ *
+ * Direct-download URLs (`toDriveStreamUrl`) are still used for the
+ * fallback "Open in new tab" CTA so users can always reach the raw
+ * file when the embed itself fails.
+ *
+ * Optional `onProgress` / `onEnded` callbacks are no-ops in the iframe
+ * path — we cannot reach into the embedded Drive player's state.
+ * They're kept on the props for source-stability with callers that
+ * still wire them (`EmbeddedViewer`, `DualMediaViewer`).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Download, ExternalLink } from 'lucide-react';
-import { sanitizeMediaUrl } from '@/lib/url-transform';
+import { AlertTriangle, ExternalLink } from 'lucide-react';
+import { toDrivePreviewUrl, toDriveStreamUrl, sanitizeMediaUrl } from '@/lib/url-transform';
 
 type MediaKind = 'video' | 'pdf';
 
 interface NativeMediaPlayerProps {
   /** Raw URL as stored in the DB (sanitised at render time for legacy rows). */
   url: string;
-  /** Accessible title for the element. */
+  /** Accessible title for the iframe. */
   title: string;
-  /** Video poster / PDF placeholder image (optional). */
+  /** Optional thumbnail / poster — currently unused in iframe mode but kept for API parity. */
   poster?: string;
   kind: MediaKind;
-  /** Optional MIME — overrides the default (`video/mp4`, `application/pdf`). */
+  /** Override MIME (not used in iframe mode; kept for source-stability). */
   mimeType?: string;
   className?: string;
-  /** Aspect ratio for video (default 16/9). PDFs use min-height instead. */
-  aspectRatio?: string;
-  /** Min height for the PDF object container (default 80vh). */
+  /** Min height for the PDF iframe container (default 80vh). */
   pdfMinHeight?: string;
-  /** Fires once when the video finishes playing (video only). */
+  /** No-op in iframe mode — kept for callers that still wire it. */
   onEnded?: () => void;
-  /**
-   * Fires roughly every `progressIntervalMs` while the video is playing
-   * (video only). Receives the current playback time in **whole seconds**.
-   * Wire this to `/api/progress/update` for watch-time persistence.
-   */
+  /** No-op in iframe mode — kept for callers that still wire it. */
   onProgress?: (currentTimeSec: number) => void;
-  /** Throttle window for `onProgress`. Defaults to 30 000 ms — matches the YT path. */
+  /** Throttle window for `onProgress` (unused in iframe mode). */
   progressIntervalMs?: number;
+  /** How long to wait for the iframe `onLoad` before declaring the embed broken. */
+  loadTimeoutMs?: number;
 }
 
 export default function NativeMediaPlayer({
   url,
   title,
-  poster,
   kind,
-  mimeType,
   className,
-  aspectRatio = '16 / 9',
   pdfMinHeight = '80vh',
-  onEnded,
-  onProgress,
-  progressIntervalMs = 30_000,
+  loadTimeoutMs = 10_000,
 }: NativeMediaPlayerProps) {
   // Always sanitise at render time so legacy DB rows (raw `/file/d/X/view`
-  // URLs) are transparently upgraded — no DB migration required.
-  const streamUrl = useMemo(() => sanitizeMediaUrl(url), [url]);
-  const [errored, setErrored] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const lastProgressAtRef = useRef<number>(0);
+  // URLs) are transparently upgraded. The sanitised form is `uc?export=download…`
+  // — fine for the download CTA. For the iframe we derive the `/preview`
+  // shape with `toDrivePreviewUrl`.
+  const canonicalUrl = useMemo(() => sanitizeMediaUrl(url), [url]);
+  const previewUrl = useMemo(() => toDrivePreviewUrl(url) ?? canonicalUrl, [url, canonicalUrl]);
+  const downloadUrl = useMemo(() => toDriveStreamUrl(url) ?? canonicalUrl, [url, canonicalUrl]);
 
-  const handleVideoError = useCallback(() => setErrored(true), []);
-  const handleVideoEnded = useCallback(() => onEnded?.(), [onEnded]);
+  /**
+   * State machine for the iframe:
+   *   'loading' → onLoad has not fired AND the timeout has not elapsed
+   *   'ready'   → onLoad fired before the timeout
+   *   'error'   → timeout fired first → assume Drive blocked / file missing
+   *
+   * iframes do not reliably fire `onError`, so the only signal we have
+   * is "did `onLoad` happen in time".
+   */
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Throttled progress tick — derived from the element's own `timeupdate`
-  // event, which fires ~4×/sec while playing. We coalesce by wall-clock
-  // delta so callers see at most one event per `progressIntervalMs`.
-  const handleTimeUpdate = useCallback(() => {
-    if (!onProgress || !videoRef.current) return;
-    const now = Date.now();
-    if (now - lastProgressAtRef.current < progressIntervalMs) return;
-    lastProgressAtRef.current = now;
-    onProgress(Math.floor(videoRef.current.currentTime));
-  }, [onProgress, progressIntervalMs]);
+  const handleLoad = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setState((prev) => (prev === 'error' ? prev : 'ready'));
+  }, []);
 
-  // Reset the throttle when the source changes (re-mounts give a fresh ref
-  // but a re-render with a new URL on the same element should still start
-  // from zero).
   useEffect(() => {
-    lastProgressAtRef.current = 0;
-  }, [streamUrl]);
+    // Reset whenever the URL changes (component re-used for different resource)
+    setState('loading');
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setState((prev) => (prev === 'ready' ? prev : 'error'));
+    }, loadTimeoutMs);
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [previewUrl, loadTimeoutMs]);
 
-  // ── Error UI ─────────────────────────────────────────────────────────────
-  // Triggered when the native element fires its `error` event (e.g. Drive
-  // returns 403 because sharing is not "Anyone with the link", or the file
-  // ID is wrong). Friendly, branded, with a direct-open escape hatch.
-  if (errored) {
+  // ── Error fallback ───────────────────────────────────────────────────────
+  // Triggered when the iframe doesn't load in time (Drive blocked, file
+  // is private, ID is wrong). We show a friendly card with a direct-open
+  // escape hatch pointing at the download URL.
+  if (state === 'error') {
     return (
       <div
         className={`flex flex-col items-center justify-center gap-4 text-center px-6 py-12 rounded-xl ${className ?? ''}`}
@@ -113,15 +121,15 @@ export default function NativeMediaPlayer({
         </div>
         <div className="max-w-md">
           <h3 className="text-base font-bold mb-1" style={{ color: '#e2e8f0' }}>
-            {kind === 'video' ? 'Video Unavailable' : 'PDF Unavailable'}
+            {kind === 'video' ? 'Video unavailable' : 'PDF unavailable'}
           </h3>
           <p className="text-sm leading-relaxed" style={{ color: '#94a3b8' }}>
-            The file couldn&rsquo;t load. The admin should check that the Drive sharing
+            The file couldn&rsquo;t load. The admin should verify the Drive sharing
             permissions are set to <strong>&ldquo;Anyone with the link can view.&rdquo;</strong>
           </p>
         </div>
         <a
-          href={streamUrl}
+          href={downloadUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md transition-opacity hover:opacity-90"
@@ -134,103 +142,91 @@ export default function NativeMediaPlayer({
     );
   }
 
-  // ── Video branch ─────────────────────────────────────────────────────────
+  // ── Video iframe ─────────────────────────────────────────────────────────
   if (kind === 'video') {
     return (
-      <div
-        className={`relative w-full overflow-hidden rounded-xl bg-black ${className ?? ''}`}
-        style={{ aspectRatio }}
-      >
-        {/* `preload="metadata"` keeps the initial network footprint tiny —
-            we fetch enough to know duration + dimensions, then defer the
-            byte stream until the user hits play. `playsinline` is required
-            for iOS Safari so the video doesn't auto-fullscreen. */}
-        {/*
-          IMPORTANT: do NOT set `crossOrigin` on this element.
-          Google Drive's `uc?export=download` redirects to *.googleusercontent.com
-          without an `Access-Control-Allow-Origin` header. Native <video> loads
-          `src` without CORS by default, but as soon as `crossOrigin` is set the
-          browser requires CORS and refuses to play. The legacy attribute is
-          only needed for canvas readback / `captureStream()` — not here.
-
-          The optional `mimeType` prop overrides Drive's `Content-Type` sniffing
-          for callers who know the codec ahead of time. We leave the default
-          unset so the browser uses Drive's response header (handles mp4, webm,
-          mov, etc. without per-file config).
-        */}
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full"
-          src={streamUrl}
-          title={title}
-          poster={poster}
-          controls
-          preload="metadata"
-          playsInline
-          onError={handleVideoError}
-          onEnded={handleVideoEnded}
-          onTimeUpdate={onProgress ? handleTimeUpdate : undefined}
-          {...(mimeType ? { 'data-mime': mimeType } : {})}
+      <div className="space-y-2">
+        <div
+          className={`aspect-video w-full rounded-xl overflow-hidden bg-black relative ${className ?? ''}`}
         >
-          <p className="text-white p-4">
-            Your browser doesn&rsquo;t support inline video.{' '}
-            <a
-              href={streamUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-indigo-300"
-            >
-              Download the video
-            </a>{' '}
-            to watch it.
-          </p>
-        </video>
+          {state === 'loading' && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-2 border-indigo-500/30 border-t-indigo-400 animate-spin" />
+            </div>
+          )}
+          <iframe
+            src={previewUrl}
+            title={title}
+            width="100%"
+            height="100%"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            onLoad={handleLoad}
+            className="block w-full h-full border-0"
+          />
+        </div>
+        {/* Permanent escape-hatch: even when the iframe loads correctly,
+            users can hit this if Drive's UI inside the iframe surfaces
+            its own "you cannot view this" page (a soft failure we
+            can't detect from outside). */}
+        <p className="text-[11px] text-right" style={{ color: '#64748b' }}>
+          Trouble playing?{' '}
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-slate-300 transition-colors"
+          >
+            Open in new tab
+          </a>
+        </p>
       </div>
     );
   }
 
-  // ── PDF branch ───────────────────────────────────────────────────────────
-  // `<object>` triggers the browser's native PDF plugin (Chrome PDFium,
-  // Firefox PDF.js, Safari Preview). Its child content is *only* rendered
-  // when the plugin is unavailable — that's our accessibility-first
-  // download fallback. No iframe, no Drive `/preview` chrome.
+  // ── PDF iframe ───────────────────────────────────────────────────────────
+  // Drive's /preview route also renders PDFs in an inline viewer with
+  // its own zoom + download controls. Same CORS / X-Frame-Options
+  // story as video — `/preview` is permitted, `uc?export=download`
+  // is not.
   return (
-    <div
-      className={`relative w-full overflow-hidden rounded-xl bg-[#525659] ${className ?? ''}`}
-      style={{ minHeight: pdfMinHeight }}
-    >
-      <object
-        data={streamUrl}
-        type={mimeType ?? 'application/pdf'}
-        title={title}
-        className="block w-full"
-        style={{ minHeight: pdfMinHeight, height: '100%' }}
-        aria-label={`PDF viewer for ${title}`}
+    <div className={`space-y-2 ${className ?? ''}`}>
+      <div
+        className="rounded-xl overflow-hidden bg-[#525659] relative"
+        style={{ minHeight: pdfMinHeight }}
       >
-        {/* Native fallback when the user has no PDF plugin (some mobile
-            browsers, locked-down enterprise installs). Always include a
-            visible download link — this satisfies WCAG 2.1 Success
-            Criterion 1.4.5 *Images of Text* for PDF content. */}
-        <div
-          className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center"
-          style={{ background: '#0d1526', color: '#e2e8f0', minHeight: pdfMinHeight }}
+        {state === 'loading' && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-indigo-500/30 border-t-indigo-400 animate-spin" />
+          </div>
+        )}
+        <iframe
+          src={previewUrl}
+          title={title}
+          width="100%"
+          height="100%"
+          allow="autoplay"
+          allowFullScreen
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          onLoad={handleLoad}
+          className="block w-full border-0"
+          style={{ minHeight: pdfMinHeight, height: '100%' }}
+        />
+      </div>
+      <p className="text-[11px] text-right" style={{ color: '#64748b' }}>
+        Trouble viewing?{' '}
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-slate-300 transition-colors"
         >
-          <p className="text-sm">
-            Your browser cannot display PDFs inline.
-          </p>
-          <a
-            href={streamUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            download
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
-          >
-            <Download className="w-4 h-4" aria-hidden />
-            Download {title}
-          </a>
-        </div>
-      </object>
+          Open in new tab
+        </a>
+      </p>
     </div>
   );
 }
