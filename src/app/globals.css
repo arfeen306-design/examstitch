@@ -77,56 +77,63 @@
   }
 
   /* ── LIGHT WHITE & PURPLE — alternate theme ───────────────────────────── */
-  /* Activated by setting `data-theme="light"` on <html>. Every CSS-var
-     consumer (admin sidebar, public navbar, cards, hero gradient,
-     portal-glass…) re-paints. Tailwind's semantic tokens swap too
-     via the brand-rgb vars above. */
+  /*
+   * Activated by `data-theme="light"` on <html>. The palette is
+   * deliberately **white-dominant with light-purple accents** —
+   * matching the reference design (white chrome, lavender surfaces,
+   * a brighter violet hero rather than a deep royal one).
+   *
+   * Body text uses deep indigo (#1E1B4B) on white for ~16:1 contrast.
+   * CTA buttons retain violet-600 for a strong visible action colour
+   * but the rest of the palette is intentionally airy.
+   */
   [data-theme="light"] {
     --brand-primary-rgb:   255 255 255;  /* #FFFFFF pure white */
-    --brand-secondary-rgb: 250 245 255;  /* #FAF5FF lavender mist */
-    --brand-accent-rgb:    124 58 237;   /* #7C3AED violet-600 */
-    --brand-highlight-rgb: 76 29 149;    /* #4C1D95 royal purple */
+    --brand-secondary-rgb: 245 243 255;  /* #F5F3FF light lavender */
+    --brand-accent-rgb:    139 92 246;   /* #8B5CF6 violet-500 (lighter than 600) */
+    --brand-highlight-rgb: 109 40 217;   /* #6D28D9 violet-700 (still readable on white) */
 
-    --bg-primary:    #FFFFFF;
-    --bg-surface:    #FAF5FF;
-    --bg-card:       #FFFFFF;
-    --bg-elevated:   #F3E8FF;
+    --bg-primary:    #FFFFFF;            /* page chrome */
+    --bg-surface:    #F5F3FF;            /* one-shade-lifted lavender */
+    --bg-card:       #FFFFFF;            /* cards stay white */
+    --bg-elevated:   #EDE9FE;            /* hovered / popped surfaces */
 
-    --hero-from:     #4C1D95;            /* purple hero against white shell */
-    --hero-via:      #6D28D9;
-    --hero-to:       #4C1D95;
+    /* Hero — bright friendly violet rather than the previous royal purple. */
+    --hero-from:     #8B5CF6;            /* violet-500 */
+    --hero-via:      #A78BFA;            /* violet-400 — mid-stop highlight */
+    --hero-to:       #8B5CF6;
     --navbar-bg:     rgba(255, 255, 255, 0.92);
 
-    --text-primary:   #1E1B4B;           /* deep indigo for body text on white */
-    --text-secondary: #4C1D95;
-    --text-muted:     #6B21A8;
+    --text-primary:   #1E1B4B;           /* deep indigo body — high contrast */
+    --text-secondary: #6D28D9;           /* lighter than royal #4C1D95 */
+    --text-muted:     #8B5CF6;           /* meta text in a soft violet */
     --text-on-dark:   #FFFFFF;
-    --text-on-accent: #FFFFFF;           /* white on purple CTAs */
+    --text-on-accent: #FFFFFF;           /* white on violet CTAs */
 
-    --accent:         #7C3AED;
-    --accent-hover:   #6D28D9;
-    --accent-subtle:  rgba(124, 58, 237, 0.10);
-    --accent-text:    #6D28D9;
+    --accent:         #8B5CF6;           /* primary CTA — violet-500 */
+    --accent-hover:   #7C3AED;           /* deepen on hover */
+    --accent-subtle:  rgba(139, 92, 246, 0.10);
+    --accent-text:    #7C3AED;
 
-    --border-color:   rgba(124, 58, 237, 0.25);
-    --border-subtle:  rgba(124, 58, 237, 0.12);
-    --badge-bg:       #7C3AED;
+    --border-color:   rgba(139, 92, 246, 0.22);
+    --border-subtle:  rgba(139, 92, 246, 0.10);
+    --badge-bg:       #8B5CF6;
     --badge-text:     #FFFFFF;
-    --shadow-color:   rgba(76, 29, 149, 0.12);
+    --shadow-color:   rgba(109, 40, 217, 0.10);
     --wave-fill:      #FFFFFF;
-    --cta-orange:     #7C3AED;
+    --cta-orange:     #8B5CF6;
 
-    /* Portal-glass in light mode: white panes with purple borders. */
-    --portal-glass-bg:           rgba(255, 255, 255, 0.92);
-    --portal-glass-bg-hover:     rgba(243, 232, 255, 0.98);
-    --portal-glass-border:       rgba(124, 58, 237, 0.22);
-    --portal-glass-border-hover: rgba(124, 58, 237, 0.48);
-    --portal-glass-inset-bg:        rgba(250, 245, 255, 0.78);
-    --portal-glass-inset-bg-hover:  rgba(243, 232, 255, 0.92);
-    --portal-glass-inset-border:    rgba(124, 58, 237, 0.18);
-    --portal-skeleton-surface:      rgba(243, 232, 255, 0.6);
-    --portal-skeleton-border:       rgba(124, 58, 237, 0.14);
-    --portal-skeleton-shine:        rgba(124, 58, 237, 0.18);
+    /* Portal-glass: white panes with light-violet borders + lavender insets. */
+    --portal-glass-bg:           rgba(255, 255, 255, 0.94);
+    --portal-glass-bg-hover:     rgba(237, 233, 254, 0.98);
+    --portal-glass-border:       rgba(139, 92, 246, 0.22);
+    --portal-glass-border-hover: rgba(139, 92, 246, 0.48);
+    --portal-glass-inset-bg:        rgba(245, 243, 255, 0.78);
+    --portal-glass-inset-bg-hover:  rgba(237, 233, 254, 0.92);
+    --portal-glass-inset-border:    rgba(139, 92, 246, 0.18);
+    --portal-skeleton-surface:      rgba(237, 233, 254, 0.6);
+    --portal-skeleton-border:       rgba(139, 92, 246, 0.14);
+    --portal-skeleton-shine:        rgba(139, 92, 246, 0.18);
   }
 
   /* ── Base element styling ───────────────────────────────────────────────── */
