@@ -6,6 +6,7 @@ import { getAdminSession } from '@/lib/supabase/guards';
 import { PORTAL_RESOURCE_STREAMS } from '@/lib/init-subject';
 import PremiumGate from '@/components/resources/PremiumGate';
 import type { QuestionMapping } from '@/components/resources/InteractiveSolver';
+import { extractDriveFileId } from '@/lib/url-transform';
 import type { Metadata } from 'next';
 
 const EmbeddedViewer    = nextDynamic(() => import('@/components/resources/EmbeddedViewer'),    { ssr: false });
@@ -123,11 +124,15 @@ export default async function ViewerPage({ params, searchParams }: ViewerPagePro
   const questionMapping = (resource as any).question_mapping as QuestionMapping[] | null;
 
   // ── Interactive Solver mode ──────────────────────────────────────────────
-  // Activates when the resource has BOTH a video AND a PDF AND question mappings
+  // Activates when the resource has BOTH a video AND a PDF AND question mappings.
+  // InteractiveSolver is YouTube-specific (it drives YT.Player.seekTo() for the
+  // timestamp jumps) — Drive videos gracefully degrade to DualMediaViewer
+  // instead, where the native <video> path renders correctly.
   const hasVideo = resource.source_url && resource.content_type === 'video';
   const hasPdf = !!worksheetUrl;
   const hasMapping = Array.isArray(questionMapping) && questionMapping.length > 0;
-  const useInteractiveSolver = hasVideo && hasPdf && hasMapping && !isWorksheet;
+  const isYouTubeVideo = hasVideo && extractDriveFileId(resource.source_url) === null;
+  const useInteractiveSolver = hasVideo && hasPdf && hasMapping && !isWorksheet && isYouTubeVideo;
 
   if (useInteractiveSolver) {
     const { href: backHref, label: backLabel } = buildBackPath(resource);

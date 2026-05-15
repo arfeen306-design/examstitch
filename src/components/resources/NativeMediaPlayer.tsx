@@ -13,7 +13,7 @@
  * should use its existing renderer — this player is the Drive-specific path.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Download, ExternalLink } from 'lucide-react';
 import { sanitizeMediaUrl } from '@/lib/url-transform';
 
@@ -34,6 +34,16 @@ interface NativeMediaPlayerProps {
   aspectRatio?: string;
   /** Min height for the PDF object container (default 80vh). */
   pdfMinHeight?: string;
+  /** Fires once when the video finishes playing (video only). */
+  onEnded?: () => void;
+  /**
+   * Fires roughly every `progressIntervalMs` while the video is playing
+   * (video only). Receives the current playback time in **whole seconds**.
+   * Wire this to `/api/progress/update` for watch-time persistence.
+   */
+  onProgress?: (currentTimeSec: number) => void;
+  /** Throttle window for `onProgress`. Defaults to 30 000 ms — matches the YT path. */
+  progressIntervalMs?: number;
 }
 
 export default function NativeMediaPlayer({
@@ -45,13 +55,37 @@ export default function NativeMediaPlayer({
   className,
   aspectRatio = '16 / 9',
   pdfMinHeight = '80vh',
+  onEnded,
+  onProgress,
+  progressIntervalMs = 30_000,
 }: NativeMediaPlayerProps) {
   // Always sanitise at render time so legacy DB rows (raw `/file/d/X/view`
   // URLs) are transparently upgraded — no DB migration required.
   const streamUrl = useMemo(() => sanitizeMediaUrl(url), [url]);
   const [errored, setErrored] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const lastProgressAtRef = useRef<number>(0);
 
   const handleVideoError = useCallback(() => setErrored(true), []);
+  const handleVideoEnded = useCallback(() => onEnded?.(), [onEnded]);
+
+  // Throttled progress tick — derived from the element's own `timeupdate`
+  // event, which fires ~4×/sec while playing. We coalesce by wall-clock
+  // delta so callers see at most one event per `progressIntervalMs`.
+  const handleTimeUpdate = useCallback(() => {
+    if (!onProgress || !videoRef.current) return;
+    const now = Date.now();
+    if (now - lastProgressAtRef.current < progressIntervalMs) return;
+    lastProgressAtRef.current = now;
+    onProgress(Math.floor(videoRef.current.currentTime));
+  }, [onProgress, progressIntervalMs]);
+
+  // Reset the throttle when the source changes (re-mounts give a fresh ref
+  // but a re-render with a new URL on the same element should still start
+  // from zero).
+  useEffect(() => {
+    lastProgressAtRef.current = 0;
+  }, [streamUrl]);
 
   // ── Error UI ─────────────────────────────────────────────────────────────
   // Triggered when the native element fires its `error` event (e.g. Drive
@@ -112,6 +146,7 @@ export default function NativeMediaPlayer({
             byte stream until the user hits play. `playsinline` is required
             for iOS Safari so the video doesn't auto-fullscreen. */}
         <video
+          ref={videoRef}
           className="absolute inset-0 w-full h-full"
           src={streamUrl}
           title={title}
@@ -121,6 +156,8 @@ export default function NativeMediaPlayer({
           playsInline
           crossOrigin="anonymous"
           onError={handleVideoError}
+          onEnded={handleVideoEnded}
+          onTimeUpdate={onProgress ? handleTimeUpdate : undefined}
         >
           <source src={streamUrl} type={mimeType ?? 'video/mp4'} />
           <p className="text-white p-4">

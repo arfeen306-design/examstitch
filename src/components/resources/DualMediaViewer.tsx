@@ -10,9 +10,10 @@ import {
   Video,
   FileText,
 } from 'lucide-react';
-import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
+import { toEmbedUrl, toDownloadUrl, extractDriveFileId } from '@/lib/url-transform';
 import { useViewTracking } from '@/hooks/useViewTracking';
 import FramedPDFViewer from './FramedPDFViewer';
+import NativeMediaPlayer from './NativeMediaPlayer';
 
 // YouTube IFrame API globals are declared once in src/global.d.ts.
 
@@ -137,10 +138,32 @@ export default function DualMediaViewer({
 }: DualMediaViewerProps) {
   useViewTracking(resourceId);
 
-  const { embedUrl: videoEmbed } = toEmbedUrl(videoUrl);
+  const { embedUrl: videoEmbed, type: videoType } = toEmbedUrl(videoUrl);
   const { embedUrl: pdfEmbed } = toEmbedUrl(pdfUrl);
   const pdfDownload = toDownloadUrl(pdfUrl);
   const [expanded, setExpanded] = useState<'video' | 'pdf' | null>(null);
+
+  // Drive-hosted videos render through the native <video> path because YT.Player
+  // cannot attach to a Drive `/preview` iframe (the embed URL is not a YouTube
+  // origin). Progress is tracked via the element's own `timeupdate` + `ended`
+  // events, throttled to the same 30 s cadence used by the YouTube path.
+  const isDriveVideo = videoType !== 'youtube' && extractDriveFileId(videoUrl) !== null;
+
+  const updateNativeProgress = useCallback(
+    async (isCompleted: boolean, watchTime: number) => {
+      if (!resourceId) return;
+      try {
+        await fetch('/api/progress/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resourceId, isCompleted, watchTime }),
+        });
+      } catch {
+        // intentionally silent — telemetry must never break playback
+      }
+    },
+    [resourceId],
+  );
 
   return (
     <motion.div
@@ -245,7 +268,27 @@ export default function DualMediaViewer({
           }`}
         >
           <div className="sticky top-24">
-            <DualVideoPlayer embedUrl={videoEmbed} title={title} resourceId={resourceId} />
+            {isDriveVideo ? (
+              <div
+                className="overflow-hidden"
+                style={{
+                  borderRadius: '12px',
+                  border: '2px solid #E2E8F0',
+                  boxShadow:
+                    '0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 12px 24px -8px rgba(0, 0, 0, 0.06)',
+                }}
+              >
+                <NativeMediaPlayer
+                  url={videoUrl}
+                  title={title}
+                  kind="video"
+                  onProgress={(t) => updateNativeProgress(false, t)}
+                  onEnded={() => updateNativeProgress(true, 0)}
+                />
+              </div>
+            ) : (
+              <DualVideoPlayer embedUrl={videoEmbed} title={title} resourceId={resourceId} />
+            )}
           </div>
         </div>
       </div>
