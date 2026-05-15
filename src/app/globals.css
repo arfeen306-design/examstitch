@@ -18,16 +18,22 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
+  /* ── DARK FOREST & BEACH — default theme ──────────────────────────────── */
   :root,
-  [data-theme="default"],
-  [data-theme="dark"],
-  [data-theme="beach"],
-  [data-theme="forest"] {
+  [data-theme="default"] {
+    /* RGB channel vars feed Tailwind's semantic tokens (primary, accent…).
+       Keep the comma-free space-separated triplets — Tailwind's
+       rgb(var(--…) / <alpha-value>) syntax requires that format. */
+    --brand-primary-rgb:   11 32 29;     /* #0B201D dark forest */
+    --brand-secondary-rgb: 22 48 43;     /* #16302B medium forest */
+    --brand-accent-rgb:    230 213 184;  /* #E6D5B8 beach sand */
+    --brand-highlight-rgb: 245 241 227;  /* #F5F1E3 cream */
+
     /* ── Surfaces ─────────────────────────────────────────────────────── */
-    --bg-primary:    #0B201D;  /* app shell + page background */
-    --bg-surface:    #122B25;  /* secondary fill (slightly lifted) */
-    --bg-card:       #16302B;  /* cards / panels */
-    --bg-elevated:   #1B3D35;  /* hover / modal / popover */
+    --bg-primary:    #0B201D;
+    --bg-surface:    #122B25;
+    --bg-card:       #16302B;
+    --bg-elevated:   #1B3D35;
 
     /* ── Hero gradient ────────────────────────────────────────────────── */
     --hero-from:     #0B201D;
@@ -36,34 +42,28 @@
     --navbar-bg:     rgba(11, 32, 29, 0.92);
 
     /* ── Text ─────────────────────────────────────────────────────────── */
-    --text-primary:   #F5F1E3;  /* light beach / cream — body */
-    --text-secondary: #E6D5B8;  /* deep beach / sand — secondary */
-    --text-muted:     #A8BBB0;  /* desaturated forest-mint — meta */
+    --text-primary:   #F5F1E3;
+    --text-secondary: #E6D5B8;
+    --text-muted:     #A8BBB0;
     --text-on-dark:   #F5F1E3;
-    --text-on-accent: #0B201D;  /* dark text on beach CTAs */
+    --text-on-accent: #0B201D;
 
-    /* ── Accent (CTAs, highlights) ────────────────────────────────────── */
-    --accent:         #E6D5B8;  /* deep beach */
-    --accent-hover:   #F5F1E3;  /* lift to cream on hover */
+    /* ── Accent ───────────────────────────────────────────────────────── */
+    --accent:         #E6D5B8;
+    --accent-hover:   #F5F1E3;
     --accent-subtle:  rgba(230, 213, 184, 0.10);
     --accent-text:    #E6D5B8;
 
-    /* ── Borders ──────────────────────────────────────────────────────── */
+    /* ── Borders / shadows / badges / misc ────────────────────────────── */
     --border-color:   rgba(230, 213, 184, 0.18);
     --border-subtle:  rgba(230, 213, 184, 0.08);
-
-    /* ── Badges ───────────────────────────────────────────────────────── */
     --badge-bg:       #E6D5B8;
     --badge-text:     #0B201D;
-
-    /* ── Shadows ──────────────────────────────────────────────────────── */
     --shadow-color:   rgba(0, 0, 0, 0.45);
-
-    /* ── Misc / legacy hooks ──────────────────────────────────────────── */
     --wave-fill:      #0B201D;
-    --cta-orange:     #E6D5B8;  /* legacy CTA token — now beach */
+    --cta-orange:     #E6D5B8;
 
-    /* ── Portal glass surfaces (O/A-Level + admin cards) ──────────────── */
+    /* ── Portal glass surfaces ────────────────────────────────────────── */
     --portal-glass-bg:           rgba(11, 32, 29, 0.68);
     --portal-glass-bg-hover:     rgba(22, 48, 43, 0.84);
     --portal-glass-border:       rgba(230, 213, 184, 0.16);
@@ -74,6 +74,59 @@
     --portal-skeleton-surface:      rgba(11, 32, 29, 0.50);
     --portal-skeleton-border:       rgba(230, 213, 184, 0.10);
     --portal-skeleton-shine:        rgba(230, 213, 184, 0.16);
+  }
+
+  /* ── LIGHT WHITE & PURPLE — alternate theme ───────────────────────────── */
+  /* Activated by setting `data-theme="light"` on <html>. Every CSS-var
+     consumer (admin sidebar, public navbar, cards, hero gradient,
+     portal-glass…) re-paints. Tailwind's semantic tokens swap too
+     via the brand-rgb vars above. */
+  [data-theme="light"] {
+    --brand-primary-rgb:   255 255 255;  /* #FFFFFF pure white */
+    --brand-secondary-rgb: 250 245 255;  /* #FAF5FF lavender mist */
+    --brand-accent-rgb:    124 58 237;   /* #7C3AED violet-600 */
+    --brand-highlight-rgb: 76 29 149;    /* #4C1D95 royal purple */
+
+    --bg-primary:    #FFFFFF;
+    --bg-surface:    #FAF5FF;
+    --bg-card:       #FFFFFF;
+    --bg-elevated:   #F3E8FF;
+
+    --hero-from:     #4C1D95;            /* purple hero against white shell */
+    --hero-via:      #6D28D9;
+    --hero-to:       #4C1D95;
+    --navbar-bg:     rgba(255, 255, 255, 0.92);
+
+    --text-primary:   #1E1B4B;           /* deep indigo for body text on white */
+    --text-secondary: #4C1D95;
+    --text-muted:     #6B21A8;
+    --text-on-dark:   #FFFFFF;
+    --text-on-accent: #FFFFFF;           /* white on purple CTAs */
+
+    --accent:         #7C3AED;
+    --accent-hover:   #6D28D9;
+    --accent-subtle:  rgba(124, 58, 237, 0.10);
+    --accent-text:    #6D28D9;
+
+    --border-color:   rgba(124, 58, 237, 0.25);
+    --border-subtle:  rgba(124, 58, 237, 0.12);
+    --badge-bg:       #7C3AED;
+    --badge-text:     #FFFFFF;
+    --shadow-color:   rgba(76, 29, 149, 0.12);
+    --wave-fill:      #FFFFFF;
+    --cta-orange:     #7C3AED;
+
+    /* Portal-glass in light mode: white panes with purple borders. */
+    --portal-glass-bg:           rgba(255, 255, 255, 0.92);
+    --portal-glass-bg-hover:     rgba(243, 232, 255, 0.98);
+    --portal-glass-border:       rgba(124, 58, 237, 0.22);
+    --portal-glass-border-hover: rgba(124, 58, 237, 0.48);
+    --portal-glass-inset-bg:        rgba(250, 245, 255, 0.78);
+    --portal-glass-inset-bg-hover:  rgba(243, 232, 255, 0.92);
+    --portal-glass-inset-border:    rgba(124, 58, 237, 0.18);
+    --portal-skeleton-surface:      rgba(243, 232, 255, 0.6);
+    --portal-skeleton-border:       rgba(124, 58, 237, 0.14);
+    --portal-skeleton-shine:        rgba(124, 58, 237, 0.18);
   }
 
   /* ── Base element styling ───────────────────────────────────────────────── */

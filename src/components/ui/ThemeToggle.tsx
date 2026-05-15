@@ -1,21 +1,31 @@
 'use client';
 
 /**
- * ThemeToggle — used to be a 4-way theme picker. After the brand
- * consolidation it renders a non-interactive Leaf badge so the navbar
- * keeps the same footprint without a dead dropdown trigger.
+ * Public navbar theme toggle — flips between the two canonical brand
+ * themes. No dropdown, no list — a single tap switches.
  */
 
-import { Leaf } from 'lucide-react';
+import { Leaf, Sparkles } from 'lucide-react';
+import { useTheme } from '@/components/ui/ThemeProvider';
 
 export default function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const isLight = theme === 'light';
+
   return (
-    <span
-      title="Theme: Dark Forest & Beach"
-      aria-label="Theme: Dark Forest & Beach"
-      className="inline-flex items-center justify-center p-2 rounded-lg"
+    <button
+      type="button"
+      onClick={() => setTheme(isLight ? 'default' : 'light')}
+      title={isLight ? 'Switch to Dark Forest & Beach' : 'Switch to Light White & Purple'}
+      aria-label={isLight ? 'Switch to Dark Forest & Beach' : 'Switch to Light White & Purple'}
+      aria-pressed={isLight}
+      className="inline-flex items-center justify-center p-2 rounded-lg hover:bg-white/10 transition-colors"
     >
-      <Leaf className="w-4 h-4" style={{ color: 'var(--accent)' }} aria-hidden />
-    </span>
+      {isLight ? (
+        <Sparkles className="w-4 h-4" style={{ color: 'var(--accent)' }} aria-hidden />
+      ) : (
+        <Leaf className="w-4 h-4" style={{ color: 'var(--accent)' }} aria-hidden />
+      )}
+    </button>
   );
 }

@@ -31,6 +31,9 @@ const HUD_THEME: Record<Theme, { text: string; muted: string; border: string; bg
   dark:    { text: 'text-white',       muted: 'text-white/50',     border: 'border-white/[0.12]', bg: 'bg-white/[0.06]' },
   beach:   { text: 'text-slate-800',   muted: 'text-slate-500',    border: 'border-slate-400/50', bg: 'bg-slate-100/80' },
   forest:  { text: 'text-emerald-100', muted: 'text-emerald-300/60', border: 'border-emerald-400/[0.15]', bg: 'bg-emerald-950/60' },
+  // Light White & Purple — deep indigo text on a soft lavender HUD so
+  // the sim controls stay legible against the new pale chrome.
+  light:   { text: 'text-indigo-950',   muted: 'text-violet-600',     border: 'border-violet-400/50',     bg: 'bg-violet-50/90' },
 };
 
 // ── Loading animation ────────────────────────────────────────────────────────
