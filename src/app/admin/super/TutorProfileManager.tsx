@@ -321,7 +321,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
         </div>
         <button
           onClick={startCreate}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 transition"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-primary hover:bg-highlight transition"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Tutor
@@ -377,7 +377,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={avatarPhase !== 'idle'}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 disabled:opacity-50 transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-primary hover:bg-highlight disabled:opacity-50 transition"
                   >
                     {avatarPhase === 'compressing' ? (
                       <>
@@ -440,7 +440,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
 
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 border border-slate-600">Cancel</button>
-            <button disabled={isPending} type="submit" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 disabled:opacity-50">
+            <button disabled={isPending} type="submit" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-primary disabled:opacity-50">
               <Save className="w-3.5 h-3.5" /> Save Tutor
             </button>
           </div>
@@ -491,7 +491,7 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
               <button
                 onClick={() => handleAssign(admin.id)}
                 disabled={isPending}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg bg-amber-500 text-slate-950 font-semibold disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg bg-accent text-primary font-semibold disabled:opacity-50"
               >
                 <UserPlus className="w-3.5 h-3.5" /> Save
               </button>
