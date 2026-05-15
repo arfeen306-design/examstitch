@@ -19,7 +19,7 @@ export const PORTAL_RESOURCE_STREAMS = {
 
 export type PortalResourceStreamKey = keyof typeof PORTAL_RESOURCE_STREAMS;
 
-/** Union of the two DB `module_type` values used on public STEM portals */
+/** Union of the two DB `module_type` values used on public subject portals */
 export type PortalResourceStreamModuleType =
   (typeof PORTAL_RESOURCE_STREAMS)[PortalResourceStreamKey];
 
