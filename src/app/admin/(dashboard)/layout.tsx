@@ -104,7 +104,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
         {/* ── Sidebar ── */}
         <aside className="w-[260px] flex flex-col shrink-0 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, var(--hero-from) 0%, var(--hero-via) 40%, var(--hero-from) 100%)',
+            background: 'linear-gradient(180deg, var(--admin-sidebar-from) 0%, var(--admin-sidebar-via) 40%, var(--admin-sidebar-to) 100%)',
             borderRight: '1px solid rgba(255,255,255,0.08)',
           }}
         >

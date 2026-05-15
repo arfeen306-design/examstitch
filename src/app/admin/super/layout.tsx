@@ -92,7 +92,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
         {/* ── Sidebar ── */}
         <aside className="w-[260px] flex flex-col shrink-0 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, var(--hero-from) 0%, var(--hero-via) 40%, var(--hero-from) 100%)',
+            background: 'linear-gradient(180deg, var(--admin-sidebar-from) 0%, var(--admin-sidebar-via) 40%, var(--admin-sidebar-to) 100%)',
             borderRight: '1px solid rgba(255,255,255,0.08)',
           }}
         >
@@ -163,7 +163,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
                         key={item.href}
                         href={item.href}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium
-                                   text-[var(--text-muted)] hover:text-violet-100 transition-all group"
+                                   text-violet-100/80 hover:text-violet-100 transition-all group"
                       >
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.05] group-hover:bg-violet-500/10 transition-colors">
                           <Icon className="w-4 h-4 shrink-0 group-hover:text-violet-400 transition-colors" />
@@ -193,7 +193,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
               <button
                 type="submit"
                 className="flex items-center justify-center w-full gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all
-                           text-[var(--text-muted)] hover:text-violet-300 border border-white/[0.06] hover:border-violet-500/25 hover:bg-violet-500/5
+                           text-violet-100/80 hover:text-violet-300 border border-white/[0.06] hover:border-violet-500/25 hover:bg-violet-500/5
                            focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2"
               >
                 <LogOut className="w-4 h-4 shrink-0" aria-hidden />

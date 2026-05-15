@@ -34,6 +34,14 @@
        indigo (against white bg). Used by the `text-fg` Tailwind class. */
     --text-primary-rgb:    245 241 227;
 
+    /* Admin sidebar gradient — kept dark in BOTH themes so the cream
+       link text inside it stays readable. Light theme uses deep royal
+       purple so the sidebar reads as "admin chrome" even on a white
+       page body — a common pattern for SaaS admin shells. */
+    --admin-sidebar-from:  #0B201D;
+    --admin-sidebar-via:   #16302B;
+    --admin-sidebar-to:    #0B201D;
+
     /* ── Surfaces ─────────────────────────────────────────────────────── */
     --bg-primary:    #0B201D;
     --bg-surface:    #122B25;
@@ -100,6 +108,11 @@
 
     /* Foreground RGB — deep indigo for body text on white surfaces. */
     --text-primary-rgb:    30 27 75;     /* #1E1B4B */
+
+    /* Sidebar stays a saturated dark gradient for light-text contrast. */
+    --admin-sidebar-from:  #4C1D95;      /* purple-900 royal */
+    --admin-sidebar-via:   #6D28D9;      /* violet-700 */
+    --admin-sidebar-to:    #4C1D95;
 
     --bg-primary:    #FFFFFF;            /* page chrome */
     --bg-surface:    #F5F3FF;            /* one-shade-lifted lavender */
