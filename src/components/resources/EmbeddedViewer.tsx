@@ -247,10 +247,27 @@ export default function EmbeddedViewer({
   const isVideo = contentType === 'video' || type === 'youtube';
 
   // Drive-hosted media gets the native HTML5 path. YouTube keeps the
-  // IFrame-API embed (we need the YT.Player onStateChange events for
-  // completion tracking — native <video> doesn't expose those).
+  // IFrame-API embed; native <video> can't pull from YouTube and the YT
+  // IFrame events drive the existing completion overlay. For Drive videos
+  // we wire equivalent progress tracking via the element's own events.
   const driveId = extractDriveFileId(safeUrl);
   const isDriveVideo = isVideo && driveId !== null && type !== 'youtube';
+
+  const handleDriveProgress = useCallback(
+    async (isCompleted: boolean, watchTime: number) => {
+      if (!resourceId) return;
+      try {
+        await fetch('/api/progress/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resourceId, isCompleted, watchTime }),
+        });
+      } catch {
+        /* telemetry never breaks playback */
+      }
+    },
+    [resourceId],
+  );
 
   return (
     <motion.div
@@ -294,7 +311,13 @@ export default function EmbeddedViewer({
         </div>
       ) : isDriveVideo ? (
         <VideoContainer title={title} showBadge>
-          <NativeMediaPlayer url={safeUrl} title={title} kind="video" />
+          <NativeMediaPlayer
+            url={safeUrl}
+            title={title}
+            kind="video"
+            onProgress={(t) => handleDriveProgress(false, t)}
+            onEnded={() => handleDriveProgress(true, 0)}
+          />
         </VideoContainer>
       ) : isVideo ? (
         <VideoFrame
