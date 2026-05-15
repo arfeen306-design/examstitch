@@ -3,195 +3,77 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   THEME VARIABLES — consumed via var(--name) in components.
-   Each [data-theme] block defines the full palette for that theme.
+   DARK FOREST & BEACH PALETTE — single brand source of truth.
+
+   Tokens (also exposed as Tailwind classes — see tailwind.config.js):
+     primary    = #0B201D  Dark Forest Green   (chrome / app shell)
+     secondary  = #16302B  Medium Forest       (cards, surfaces)
+     accent     = #E6D5B8  Deep Beach / Sand   (CTAs, highlights)
+     highlight  = #F5F1E3  Light Beach / Cream (body text, soft surfaces)
+
+   Every legacy [data-theme="…"] alternate (beach / dark / default /
+   forest) collapses into this single root so no theme switching is
+   possible from this point on. Components reading `var(--bg-primary)`,
+   `var(--accent)`, etc. re-paint automatically.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
-  /* ── Beach ───────────────────────────────────────────────────────────────── */
-  [data-theme="beach"] {
-    --bg-primary:    #FDF5E6;
-    --bg-surface:    #FFF8EE;
-    --bg-card:       #FFFFFF;
-    --bg-elevated:   #FFFFFF;
-
-    --hero-from:     #0C4A6E;
-    --hero-via:      #075985;
-    --hero-to:       #0C4A6E;
-    --navbar-bg:     rgba(12, 74, 110, 0.92);
-
-    --text-primary:  #1C1917;
-    --text-secondary:#44403C;
-    --text-muted:    #78716C;
-    --text-on-dark:  #ffffff;
-    --text-on-accent:#1C1917;
-
-    --accent:        #F97316;
-    --accent-hover:  #FB923C;
-    --accent-subtle: #FFF7ED;
-    --accent-text:   #C2410C;
-
-    --border-color:  #D6D3D1;
-    --border-subtle: #E7E5E4;
-
-    --badge-bg:      #0C4A6E;
-    --badge-text:    #ffffff;
-
-    --shadow-color:  rgba(28, 25, 23, 0.06);
-
-    --wave-fill:     #FDF5E6;
-    --cta-orange:    #FF6B35;
-
-    /* O/A portals — navy glass on cream canvas */
-    --portal-glass-bg: rgba(15, 23, 42, 0.52);
-    --portal-glass-bg-hover: rgba(30, 41, 59, 0.7);
-    --portal-glass-border: rgba(148, 163, 184, 0.22);
-    --portal-glass-border-hover: rgba(251, 191, 36, 0.38);
-    --portal-glass-inset-bg: rgba(2, 6, 23, 0.45);
-    --portal-glass-inset-bg-hover: rgba(15, 23, 42, 0.62);
-    --portal-glass-inset-border: rgba(148, 163, 184, 0.2);
-    --portal-skeleton-surface: rgba(15, 23, 42, 0.4);
-    --portal-skeleton-border: rgba(148, 163, 184, 0.14);
-    --portal-skeleton-shine: rgba(148, 163, 184, 0.18);
-  }
-
-  /* ── Dark ───────────────────────────────────────────────────────────────── */
-  [data-theme="dark"] {
-    --bg-primary:    #050505;
-    --bg-surface:    #111111;
-    --bg-card:       #171717;
-    --bg-elevated:   #1F1F1F;
-
-    --hero-from:     #050505;
-    --hero-via:      #111111;
-    --hero-to:       #050505;
-    --navbar-bg:     rgba(5, 5, 5, 0.94);
-
-    --text-primary:  #F0F0F0;
-    --text-secondary:#A0A0A0;
-    --text-muted:    #6B6B6B;
-    --text-on-dark:  #F0F0F0;
-    --text-on-accent:#050505;
-
-    --accent:        #22D3EE;
-    --accent-hover:  #67E8F9;
-    --accent-subtle: rgba(34, 211, 238, 0.08);
-    --accent-text:   #67E8F9;
-
-    --border-color:  #2A2A2A;
-    --border-subtle: #1E1E1E;
-
-    --badge-bg:      #22D3EE;
-    --badge-text:    #050505;
-
-    --shadow-color:  rgba(0, 0, 0, 0.5);
-
-    --wave-fill:     #050505;
-    --cta-orange:    #FF6B35;
-
-    --portal-glass-bg: rgba(17, 17, 17, 0.62);
-    --portal-glass-bg-hover: rgba(28, 28, 28, 0.78);
-    --portal-glass-border: rgba(255, 255, 255, 0.1);
-    --portal-glass-border-hover: rgba(251, 191, 36, 0.35);
-    --portal-glass-inset-bg: rgba(10, 10, 10, 0.55);
-    --portal-glass-inset-bg-hover: rgba(24, 24, 24, 0.72);
-    --portal-glass-inset-border: rgba(255, 255, 255, 0.08);
-    --portal-skeleton-surface: rgba(20, 20, 20, 0.65);
-    --portal-skeleton-border: rgba(255, 255, 255, 0.06);
-    --portal-skeleton-shine: rgba(255, 255, 255, 0.08);
-  }
-
-  /* ── Navy (Default) — Slate-950 / Neon Blue ─────────────────────────────── */
   :root,
-  [data-theme="default"] {
-    --bg-primary:    #020617;
-    --bg-surface:    #0f172a;
-    --bg-card:       #1e293b;
-    --bg-elevated:   #1e293b;
-
-    --hero-from:     #020617;
-    --hero-via:      #0f172a;
-    --hero-to:       #020617;
-    --navbar-bg:     rgba(2, 6, 23, 0.94);
-
-    --text-primary:  #f1f5f9;
-    --text-secondary:#94a3b8;
-    --text-muted:    #64748b;
-    --text-on-dark:  #f1f5f9;
-    --text-on-accent:#020617;
-
-    --accent:        #3B82F6;
-    --accent-hover:  #60A5FA;
-    --accent-subtle: rgba(59, 130, 246, 0.1);
-    --accent-text:   #60A5FA;
-
-    --border-color:  #334155;
-    --border-subtle: #1e293b;
-
-    --badge-bg:      #3B82F6;
-    --badge-text:    #ffffff;
-
-    --shadow-color:  rgba(0, 0, 0, 0.4);
-
-    --wave-fill:     #020617;
-    --cta-orange:    #FF6B35;
-
-    --portal-glass-bg: rgba(8, 14, 28, 0.68);
-    --portal-glass-bg-hover: rgba(14, 24, 48, 0.84);
-    --portal-glass-border: rgba(148, 163, 184, 0.14);
-    --portal-glass-border-hover: rgba(251, 191, 36, 0.38);
-    --portal-glass-inset-bg: rgba(4, 8, 20, 0.58);
-    --portal-glass-inset-bg-hover: rgba(10, 18, 40, 0.72);
-    --portal-glass-inset-border: rgba(148, 163, 184, 0.14);
-    --portal-skeleton-surface: rgba(8, 14, 28, 0.5);
-    --portal-skeleton-border: rgba(148, 163, 184, 0.1);
-    --portal-skeleton-shine: rgba(148, 163, 184, 0.14);
-  }
-
-  /* ── Forest Green (#062C22 / Gold-Mint) ─────────────────────────────── */
+  [data-theme="default"],
+  [data-theme="dark"],
+  [data-theme="beach"],
   [data-theme="forest"] {
-    --bg-primary:    #062C22;
-    --bg-surface:    #04231a;
-    --bg-card:       #022c1e;
-    --bg-elevated:   #0a3d2c;
+    /* ── Surfaces ─────────────────────────────────────────────────────── */
+    --bg-primary:    #0B201D;  /* app shell + page background */
+    --bg-surface:    #122B25;  /* secondary fill (slightly lifted) */
+    --bg-card:       #16302B;  /* cards / panels */
+    --bg-elevated:   #1B3D35;  /* hover / modal / popover */
 
-    --hero-from:     #062C22;
-    --hero-via:      #04231a;
-    --hero-to:       #062C22;
-    --navbar-bg:     rgba(6, 44, 34, 0.94);
+    /* ── Hero gradient ────────────────────────────────────────────────── */
+    --hero-from:     #0B201D;
+    --hero-via:      #16302B;
+    --hero-to:       #0B201D;
+    --navbar-bg:     rgba(11, 32, 29, 0.92);
 
-    --text-primary:  #ecfdf5;
-    --text-secondary:#a7f3d0;
-    --text-muted:    #6ee7b7;
-    --text-on-dark:  #ecfdf5;
-    --text-on-accent:#062C22;
+    /* ── Text ─────────────────────────────────────────────────────────── */
+    --text-primary:   #F5F1E3;  /* light beach / cream — body */
+    --text-secondary: #E6D5B8;  /* deep beach / sand — secondary */
+    --text-muted:     #A8BBB0;  /* desaturated forest-mint — meta */
+    --text-on-dark:   #F5F1E3;
+    --text-on-accent: #0B201D;  /* dark text on beach CTAs */
 
-    --accent:        #FBBF24;
-    --accent-hover:  #F59E0B;
-    --accent-subtle: rgba(251, 191, 36, 0.1);
-    --accent-text:   #FBBF24;
+    /* ── Accent (CTAs, highlights) ────────────────────────────────────── */
+    --accent:         #E6D5B8;  /* deep beach */
+    --accent-hover:   #F5F1E3;  /* lift to cream on hover */
+    --accent-subtle:  rgba(230, 213, 184, 0.10);
+    --accent-text:    #E6D5B8;
 
-    --border-color:  rgba(52, 211, 153, 0.18);
-    --border-subtle: rgba(52, 211, 153, 0.08);
+    /* ── Borders ──────────────────────────────────────────────────────── */
+    --border-color:   rgba(230, 213, 184, 0.18);
+    --border-subtle:  rgba(230, 213, 184, 0.08);
 
-    --badge-bg:      #FBBF24;
-    --badge-text:    #062C22;
+    /* ── Badges ───────────────────────────────────────────────────────── */
+    --badge-bg:       #E6D5B8;
+    --badge-text:     #0B201D;
 
-    --shadow-color:  rgba(0, 0, 0, 0.35);
+    /* ── Shadows ──────────────────────────────────────────────────────── */
+    --shadow-color:   rgba(0, 0, 0, 0.45);
 
-    --wave-fill:     #062C22;
-    --cta-orange:    #FF6B35;
+    /* ── Misc / legacy hooks ──────────────────────────────────────────── */
+    --wave-fill:      #0B201D;
+    --cta-orange:     #E6D5B8;  /* legacy CTA token — now beach */
 
-    --portal-glass-bg: rgba(6, 44, 34, 0.55);
-    --portal-glass-bg-hover: rgba(10, 61, 44, 0.72);
-    --portal-glass-border: rgba(52, 211, 153, 0.2);
-    --portal-glass-border-hover: rgba(251, 191, 36, 0.4);
-    --portal-glass-inset-bg: rgba(4, 35, 26, 0.55);
-    --portal-glass-inset-bg-hover: rgba(8, 55, 40, 0.68);
-    --portal-glass-inset-border: rgba(52, 211, 153, 0.16);
-    --portal-skeleton-surface: rgba(6, 44, 34, 0.45);
-    --portal-skeleton-border: rgba(52, 211, 153, 0.12);
-    --portal-skeleton-shine: rgba(110, 231, 183, 0.14);
+    /* ── Portal glass surfaces (O/A-Level + admin cards) ──────────────── */
+    --portal-glass-bg:           rgba(11, 32, 29, 0.68);
+    --portal-glass-bg-hover:     rgba(22, 48, 43, 0.84);
+    --portal-glass-border:       rgba(230, 213, 184, 0.16);
+    --portal-glass-border-hover: rgba(230, 213, 184, 0.42);
+    --portal-glass-inset-bg:        rgba(8, 22, 20, 0.58);
+    --portal-glass-inset-bg-hover:  rgba(15, 36, 33, 0.72);
+    --portal-glass-inset-border:    rgba(230, 213, 184, 0.14);
+    --portal-skeleton-surface:      rgba(11, 32, 29, 0.50);
+    --portal-skeleton-border:       rgba(230, 213, 184, 0.10);
+    --portal-skeleton-shine:        rgba(230, 213, 184, 0.16);
   }
 
   /* ── Base element styling ───────────────────────────────────────────────── */

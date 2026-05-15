@@ -1,15 +1,24 @@
 'use client';
 
 /**
- * ThemeProvider — sets data-theme on <html> and syncs with localStorage.
- * Wrap your layout with this component above everything else.
+ * ThemeProvider — used to be a multi-theme switcher (default / dark /
+ * beach / forest). After the brand consolidation it is reduced to a
+ * single canonical theme: **Dark Forest & Beach**.
+ *
+ * The component is retained as a thin compatibility shim so existing
+ * `useTheme()` callers continue to compile, but the value is now
+ * effectively immutable and `setTheme` is a no-op.
  */
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
+/**
+ * Type union preserved for source compatibility with legacy callers
+ * that compare `theme === 'beach'` etc. The runtime value is always
+ * `'default'` post-brand-consolidation, so those checks evaluate to
+ * `false` — no consumer needs to be touched.
+ */
 export type Theme = 'default' | 'dark' | 'beach' | 'forest';
-
-const STORAGE_KEY = 'examstitch-theme';
 
 interface ThemeCtx {
   theme: Theme;
@@ -22,33 +31,20 @@ const ThemeContext = createContext<ThemeCtx>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('default');
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    // Read saved preference on first mount
-    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (saved && ['default', 'dark', 'beach', 'forest'].includes(saved)) {
-      setThemeState(saved);
-      document.documentElement.setAttribute('data-theme', saved);
-    } else {
-      // No saved preference — apply Navy as default
-      document.documentElement.setAttribute('data-theme', 'default');
+    // Ensure the <html> attribute stays in the canonical state even if a
+    // legacy value was persisted in localStorage from the old theme
+    // switcher. We can also opportunistically clear that key.
+    document.documentElement.setAttribute('data-theme', 'default');
+    try {
+      localStorage.removeItem('examstitch-theme');
+    } catch {
+      /* SSR / locked-down localStorage — harmless to ignore */
     }
-    setMounted(true);
   }, []);
 
-  const setTheme = (t: Theme) => {
-    setThemeState(t);
-    localStorage.setItem(STORAGE_KEY, t);
-    document.documentElement.setAttribute('data-theme', t);
-  };
-
-  // Prevent flash: render nothing until client has read localStorage
-  if (!mounted) return <>{children}</>;
-
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme: 'default', setTheme: () => {} }}>
       {children}
     </ThemeContext.Provider>
   );
