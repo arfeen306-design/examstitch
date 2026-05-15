@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, MapPin, Sparkles } from 'lucide-react';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { toEmbedVideoUrl } from '@/lib/tutors';
+import TutorAvatarPlaceholder from '@/components/tutors/TutorAvatarPlaceholder';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,9 +62,7 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ s
                     priority
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-slate-800/80 text-xs text-slate-400">
-                    Photo coming soon
-                  </div>
+                  <TutorAvatarPlaceholder name={tutor.full_name} iconClassName="h-20 w-20" />
                 )}
               </div>
             </div>

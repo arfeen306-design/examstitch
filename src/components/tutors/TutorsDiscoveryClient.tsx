@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import TutorAvatarPlaceholder from './TutorAvatarPlaceholder';
 
 /** Rotating accent phrases — same spirit as the home hero subject carousel. */
 const HERO_FOCUS_PHRASES = [
@@ -349,9 +350,7 @@ export default function TutorsDiscoveryClient({ tutors }: { tutors: TutorListIte
                           sizes="96px"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-500">
-                          Photo soon
-                        </div>
+                        <TutorAvatarPlaceholder name={tutor.full_name} iconClassName="h-12 w-12" />
                       )}
                     </motion.div>
                     <div className="min-w-0 flex-1">
