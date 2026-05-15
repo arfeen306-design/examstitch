@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   extractDriveFileId,
   toDriveStreamUrl,
+  toDrivePreviewUrl,
   sanitizeMediaUrl,
   toEmbedUrl,
   toDownloadUrl,
@@ -86,6 +87,36 @@ describe('toDriveStreamUrl', () => {
   it('returns null for non-Drive URLs', () => {
     expect(toDriveStreamUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(null);
     expect(toDriveStreamUrl('https://cdn.example.com/video.mp4')).toBe(null);
+  });
+});
+
+describe('toDrivePreviewUrl', () => {
+  it('returns the /file/d/ID/preview iframe-embed shape', () => {
+    expect(toDrivePreviewUrl(`https://drive.google.com/file/d/${ID}/view?usp=sharing`)).toBe(
+      `https://drive.google.com/file/d/${ID}/preview`,
+    );
+  });
+
+  it('handles short ?id= links', () => {
+    expect(toDrivePreviewUrl(`https://drive.google.com/open?id=${ID}`)).toBe(
+      `https://drive.google.com/file/d/${ID}/preview`,
+    );
+  });
+
+  it('handles bare file IDs', () => {
+    expect(toDrivePreviewUrl(ID)).toBe(`https://drive.google.com/file/d/${ID}/preview`);
+  });
+
+  it('returns null for non-Drive URLs', () => {
+    expect(toDrivePreviewUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(null);
+    expect(toDrivePreviewUrl('')).toBe(null);
+    expect(toDrivePreviewUrl(undefined)).toBe(null);
+  });
+
+  it('never contains confirm=t (that flag is for download, not preview)', () => {
+    const out = toDrivePreviewUrl(`https://drive.google.com/file/d/${ID}/view`)!;
+    expect(out).not.toContain('confirm=t');
+    expect(out).not.toContain('uc?export=download');
   });
 });
 

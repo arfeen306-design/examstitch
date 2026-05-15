@@ -110,6 +110,24 @@ export function sanitizeMediaUrl(url: string | null | undefined): string {
   return toDriveStreamUrl(url) ?? url;
 }
 
+/**
+ * Returns Drive's **iframe-embed** URL for the given file. This is the
+ * preferred shape for cross-origin embedding because Drive serves the
+ * `/preview` route with permissive `X-Frame-Options` and bypasses the
+ * CORS-driven media-element block that affects `uc?export=download`.
+ *
+ *     https://drive.google.com/file/d/FILE_ID/preview
+ *
+ * Use for `<iframe src>`. For server-side byte streaming or for
+ * download CTAs, keep `toDriveStreamUrl` (which has `&confirm=t`).
+ * Returns `null` for non-Drive URLs.
+ */
+export function toDrivePreviewUrl(url: string | null | undefined): string | null {
+  const id = extractDriveFileId(url);
+  if (!id) return null;
+  return `https://drive.google.com/file/d/${id}/preview`;
+}
+
 // ── YouTube + legacy embed helper (kept for the YouTube branch) ─────────────
 
 export function toEmbedUrl(url: string): { embedUrl: string; type: 'youtube' | 'drive' | 'unknown' } {
