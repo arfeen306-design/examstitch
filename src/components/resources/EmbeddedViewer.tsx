@@ -4,10 +4,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, RotateCcw, ChevronRight } from 'lucide-react';
-import { toEmbedUrl, toDownloadUrl } from '@/lib/url-transform';
+import { toEmbedUrl, toDownloadUrl, extractDriveFileId } from '@/lib/url-transform';
 import { useViewTracking } from '@/hooks/useViewTracking';
 import VideoContainer from './VideoContainer';
 import FramedPDFViewer from './FramedPDFViewer';
+import NativeMediaPlayer from './NativeMediaPlayer';
 
 interface EmbeddedViewerProps {
   title: string;
@@ -237,9 +238,19 @@ export default function EmbeddedViewer({
 }: EmbeddedViewerProps) {
   useViewTracking(resourceId);
 
-  const { embedUrl, type } = toEmbedUrl(sourceUrl);
-  const downloadUrl = toDownloadUrl(sourceUrl);
+  // Guard: bail early if the URL is empty / nullish — show the friendly
+  // "resource missing" notice rather than letting React render a broken
+  // <video src=""> that triggers an immediate error event.
+  const safeUrl = (sourceUrl ?? '').trim();
+  const { embedUrl, type } = toEmbedUrl(safeUrl);
+  const downloadUrl = toDownloadUrl(safeUrl);
   const isVideo = contentType === 'video' || type === 'youtube';
+
+  // Drive-hosted media gets the native HTML5 path. YouTube keeps the
+  // IFrame-API embed (we need the YT.Player onStateChange events for
+  // completion tracking — native <video> doesn't expose those).
+  const driveId = extractDriveFileId(safeUrl);
+  const isDriveVideo = isVideo && driveId !== null && type !== 'youtube';
 
   return (
     <motion.div
@@ -266,7 +277,26 @@ export default function EmbeddedViewer({
         {title}
       </h1>
 
-      {isVideo ? (
+      {!safeUrl ? (
+        <div
+          role="alert"
+          className="rounded-xl px-6 py-10 text-center"
+          style={{
+            background: 'linear-gradient(180deg, #0d1526 0%, #111d35 100%)',
+            border: '1px solid rgba(251,146,60,0.2)',
+            color: '#e2e8f0',
+          }}
+        >
+          <p className="text-base font-bold mb-1">Resource source missing</p>
+          <p className="text-sm" style={{ color: '#94a3b8' }}>
+            An admin must add a Google Drive or YouTube URL before this resource can be viewed.
+          </p>
+        </div>
+      ) : isDriveVideo ? (
+        <VideoContainer title={title} showBadge>
+          <NativeMediaPlayer url={safeUrl} title={title} kind="video" />
+        </VideoContainer>
+      ) : isVideo ? (
         <VideoFrame
           embedUrl={embedUrl}
           title={title}

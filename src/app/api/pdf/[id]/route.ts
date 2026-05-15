@@ -26,6 +26,7 @@ import {
   parseSupabaseStorageObjectUrl,
   STORAGE_SIGNED_URL_TTL_SEC,
 } from '@/lib/supabase/storage-object-url';
+import { toDriveStreamUrl } from '@/lib/url-transform';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -140,13 +141,11 @@ async function loadPdfBytes(
     return { ok: false, message: detail, status: 502 };
   }
 
-  let fetchUrl = pdfUrl;
-  const driveFileMatch = pdfUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  const driveOpenMatch = pdfUrl.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  const driveId = driveFileMatch?.[1] || driveOpenMatch?.[1];
-  if (driveId) {
-    fetchUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
-  }
+  // Use the shared Drive utility so the `&confirm=t` flag is always present
+  // (required for files > 100 MB — Drive otherwise serves the virus-scan
+  // HTML interstitial which `pdf-lib` rejects as a malformed PDF).
+  const driveStreamUrl = toDriveStreamUrl(pdfUrl);
+  const fetchUrl = driveStreamUrl ?? pdfUrl;
 
   let pdfResponse: Response;
   try {
