@@ -145,6 +145,19 @@ export default function NativeMediaPlayer({
             we fetch enough to know duration + dimensions, then defer the
             byte stream until the user hits play. `playsinline` is required
             for iOS Safari so the video doesn't auto-fullscreen. */}
+        {/*
+          IMPORTANT: do NOT set `crossOrigin` on this element.
+          Google Drive's `uc?export=download` redirects to *.googleusercontent.com
+          without an `Access-Control-Allow-Origin` header. Native <video> loads
+          `src` without CORS by default, but as soon as `crossOrigin` is set the
+          browser requires CORS and refuses to play. The legacy attribute is
+          only needed for canvas readback / `captureStream()` — not here.
+
+          The optional `mimeType` prop overrides Drive's `Content-Type` sniffing
+          for callers who know the codec ahead of time. We leave the default
+          unset so the browser uses Drive's response header (handles mp4, webm,
+          mov, etc. without per-file config).
+        */}
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full"
@@ -154,12 +167,11 @@ export default function NativeMediaPlayer({
           controls
           preload="metadata"
           playsInline
-          crossOrigin="anonymous"
           onError={handleVideoError}
           onEnded={handleVideoEnded}
           onTimeUpdate={onProgress ? handleTimeUpdate : undefined}
+          {...(mimeType ? { 'data-mime': mimeType } : {})}
         >
-          <source src={streamUrl} type={mimeType ?? 'video/mp4'} />
           <p className="text-white p-4">
             Your browser doesn&rsquo;t support inline video.{' '}
             <a
