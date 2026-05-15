@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useMemo, useRef } from 'react';
 import { FileText, Download, Printer, AlertTriangle, RefreshCw } from 'lucide-react';
 import {
   loadAdobePdfEmbedScript,
@@ -48,12 +48,22 @@ export default function FramedPDFViewer({
   const [adobeState, setAdobeState] = useState<AdobeInitState>('off');
   const [inView, setInView] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
+  /**
+   * Mobile detection — defaults to `false` so SSR + first paint match
+   * desktop (no hydration mismatch). The real value is set in a layout
+   * effect on mount and updated on resize. The threshold matches the
+   * Tailwind `md:` breakpoint.
+   */
+  const [isMobile, setIsMobile] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   /** After Adobe has mounted once, keep it alive if the user scrolls (avoid re-init flicker). */
   const adobeEverMountedRef = useRef(false);
 
   const adobeClientId = env.NEXT_PUBLIC_ADOBE_CLIENT_ID;
-  const canUseAdobeEmbed = Boolean(adobeClientId && resourceId);
+  // Adobe PDF Embed is desktop-only; mobile gets the Google Docs Viewer
+  // fallback which renders the PDF as a scrollable web-app and bypasses
+  // the iOS/Android "first-page-only" inline-PDF limitation.
+  const canUseAdobeEmbed = Boolean(adobeClientId && resourceId) && !isMobile;
 
   const inlinePdfQuery = (() => {
     if (!resourceId) return '';
@@ -96,6 +106,30 @@ export default function FramedPDFViewer({
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  // Mobile detection — runs once on mount, then on every resize. Width
+  // threshold matches Tailwind's `md:` breakpoint (768 px) so the split
+  // is consistent with our other responsive styles.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const update = () => setIsMobile(window.innerWidth < 768);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // Mobile-only: build the Google Docs Viewer URL. We point it at our
+  // own /api/pdf/[id] route (absolute URL — Google's server has to
+  // fetch it) rather than the raw Drive download, so watermarks +
+  // auth-gating stay intact. The `embedded=true` flag strips the Docs
+  // header chrome and forces the in-frame web-app renderer.
+  const mobileViewerUrl = useMemo(() => {
+    if (!isMobile) return null;
+    if (typeof window === 'undefined') return null;
+    const target = absolutePdfUrl || embedUrl;
+    if (!target) return null;
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(target)}&embedded=true`;
+  }, [isMobile, absolutePdfUrl, embedUrl]);
 
   // Pre-flight PDF only after visible — avoids blocking above-the-fold work
   useEffect(() => {
@@ -488,13 +522,47 @@ export default function FramedPDFViewer({
               />
             )}
 
-            {showIframeFallback && (
-              // Native <object> triggers the browser's built-in PDF plugin
-              // (Chrome PDFium / Firefox PDF.js / Safari Preview) which is
-              // measurably faster than an iframe wrapping the same URL and
-              // doesn't carry the iframe's main-thread isolation overhead.
-              // Children render only when the plugin is unavailable —
-              // a download link satisfies that fallback path.
+            {showIframeFallback && isMobile && mobileViewerUrl && (
+              // Mobile: Google Docs Viewer wrapper. iOS Safari / Android
+              // Chrome silently truncate inline <object>/<embed> PDFs to
+              // the first page; the Docs viewer renders the file as a
+              // scrollable web-app and bypasses that limitation.
+              // The outer div carries the touch-momentum scroll styles
+              // — `-webkit-overflow-scrolling: touch` is non-standard but
+              // still respected by iOS Safari for smooth flick scrolling.
+              <div
+                className={`max-w-full block ${
+                  shouldFillContainer ? 'absolute inset-0 h-full w-full' : 'w-full'
+                }`}
+                style={{
+                  overflow: 'scroll',
+                  WebkitOverflowScrolling: 'touch',
+                  ...(shouldFillContainer
+                    ? { minHeight: 0 }
+                    : { minHeight: viewerMinHeight, height: '100%', width: '100%' }),
+                }}
+              >
+                <iframe
+                  key={`pdf-mobile-${retryNonce}`}
+                  src={mobileViewerUrl}
+                  title={iframeAccessibleTitle}
+                  className="block w-full h-full border-0"
+                  style={{ minHeight: viewerMinHeight, height: '100%', width: '100%' }}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onLoad={handleIframeLoad}
+                />
+              </div>
+            )}
+
+            {showIframeFallback && !(isMobile && mobileViewerUrl) && (
+              // Desktop: native <object> triggers the browser's built-in
+              // PDF plugin (Chrome PDFium / Firefox PDF.js / Safari
+              // Preview) which is measurably faster than an iframe
+              // wrapping the same URL and doesn't carry the iframe's
+              // main-thread isolation overhead. Children render only
+              // when the plugin is unavailable — a download link
+              // satisfies that fallback path.
               <object
                 key={`pdf-${retryNonce}`}
                 data={iframeSrc}
