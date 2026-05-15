@@ -1,11 +1,32 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Plus, Save, Trash2, UserPlus } from 'lucide-react';
+import { Check, ImagePlus, Loader2, Plus, Save, Trash2, UserPlus, X } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { assignTutorToAdminUser, deleteTutorProfile, upsertTutorProfile } from './tutor-actions';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
+import { createClient } from '@/lib/supabase/client';
+
+/** Supabase Storage bucket dedicated to tutor avatar uploads. */
+const TUTOR_AVATARS_BUCKET = 'tutor-avatars';
+
+/** Hard cap on tutor avatar uploads — anything bigger is almost certainly an unedited camera-roll JPEG. */
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
+
+/**
+ * Sanitises a filename so the Supabase Storage path is predictable and
+ * safe. Drops anything that isn't `[a-z0-9._-]`, lowercases, and trims
+ * the leading extension separator.
+ */
+function safeFilename(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'upload';
+}
 
 interface TutorItem {
   id: string;
@@ -69,9 +90,77 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<TutorFormState>(emptyForm());
   const [showForm, setShowForm] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [assignment, setAssignment] = useState<Record<string, string>>(() =>
     Object.fromEntries(admins.map((a) => [a.id, a.tutor_id ?? '']))
   );
+
+  /**
+   * Uploads a file to the `tutor-avatars` Supabase Storage bucket, then
+   * resolves its public URL and writes it back into form state.
+   *
+   * Path shape:  `{timestamp}-{sanitised-filename}`
+   * Bucket:      `tutor-avatars` (must be public read; admin write)
+   * Side effect: shows a toast on success/failure, never throws to the UI
+   */
+  async function handleFileUpload(file: File) {
+    if (!file) return;
+    if (file.size > MAX_AVATAR_BYTES) {
+      showToast({
+        message: `File is ${(file.size / 1024 / 1024).toFixed(1)} MB — please keep avatars under 5 MB.`,
+        type: 'error',
+      });
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      showToast({ message: 'Please choose an image file.', type: 'error' });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const supabase = createClient();
+      const objectKey = `${Date.now()}-${safeFilename(file.name)}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from(TUTOR_AVATARS_BUCKET)
+        .upload(objectKey, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type,
+        });
+
+      if (uploadErr) {
+        showToast({ message: `Upload failed: ${uploadErr.message}`, type: 'error' });
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from(TUTOR_AVATARS_BUCKET)
+        .getPublicUrl(objectKey);
+
+      const publicUrl = publicData?.publicUrl;
+      if (!publicUrl) {
+        showToast({ message: 'Upload succeeded but the public URL was empty.', type: 'error' });
+        return;
+      }
+
+      setForm((s) => ({ ...s, thumbnail_url: publicUrl }));
+      showToast({ message: 'Avatar uploaded.', type: 'success' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown upload error.';
+      showToast({ message: `Upload failed: ${message}`, type: 'error' });
+    } finally {
+      setUploadingAvatar(false);
+      // Reset the input so picking the same file twice still fires onChange
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function clearThumbnail() {
+    setForm((s) => ({ ...s, thumbnail_url: '' }));
+  }
 
   const subAdmins = useMemo(
     () => admins.filter((a) => isStudentAccountAdminRole(a.role) && !a.is_super_admin),
@@ -176,7 +265,89 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
             <input required value={form.slug} onChange={(e) => setForm((s) => ({ ...s, slug: e.target.value }))} placeholder="Slug (e.g. sarah-khan)" className="px-3 py-2 text-sm rounded-lg border border-slate-600 bg-slate-950 text-slate-100 placeholder:text-slate-400" />
           </div>
 
-          <input value={form.thumbnail_url} onChange={(e) => setForm((s) => ({ ...s, thumbnail_url: e.target.value }))} placeholder="Thumbnail URL" className="w-full px-3 py-2 text-sm rounded-lg border border-slate-600 bg-slate-950 text-slate-100 placeholder:text-slate-400" />
+          {/* Avatar uploader — uploads to Supabase Storage and stores the public URL.
+              A small preview keeps the admin confident the upload worked. */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1.5">
+              Thumbnail
+            </label>
+            <div className="flex items-center gap-3">
+              {/* Preview — image when set, neutral placeholder otherwise */}
+              <div
+                className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-slate-600 bg-slate-900 flex items-center justify-center"
+                aria-hidden={!form.thumbnail_url}
+              >
+                {form.thumbnail_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={form.thumbnail_url}
+                    alt="Tutor avatar preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Broken legacy URL — show the placeholder icon instead
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <ImagePlus className="w-6 h-6 text-slate-500" />
+                )}
+              </div>
+
+              {/* Hidden file input + visible action buttons */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFileUpload(f);
+                }}
+              />
+              <div className="flex-1 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 disabled:opacity-50 transition"
+                  >
+                    {uploadingAvatar ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Uploading…
+                      </>
+                    ) : (
+                      <>
+                        <ImagePlus className="w-3.5 h-3.5" />
+                        {form.thumbnail_url ? 'Replace image' : 'Upload image'}
+                      </>
+                    )}
+                  </button>
+                  {form.thumbnail_url && (
+                    <button
+                      type="button"
+                      onClick={clearThumbnail}
+                      disabled={uploadingAvatar}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 disabled:opacity-50 transition"
+                    >
+                      <X className="w-3 h-3" />
+                      Clear
+                    </button>
+                  )}
+                </div>
+                {/* Read-only confirmation of the resolved URL — paste-friendly
+                    so admins can still drop in an externally-hosted CDN URL
+                    if they don't want to upload. */}
+                <input
+                  value={form.thumbnail_url}
+                  onChange={(e) => setForm((s) => ({ ...s, thumbnail_url: e.target.value }))}
+                  placeholder="…or paste an image URL"
+                  className="w-full px-2.5 py-1.5 text-[11px] font-mono rounded-md border border-slate-700 bg-slate-950 text-slate-300 placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+          </div>
           <input value={form.hook_intro} onChange={(e) => setForm((s) => ({ ...s, hook_intro: e.target.value }))} placeholder="Hook Intro" className="w-full px-3 py-2 text-sm rounded-lg border border-slate-600 bg-slate-950 text-slate-100 placeholder:text-slate-400" />
           <textarea value={form.detailed_bio} onChange={(e) => setForm((s) => ({ ...s, detailed_bio: e.target.value }))} placeholder="Detailed bio" rows={4} className="w-full px-3 py-2 text-sm rounded-lg border border-slate-600 bg-slate-950 text-slate-100 placeholder:text-slate-400" />
 
