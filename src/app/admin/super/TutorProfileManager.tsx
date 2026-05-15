@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, ImagePlus, Loader2, Plus, Save, Trash2, UserPlus, X } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { assignTutorToAdminUser, deleteTutorProfile, upsertTutorProfile } from './tutor-actions';
 import { isStudentAccountAdminRole } from '@/lib/admin/student-account-role';
 import { createClient } from '@/lib/supabase/client';
+import TutorAvatarPlaceholder from '@/components/tutors/TutorAvatarPlaceholder';
 
 /**
  * Supabase Storage bucket. **Must exist** and be configured public-read
@@ -110,6 +111,8 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
   const [form, setForm] = useState<TutorFormState>(emptyForm());
   const [showForm, setShowForm] = useState(false);
   const [avatarPhase, setAvatarPhase] = useState<'idle' | 'compressing' | 'uploading'>('idle');
+  /** True when the preview <img> fails to load (broken legacy URL etc.) so we fall back to the silhouette. */
+  const [previewBroken, setPreviewBroken] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [assignment, setAssignment] = useState<Record<string, string>>(() =>
     Object.fromEntries(admins.map((a) => [a.id, a.tutor_id ?? '']))
@@ -223,6 +226,12 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
     setForm((s) => ({ ...s, thumbnail_url: '' }));
   }
 
+  // Reset the broken-image flag whenever the URL changes so a freshly
+  // uploaded / pasted / edited URL gets a fresh load attempt.
+  useEffect(() => {
+    setPreviewBroken(false);
+  }, [form.thumbnail_url]);
+
   const subAdmins = useMemo(
     () => admins.filter((a) => isStudentAccountAdminRole(a.role) && !a.is_super_admin),
     [admins],
@@ -333,24 +342,21 @@ export default function TutorProfileManager({ tutors, admins }: { tutors: TutorI
               Thumbnail
             </label>
             <div className="flex items-center gap-3">
-              {/* Preview — image when set, neutral placeholder otherwise */}
-              <div
-                className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-slate-600 bg-slate-900 flex items-center justify-center"
-                aria-hidden={!form.thumbnail_url}
-              >
-                {form.thumbnail_url ? (
+              {/* Preview — image when set + reachable, human silhouette otherwise */}
+              <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-slate-600">
+                {form.thumbnail_url && !previewBroken ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={form.thumbnail_url}
-                    alt="Tutor avatar preview"
+                    alt={form.full_name ? `${form.full_name} avatar preview` : 'Tutor avatar preview'}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Broken legacy URL — show the placeholder icon instead
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
+                    onError={() => setPreviewBroken(true)}
                   />
                 ) : (
-                  <ImagePlus className="w-6 h-6 text-slate-500" />
+                  <TutorAvatarPlaceholder
+                    name={form.full_name || undefined}
+                    iconClassName="h-8 w-8"
+                  />
                 )}
               </div>
 
