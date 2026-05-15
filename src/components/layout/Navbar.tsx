@@ -108,7 +108,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             <div className="w-9 h-9 rounded-lg gradient-gold flex items-center justify-center">
               <GraduationCap className="w-5 h-5 text-navy-900" />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">
+            <span className="text-xl font-bold text-fg tracking-tight">
               Exam<span className="text-gold-500">Stitch</span>
             </span>
           </Link>
@@ -120,7 +120,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 key={item.href}
                 href={item.href}
                 onClick={item.href === '/digital-skills' ? handleDigitalSkillsNavClick : undefined}
-                className="px-2.5 py-2 text-[13px] font-medium text-white/75 hover:text-white transition-colors rounded-lg hover:bg-white/[0.08] whitespace-nowrap"
+                className="px-2.5 py-2 text-[13px] font-medium text-fg/75 hover:text-fg transition-colors rounded-lg hover:bg-fg/10 whitespace-nowrap"
               >
                 {item.label}
               </Link>
@@ -147,13 +147,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       backdropFilter: 'blur(12px)',
                     }}
                   >
-                    <Search className="w-4 h-4 text-white/50 ml-2.5 shrink-0" />
+                    <Search className="w-4 h-4 text-fg/50 ml-2.5 shrink-0" />
                     <input
                       ref={searchRef}
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       placeholder="Search…"
-                      className="bg-transparent text-sm text-white placeholder-white/40 outline-none px-2 py-2 w-full"
+                      className="bg-transparent text-sm text-fg placeholder-fg/40 outline-none px-2 py-2 w-full"
                       onBlur={() => {
                         if (!searchQuery.trim()) setSearchOpen(false);
                       }}
@@ -165,7 +165,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       <button
                         type="button"
                         onClick={() => { setSearchQuery(''); searchRef.current?.focus(); }}
-                        className="p-1.5 mr-1 text-white/40 hover:text-white/70 transition"
+                        className="p-1.5 mr-1 text-fg/40 hover:text-fg/70 transition"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -178,7 +178,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={() => setSearchOpen(true)}
-                    className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors"
+                    className="p-2 rounded-lg text-fg/60 hover:text-fg hover:bg-fg/10 transition-colors"
                     title="Search"
                   >
                     <Search className="w-4 h-4" />
@@ -193,7 +193,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => setAccountMenuOpen((v) => !v)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-white/15 text-white/80 hover:text-white hover:bg-white/[0.08] transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-fg/15 text-fg/80 hover:text-fg hover:bg-fg/10 transition-colors"
                     aria-label="Account switch"
                   >
                     <User className="w-4 h-4" />
@@ -206,15 +206,15 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-52 rounded-xl border border-white/15 bg-[#0f172a]/95 backdrop-blur-xl shadow-2xl p-1.5 z-[80]"
+                        className="absolute right-0 mt-2 w-52 rounded-xl border border-fg/15 bg-[var(--bg-elevated)]/95 backdrop-blur-xl shadow-2xl p-1.5 z-[80]"
                       >
-                        <p className="px-2.5 py-2 text-[11px] text-white/55">
-                          Signed in as <span className="text-white/80">{user.email?.split('@')[0]}</span>
+                        <p className="px-2.5 py-2 text-[11px] text-fg/55">
+                          Signed in as <span className="text-fg/80">{user.email?.split('@')[0]}</span>
                         </p>
                         <Link
                           href="/dashboard"
                           onClick={() => setAccountMenuOpen(false)}
-                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-white/80 hover:bg-white/[0.08] transition-colors"
+                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-fg/80 hover:bg-fg/10 transition-colors"
                         >
                           <LayoutDashboard className="w-3.5 h-3.5" />
                           Dashboard
@@ -224,7 +224,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                             setAccountMenuOpen(false);
                             handleSignOut();
                           }}
-                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-white/80 hover:bg-white/[0.08] transition-colors"
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-fg/80 hover:bg-fg/10 transition-colors"
                         >
                           <LogOut className="w-3.5 h-3.5" />
                           Sign Out
@@ -236,7 +236,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               ) : (
                 <Link
                   href="/auth/login"
-                  className="px-3 py-2 text-xs font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                  className="px-3 py-2 text-xs font-medium text-fg/60 hover:text-fg transition-colors rounded-lg hover:bg-fg/[0.05]"
                 >
                   Log In
                 </Link>
@@ -244,7 +244,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             )}
             <Link
               href="/demo"
-              className="px-4 py-2 text-xs font-bold text-white rounded-lg transition-all duration-200 hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,107,53,0.4)]"
+              className="px-4 py-2 text-xs font-bold text-fg rounded-lg transition-all duration-200 hover:opacity-90 hover:shadow-[0_4px_20px_rgba(255,107,53,0.4)]"
               style={{ backgroundColor: '#FF6B35' }}
             >
               Book a Demo
@@ -257,13 +257,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             <ThemeToggle />
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 text-white/70 hover:text-white"
+              className="p-2 text-fg/70 hover:text-fg"
             >
               <Search className="w-5 h-5" />
             </button>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-2 text-white/80 hover:text-white"
+              className="p-2 text-fg/80 hover:text-fg"
             >
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -279,15 +279,15 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
               onSubmit={handleSearch}
-              className="lg:hidden overflow-hidden border-t border-white/10"
+              className="lg:hidden overflow-hidden border-t border-fg/10"
             >
               <div className="flex items-center gap-2 px-4 py-3">
-                <Search className="w-4 h-4 text-white/50 shrink-0" />
+                <Search className="w-4 h-4 text-fg/50 shrink-0" />
                 <input
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search resources…"
-                  className="bg-transparent text-sm text-white placeholder-white/40 outline-none w-full"
+                  className="bg-transparent text-sm text-fg placeholder-fg/40 outline-none w-full"
                   autoFocus
                 />
                 {searchQuery && (
@@ -306,7 +306,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="lg:hidden overflow-hidden border-t border-white/10"
+              className="lg:hidden overflow-hidden border-t border-fg/10"
             >
               <div className="py-4 space-y-1">
                 {mainNavItems.map((item) => (
@@ -317,12 +317,12 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       if (item.href === '/digital-skills') handleDigitalSkillsNavClick(e);
                       setMobileOpen(false);
                     }}
-                    className="block px-4 py-3 text-sm font-medium text-white/80 hover:text-gold-500 hover:bg-white/5 rounded-lg transition-colors"
+                    className="block px-4 py-3 text-sm font-medium text-fg/80 hover:text-gold-500 hover:bg-fg/[0.05] rounded-lg transition-colors"
                   >
                     {item.label}
                   </Link>
                 ))}
-                <div className="pt-4 px-4 border-t border-white/10 mt-4 space-y-2">
+                <div className="pt-4 px-4 border-t border-fg/10 mt-4 space-y-2">
                   {user ? (
                     <>
                       <Link
@@ -333,10 +333,10 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                         <LayoutDashboard className="w-4 h-4 ml-auto" />
                         <span className="mr-auto">Dashboard</span>
                       </Link>
-                      <p className="text-xs text-white/50 px-1 pb-1">{user.email}</p>
+                      <p className="text-xs text-fg/50 px-1 pb-1">{user.email}</p>
                       <button
                         onClick={() => { handleSignOut(); setMobileOpen(false); }}
-                        className="flex items-center gap-2 w-full text-center py-2.5 text-sm font-medium text-white/80 border border-white/20 rounded-lg hover:bg-white/5 transition-colors"
+                        className="flex items-center gap-2 w-full text-center py-2.5 text-sm font-medium text-fg/80 border border-fg/20 rounded-lg hover:bg-fg/[0.05] transition-colors"
                       >
                         <LogOut className="w-4 h-4 ml-auto" />
                         <span className="mr-auto">Sign Out</span>
@@ -346,7 +346,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                     <Link
                       href="/auth/login"
                       onClick={() => setMobileOpen(false)}
-                      className="block w-full text-center py-2.5 text-sm font-medium text-white/80 border border-white/20 rounded-lg hover:bg-white/5 transition-colors"
+                      className="block w-full text-center py-2.5 text-sm font-medium text-fg/80 border border-fg/20 rounded-lg hover:bg-fg/[0.05] transition-colors"
                     >
                       Log In
                     </Link>
@@ -354,7 +354,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <Link
                     href="/demo"
                     onClick={() => setMobileOpen(false)}
-                    className="block w-full text-center py-2.5 text-sm font-bold text-white rounded-lg transition-colors"
+                    className="block w-full text-center py-2.5 text-sm font-bold text-fg rounded-lg transition-colors"
                     style={{ backgroundColor: '#FF6B35' }}
                   >
                     Book a Demo

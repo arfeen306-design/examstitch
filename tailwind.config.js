@@ -66,6 +66,14 @@ module.exports = {
         secondary: 'rgb(var(--brand-secondary-rgb) / <alpha-value>)',
         accent:    'rgb(var(--brand-accent-rgb) / <alpha-value>)',
         highlight: 'rgb(var(--brand-highlight-rgb) / <alpha-value>)',
+        /**
+         * Foreground / body-text token — flips with the theme.
+         *   Dark Forest & Beach → cream (#F5F1E3)
+         *   Light White & Purple → deep indigo (#1E1B4B)
+         * Use anywhere a previous `text-white` / `text-white/75` class
+         * would have lived: `text-fg`, `text-fg/75`, `hover:text-fg`.
+         */
+        fg: 'rgb(var(--text-primary-rgb) / <alpha-value>)',
 
         // ── Palette remapping ─────────────────────────────────────────
         // Every existing `bg-slate-*` / `text-blue-*` class now resolves
