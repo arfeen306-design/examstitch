@@ -145,13 +145,17 @@ export default function NativeMediaPlayer({
   // ── Video iframe ─────────────────────────────────────────────────────────
   if (kind === 'video') {
     return (
-      <div className="space-y-2">
-        <div
-          className={`aspect-video w-full rounded-xl overflow-hidden bg-black relative ${className ?? ''}`}
-        >
+      // Full-bleed on phones: negative horizontal margin cancels the
+      // parent /view container's `px-4`, so the player extends to the
+      // screen edges. On `sm:` (≥ 640 px) and up we return to flush
+      // alignment with the rest of the content. Square corners on
+      // mobile because rounded corners + full-bleed look weird at the
+      // screen edge.
+      <div className={`-mx-4 sm:mx-0 ${className ?? ''}`}>
+        <div className="aspect-video w-full overflow-hidden bg-black relative sm:rounded-xl">
           {state === 'loading' && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full border-2 border-indigo-500/30 border-t-indigo-400 animate-spin" />
+              <div className="w-10 h-10 rounded-full border-2 border-indigo-500/30 border-t-indigo-400 animate-spin" />
             </div>
           )}
           <iframe
@@ -171,35 +175,32 @@ export default function NativeMediaPlayer({
             top-right corner of the /preview UI. The shield sits above
             the iframe (z-10 vs iframe's z-0) and captures pointer events
             so clicks land here instead of on Drive's open-in-new-tab
-            icon. 60×60 covers both the icon and its surrounding tap
-            target without intruding into Drive's playback controls.
+            icon. Slightly larger on mobile to cover Drive's chunkier
+            touch UI.
           */}
           <div
             aria-hidden="true"
-            className="absolute top-0 right-0 z-10"
-            style={{
-              width: 60,
-              height: 60,
-              background: 'transparent',
-              pointerEvents: 'auto',
-            }}
+            className="absolute top-0 right-0 z-10 w-[64px] h-[56px] sm:w-[60px] sm:h-[60px]"
+            style={{ background: 'transparent', pointerEvents: 'auto' }}
           />
         </div>
         {/* Permanent escape-hatch: even when the iframe loads correctly,
             users can hit this if Drive's UI inside the iframe surfaces
             its own "you cannot view this" page (a soft failure we
-            can't detect from outside). */}
-        <p className="text-[11px] text-right" style={{ color: '#64748b' }}>
-          Trouble playing?{' '}
+            can't detect from outside).
+            Mobile gets a centred, larger-tap-target button-style link;
+            desktop keeps the discreet right-aligned text. */}
+        <div className="px-4 sm:px-0 mt-3 sm:mt-2 flex justify-center sm:justify-end">
           <a
             href={downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-slate-300 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-[11px] py-1.5 px-2 sm:p-0 rounded-md underline transition-colors"
+            style={{ color: '#64748b' }}
           >
-            Open in new tab
+            Trouble playing?&nbsp;<span className="text-slate-300">Open in new tab</span>
           </a>
-        </p>
+        </div>
       </div>
     );
   }
