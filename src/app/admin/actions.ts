@@ -7,6 +7,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { isValidModuleType } from '@/config/taxonomy';
 import { MODULE_TYPES } from '@/lib/constants';
+import { sanitizeMediaUrl } from '@/lib/url-transform';
 import { validateCategorySlugAgainstNavigation } from '@/lib/category-slug-policy';
 import {
   assertResourceSyllabusBatch,
@@ -348,16 +349,26 @@ export async function bulkInsertResources(
     }
   }
 
-  // Build clean payload — only include fields that have actual values
+  // Build clean payload — only include fields that have actual values.
+  //
+  // INTERCEPTOR: every Drive URL is rewritten to the canonical native-stream
+  // form (`uc?export=download&id=ID&confirm=t`) **before** it hits the DB.
+  // Non-Drive URLs (YouTube, CDN, signed Supabase storage) pass through.
+  // Done once here so every admin write surface — bulk upload, modal,
+  // single insert — gets the same treatment with zero duplication.
   const payload = enriched.map(res => {
+    const sanitisedSourceUrl = sanitizeMediaUrl(res.source_url);
+    const sanitisedWorksheetUrl =
+      res.worksheet_url == null ? res.worksheet_url : sanitizeMediaUrl(res.worksheet_url);
+
     const item: Record<string, unknown> = {
       title: res.title,
       content_type: res.content_type,
-      source_url: res.source_url,
+      source_url: sanitisedSourceUrl,
       is_locked: res.is_locked,
     };
 
-    item.source_type = res.source_type ?? inferSourceTypeFromUrl(res.source_url);
+    item.source_type = res.source_type ?? inferSourceTypeFromUrl(sanitisedSourceUrl);
     if (res.subject)                   item.subject       = res.subject;
     if (res.subject_id)                item.subject_id    = res.subject_id;
     if (res.syllabus_id)               item.syllabus_id   = res.syllabus_id;
@@ -366,7 +377,7 @@ export async function bulkInsertResources(
     if (res.description)               item.description   = res.description;
     if (res.topic)                     item.topic         = res.topic;
     item.module_type = res.module_type;
-    if (res.worksheet_url !== undefined) item.worksheet_url = res.worksheet_url;
+    if (res.worksheet_url !== undefined) item.worksheet_url = sanitisedWorksheetUrl;
     if (res.is_watermarked !== undefined) item.is_watermarked = res.is_watermarked;
     if (res.is_published !== undefined)   item.is_published   = res.is_published;
 

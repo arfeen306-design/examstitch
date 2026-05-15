@@ -47,7 +47,7 @@ export default function FramedPDFViewer({
   const [loadState, setLoadState] = useState<'idle' | 'checking' | 'ready' | 'error'>('idle');
   const [adobeState, setAdobeState] = useState<AdobeInitState>('off');
   const [inView, setInView] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   /** After Adobe has mounted once, keep it alive if the user scrolls (avoid re-init flicker). */
   const adobeEverMountedRef = useRef(false);
@@ -258,9 +258,9 @@ export default function FramedPDFViewer({
     adobeEverMountedRef.current = false;
     setLoadState('checking');
     setAdobeState('off');
-    if (iframeRef.current) {
-      iframeRef.current.src = iframeSrc + (iframeSrc.includes('?') ? '&' : '?') + '_r=' + Date.now();
-    }
+    // Bump nonce so React remounts the <object> with a fresh data= URL —
+    // a remount is more reliable than mutating .data on an existing object.
+    setRetryNonce((n) => n + 1);
     (async () => {
       try {
         const controller = new AbortController();
@@ -489,11 +489,19 @@ export default function FramedPDFViewer({
             )}
 
             {showIframeFallback && (
-              <iframe
-                ref={iframeRef}
-                src={iframeSrc}
+              // Native <object> triggers the browser's built-in PDF plugin
+              // (Chrome PDFium / Firefox PDF.js / Safari Preview) which is
+              // measurably faster than an iframe wrapping the same URL and
+              // doesn't carry the iframe's main-thread isolation overhead.
+              // Children render only when the plugin is unavailable —
+              // a download link satisfies that fallback path.
+              <object
+                key={`pdf-${retryNonce}`}
+                data={iframeSrc}
+                type="application/pdf"
                 title={iframeAccessibleTitle}
-                className={`max-w-full border-0 ${
+                aria-label={iframeAccessibleTitle}
+                className={`max-w-full block ${
                   shouldFillContainer ? 'absolute inset-0 h-full w-full' : 'w-full'
                 }`}
                 style={
@@ -501,13 +509,26 @@ export default function FramedPDFViewer({
                     ? { minHeight: 0 }
                     : { minHeight: viewerMinHeight, height: '100%', width: '100%' }
                 }
-                {...(resourceId
-                  ? {}
-                  : { sandbox: 'allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox' })}
-                referrerPolicy="no-referrer"
-                loading="lazy"
                 onLoad={handleIframeLoad}
-              />
+              >
+                <div
+                  className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center"
+                  style={{ background: '#0d1526', color: '#e2e8f0', minHeight: viewerMinHeight }}
+                >
+                  <p className="text-sm">Your browser cannot display PDFs inline.</p>
+                  {resolvedDownloadUrl && (
+                    <a
+                      href={resolvedDownloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md hover:opacity-90 transition-opacity"
+                      style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}
+                    >
+                      Download {title}
+                    </a>
+                  )}
+                </div>
+              </object>
             )}
           </>
         )}
