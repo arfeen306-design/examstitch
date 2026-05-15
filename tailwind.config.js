@@ -58,11 +58,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ── Semantic tokens (new canonical names) ──────────────────────
-        primary:   '#0B201D',
-        secondary: '#16302B',
-        accent:    '#E6D5B8',
-        highlight: '#F5F1E3',
+        // ── Semantic tokens (CSS-variable-backed so they switch with theme) ──
+        // RGB channel syntax keeps Tailwind opacity modifiers working —
+        // `bg-primary/40`, `text-accent/80`, etc. all resolve correctly.
+        // The variables themselves are defined in globals.css per data-theme.
+        primary:   'rgb(var(--brand-primary-rgb) / <alpha-value>)',
+        secondary: 'rgb(var(--brand-secondary-rgb) / <alpha-value>)',
+        accent:    'rgb(var(--brand-accent-rgb) / <alpha-value>)',
+        highlight: 'rgb(var(--brand-highlight-rgb) / <alpha-value>)',
 
         // ── Palette remapping ─────────────────────────────────────────
         // Every existing `bg-slate-*` / `text-blue-*` class now resolves

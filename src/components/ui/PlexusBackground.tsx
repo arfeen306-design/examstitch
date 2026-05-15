@@ -30,6 +30,14 @@ const THEME_COLORS: Record<Theme, { dot: string; line: string; lineRgb: string; 
     lineRgb: '52, 211, 153',
     lineBaseAlpha: 0.09,
   },
+  light: {
+    // Light White & Purple — soft violet dots / lines that sit gently
+    // against the white canvas without overwhelming the content.
+    dot: 'rgba(124, 58, 237, 0.35)',
+    line: 'rgba(124, 58, 237, 0.10)',
+    lineRgb: '124, 58, 237',
+    lineBaseAlpha: 0.10,
+  },
 };
 
 // ── Configuration ───────────────────────────────────────────────────────────

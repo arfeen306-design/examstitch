@@ -76,10 +76,11 @@ export default async function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
-        {/* FOUC prevention — single canonical theme after brand consolidation */}
+        {/* FOUC prevention — applies the persisted theme before first paint
+            so users on Light White & Purple don't see a green flash. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.setAttribute('data-theme','default');`,
+            __html: `(function(){try{var t=localStorage.getItem('examstitch-theme');document.documentElement.setAttribute('data-theme',(t==='light'||t==='default')?t:'default');}catch(e){document.documentElement.setAttribute('data-theme','default');}})();`,
           }}
         />
         {/* Preconnect: cuts DNS+TLS round-trip for Supabase, YouTube, Google Drive */}
