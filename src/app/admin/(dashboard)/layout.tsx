@@ -10,6 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import SubjectSwitcher from '@/components/admin/SubjectSwitcher';
 import AdminThemeButton from '@/components/admin/AdminThemeButton';
+import PublicSiteBridge from '@/components/admin/PublicSiteBridge';
 import RefreshPermissionsButton from '@/components/admin/RefreshPermissionsButton';
 import { getPortalsForSubjects } from '@/config/taxonomy';
 import { resolveManagedSubjectsToSlugs } from '@/lib/admin/resolve-managed-subjects';
@@ -54,6 +55,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
     jar.delete('admin_session');
     jar.delete('admin_mode');
     jar.delete('admin_landing');
+    jar.delete('super_admin_mode');
     redirect('/admin/login');
   }
 
@@ -282,6 +284,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             {children}
           </div>
         </main>
+        <PublicSiteBridge />
       </div>
     </ToastProvider>
   );
